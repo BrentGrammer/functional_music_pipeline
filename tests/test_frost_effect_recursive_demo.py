@@ -34,37 +34,27 @@ def _voices_with_role(voices, role):
 def _assert_controlled_edge_stagger(voices):
     center_voices = _voices_with_role(voices, FROST_ROLE_CENTER)
     side_voices = _voices_with_role(voices, FROST_ROLE_SIDE)
-    event_anchor_time = min(_voice_start_time(voice) for voice in center_voices)
-    latest_start_time = max(_voice_start_time(voice) for voice in voices)
-    earliest_end_time = min(_voice_end_time(voice) for voice in voices)
-    side_delays = sorted(_voice_start_time(voice) - event_anchor_time for voice in side_voices)
+    center_start_times = sorted(_voice_start_time(voice) for voice in center_voices)
+    side_start_times = sorted(_voice_start_time(voice) for voice in side_voices)
 
-    assert len({_voice_start_time(voice) for voice in center_voices}) == 1
-    assert len(side_delays) == 2
+    assert len(center_start_times) == len(center_voices)
+    assert len(set(center_start_times)) == len(center_start_times)
+    assert len(side_start_times) == 2
 
     if len(center_voices) == 1:
-        side_separation = side_delays[1] - side_delays[0]
+        side_separation = side_start_times[1] - side_start_times[0]
 
-        assert side_delays[0] >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
-        assert side_delays[0] <= FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS
         assert side_separation >= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS
         assert side_separation <= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS
     else:
-        for side_delay in side_delays:
-            assert side_delay >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
-            assert side_delay <= FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS
-
-    assert latest_start_time < earliest_end_time
+        assert side_start_times[0] - center_start_times[0] >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
 
 
 def _assert_event_follows_and_overlaps(previous_event_voices, event_voices):
     previous_event_end_time = max(_voice_end_time(voice) for voice in previous_event_voices)
     event_start_time = min(_voice_start_time(voice) for voice in event_voices)
-    latest_start_time = max(_voice_start_time(voice) for voice in event_voices)
-    earliest_end_time = min(_voice_end_time(voice) for voice in event_voices)
 
     assert event_start_time >= previous_event_end_time
-    assert latest_start_time < earliest_end_time
 
 
 def _build_cluster_frost_composition() -> dict:

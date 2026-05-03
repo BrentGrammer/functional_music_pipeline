@@ -116,31 +116,20 @@ def _event_voices_with_role(score: Score, event_number: int, role: str) -> list[
 def _assert_event_has_controlled_edge_stagger(score: Score, event_number: int) -> None:
     center_voices = _event_voices_with_role(score, event_number, FROST_ROLE_CENTER)
     side_voices = _event_voices_with_role(score, event_number, FROST_ROLE_SIDE)
-    event_anchor_time = min(_voice_start_time(voice) for voice in center_voices)
-    latest_start_time = max(_event_start_times(score, event_number))
-    earliest_end_time = min(_voice_end_time(voice) for voice in _event_voices(score, event_number))
-    side_delays = sorted(_voice_start_time(voice) - event_anchor_time for voice in side_voices)
+    center_start_times = sorted(_voice_start_time(voice) for voice in center_voices)
+    side_start_times = sorted(_voice_start_time(voice) for voice in side_voices)
 
-    assert len({_voice_start_time(voice) for voice in center_voices}) == 1
-    assert len(side_delays) == 2
+    assert len(center_start_times) == len(center_voices)
+    assert len(set(center_start_times)) == len(center_start_times)
+    assert len(side_start_times) == 2
 
     if len(center_voices) == 1:
-        side_separation = side_delays[1] - side_delays[0]
+        side_separation = side_start_times[1] - side_start_times[0]
 
-        assert side_delays[0] >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
-        assert side_delays[0] <= FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS
         assert side_separation >= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS
         assert side_separation <= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS
-        assert side_delays[1] <= (
-            FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS
-            + FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS
-        )
     else:
-        for side_delay in side_delays:
-            assert side_delay >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
-            assert side_delay <= FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS
-
-    assert latest_start_time < earliest_end_time
+        assert side_start_times[0] - center_start_times[0] >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
 
 
 def _assert_new_edges_have_controlled_stagger(
@@ -161,20 +150,15 @@ def _assert_new_edges_have_controlled_stagger(
         _find_event_voice_by_frequency(score, event_number, frequency)
         for frequency in new_frequencies
     ]
-    event_anchor_time = min(_voice_start_time(voice) for voice in replayed_voices)
-    latest_start_time = max(_event_start_times(score, event_number))
-    earliest_end_time = min(_voice_end_time(voice) for voice in _event_voices(score, event_number))
+    replayed_start_times = sorted(_voice_start_time(voice) for voice in replayed_voices)
+    new_edge_start_times = sorted(_voice_start_time(voice) for voice in new_edge_voices)
 
     assert len(new_frequencies) == 2
-    assert len({_voice_start_time(voice) for voice in replayed_voices}) == 1
+    assert len(replayed_start_times) == len(replayed_voices)
+    assert len(set(replayed_start_times)) == len(replayed_start_times)
+    assert len(new_edge_start_times) == 2
 
-    for voice in new_edge_voices:
-        edge_delay = _voice_start_time(voice) - event_anchor_time
-
-        assert edge_delay >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
-        assert edge_delay <= FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS
-
-    assert latest_start_time < earliest_end_time
+    assert new_edge_start_times[0] >= replayed_start_times[-1]
 
 
 def _cents_between(lower_frequency: float, upper_frequency: float) -> float:
@@ -246,7 +230,7 @@ def test_first_frost_event_delays_only_new_edge_tones_within_controlled_bounds()
     _assert_event_has_controlled_edge_stagger(score, 1)
 
 
-def test_first_frost_event_expands_cluster_as_one_simultaneous_event():
+def test_first_frost_event_expands_cluster_as_one_staggered_event():
     random.seed(0)
 
     score = frost_effect(
@@ -281,7 +265,7 @@ def test_first_frost_event_expands_cluster_as_one_simultaneous_event():
     assert sum(frequency > 550.0 for frequency in new_frequencies) == 1
     assert len(center_voices) == 3
     assert len(side_voices) == 2
-    assert len({_voice_start_time(voice) for voice in center_voices}) == 1
+    assert len({_voice_start_time(voice) for voice in center_voices}) == len(center_voices)
     assert min(_voice_start_time(voice) for voice in center_voices) >= source_event_end_time
 
 

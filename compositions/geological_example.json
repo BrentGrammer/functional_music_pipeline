@@ -13,9 +13,7 @@
       {
         "phrases": [
           {
-            "motifs": [
-              "c_major_arpeggio"
-            ],
+            "motifs": ["c_major_arpeggio"],
             "transforms": [
               {
                 "name": "geological",
@@ -31,11 +29,13 @@
                 }
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "phrases": [
           {
-            "motifs": [
-              "c_major_arpeggio"
-            ],
+            "motifs": ["c_major_arpeggio"],
             "transforms": [
               {
                 "name": "geological",
@@ -51,11 +51,13 @@
                 }
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "phrases": [
           {
-            "motifs": [
-              "c_major_arpeggio"
-            ],
+            "motifs": ["c_major_arpeggio"],
             "transforms": [
               {
                 "name": "geological",
@@ -71,11 +73,13 @@
                 }
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "phrases": [
           {
-            "motifs": [
-              "c_major_arpeggio"
-            ],
+            "motifs": ["c_major_arpeggio"],
             "transforms": [
               {
                 "name": "geological",

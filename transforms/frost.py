@@ -13,10 +13,10 @@ from transforms.delay import delay_tones
 FrostPendingEdgeExpansion: TypeAlias = tuple[Voice, Callable[[float], float]]
 FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS = 25.0
 FROST_EFFECT_MAXIMUM_OUTWARD_MOVEMENT_CENTS = 115.0
-FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS = 0.18
-FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS = 0.35
-FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS = 0.12
-FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS = 0.22
+FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS = 0.28
+FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS = 0.55
+FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS = 0.18
+FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS = 0.32
 FROST_ROLE_CENTER = "center"
 FROST_ROLE_SIDE = "side"
 
@@ -194,15 +194,33 @@ def _random_single_seed_edge_separation_seconds() -> float:
     )
 
 
+def _build_replay_entry_delays(voice_count: int) -> list[float]:
+    if voice_count <= 0:
+        return []
+
+    entry_delays: list[float] = []
+    current_delay = _random_edge_stagger_seconds()
+
+    for index in range(voice_count):
+        if index > 0:
+            current_delay += _random_edge_stagger_seconds()
+        entry_delays.append(current_delay)
+
+    return entry_delays
+
+
 def _build_replayed_event_voices(
     voices: list[Voice],
     event_start: float,
     generation: int,
     preserve_existing_roles: bool,
+    entry_delays: list[float] | None = None,
 ) -> list[Voice]:
     replayed_voices: list[Voice] = []
+    if entry_delays is None:
+        entry_delays = _build_replay_entry_delays(len(voices))
 
-    for voice in voices:
+    for voice, entry_delay in zip(voices, entry_delays):
         tone = _first_audible_tone(voice)
         if tone is None:
             continue
@@ -211,7 +229,7 @@ def _build_replayed_event_voices(
             _build_frost_voice(
                 FrostVoiceBuildSpec(
                     tone=tone,
-                    delay_seconds=event_start,
+                    delay_seconds=event_start + entry_delay,
                     generation=generation,
                     frequency=tone.frequency,
                     role=getattr(voice, "frost_role", FROST_ROLE_CENTER)
@@ -227,6 +245,7 @@ def _build_replayed_event_voices(
 def _build_edge_voices(
     voices: list[Voice],
     event_start: float,
+    edge_base_delay: float,
     generation: int,
     single_seed_event: bool,
 ) -> list[Voice]:
@@ -241,9 +260,12 @@ def _build_edge_voices(
         if tone is None:
             continue
 
-        edge_delay = _random_edge_stagger_seconds()
-        if single_seed_event and previous_edge_delay is not None:
+        if previous_edge_delay is None:
+            edge_delay = edge_base_delay + _random_edge_stagger_seconds()
+        elif single_seed_event:
             edge_delay = previous_edge_delay + _random_single_seed_edge_separation_seconds()
+        else:
+            edge_delay = previous_edge_delay + _random_edge_stagger_seconds()
         previous_edge_delay = edge_delay
 
         edge_voices.append(
@@ -263,16 +285,19 @@ def _build_edge_voices(
 
 def _build_initial_frost_event_voices(score: Score, event_start: float) -> list[Voice]:
     source_voices = [onset_tone.voice for onset_tone in _first_audible_onset_field(score)]
+    replay_entry_delays = _build_replay_entry_delays(len(source_voices))
     replayed_voices = _build_replayed_event_voices(
         source_voices,
         event_start,
         1,
         preserve_existing_roles=False,
+        entry_delays=replay_entry_delays,
     )
     edge_voices = _build_edge_voices(
         source_voices,
         event_start,
-        1,
+        edge_base_delay=max(replay_entry_delays, default=0.0),
+        generation=1,
         single_seed_event=len(source_voices) == 1,
     )
     return replayed_voices + edge_voices
@@ -284,17 +309,20 @@ def _build_later_frost_event_voices(score: Score, latest_generation: int, event_
         for voice in score.voices
         if getattr(voice, "frost_generation", 0) == latest_generation and _first_audible_tone(voice) is not None
     ]
+    replay_entry_delays = _build_replay_entry_delays(len(latest_voices))
 
     replayed_voices = _build_replayed_event_voices(
         latest_voices,
         event_start,
         latest_generation + 1,
         preserve_existing_roles=True,
+        entry_delays=replay_entry_delays,
     )
     edge_voices = _build_edge_voices(
         latest_voices,
         event_start,
-        latest_generation + 1,
+        edge_base_delay=max(replay_entry_delays, default=0.0),
+        generation=latest_generation + 1,
         single_seed_event=False,
     )
     return replayed_voices + edge_voices
