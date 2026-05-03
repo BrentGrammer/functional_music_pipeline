@@ -13,60 +13,84 @@
       {
         "phrases": [
           {
-            "motifs": ["c_major_arpeggio"],
-            "transforms": [{
-              "name": "geological",
-              "params": {
-                "profile": {"type": "weierstrass", "params": {"seed": 42}},
-                "dimension": "frequency",
-                "max_deviation": 0.05
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+              {
+                "name": "geological",
+                "params": {
+                  "profile": {
+                    "type": "weierstrass",
+                    "params": {
+                      "seed": 42
+                    }
+                  },
+                  "dimension": "frequency",
+                  "max_deviation": 0.05
+                }
               }
-            }]
-          }
-        ]
-      },
-      {
-        "phrases": [
+            ]
+          },
           {
-            "motifs": ["c_major_arpeggio"],
-            "transforms": [{
-              "name": "geological",
-              "params": {
-                "profile": {"type": "terraced", "params": {"seed": 42}},
-                "dimension": "duration",
-                "max_deviation": 0.5
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+              {
+                "name": "geological",
+                "params": {
+                  "profile": {
+                    "type": "terraced",
+                    "params": {
+                      "seed": 42
+                    }
+                  },
+                  "dimension": "duration",
+                  "max_deviation": 0.5
+                }
               }
-            }]
-          }
-        ]
-      },
-      {
-        "phrases": [
+            ]
+          },
           {
-            "motifs": ["c_major_arpeggio"],
-            "transforms": [{
-              "name": "geological",
-              "params": {
-                "profile": {"type": "cellular_automata", "params": {"seed": 42}},
-                "dimension": "amplitude",
-                "max_deviation": 0.4
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+              {
+                "name": "geological",
+                "params": {
+                  "profile": {
+                    "type": "cellular_automata",
+                    "params": {
+                      "seed": 42
+                    }
+                  },
+                  "dimension": "amplitude",
+                  "max_deviation": 0.4
+                }
               }
-            }]
-          }
-        ]
-      },
-      {
-        "phrases": [
+            ]
+          },
           {
-            "motifs": ["c_major_arpeggio"],
-            "transforms": [{
-              "name": "geological",
-              "params": {
-                "profile": {"type": "ridged_multifractal", "params": {"seed": 42}},
-                "dimension": "amplitude",
-                "max_deviation": 0.9
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+              {
+                "name": "geological",
+                "params": {
+                  "profile": {
+                    "type": "ridged_multifractal",
+                    "params": {
+                      "seed": 42
+                    }
+                  },
+                  "dimension": "amplitude",
+                  "max_deviation": 0.9
+                }
               }
-            }]
+            ]
           }
         ]
       }
