@@ -209,6 +209,17 @@ def _build_replay_entry_delays(voice_count: int) -> list[float]:
     return entry_delays
 
 
+def _advance_edge_delay(
+    previous_edge_delay: float | None,
+    edge_base_delay: float,
+    next_delay: Callable[[], float],
+) -> float:
+    if previous_edge_delay is None:
+        return edge_base_delay + _random_edge_stagger_seconds()
+
+    return previous_edge_delay + next_delay()
+
+
 def _build_replayed_event_voices(
     voices: list[Voice],
     event_start: float,
@@ -251,6 +262,11 @@ def _build_edge_voices(
 ) -> list[Voice]:
     pending_edge_expansions = _build_pending_edge_expansions(voices)
     random.shuffle(pending_edge_expansions)
+    next_edge_delay = (
+        _random_single_seed_edge_separation_seconds
+        if single_seed_event
+        else _random_edge_stagger_seconds
+    )
 
     edge_voices: list[Voice] = []
     previous_edge_delay: float | None = None
@@ -260,12 +276,7 @@ def _build_edge_voices(
         if tone is None:
             continue
 
-        if previous_edge_delay is None:
-            edge_delay = edge_base_delay + _random_edge_stagger_seconds()
-        elif single_seed_event:
-            edge_delay = previous_edge_delay + _random_single_seed_edge_separation_seconds()
-        else:
-            edge_delay = previous_edge_delay + _random_edge_stagger_seconds()
+        edge_delay = _advance_edge_delay(previous_edge_delay, edge_base_delay, next_edge_delay)
         previous_edge_delay = edge_delay
 
         edge_voices.append(
@@ -283,24 +294,40 @@ def _build_edge_voices(
     return edge_voices
 
 
-def _build_initial_frost_event_voices(score: Score, event_start: float) -> list[Voice]:
-    source_voices = [onset_tone.voice for onset_tone in _first_audible_onset_field(score)]
+def _build_frost_event_voices(
+    source_voices: list[Voice],
+    event_start: float,
+    generation: int,
+    preserve_existing_roles: bool,
+    single_seed_event: bool,
+) -> list[Voice]:
     replay_entry_delays = _build_replay_entry_delays(len(source_voices))
     replayed_voices = _build_replayed_event_voices(
         source_voices,
         event_start,
-        1,
-        preserve_existing_roles=False,
+        generation,
+        preserve_existing_roles=preserve_existing_roles,
         entry_delays=replay_entry_delays,
     )
     edge_voices = _build_edge_voices(
         source_voices,
         event_start,
         edge_base_delay=max(replay_entry_delays, default=0.0),
-        generation=1,
-        single_seed_event=len(source_voices) == 1,
+        generation=generation,
+        single_seed_event=single_seed_event,
     )
     return replayed_voices + edge_voices
+
+
+def _build_initial_frost_event_voices(score: Score, event_start: float) -> list[Voice]:
+    source_voices = [onset_tone.voice for onset_tone in _first_audible_onset_field(score)]
+    return _build_frost_event_voices(
+        source_voices,
+        event_start,
+        generation=1,
+        preserve_existing_roles=False,
+        single_seed_event=len(source_voices) == 1,
+    )
 
 
 def _build_later_frost_event_voices(score: Score, latest_generation: int, event_start: float) -> list[Voice]:
@@ -309,23 +336,13 @@ def _build_later_frost_event_voices(score: Score, latest_generation: int, event_
         for voice in score.voices
         if getattr(voice, "frost_generation", 0) == latest_generation and _first_audible_tone(voice) is not None
     ]
-    replay_entry_delays = _build_replay_entry_delays(len(latest_voices))
-
-    replayed_voices = _build_replayed_event_voices(
+    return _build_frost_event_voices(
         latest_voices,
         event_start,
-        latest_generation + 1,
-        preserve_existing_roles=True,
-        entry_delays=replay_entry_delays,
-    )
-    edge_voices = _build_edge_voices(
-        latest_voices,
-        event_start,
-        edge_base_delay=max(replay_entry_delays, default=0.0),
         generation=latest_generation + 1,
+        preserve_existing_roles=True,
         single_seed_event=False,
     )
-    return replayed_voices + edge_voices
 
 
 def _apply_frost_iteration(score: Score) -> Score:

@@ -3,7 +3,6 @@ import pytest
 from composition.parser import parse_composition
 from score_model.score import Score
 from transforms.frost import (
-    FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS,
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS,

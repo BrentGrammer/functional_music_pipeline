@@ -7,7 +7,6 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.frost import (
-    FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS,
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
     FROST_EFFECT_MAXIMUM_OUTWARD_MOVEMENT_CENTS,
     FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS,
