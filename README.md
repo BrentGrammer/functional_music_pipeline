@@ -150,3 +150,31 @@ These transforms introduce structured randomness, inspired by geological pattern
   - **`cellular_automata`**: Creates complex, aperiodic patterns from simple rules.
   - **`ridged_multifractal`**: Creates a mostly stable signal with rare, sharp drops.
   - **`random_drop`**: Injects random downward shifts at a controlled rate.
+
+### Development
+
+All developer commands should be run from inside the running Docker container.
+
+#### Linting (Ruff)
+
+To check the code for style and formatting issues, run:
+
+```bash
+ruff check .
+```
+
+#### Type Checking (MyPy)
+
+To perform static type checking, run:
+
+```bash
+mypy .
+```
+
+#### Testing (Pytest)
+
+To run the full test suite, execute:
+
+```bash
+pytest tests
+```
