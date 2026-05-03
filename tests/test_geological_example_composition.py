@@ -1,17 +1,103 @@
-import json
-import os
-
 import pytest
 
 from composition.parser import parse_composition, parse_motifs
 from score_model.score import Score
 
-# Get the directory of the current test file
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-# Go up one level to src/ and then into compositions/
-COMPOSITION_FILE_PATH = os.path.join(
-    TEST_DIR, "..", "compositions", "geological_example.json"
-)
+
+def _build_geological_example_composition() -> dict:
+    return {
+        "description": "A showcase of the four geological profiles. Each voice plays the same C major arpeggio, but has a different stochastic transform applied to a different musical dimension (frequency, duration, or amplitude). A score-level transform is also applied to all voices.",
+        "motifs": {
+            "c_major_arpeggio": [
+                "261.63:0.5",
+                "329.63:0.5",
+                "392.00:0.5",
+                "523.25:0.5",
+            ]
+        },
+        "composition": {
+            "voices": [
+                {
+                    "phrases": [
+                        {
+                            "motifs": ["c_major_arpeggio"],
+                            "transforms": [
+                                {
+                                    "name": "geological",
+                                    "params": {
+                                        "profile": {"type": "weierstrass", "params": {"seed": 42}},
+                                        "dimension": "frequency",
+                                        "max_deviation": 0.05,
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "phrases": [
+                        {
+                            "motifs": ["c_major_arpeggio"],
+                            "transforms": [
+                                {
+                                    "name": "geological",
+                                    "params": {
+                                        "profile": {"type": "terraced", "params": {"seed": 42}},
+                                        "dimension": "duration",
+                                        "max_deviation": 0.5,
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "phrases": [
+                        {
+                            "motifs": ["c_major_arpeggio"],
+                            "transforms": [
+                                {
+                                    "name": "geological",
+                                    "params": {
+                                        "profile": {"type": "cellular_automata", "params": {"seed": 42}},
+                                        "dimension": "amplitude",
+                                        "max_deviation": 0.4,
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "phrases": [
+                        {
+                            "motifs": ["c_major_arpeggio"],
+                            "transforms": [
+                                {
+                                    "name": "geological",
+                                    "params": {
+                                        "profile": {"type": "ridged_multifractal", "params": {"seed": 42}},
+                                        "dimension": "amplitude",
+                                        "max_deviation": 0.9,
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                },
+            ],
+            "score_transforms": [
+                {
+                    "name": "score_geological",
+                    "params": {
+                        "profile": {"type": "weierstrass", "params": {"seed": 100}},
+                        "dimension": "amplitude",
+                        "max_deviation": 0.1,
+                    },
+                }
+            ],
+        },
+    }
 
 
 class TestGeologicalExampleComposition:
@@ -19,8 +105,7 @@ class TestGeologicalExampleComposition:
         # This test ensures the example composition file is valid JSON and
         # can be successfully parsed by the composition engine, serving as a
         # basic integration test for the unified geological transform API.
-        with open(COMPOSITION_FILE_PATH, "r") as f:
-            composition_data = json.load(f)
+        composition_data = _build_geological_example_composition()
 
         score = parse_composition(composition_data)
 
@@ -35,8 +120,7 @@ class TestGeologicalExampleComposition:
         # Geological transforms are seeded, so repeated parsing of the same
         # composition must yield identical musical output. This test locks in
         # that invariant.
-        with open(COMPOSITION_FILE_PATH, "r") as f:
-            composition_data = json.load(f)
+        composition_data = _build_geological_example_composition()
 
         score1 = parse_composition(composition_data)
         score2 = parse_composition(composition_data)
@@ -53,8 +137,7 @@ class TestGeologicalExampleComposition:
     def test_structural_invariants(self):
         # Verifies the user-visible guarantees of the geological transform API
         # at the composition boundary.
-        with open(COMPOSITION_FILE_PATH, "r") as f:
-            composition_data = json.load(f)
+        composition_data = _build_geological_example_composition()
 
         score = parse_composition(composition_data)
 

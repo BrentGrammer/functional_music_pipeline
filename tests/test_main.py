@@ -4,9 +4,8 @@ import pytest
 
 from main import build_output_filename, get_cli_parser, main
 
-# A real file path is needed for the argparse component to find the file.
 # The contents are not read in these tests because load_composition_score is mocked.
-VALID_COMPOSITION_FILE = "compositions/geological_example.json"
+VALID_COMPOSITION_FILE = "composition.json"
 
 
 def test_cli_parser_accepts_output_name():
