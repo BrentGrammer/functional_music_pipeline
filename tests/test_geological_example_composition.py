@@ -1,0 +1,90 @@
+import json
+import os
+
+import pytest
+
+from composition.parser import parse_composition, parse_motifs
+from score_model.score import Score
+
+# Get the directory of the current test file
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+# Go up one level to src/ and then into compositions/
+COMPOSITION_FILE_PATH = os.path.join(
+    TEST_DIR, "..", "compositions", "geological_example.json"
+)
+
+
+class TestGeologicalExampleComposition:
+    def test_loads_and_parses_without_error(self):
+        # This test ensures the example composition file is valid JSON and
+        # can be successfully parsed by the composition engine, serving as a
+        # basic integration test for the unified geological transform API.
+        with open(COMPOSITION_FILE_PATH, "r") as f:
+            composition_data = json.load(f)
+
+        score = parse_composition(composition_data)
+
+        assert isinstance(score, Score)
+        assert len(score.voices) == 4
+
+        # The motif "c_major_arpeggio" has 4 tones, so each voice should have 4 tones.
+        for voice in score.voices:
+            assert len(voice.tones) == 4
+
+    def test_parsing_is_deterministic(self):
+        # Geological transforms are seeded, so repeated parsing of the same
+        # composition must yield identical musical output. This test locks in
+        # that invariant.
+        with open(COMPOSITION_FILE_PATH, "r") as f:
+            composition_data = json.load(f)
+
+        score1 = parse_composition(composition_data)
+        score2 = parse_composition(composition_data)
+
+        assert len(score1.voices) == len(score2.voices)
+
+        for voice1, voice2 in zip(score1.voices, score2.voices):
+            assert len(voice1.tones) == len(voice2.tones)
+            for tone1, tone2 in zip(voice1.tones, voice2.tones):
+                assert tone1.frequency == pytest.approx(tone2.frequency)
+                assert tone1.duration == pytest.approx(tone2.duration)
+                assert tone1.amplitude == pytest.approx(tone2.amplitude)
+
+    def test_structural_invariants(self):
+        # Verifies the user-visible guarantees of the geological transform API
+        # at the composition boundary.
+        with open(COMPOSITION_FILE_PATH, "r") as f:
+            composition_data = json.load(f)
+
+        score = parse_composition(composition_data)
+
+        # Retrieve original tones for comparison by reusing the motif parser.
+        # This avoids duplicating tone-string parsing logic in the test.
+        parsed_motifs = parse_motifs(composition_data["motifs"])
+        original_motif_tones = parsed_motifs["c_major_arpeggio"]
+
+        # Voice 1: Weierstrass on Frequency
+        voice1_tones = score.voices[0].tones
+        max_deviation_v1 = composition_data["composition"]["voices"][0]["phrases"][0]["transforms"][0]["params"]["max_deviation"]
+        for i, transformed_tone in enumerate(voice1_tones):
+            original_freq = original_motif_tones[i].frequency
+            assert original_freq * (1 - max_deviation_v1) <= transformed_tone.frequency <= original_freq * (1 + max_deviation_v1)
+
+        # Voice 2: Terraced Brownian on Duration
+        voice2_tones = score.voices[1].tones
+        max_deviation_v2 = composition_data["composition"]["voices"][1]["phrases"][0]["transforms"][0]["params"]["max_deviation"]
+        for i, transformed_tone in enumerate(voice2_tones):
+            original_dur = original_motif_tones[i].duration
+            assert original_dur * (1 - max_deviation_v2) <= transformed_tone.duration <= original_dur * (1 + max_deviation_v2)
+            assert transformed_tone.duration > 0
+
+        # All Voices: Verify score-level amplitude transform and general amplitude invariants
+        for i, voice in enumerate(score.voices):
+            for j, transformed_tone in enumerate(voice.tones):
+                # Check invariant: amplitude must be in valid range
+                assert 0.0 <= transformed_tone.amplitude <= 1.0
+
+                # Check effect: score transform should have modified all amplitudes
+                # from their original values.
+                original_amp = original_motif_tones[j].amplitude
+                assert transformed_tone.amplitude != original_amp

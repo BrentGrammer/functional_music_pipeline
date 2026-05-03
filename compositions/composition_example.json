@@ -1,0 +1,43 @@
+{
+  "motifs": {
+    "seed_a": ["155.56:0.3", "185.00:0.15", "207.65:0.15"],
+    "seed_b": ["622.25:0.2", "220:0.3"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "motifs": ["seed_a"],
+            "transforms": ["reverse"]
+          },
+          {
+            "motifs": ["seed_b"],
+            "transforms": [
+              {
+                "name": "scale",
+                "params": {
+                  "dimension": "duration",
+                  "factor": 0.5
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": ["seed_b"],
+            "transforms": []
+          },
+          {
+            "motifs": ["seed_a"],
+            "transforms": ["phrase_feigenbaum_grow"]
+          }
+        ]
+      }
+    ],
+    "score_transforms": ["score_feigenbaum_sequence"]
+  }
+}

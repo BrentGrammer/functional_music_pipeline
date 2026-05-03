@@ -1,0 +1,90 @@
+{
+  "description": "A showcase of the four geological profiles. Each voice plays the same C major arpeggio, but has a different stochastic transform applied to a different musical dimension (frequency, duration, or amplitude). A score-level transform is also applied to all voices.",
+  "motifs": {
+    "c_major_arpeggio": [
+      "261.63:0.5",
+      "329.63:0.5",
+      "392.00:0.5",
+      "523.25:0.5"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [{
+              "name": "geological",
+              "params": {
+                "profile": {"type": "weierstrass", "params": {"seed": 42}},
+                "dimension": "frequency",
+                "max_deviation": 0.05
+              }
+            }]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [{
+              "name": "geological",
+              "params": {
+                "profile": {"type": "terraced", "params": {"seed": 42}},
+                "dimension": "duration",
+                "max_deviation": 0.5
+              }
+            }]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [{
+              "name": "geological",
+              "params": {
+                "profile": {"type": "cellular_automata", "params": {"seed": 42}},
+                "dimension": "amplitude",
+                "max_deviation": 0.4
+              }
+            }]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [{
+              "name": "geological",
+              "params": {
+                "profile": {"type": "ridged_multifractal", "params": {"seed": 42}},
+                "dimension": "amplitude",
+                "max_deviation": 0.9
+              }
+            }]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "name": "score_geological",
+        "params": {
+          "profile": {
+            "type": "weierstrass",
+            "params": {
+              "seed": 100
+            }
+          },
+          "dimension": "amplitude",
+          "max_deviation": 0.1
+        }
+      }
+    ]
+  }
+}

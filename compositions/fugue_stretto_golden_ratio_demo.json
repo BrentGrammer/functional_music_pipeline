@@ -1,0 +1,68 @@
+{
+  "motifs": {
+    "subject": ["261.63:0.45", "293.66:0.45", "329.63:0.45", "392.00:0.75"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Plain subject statement with no transforms.",
+            "motifs": ["subject"]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "comment": "First golden-ratio stretto entry begins after the plain statement and a short pause.",
+            "motifs": ["subject"],
+            "transforms": [
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 2.4,
+                  "position": "start"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "comment": "Second entry overlaps according to the golden-ratio onset interval.",
+            "motifs": ["subject"],
+            "transforms": [
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 3.697871376374779,
+                  "position": "start"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "comment": "Third entry continues the golden-ratio overlap pattern.",
+            "motifs": ["subject"],
+            "transforms": [
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 4.995742752749558,
+                  "position": "start"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

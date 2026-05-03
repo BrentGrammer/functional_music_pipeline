@@ -1,0 +1,35 @@
+{
+  "motifs": {
+    "subject": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "392.00:0.6"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Subject entry in the first voice.",
+            "motifs": ["subject"]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "comment": "Answer entry: same subject, transposed up a fifth after the subject completes.",
+            "motifs": ["subject"],
+            "transforms": [
+              {
+                "name": "transpose",
+                "params": 7
+              },
+              {
+                "name": "delay",
+                "params": 1.8
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

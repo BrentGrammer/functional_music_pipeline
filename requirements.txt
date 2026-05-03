@@ -1,0 +1,4 @@
+numpy==1.26.4
+sympy==1.12
+pyaudio==0.2.11
+mido==1.3.3

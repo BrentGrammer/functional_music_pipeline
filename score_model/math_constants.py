@@ -1,0 +1,6 @@
+import sympy
+
+TWELVE_TET_RATIO = 2 ** (1/12)
+
+GOLDEN_RATIO = float(sympy.GoldenRatio.evalf())
+FEIGENBAUM_DELTA = 4.66920160910299067185320382

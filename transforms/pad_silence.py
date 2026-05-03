@@ -1,0 +1,17 @@
+from score_model.tone_utils import make_silence_tone
+from transforms.base import ToneSequence
+
+
+def pad_silence_tones(tones: ToneSequence, seconds: float, position: str) -> ToneSequence:
+    if seconds < 0:
+        raise ValueError("Pad silence seconds must be non-negative.")
+    if position not in {"start", "end"}:
+        raise ValueError("Pad silence position must be 'start' or 'end'.")
+    if seconds == 0:
+        return tones[:]
+
+    silent_tone = make_silence_tone(seconds)
+    if position == "start":
+        return [silent_tone] + tones[:]
+
+    return tones[:] + [silent_tone]

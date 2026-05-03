@@ -1,0 +1,41 @@
+{
+  "description": "A frost demo that starts from a three-tone cluster and renders four frost events.",
+  "motifs": {
+    "seed_low": ["330:1.0"],
+    "seed_mid": ["440:1.0"],
+    "seed_high": ["550:1.0"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "motifs": ["seed_low"]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": ["seed_mid"]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": ["seed_high"]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "name": "frost_effect",
+        "params": {
+          "iterations": 4
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "motifs": {
+    "melodic_line": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "349.23:0.4", "392.00:0.4", "440.00:0.4", "392.00:0.4", "349.23:0.4"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Original: a short melodic line with changing pitches.",
+            "motifs": ["melodic_line"]
+          },
+          {
+            "comment": "Transformed: FREQUENCY drift with POSITIVE rate (+0.1). Upward glissando.",
+            "motifs": ["melodic_line"],
+            "transforms": [
+              {
+                "name": "drift",
+                "params": { "dimension": "FREQUENCY", "rate": 0.1 }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

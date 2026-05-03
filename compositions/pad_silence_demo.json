@@ -1,0 +1,31 @@
+{
+  "motifs": {
+    "subject": ["261.63:0.45", "293.66:0.45", "329.63:0.45"],
+    "answer": ["392.00:0.45", "329.63:0.45", "293.66:0.45"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Subject statement with trailing silence before the next phrase.",
+            "motifs": ["subject"],
+            "transforms": [
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 0.5,
+                  "position": "end"
+                }
+              }
+            ]
+          },
+          {
+            "comment": "Answer enters after the padded pause.",
+            "motifs": ["answer"]
+          }
+        ]
+      }
+    ]
+  }
+}
