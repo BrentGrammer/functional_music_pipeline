@@ -29,7 +29,10 @@ This will build the Docker image and start the service in the background.
 
 Get an interactive shell inside the running container:
 ```bash
-docker-compose exec functional-music-pipeline bash
+# to get the container name:
+docker ps
+# Shell into the container:
+docker-compose exec <container_name> bash
 ```
 
 You will now have a `bash` prompt, and all subsequent commands should be run from inside the container.
