@@ -1,4 +1,4 @@
-# Emergent Soundscape Generator
+# Functional Music Pipeline
 
 Inspired by Stephen Wolfram's concept of computational irreducibility and the iterative cyclic processes found in nature (e.g., geological formation, crystal growth), this application provides a framework for musical exploration. The core idea is to build complex, unpredictable, and often surprising musical structures by piping simple melodic motifs through a functional-style pipeline of algorithmic transformations.
 
@@ -29,7 +29,7 @@ This will build the Docker image and start the service in the background.
 
 Get an interactive shell inside the running container:
 ```bash
-docker-compose exec generator bash
+docker-compose exec functional-music-pipeline bash
 ```
 
 You will now have a `bash` prompt, and all subsequent commands should be run from inside the container.
