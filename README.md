@@ -32,7 +32,7 @@ Get an interactive shell inside the running container:
 # to get the container name:
 docker ps
 # Shell into the container:
-docker-compose exec <container_name> bash
+docker-compose exec -it <container_name> bash
 ```
 
 You will now have a `bash` prompt, and all subsequent commands should be run from inside the container.
