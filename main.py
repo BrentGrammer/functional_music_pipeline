@@ -25,7 +25,6 @@ MIDI_EXPORT_FORMAT = "midi"
 
 
 def get_cli_parser() -> argparse.ArgumentParser:
-    """Configures and returns the CLI argument parser."""
     parser = argparse.ArgumentParser(
         description="Algorithmic Tone Transformer",
         add_help=False,  # Custom help message is handled in main()
@@ -57,7 +56,6 @@ def get_cli_parser() -> argparse.ArgumentParser:
 
 
 def print_usage_and_exit(parser: argparse.ArgumentParser, exit_code: int = 0) -> NoReturn:
-    """Prints usage information and exits."""
     print("Usage: python main.py --composition-file <path> --output-name <name> --output-format <wav|midi>")
     print(f"\nExample: python main.py --composition-file {EXAMPLE_COMPOSITION_PATH} --output-name my_composition")
     print(f"Example: python main.py --composition-file {EXAMPLE_COMPOSITION_PATH} --output-format midi --output-name my_composition")
@@ -83,7 +81,6 @@ def build_output_filename(output_name: str, output_format: str) -> str:
 
 
 def main(args: list[str] | None = None) -> None:
-    """Main entry point for the application."""
     parser = get_cli_parser()
     parsed_args = parser.parse_args(args if args is not None else sys.argv[1:])
 
@@ -105,7 +102,6 @@ def main(args: list[str] | None = None) -> None:
         logger.error(str(e))
         sys.exit(1)
     except Exception as e:
-        # For now, catch other potential errors from parsing or rendering.
         logger.error(f"An unexpected error occurred: {e}")
         sys.exit(1)
 
