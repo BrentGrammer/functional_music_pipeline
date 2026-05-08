@@ -13,7 +13,7 @@ This application is designed to be run inside a Docker container.
 #### Prerequisites
 
 - Docker
-- Docker Compose
+- Docker Compose (comes with Docker Desktop)
 
 #### 1. Build and Start the Service
 
@@ -28,6 +28,7 @@ This will build the Docker image and start the service in the background.
 #### 2. Enter the Container
 
 Get an interactive shell inside the running container:
+
 ```bash
 # to get the container name:
 docker ps
@@ -37,7 +38,7 @@ docker-compose exec -it <container_name> bash
 
 You will now have a `bash` prompt, and all subsequent commands should be run from inside the container.
 
-#### 3. Run the Generator
+#### 3. Run the Application
 
 From inside the container's shell, you can now run the generator script directly.
 
@@ -64,7 +65,8 @@ docker-compose down
 ### Core Concepts
 
 - **Tone**: A single sound defined by its `frequency` (Hz) and `duration` (seconds). e.g., `"440:0.5"`.
-- **Voice**: A sequence of Tones, like a single melodic line. Each Voice is placed on a separate track in a MIDI file.
+- **Phrase**: A sequence of Tones played one after the other. Monophonic in nature.
+- **Voice**: Contains one or more phrases. Voices are polyphonic in nature and can played at the same time.
 - **Score**: The complete composition, containing one or more Voices that play simultaneously.
 
 ### Creating a Composition File
@@ -114,7 +116,7 @@ Transforms are functions that modify a sequence of tones. Many can be applied to
 
 #### Structural & Algorithmic
 
-- **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to the properties of a phrase, creating new musical material where the relationships between notes feel organic and self-similar, much like patterns found in nature.
+- **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to the properties of a phrase, creating new musical material where the ratio of durations between notes have a mathematical constant relationship.
 - **`add_pedal_point`**: A fugal technique that adds a sustained or repeated anchor note to the score, providing a harmonic foundation.
 - **`stretto`**: A fugal technique that creates overlapping, imitative entries of a motif for climactic effect.
 
@@ -178,3 +180,12 @@ To run the full test suite, execute:
 ```bash
 pytest tests
 ```
+
+#### Test Coverage
+
+- Use the pytest coverage tool.
+
+#### Cyclomatic Complexity Analysis
+
+- use the installed dev dependency tool `radon`
+  - You can pinpoint functions with a high complexity score and ask a coding agent to refactor these to reduce the Cyclomatic Complexity.
