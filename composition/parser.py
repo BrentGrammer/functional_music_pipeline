@@ -15,6 +15,7 @@ from score_model.voice import Voice
 from transforms.base import (
     ToneSequence,
     TransformDescriptor,
+    TransformParamsSpec,
     TransformScope,
     apply_to_all_voices,
 )
@@ -182,8 +183,18 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
     "invert": TransformDescriptor("invert", TransformScope.PHRASE, invert_tones),
     "feigenbaum_sequence": TransformDescriptor("feigenbaum_sequence", TransformScope.PHRASE, feigenbaum_sequence),
     "transpose": TransformDescriptor("transpose", TransformScope.PHRASE, transpose_tones),
-    "scale": TransformDescriptor("scale", TransformScope.PHRASE, scale_transform),
-    "pad_silence": TransformDescriptor("pad_silence", TransformScope.PHRASE, pad_silence_tones),
+    "scale": TransformDescriptor(
+        "scale",
+        TransformScope.PHRASE,
+        scale_transform,
+        params_spec=TransformParamsSpec(required_fields=("dimension", "factor")),
+    ),
+    "pad_silence": TransformDescriptor(
+        "pad_silence",
+        TransformScope.PHRASE,
+        pad_silence_tones,
+        params_spec=TransformParamsSpec(required_fields=("seconds", "position")),
+    ),
     "delay": TransformDescriptor("delay", TransformScope.PHRASE, delay_tones),
     "repeat": TransformDescriptor("repeat", TransformScope.PHRASE, repeat_tones),
     "erosion": TransformDescriptor("erosion", TransformScope.PHRASE, erosion_transform),
@@ -197,7 +208,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
     "score_golden_ratio": TransformDescriptor("score_golden_ratio", TransformScope.ALL_VOICES, golden_ratio_transform),
     "score_invert": TransformDescriptor("score_invert", TransformScope.ALL_VOICES, invert_tones),
     "score_transpose": TransformDescriptor("score_transpose", TransformScope.ALL_VOICES, transpose_tones),
-    "score_scale": TransformDescriptor("score_scale", TransformScope.ALL_VOICES, scale_transform),
+    "score_scale": TransformDescriptor(
+        "score_scale",
+        TransformScope.ALL_VOICES,
+        scale_transform,
+        params_spec=TransformParamsSpec(required_fields=("dimension", "factor")),
+    ),
     "score_delay": TransformDescriptor("score_delay", TransformScope.ALL_VOICES, delay_tones),
     "score_repeat": TransformDescriptor("score_repeat", TransformScope.ALL_VOICES, repeat_tones),
     "score_drift": TransformDescriptor("score_drift", TransformScope.ALL_VOICES, drift_transform),
