@@ -283,9 +283,19 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         stretto,
         params_spec=TransformParamsSpec(required_fields=("motif", "num_times", "spacing")),
     ),
-    "geological": TransformDescriptor("geological", TransformScope.PHRASE, apply_geological_transform),
+    "geological": TransformDescriptor(
+        "geological",
+        TransformScope.PHRASE,
+        apply_geological_transform,
+        params_spec=TransformParamsSpec(required_fields=("profile", "dimension", "max_deviation")),
+    ),
     "frost_effect": TransformDescriptor("frost_effect", TransformScope.SCORE, frost_effect),
-    "score_geological": TransformDescriptor("score_geological", TransformScope.ALL_VOICES, apply_geological_transform),
+    "score_geological": TransformDescriptor(
+        "score_geological",
+        TransformScope.ALL_VOICES,
+        apply_geological_transform,
+        params_spec=TransformParamsSpec(required_fields=("profile", "dimension", "max_deviation")),
+    ),
     "accelerando": TransformDescriptor(
         "accelerando",
         TransformScope.PHRASE,

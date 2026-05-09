@@ -413,6 +413,48 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError, match="must include"):
                 parse_composition(composition_doc)
 
+    def test_geological_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["geological"]
+        valid_params = {
+            "profile": {"type": "weierstrass", "params": {"seed": 42}},
+            "dimension": "frequency",
+            "max_deviation": 0.1,
+        }
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "geological", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
+    def test_score_geological_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_geological"]
+        valid_params = {
+            "profile": {"type": "weierstrass", "params": {"seed": 42}},
+            "dimension": "frequency",
+            "max_deviation": 0.1,
+        }
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {"seed": ["440"]},
+                "composition": {
+                    "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                    "score_transforms": [{"name": "score_geological", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_composition(composition_doc)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]
