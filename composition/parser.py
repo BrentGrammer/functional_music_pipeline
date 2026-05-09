@@ -121,6 +121,8 @@ def _apply_score_transform(
     descriptor: TransformDescriptor,
     transform_params: TransformParams | None,
 ) -> Score:
+    _require_params_for_descriptor(descriptor, transform_params)
+
     if transform_params is None:
         return descriptor.transform(score)
 
