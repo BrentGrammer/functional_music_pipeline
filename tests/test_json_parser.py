@@ -113,6 +113,29 @@ def test_parse_phrase_scale_applies_to_all_grouped_motifs():
     assert result[1].duration == 0.5
     assert result[2].duration == 1.5
 
+def test_parse_phrase_delay_applies_to_all_grouped_motifs():
+    EXPECTED_TONE_COUNT_WITH_DELAY = 2
+    SILENCE_FREQUENCY = 0.0
+    SILENCE_AMPLITUDE = 0.0
+    ORIGINAL_FREQUENCY = 440.0
+    ORIGINAL_DURATION = 0.5
+    DELAY_SECONDS = 1.8
+
+    parsed_motifs = {"seed_a": [Tone(ORIGINAL_FREQUENCY, ORIGINAL_DURATION)]}
+    phrase_dict = {
+        "motifs": ["seed_a"],
+        "transforms": [{"name": "delay", "params": {"seconds": DELAY_SECONDS}}],
+    }
+
+    result = parse_phrase(phrase_dict, parsed_motifs)
+
+    assert len(result) == EXPECTED_TONE_COUNT_WITH_DELAY
+    assert result[0].frequency == pytest.approx(SILENCE_FREQUENCY)
+    assert result[0].amplitude == pytest.approx(SILENCE_AMPLITUDE)
+    assert result[0].duration == pytest.approx(DELAY_SECONDS)
+    assert result[1].frequency == pytest.approx(ORIGINAL_FREQUENCY)
+    assert result[1].duration == pytest.approx(ORIGINAL_DURATION)
+
 class TestScaleTransformParsing:
     def test_scale_duration(self):
         original_duration = 0.5
