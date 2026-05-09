@@ -110,6 +110,25 @@ def test_parse_phrase_pad_silence_requires_dict_params():
         parse_phrase(phrase_config, parsed_motifs)
 
 
+def test_parse_phrase_pad_silence_requires_missing_required_fields():
+    subject_frequency = 440.0
+    subject_duration = 0.5
+    parsed_motifs = {"subject": [Tone(subject_frequency, duration=subject_duration)]}
+    descriptor = TRANSFORMS["pad_silence"]
+    valid_params = {"seconds": 0.3, "position": "end"}
+
+    for required_field in descriptor.params_spec.required_fields:
+        incomplete_params = valid_params.copy()
+        incomplete_params.pop(required_field)
+        phrase_config = {
+            "motifs": ["subject"],
+            "transforms": [{"name": "pad_silence", "params": incomplete_params}],
+        }
+
+        with pytest.raises(ValueError, match="must include"):
+            parse_phrase(phrase_config, parsed_motifs)
+
+
 def test_parse_composition_applies_pad_silence_between_phrases():
     subject_frequency = 261.63
     answer_frequency = 329.63

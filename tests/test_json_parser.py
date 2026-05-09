@@ -199,6 +199,22 @@ class TestScaleTransformParsing:
         with pytest.raises(ValueError):
             parse_phrase(phrase_config, parsed_motifs)
 
+    def test_scale_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["scale"]
+        valid_params = {"dimension": "duration", "factor": 2.0}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "scale", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
     def test_score_scale_with_numeric_param_raises_error(self):
         # Ensures the score-level 'scale' transform enforces explicit parameterization.
         composition_doc = {
@@ -210,6 +226,24 @@ class TestScaleTransformParsing:
         }
         with pytest.raises(ValueError):
             parse_composition(composition_doc)
+
+    def test_score_scale_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_scale"]
+        valid_params = {"dimension": "duration", "factor": 2.0}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {"seed": ["440"]},
+                "composition": {
+                    "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                    "score_transforms": [{"name": "score_scale", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_composition(composition_doc)
 
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {

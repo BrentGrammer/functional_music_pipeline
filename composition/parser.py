@@ -188,6 +188,13 @@ def _require_params_for_descriptor(
     if not isinstance(transform_params, dict):
         raise ValueError(error_message)
 
+    missing_fields = tuple(field for field in required_fields if field not in transform_params)
+    if missing_fields:
+        missing_fields_description = ", ".join(f"'{field}'" for field in missing_fields)
+        raise ValueError(
+            f"The '{descriptor.name}' transform params must include {missing_fields_description}."
+        )
+
 
 TRANSFORMS: dict[str, TransformDescriptor] = {
     "reverse": TransformDescriptor("reverse", TransformScope.PHRASE, reverse_tones),
@@ -270,39 +277,6 @@ def parse_transform_spec(
     return transform_name, transform_params
 
 
-def apply_phrase_transform(
-    transform_func: Callable[..., ToneSequence],
-    phrase_tones: ToneSequence,
-    transform_params: TransformParams | None,
-) -> ToneSequence:
-    transform_param_requirements = {
-        scale_transform: "The 'scale' transform requires an object with named fields specifying 'dimension' and 'factor'.",
-        pad_silence_tones: "The 'pad_silence' transform requires an object with named fields specifying 'seconds' and 'position'.",
-    }
-    error_message = transform_param_requirements.get(transform_func)
-    if error_message is not None and not isinstance(transform_params, dict):
-        raise ValueError(error_message)
-
-    return _apply_transform_with_optional_params(transform_func, phrase_tones, transform_params)
-
-
-def _apply_phrase_relative_transform(
-    descriptor: TransformDescriptor,
-    phrase_tones: list[Tone],
-    transform_params: TransformParams | None,
-    reference_tones: list[Tone] | None,
-) -> list[Tone]:
-    phrase_reference_tones = reference_tones if reference_tones else []
-
-    if transform_params is None:
-        return descriptor.transform(phrase_tones, phrase_reference_tones)
-
-    if isinstance(transform_params, dict):
-        return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
-
-    raise AssertionError("Unreachable: transform_params must be None or a dict.")
-
-
 def _apply_phrase_transform_spec(
     descriptor: TransformDescriptor,
     phrase_tones: list[Tone],
@@ -310,10 +284,16 @@ def _apply_phrase_transform_spec(
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     if descriptor.scope == TransformScope.PHRASE:
-        return apply_phrase_transform(descriptor.transform, phrase_tones, transform_params)
+        _require_params_for_descriptor(descriptor, transform_params)
+        return _apply_transform_with_optional_params(descriptor.transform, phrase_tones, transform_params)
 
     if descriptor.scope == TransformScope.PHRASE_RELATIVE:
-        return _apply_phrase_relative_transform(descriptor, phrase_tones, transform_params, reference_tones)
+        phrase_reference_tones = reference_tones if reference_tones else []
+        if transform_params is None:
+            return descriptor.transform(phrase_tones, phrase_reference_tones)
+        if isinstance(transform_params, dict):
+            return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
+        raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
