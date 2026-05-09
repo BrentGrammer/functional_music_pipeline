@@ -257,7 +257,7 @@ def apply_phrase_transform(
     return _apply_transform_with_optional_params(transform_func, phrase_tones, transform_params)
 
 
-def _handle_phrase_relative_scope(
+def _apply_phrase_relative_transform(
     descriptor: TransformDescriptor,
     phrase_tones: list[Tone],
     transform_params: TransformParams | None,
@@ -283,11 +283,10 @@ def _apply_phrase_transform_spec(
     if descriptor.scope == TransformScope.PHRASE:
         return apply_phrase_transform(descriptor.transform, phrase_tones, transform_params)
 
-    if descriptor.scope not in PHRASE_TRANSFORM_STRATEGIES:
-        raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
+    if descriptor.scope == TransformScope.PHRASE_RELATIVE:
+        return _apply_phrase_relative_transform(descriptor, phrase_tones, transform_params, reference_tones)
 
-    apply_transform = PHRASE_TRANSFORM_STRATEGIES[descriptor.scope]
-    return apply_transform(descriptor, phrase_tones, transform_params, reference_tones)
+    raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
 
 def _apply_phrase_transform_specs(
@@ -321,11 +320,6 @@ def _build_voice_tones(
         combined_tones.extend(phrase_tones)
 
     return combined_tones
-
-
-PHRASE_TRANSFORM_STRATEGIES = {
-    TransformScope.PHRASE_RELATIVE: _handle_phrase_relative_scope,
-}
 
 
 def _validate_and_extract_motifs(phrase_config: PhraseConfig) -> list[str]:
