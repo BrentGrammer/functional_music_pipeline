@@ -12,9 +12,7 @@ class GeologicalTransformParams(TypedDict):
     max_deviation: float
 
 
-TransformParams: TypeAlias = (
-    int | float | dict[str, str | int | float | bool] | GeologicalTransformParams
-)
+TransformParams: TypeAlias = dict[str, str | int | float | bool] | GeologicalTransformParams
 
 
 class TransformConfig(TypedDict, total=False):
