@@ -245,6 +245,40 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError, match="must include"):
                 parse_composition(composition_doc)
 
+    def test_transpose_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["transpose"]
+        valid_params = {"semitones": 1.0}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "transpose", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
+    def test_score_transpose_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_transpose"]
+        valid_params = {"semitones": 1.0}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {"seed": ["440"]},
+                "composition": {
+                    "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                    "score_transforms": [{"name": "score_transpose", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_composition(composition_doc)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]

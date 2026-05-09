@@ -201,7 +201,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
     "golden_ratio": TransformDescriptor("golden_ratio", TransformScope.PHRASE, golden_ratio_transform),
     "invert": TransformDescriptor("invert", TransformScope.PHRASE, invert_tones),
     "feigenbaum_sequence": TransformDescriptor("feigenbaum_sequence", TransformScope.PHRASE, feigenbaum_sequence),
-    "transpose": TransformDescriptor("transpose", TransformScope.PHRASE, transpose_tones),
+    "transpose": TransformDescriptor(
+        "transpose",
+        TransformScope.PHRASE,
+        transpose_tones,
+        params_spec=TransformParamsSpec(required_fields=("semitones",)),
+    ),
     "scale": TransformDescriptor(
         "scale",
         TransformScope.PHRASE,
@@ -226,7 +231,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
     "score_reverse": TransformDescriptor("score_reverse", TransformScope.ALL_VOICES, reverse_tones),
     "score_golden_ratio": TransformDescriptor("score_golden_ratio", TransformScope.ALL_VOICES, golden_ratio_transform),
     "score_invert": TransformDescriptor("score_invert", TransformScope.ALL_VOICES, invert_tones),
-    "score_transpose": TransformDescriptor("score_transpose", TransformScope.ALL_VOICES, transpose_tones),
+    "score_transpose": TransformDescriptor(
+        "score_transpose",
+        TransformScope.ALL_VOICES,
+        transpose_tones,
+        params_spec=TransformParamsSpec(required_fields=("semitones",)),
+    ),
     "score_scale": TransformDescriptor(
         "score_scale",
         TransformScope.ALL_VOICES,
