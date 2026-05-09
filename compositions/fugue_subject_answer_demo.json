@@ -20,11 +20,11 @@
             "transforms": [
               {
                 "name": "transpose",
-                "params": 7
+                "params": { "semitones": 7 }
               },
               {
                 "name": "delay",
-                "params": 1.8
+                "params": { "seconds": 1.8 }
               }
             ]
           }

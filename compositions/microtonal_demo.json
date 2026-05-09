@@ -18,7 +18,7 @@
             "transforms": [
               {
                 "name": "transpose",
-                "params": 1.0
+                "params": { "semitones": 1.0 }
               }
             ]
           },
@@ -31,7 +31,7 @@
             "transforms": [
               {
                 "name": "transpose",
-                "params": 0.5
+                "params": { "semitones": 0.5 }
               }
             ]
           }

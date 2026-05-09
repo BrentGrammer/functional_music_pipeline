@@ -11,7 +11,7 @@ from score_model.tone import Tone
 def test_delay_zero():
     """Zero delay should return original tones."""
     tones = [Tone(440.0), Tone(523.25)]
-    result = delay_tones(tones, 0)
+    result = delay_tones(tones, seconds=0)
     assert len(result) == 2
     assert result[0].frequency == pytest.approx(440.0)
     assert result[1].frequency == pytest.approx(523.25)
@@ -20,7 +20,7 @@ def test_delay_positive():
     """Positive delay should prepend a silent tone."""
     tones = [Tone(440.0, duration=0.5), Tone(523.25, duration=0.3)]
     delay_time = 0.2
-    result = delay_tones(tones, delay_time)
+    result = delay_tones(tones, seconds=delay_time)
     
     expected_length = len(tones) + 1
     assert len(result) == expected_length
@@ -38,12 +38,12 @@ def test_delay_negative():
     """Negative delay should raise ValueError."""
     tones = [Tone(440.0)]
     with pytest.raises(ValueError, match="Delay must be non-negative. Negative offsets are not supported."):
-        delay_tones(tones, -0.5)
+        delay_tones(tones, seconds=-0.5)
 
 def test_delay_preserves_amplitude():
     """Delay should preserve amplitude of original tones."""
     tones = [Tone(440.0, amplitude=0.3), Tone(523.25, amplitude=0.7)]
-    result = delay_tones(tones, 0.1)
+    result = delay_tones(tones, seconds=0.1)
     
     assert len(result) == 3
     assert result[0].amplitude == 0
@@ -62,7 +62,7 @@ def test_delay_generates_silence():
 
 def test_delay_empty_list():
     """Delaying an empty tone list should still prepend a silent tone."""
-    result = delay_tones([], 0.5)
+    result = delay_tones([], seconds=0.5)
     assert len(result) == 1
     assert result[0].frequency == 0
     assert result[0].duration == pytest.approx(0.5)
