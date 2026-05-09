@@ -379,6 +379,40 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError, match="must include"):
                 parse_phrase(phrase_config, parsed_motifs)
 
+    def test_drift_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["drift"]
+        valid_params = {"dimension": "frequency", "rate": 0.1}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "drift", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
+    def test_score_drift_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_drift"]
+        valid_params = {"dimension": "frequency", "rate": 0.1}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {"seed": ["440"]},
+                "composition": {
+                    "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                    "score_transforms": [{"name": "score_drift", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_composition(composition_doc)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]
@@ -841,7 +875,7 @@ def test_parse_composition_with_bad_geological_config_raises_error(
 def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
     captured = {}
 
-    def fake_score_with_motifs_transform(score, parsed_motifs, motif):
+    def capture_score_target_motifs_transform(score, parsed_motifs, motif):
         captured["motif"] = motif
         captured["parsed_motifs"] = parsed_motifs
         return score
@@ -849,7 +883,7 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
     TRANSFORMS["_test_score_with_motifs"] = TransformDescriptor(
         "_test_score_with_motifs",
         TransformScope.SCORE_TARGET_MOTIFS,
-        fake_score_with_motifs_transform,
+        capture_score_target_motifs_transform,
     )
 
     try:
@@ -876,13 +910,13 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
 
 
 def test_parse_composition_score_target_motifs_scope_requires_params_object():
-    def fake_score_with_motifs_transform(score, parsed_motifs, motif):
+    def noop_score_target_motifs_transform(score, parsed_motifs, motif):
         return score
 
     TRANSFORMS["_test_score_with_motifs"] = TransformDescriptor(
         "_test_score_with_motifs",
         TransformScope.SCORE_TARGET_MOTIFS,
-        fake_score_with_motifs_transform,
+        noop_score_target_motifs_transform,
     )
 
     try:
@@ -899,6 +933,31 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
                                 "params": invalid_raw_scalar_param,
                             }
                         ],
+                    },
+                }
+            )
+    finally:
+        TRANSFORMS.pop("_test_score_with_motifs", None)
+
+
+def test_parse_composition_score_target_motifs_scope_requires_params():
+    def noop_score_target_motifs_transform(score, parsed_motifs, motif):
+        return score
+
+    TRANSFORMS["_test_score_with_motifs"] = TransformDescriptor(
+        "_test_score_with_motifs",
+        TransformScope.SCORE_TARGET_MOTIFS,
+        noop_score_target_motifs_transform,
+    )
+
+    try:
+        with pytest.raises(ValueError, match="requires an object with named fields"):
+            parse_composition(
+                {
+                    "motifs": {"seed": ["440:0.5"]},
+                    "composition": {
+                        "voices": [],
+                        "score_transforms": [{"name": "_test_score_with_motifs"}],
                     },
                 }
             )

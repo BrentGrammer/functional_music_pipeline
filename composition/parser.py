@@ -232,7 +232,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(required_fields=("count",)),
     ),
     "erosion": TransformDescriptor("erosion", TransformScope.PHRASE, erosion_transform),
-    "drift": TransformDescriptor("drift", TransformScope.PHRASE, drift_transform),
+    "drift": TransformDescriptor(
+        "drift",
+        TransformScope.PHRASE,
+        drift_transform,
+        params_spec=TransformParamsSpec(required_fields=("dimension", "rate")),
+    ),
     "phrase_feigenbaum_shrink": TransformDescriptor("phrase_feigenbaum_shrink", TransformScope.PHRASE_RELATIVE, phrase_feigenbaum_shrink),
     "phrase_feigenbaum_grow": TransformDescriptor("phrase_feigenbaum_grow", TransformScope.PHRASE_RELATIVE, phrase_feigenbaum_grow),
     "phrase_golden_ratio_shrink": TransformDescriptor("phrase_golden_ratio_shrink", TransformScope.PHRASE_RELATIVE, phrase_golden_ratio_shrink),
@@ -265,7 +270,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         repeat_tones,
         params_spec=TransformParamsSpec(required_fields=("count",)),
     ),
-    "score_drift": TransformDescriptor("score_drift", TransformScope.ALL_VOICES, drift_transform),
+    "score_drift": TransformDescriptor(
+        "score_drift",
+        TransformScope.ALL_VOICES,
+        drift_transform,
+        params_spec=TransformParamsSpec(required_fields=("dimension", "rate")),
+    ),
     "add_pedal_point": TransformDescriptor("add_pedal_point", TransformScope.SCORE, add_pedal_point),
     "stretto": TransformDescriptor(
         "stretto",
