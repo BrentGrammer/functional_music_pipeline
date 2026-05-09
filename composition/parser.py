@@ -197,7 +197,12 @@ def _require_params_for_descriptor(
 
 
 TRANSFORMS: dict[str, TransformDescriptor] = {
-    "reverse": TransformDescriptor("reverse", TransformScope.PHRASE, reverse_tones),
+    "reverse": TransformDescriptor(
+        "reverse",
+        TransformScope.PHRASE,
+        reverse_tones,
+        params_spec=TransformParamsSpec(),
+    ),
     "golden_ratio": TransformDescriptor(
         "golden_ratio",
         TransformScope.PHRASE,
@@ -288,7 +293,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         score_feigenbaum_sequence,
         params_spec=TransformParamsSpec(),
     ),
-    "score_reverse": TransformDescriptor("score_reverse", TransformScope.ALL_VOICES, reverse_tones),
+    "score_reverse": TransformDescriptor(
+        "score_reverse",
+        TransformScope.ALL_VOICES,
+        reverse_tones,
+        params_spec=TransformParamsSpec(),
+    ),
     "score_golden_ratio": TransformDescriptor(
         "score_golden_ratio",
         TransformScope.ALL_VOICES,
