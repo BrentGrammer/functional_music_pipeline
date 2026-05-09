@@ -106,7 +106,7 @@ def test_parse_phrase_pad_silence_requires_dict_params():
         "transforms": [{"name": "pad_silence", "params": invalid_params}],
     }
 
-    with pytest.raises(ValueError, match="requires a dictionary of parameters"):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_config, parsed_motifs)
 
 

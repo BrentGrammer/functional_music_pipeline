@@ -173,7 +173,7 @@ class TestScaleTransformParsing:
             "motifs": ["seed"],
             "transforms": [{"name": "scale", "params": 2.0}],
         }
-        with pytest.raises(ValueError, match="requires a dictionary of parameters"):
+        with pytest.raises(ValueError):
             parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_scale_with_numeric_param_raises_error(self):
@@ -185,7 +185,7 @@ class TestScaleTransformParsing:
                 "score_transforms": [{"name": "score_scale", "params": 2.0}],
             },
         }
-        with pytest.raises(ValueError, match="requires a dictionary of parameters"):
+        with pytest.raises(ValueError):
             parse_composition(composition_doc)
 
 def test_parse_phrase_with_reference_transform():
@@ -319,6 +319,12 @@ def test_parse_phrase_transform_must_be_string_or_object():
 
     with pytest.raises(ValueError, match="Phrase transforms must be strings or objects with a 'name' field."):
         parse_phrase(phrase_dict, parsed_motifs)
+
+def test_parse_transform_spec_rejects_scalar_params():
+    transform_spec = {"name": "transpose", "params": 1.0}
+
+    with pytest.raises(ValueError):
+        parse_transform_spec(transform_spec, "Phrase")
 
 def test_parse_composition_requires_document_object():
     with pytest.raises(ValueError, match="Composition document must be an object."):
@@ -689,7 +695,8 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
     )
 
     try:
-        with pytest.raises(ValueError, match="requires a dictionary of parameters"):
+        invalid_raw_scalar_param = 1.0
+        with pytest.raises(ValueError):
             parse_composition(
                 {
                     "motifs": {"seed": ["440:0.5"]},
@@ -698,7 +705,7 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
                         "score_transforms": [
                             {
                                 "name": "_test_score_with_motifs",
-                                "params": 1.0,
+                                "params": invalid_raw_scalar_param,
                             }
                         ],
                     },

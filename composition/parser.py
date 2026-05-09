@@ -95,8 +95,8 @@ def _validate_transform_name(transform_name: object, transform_scope: str) -> st
 
 
 def _validate_transform_params(transform_params: object, transform_scope: str) -> TransformParams | None:
-    if transform_params is not None and not isinstance(transform_params, (int, float, dict)):
-        raise ValueError(f"{transform_scope} transform params must be an integer, float, or dictionary.")
+    if transform_params is not None and not isinstance(transform_params, dict):
+        raise ValueError(f"{transform_scope} transform params must be an object with named fields.")
 
     return transform_params
 
