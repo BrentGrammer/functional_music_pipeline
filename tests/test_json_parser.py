@@ -455,6 +455,24 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError, match="must include"):
                 parse_composition(composition_doc)
 
+    def test_add_pedal_point_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["add_pedal_point"]
+        valid_params = {"frequency": 130.81, "duration": 2.0, "amplitude": 0.25}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {},
+                "composition": {
+                    "voices": [],
+                    "score_transforms": [{"name": "add_pedal_point", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_composition(composition_doc)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]

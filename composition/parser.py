@@ -198,7 +198,12 @@ def _require_params_for_descriptor(
 
 TRANSFORMS: dict[str, TransformDescriptor] = {
     "reverse": TransformDescriptor("reverse", TransformScope.PHRASE, reverse_tones),
-    "golden_ratio": TransformDescriptor("golden_ratio", TransformScope.PHRASE, golden_ratio_transform),
+    "golden_ratio": TransformDescriptor(
+        "golden_ratio",
+        TransformScope.PHRASE,
+        golden_ratio_transform,
+        params_spec=TransformParamsSpec(),
+    ),
     "invert": TransformDescriptor("invert", TransformScope.PHRASE, invert_tones),
     "feigenbaum_sequence": TransformDescriptor("feigenbaum_sequence", TransformScope.PHRASE, feigenbaum_sequence),
     "transpose": TransformDescriptor(
@@ -240,11 +245,26 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
     ),
     "phrase_feigenbaum_shrink": TransformDescriptor("phrase_feigenbaum_shrink", TransformScope.PHRASE_RELATIVE, phrase_feigenbaum_shrink),
     "phrase_feigenbaum_grow": TransformDescriptor("phrase_feigenbaum_grow", TransformScope.PHRASE_RELATIVE, phrase_feigenbaum_grow),
-    "phrase_golden_ratio_shrink": TransformDescriptor("phrase_golden_ratio_shrink", TransformScope.PHRASE_RELATIVE, phrase_golden_ratio_shrink),
-    "phrase_golden_ratio_grow": TransformDescriptor("phrase_golden_ratio_grow", TransformScope.PHRASE_RELATIVE, phrase_golden_ratio_grow),
+    "phrase_golden_ratio_shrink": TransformDescriptor(
+        "phrase_golden_ratio_shrink",
+        TransformScope.PHRASE_RELATIVE,
+        phrase_golden_ratio_shrink,
+        params_spec=TransformParamsSpec(),
+    ),
+    "phrase_golden_ratio_grow": TransformDescriptor(
+        "phrase_golden_ratio_grow",
+        TransformScope.PHRASE_RELATIVE,
+        phrase_golden_ratio_grow,
+        params_spec=TransformParamsSpec(),
+    ),
     "score_feigenbaum_sequence": TransformDescriptor("score_feigenbaum_sequence", TransformScope.SCORE, score_feigenbaum_sequence),
     "score_reverse": TransformDescriptor("score_reverse", TransformScope.ALL_VOICES, reverse_tones),
-    "score_golden_ratio": TransformDescriptor("score_golden_ratio", TransformScope.ALL_VOICES, golden_ratio_transform),
+    "score_golden_ratio": TransformDescriptor(
+        "score_golden_ratio",
+        TransformScope.ALL_VOICES,
+        golden_ratio_transform,
+        params_spec=TransformParamsSpec(),
+    ),
     "score_invert": TransformDescriptor("score_invert", TransformScope.ALL_VOICES, invert_tones),
     "score_transpose": TransformDescriptor(
         "score_transpose",
@@ -276,7 +296,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         drift_transform,
         params_spec=TransformParamsSpec(required_fields=("dimension", "rate")),
     ),
-    "add_pedal_point": TransformDescriptor("add_pedal_point", TransformScope.SCORE, add_pedal_point),
+    "add_pedal_point": TransformDescriptor(
+        "add_pedal_point",
+        TransformScope.SCORE,
+        add_pedal_point,
+        params_spec=TransformParamsSpec(required_fields=("frequency", "duration")),
+    ),
     "stretto": TransformDescriptor(
         "stretto",
         TransformScope.SCORE_TARGET_MOTIFS,
