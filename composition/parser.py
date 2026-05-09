@@ -172,7 +172,19 @@ def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[s
     return motif_name, [_parse_tone_string(tone_string) for tone_string in tone_strings]
 
 
-def _require_dict_transform_params(transform_params: TransformParams | None, error_message: str) -> None:
+def _require_params_for_descriptor(
+    descriptor: TransformDescriptor,
+    transform_params: TransformParams | None,
+) -> None:
+    required_fields = descriptor.params_spec.required_fields
+    if not required_fields:
+        return
+
+    required_fields_description = ", ".join(f"'{field}'" for field in required_fields)
+    error_message = (
+        f"The '{descriptor.name}' transform requires an object with named fields specifying "
+        f"{required_fields_description}."
+    )
     if not isinstance(transform_params, dict):
         raise ValueError(error_message)
 
@@ -267,8 +279,9 @@ def apply_phrase_transform(
         scale_transform: "The 'scale' transform requires an object with named fields specifying 'dimension' and 'factor'.",
         pad_silence_tones: "The 'pad_silence' transform requires an object with named fields specifying 'seconds' and 'position'.",
     }
-    if transform_func in transform_param_requirements:
-        _require_dict_transform_params(transform_params, transform_param_requirements[transform_func])
+    error_message = transform_param_requirements.get(transform_func)
+    if error_message is not None and not isinstance(transform_params, dict):
+        raise ValueError(error_message)
 
     return _apply_transform_with_optional_params(transform_func, phrase_tones, transform_params)
 
@@ -437,12 +450,7 @@ def _apply_all_voices_transform(
     descriptor: TransformDescriptor,
     transform_params: TransformParams | None
 ) -> Score:
-    if descriptor.transform is scale_transform:
-        _require_dict_transform_params(
-            transform_params,
-            "The 'score_scale' transform requires an object with named fields specifying 'dimension' and 'factor'.",
-        )
-
+    _require_params_for_descriptor(descriptor, transform_params)
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
 
 
