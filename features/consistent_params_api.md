@@ -71,6 +71,7 @@ Transforms that already use named parameters can remain object-shaped, but the i
    - 2.6. Remove scalar dispatch paths from all-voices score transform application helpers.
    - 2.7. Verify relative phrase transforms and score target motif transforms still use keyword arguments only.
    - 2.8. Run the parser-focused tests to identify behavior that still depends on scalar params.
+   - 2.9. Revisit the parser helper layer after the dispatch behavior is stable and simplify or inline any helpers that no longer earn their keep.
 
 3. Align transform invocation semantics.
    - 3.1. Identify transforms whose Python function signatures currently rely on positional scalar arguments from JSON.
