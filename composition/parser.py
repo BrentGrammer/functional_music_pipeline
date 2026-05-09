@@ -257,20 +257,6 @@ def apply_phrase_transform(
     return _apply_transform_with_optional_params(transform_func, phrase_tones, transform_params)
 
 
-def _apply_score_with_optional_params(
-    transform_func: Callable[..., Score],
-    score: Score,
-    transform_params: TransformParams | None,
-) -> Score:
-    if transform_params is None:
-        return transform_func(score)
-
-    if isinstance(transform_params, dict):
-        return transform_func(score, **transform_params)
-
-    raise AssertionError("Unreachable: transform_params must be None or a dict.")
-
-
 def _handle_phrase_scope(
     descriptor: TransformDescriptor,
     phrase_tones: list[Tone],
