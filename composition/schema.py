@@ -19,9 +19,9 @@ class GeologicalTransformParams(TypedDict):
 TransformParams: TypeAlias = StandardTransformParams | GeologicalTransformParams
 
 
-class TransformConfig(TypedDict, total=False):
+class TransformConfig(TypedDict):
     name: str
-    params: TransformParams
+    params: NotRequired[TransformParams]
 
 
 TransformSpec: TypeAlias = str | TransformConfig
