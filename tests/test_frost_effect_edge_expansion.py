@@ -14,6 +14,7 @@ from transforms.frost import (
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS,
     FROST_ROLE_CENTER,
     FROST_ROLE_SIDE,
+    _build_replayed_event_voices,
     _cents_to_frequency_ratio,
     _first_audible_onset_field,
     _first_audible_onset_time,
@@ -21,6 +22,7 @@ from transforms.frost import (
     _find_frost_edge_voices,
     _jitter_frequency_down_within_bounds,
     _jitter_frequency_up_within_bounds,
+    _voice_start_time as frost_voice_start_time,
     frost_effect,
 )
 
@@ -373,6 +375,13 @@ def test_first_audible_tone_with_onset_returns_single_seed_at_zero():
     assert onset_tone.onset_time == pytest.approx(0.0)
 
 
+def test_voice_start_time_uses_leading_silence_duration():
+    leading_silence_duration = 0.5
+    voice = Voice([Tone(0.0, duration=leading_silence_duration), Tone(440.0, duration=1.0)])
+
+    assert frost_voice_start_time(voice) == pytest.approx(leading_silence_duration)
+
+
 def test_first_audible_onset_field_collects_simultaneous_cluster_voices():
     score = Score(
         [
@@ -404,6 +413,22 @@ def test_first_audible_onset_field_excludes_later_delayed_voice():
 
     assert [onset_tone.tone.frequency for onset_tone in onset_field] == [
         pytest.approx(330.0),
+    ]
+
+
+def test_first_audible_onset_field_skips_voice_with_no_audible_tone():
+    audible_frequency = 330.0
+    score = Score(
+        [
+            Voice([Tone(audible_frequency, duration=1.0)]),
+            Voice([Tone(0.0, duration=0.5), Tone(440.0, duration=1.0, amplitude=0.0)]),
+        ]
+    )
+
+    onset_field = _first_audible_onset_field(score)
+
+    assert [onset_tone.tone.frequency for onset_tone in onset_field] == [
+        pytest.approx(audible_frequency),
     ]
 
 
@@ -617,6 +642,23 @@ def test_first_frost_event_uses_earliest_onset_not_later_delayed_voice():
     assert all(frequency != pytest.approx(550.0) for frequency in first_event_frequencies)
     assert min(first_event_frequencies) < 330.0
     assert max(first_event_frequencies) > 330.0
+
+
+def test_build_replayed_event_voices_generates_entry_delays_when_not_provided():
+    source_frequency = 440.0
+    event_start = 1.0
+    source_voice = Voice([Tone(source_frequency, duration=1.0)])
+
+    replayed_voices = _build_replayed_event_voices(
+        [source_voice],
+        event_start=event_start,
+        generation=2,
+        preserve_existing_roles=False,
+    )
+
+    assert len(replayed_voices) == 1
+    assert replayed_voices[0].tones[1].frequency == pytest.approx(source_frequency)
+    assert frost_voice_start_time(replayed_voices[0]) >= event_start + FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
 
 
 def test_multi_voice_input_keeps_growing_linearly_across_multiple_events():

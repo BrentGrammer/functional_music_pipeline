@@ -1,6 +1,10 @@
 import pytest
 
 from composition.parser import (
+    _apply_all_voices_transform_with_optional_params,
+    _apply_phrase_transform_spec,
+    _apply_score_transform,
+    _apply_transform_with_optional_params,
     TRANSFORMS,
     parse_composition,
     parse_motifs,
@@ -611,9 +615,61 @@ def test_parse_transform_spec_rejects_scalar_params():
     with pytest.raises(ValueError):
         parse_transform_spec(transform_spec, "Phrase")
 
+
+def test_parse_phrase_unknown_transform():
+    parsed_motifs = {"seed_a": [Tone(440)]}
+    phrase_dict = {"motifs": ["seed_a"], "transforms": ["unknown_transform"]}
+
+    with pytest.raises(ValueError):
+        parse_phrase(phrase_dict, parsed_motifs)
+
+
+def test_parse_phrase_requires_params_object_when_transform_params_are_missing():
+    parsed_motifs = {"seed": [Tone(440)]}
+    phrase_dict = {"motifs": ["seed"], "transforms": [{"name": "scale"}]}
+
+    with pytest.raises(ValueError):
+        parse_phrase(phrase_dict, parsed_motifs)
+
+
+def test_apply_transform_with_optional_params_rejects_non_dict_non_none_params():
+    with pytest.raises(AssertionError):
+        _apply_transform_with_optional_params(lambda tones: tones, [], 1.0)
+
+
+def test_apply_score_transform_rejects_non_dict_non_none_params():
+    descriptor = TransformDescriptor(
+        "_test_score_transform",
+        TransformScope.SCORE,
+        lambda score: score,
+    )
+
+    with pytest.raises(AssertionError):
+        _apply_score_transform(Score([]), descriptor, 1.0)
+
+
+def test_apply_all_voices_transform_with_optional_params_rejects_non_dict_non_none_params():
+    with pytest.raises(AssertionError):
+        _apply_all_voices_transform_with_optional_params(lambda tones: tones, Score([]), 1.0)
+
+
+def test_apply_phrase_transform_spec_rejects_non_dict_non_none_params_for_relative_scope():
+    descriptor = TransformDescriptor(
+        "_test_phrase_relative_transform",
+        TransformScope.PHRASE_RELATIVE,
+        lambda phrase_tones, reference_tones: phrase_tones,
+    )
+
+    with pytest.raises(AssertionError):
+        _apply_phrase_transform_spec(descriptor, [Tone(440)], 1.0, [Tone(220)])
+
 def test_parse_composition_requires_document_object():
     with pytest.raises(ValueError, match="Composition document must be an object."):
         parse_composition([])
+
+def test_parse_composition_requires_motifs_object():
+    with pytest.raises(ValueError):
+        parse_composition({"motifs": [], "composition": {}})
 
 def test_parse_composition_requires_composition_object():
     with pytest.raises(ValueError, match="Composition 'composition' must be an object."):
@@ -658,6 +714,42 @@ def test_parse_composition_unknown_score_transform():
 
     with pytest.raises(ValueError, match="Unknown score transform 'score_unknown'"):
         parse_composition(json_data)
+
+
+def test_parse_composition_rejects_phrase_transform_in_score_transforms():
+    json_data = {
+        "motifs": {"seed": ["440:0.5", "660:0.5"]},
+        "composition": {
+            "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+            "score_transforms": ["reverse"],
+        },
+    }
+
+    with pytest.raises(ValueError):
+        parse_composition(json_data)
+
+
+def test_parse_composition_score_reverse_applies_to_all_voices_without_params():
+    json_data = {
+        "motifs": {
+            "voice_a": ["440:0.5", "660:0.25"],
+            "voice_b": ["880:0.75", "990:1.0"],
+        },
+        "composition": {
+            "voices": [
+                {"phrases": [{"motifs": ["voice_a"]}]},
+                {"phrases": [{"motifs": ["voice_b"]}]},
+            ],
+            "score_transforms": ["score_reverse"],
+        },
+    }
+
+    score = parse_composition(json_data)
+
+    assert [tone.frequency for tone in score.voices[0].tones] == [660.0, 440.0]
+    assert [tone.duration for tone in score.voices[0].tones] == [0.25, 0.5]
+    assert [tone.frequency for tone in score.voices[1].tones] == [990.0, 880.0]
+    assert [tone.duration for tone in score.voices[1].tones] == [1.0, 0.75]
 
 def test_parse_composition():
     json_data = {
