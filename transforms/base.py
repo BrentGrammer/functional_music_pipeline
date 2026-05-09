@@ -35,10 +35,16 @@ class TransformScope(Enum):
 
 
 @dataclass(frozen=True)
+class TransformParamsSpec:
+    required_fields: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class TransformDescriptor:
     name: str
     scope: TransformScope
     transform: Callable
+    params_spec: TransformParamsSpec = TransformParamsSpec()
 
 
 class Transform(Protocol):
