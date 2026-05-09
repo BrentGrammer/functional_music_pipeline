@@ -107,11 +107,14 @@ Transforms that already use named parameters can remain object-shaped, but the i
    - Update feature docs that still show scalar params if they are meant to describe public JSON usage.
 
 7. Parser helper cleanup refactor.
-   - 7.1. Map the remaining parser helper roles.
-   - 7.2. Collapse only the clearly duplicated dispatch logic.
-   - 7.3. Remove helpers that are now pure pass-throughs.
-   - 7.4. Rebuild the strategy tables around the simplified helpers.
-   - 7.5. Verify behavior with focused tests.
+   - 7.1. Keep `_validate_transform_params`, `_validate_transform_name`, and `parse_transform_spec` as the central parser contract helpers.
+   - 7.2. Keep `_apply_transform_with_optional_params`, `_apply_score_with_optional_params`, and `_apply_all_voices_transform_with_optional_params` as explicit helpers for the three real calling conventions.
+   - 7.3. Remove `_handle_phrase_scope` and call `apply_phrase_transform(...)` directly from `_apply_phrase_transform_spec` for `TransformScope.PHRASE`.
+   - 7.4. Remove `PHRASE_TRANSFORM_STRATEGIES` and replace it with direct scope branches for `TransformScope.PHRASE` and `TransformScope.PHRASE_RELATIVE`.
+   - 7.5. Remove `_apply_score_transform` and call `_apply_score_with_optional_params(...)` directly from `_apply_score_transform_spec` for `TransformScope.SCORE`.
+   - 7.6. Remove `SCORE_TRANSFORM_STRATEGIES` and replace it with direct branches for `TransformScope.SCORE_TARGET_MOTIFS`, `TransformScope.SCORE_ALL_VOICES`, and `TransformScope.SCORE`.
+   - 7.7. Keep `_apply_score_all_voices_transform` and `_apply_score_target_motifs_transform` because they contain special behavior beyond simple forwarding.
+   - 7.8. Run focused parser tests or at least `py_compile` after each small removal.
 
 ## Suggested Naming
 
