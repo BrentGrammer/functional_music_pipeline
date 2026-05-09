@@ -161,9 +161,7 @@ All developer commands should be run from inside the running Docker container.
 
 To check the code for style and formatting issues, run:
 
-```bash
-ruff check .
-```
+- `ruff check .` Then fix with `ruff check . --fix` or manually.
 
 #### Type Checking (MyPy)
 
@@ -185,7 +183,21 @@ pytest tests
 
 - Use the pytest coverage tool.
 
+```bash
+pytest --cov=. tests
+# html report
+pytest --cov=. --cov-report=html tests/
+# txt
+pytest --cov=. tests/ > coverage.txt
+```
+
 #### Cyclomatic Complexity Analysis
 
 - use the installed dev dependency tool `radon`
   - You can pinpoint functions with a high complexity score and ask a coding agent to refactor these to reduce the Cyclomatic Complexity.
+- `radon cc ./ -a -s`
+
+### Generating a dependency graph
+
+- Uses pydeps package
+- `pydeps main.py --show-dot --noshow --max-module-depth 3 -x os re sys numpy | sed 's/ \[.*\]//g' > readonly/dependency_graph.dot`
