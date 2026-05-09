@@ -115,7 +115,7 @@ def _apply_transform_with_optional_params(
     raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
 
-def _apply_score_with_optional_params(
+def _apply_score_transform(
     transform_func: Callable[..., Score],
     score: Score,
     transform_params: TransformParams | None,
@@ -470,18 +470,12 @@ def _apply_score_transform_spec(
         return _apply_score_target_motifs_transform(score, descriptor, transform_params, parsed_motifs)
 
     if descriptor.scope == TransformScope.SCORE:
-        return _apply_score_with_optional_params(descriptor.transform, score, transform_params)
+        return _apply_score_transform(descriptor.transform, score, transform_params)
 
-    if descriptor.scope not in SCORE_TRANSFORM_STRATEGIES:
-        raise ValueError(f"Transform '{transform_name}' is not a score transform.")
+    if descriptor.scope == TransformScope.SCORE_ALL_VOICES:
+        return _apply_score_all_voices_transform(score, descriptor, transform_params)
 
-    apply_strategy = SCORE_TRANSFORM_STRATEGIES[descriptor.scope]
-    return apply_strategy(score, descriptor, transform_params)
-
-
-SCORE_TRANSFORM_STRATEGIES = {
-    TransformScope.SCORE_ALL_VOICES: _apply_score_all_voices_transform,
-}
+    raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 
 
 def parse_composition(composition_document: CompositionDocument) -> Score:
