@@ -257,15 +257,6 @@ def apply_phrase_transform(
     return _apply_transform_with_optional_params(transform_func, phrase_tones, transform_params)
 
 
-def _handle_phrase_scope(
-    descriptor: TransformDescriptor,
-    phrase_tones: list[Tone],
-    transform_params: TransformParams | None,
-    reference_tones: list[Tone] | None,
-) -> list[Tone]:
-    return apply_phrase_transform(descriptor.transform, phrase_tones, transform_params)
-
-
 def _handle_phrase_relative_scope(
     descriptor: TransformDescriptor,
     phrase_tones: list[Tone],
@@ -289,6 +280,9 @@ def _apply_phrase_transform_spec(
     transform_params: TransformParams | None,
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
+    if descriptor.scope == TransformScope.PHRASE:
+        return apply_phrase_transform(descriptor.transform, phrase_tones, transform_params)
+
     if descriptor.scope not in PHRASE_TRANSFORM_STRATEGIES:
         raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
@@ -330,7 +324,6 @@ def _build_voice_tones(
 
 
 PHRASE_TRANSFORM_STRATEGIES = {
-    TransformScope.PHRASE: _handle_phrase_scope,
     TransformScope.PHRASE_RELATIVE: _handle_phrase_relative_scope,
 }
 
