@@ -98,27 +98,29 @@ A composition file has two main parts: `motifs` (reusable musical ideas) and `co
 
 Transforms are functions that modify a sequence of tones. Many can be applied to a single phrase or to all voices in a score (e.g., `transpose` vs. `score_transpose`).
 
+When a transform uses `params`, `params` must be an object with named fields.
+
 #### Pitch & Harmony
 
-- **`transpose`**: Shifts pitch up or down by a number of semitones. Accepts fractions for microtonal shifts (e.g., `0.5`).
-- **`invert`**: Flips the melodic contour of a phrase around a central pitch.
-- **`scale`**: Multiplies the `frequency`, `duration`, or `amplitude` of each tone by a factor.
+- **`transpose`**: Shifts pitch up or down by `semitones`. Accepts fractions for microtonal shifts (e.g., `0.5`).
+- **`invert`**: Flips the melodic contour of a phrase around a central pitch. Optionally accepts `dimension`.
+- **`scale`**: Multiplies the `frequency`, `duration`, or `amplitude` of each tone by `factor` for a chosen `dimension`.
 
 #### Time & Sequence
 
 - **`reverse`**: Reverses the order of tones in a phrase.
 - **`delay`**: Adds a period of silence before each tone. Use `seconds` to describe the silent duration.
-- **`repeat`**: Repeats the tones in a phrase a specified number of times.
-- **`pad_silence`**: Adds a block of silence to the beginning or end of a phrase.
-- **`accelerando`**: Speeds up the phrase. An optional `jaggedness` parameter adds stochastic variation.
-- **`ritardando`**: Slows down the phrase. An optional `jaggedness` parameter adds stochastic variation.
-- **`drift`**: Creates a linear change (e.g., accelerando, crescendo) in `frequency`, `duration`, or `amplitude`.
+- **`repeat`**: Repeats the tones in a phrase `count` times.
+- **`pad_silence`**: Adds a block of silence to the beginning or end of a phrase using `seconds` and `position`.
+- **`accelerando`**: Speeds up the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
+- **`ritardando`**: Slows down the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
+- **`drift`**: Creates a linear change (e.g., accelerando, crescendo) in a chosen `dimension` using `rate`.
 
 #### Structural & Algorithmic
 
-- **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to the properties of a phrase, creating new musical material where the ratio of durations between notes have a mathematical constant relationship.
-- **`add_pedal_point`**: A fugal technique that adds a sustained or repeated anchor note to the score, providing a harmonic foundation.
-- **`stretto`**: A fugal technique that creates overlapping, imitative entries of a motif for climactic effect.
+- **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to a phrase. Both optionally accept `dimension`.
+- **`add_pedal_point`**: A fugal technique that adds a sustained or repeated anchor note to the score. It requires `frequency` and `duration`, and may also use `amplitude`, `mode`, and `pulse_duration`.
+- **`stretto`**: A fugal technique that creates overlapping, imitative entries of a motif using `motif`, `num_times`, and `spacing`.
 
 #### Geological & Stochastic Transforms
 
@@ -128,11 +130,11 @@ These transforms introduce structured randomness, inspired by geological pattern
   ```json
   "transforms": [{"name": "erosion", "params": {"dimension": "duration"}}]
   ```
-- **`frost`**: Simulates the frost effect which slowly creates cracks in rock as precipitation gets into micro-crevices and oscillates between freezing and thawing to gradually widen the cracks (e.g., in hoodoos in Southeast Utah). It takes a single `iterations` parameter which indicates how many times this cyclic process happens.
+- **`frost_effect`**: Simulates the frost effect which slowly creates cracks in rock as precipitation gets into micro-crevices and oscillates between freezing and thawing to gradually widen the cracks (e.g., in hoodoos in Southeast Utah). It optionally accepts `iterations`.
   ```json
-  "score_transforms": [{"name": "frost", "params": {"iterations": 3}}]
+  "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
   ```
-- **`geological`**: The main stochastic transform. Use it with one of the profiles below to apply different patterns of variation.
+- **`geological`**: The main stochastic transform. It requires `profile`, `dimension`, and `max_deviation`.
 
   ```json
   "transforms": [
