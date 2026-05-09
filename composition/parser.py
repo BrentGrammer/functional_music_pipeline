@@ -116,15 +116,15 @@ def _apply_transform_with_optional_params(
 
 
 def _apply_score_transform(
-    transform_func: Callable[..., Score],
     score: Score,
+    descriptor: TransformDescriptor,
     transform_params: TransformParams | None,
 ) -> Score:
     if transform_params is None:
-        return transform_func(score)
+        return descriptor.transform(score)
 
     if isinstance(transform_params, dict):
-        return transform_func(score, **transform_params)
+        return descriptor.transform(score, **transform_params)
 
     raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
@@ -470,7 +470,7 @@ def _apply_score_transform_spec(
         return _apply_score_target_motifs_transform(score, descriptor, transform_params, parsed_motifs)
 
     if descriptor.scope == TransformScope.SCORE:
-        return _apply_score_transform(descriptor.transform, score, transform_params)
+        return _apply_score_transform(score, descriptor, transform_params)
 
     if descriptor.scope == TransformScope.ALL_VOICES:
         return _apply_all_voices_transform(score, descriptor, transform_params)
