@@ -279,6 +279,74 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError, match="must include"):
                 parse_composition(composition_doc)
 
+    def test_delay_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["delay"]
+        valid_params = {"seconds": 0.25}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "delay", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
+    def test_score_delay_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_delay"]
+        valid_params = {"seconds": 0.25}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {"seed": ["440"]},
+                "composition": {
+                    "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                    "score_transforms": [{"name": "score_delay", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_composition(composition_doc)
+
+    def test_repeat_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["repeat"]
+        valid_params = {"count": 2}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "repeat", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
+    def test_score_repeat_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_repeat"]
+        valid_params = {"count": 2}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {"seed": ["440"]},
+                "composition": {
+                    "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                    "score_transforms": [{"name": "score_repeat", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_composition(composition_doc)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]
