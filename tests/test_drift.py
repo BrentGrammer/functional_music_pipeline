@@ -233,7 +233,7 @@ class TestScoreDriftRegistration:
         # `score_drift` must apply across all voices of a score, matching
         # the pattern of other `score_*` transforms (e.g. score_reverse, score_scale).
         descriptor = TRANSFORMS["score_drift"]
-        assert descriptor.scope == TransformScope.SCORE_ALL_VOICES
+        assert descriptor.scope == TransformScope.ALL_VOICES
 
     def test_score_drift_wraps_drift_transform(self):
         descriptor = TRANSFORMS["score_drift"]

@@ -193,19 +193,19 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
     "phrase_golden_ratio_shrink": TransformDescriptor("phrase_golden_ratio_shrink", TransformScope.PHRASE_RELATIVE, phrase_golden_ratio_shrink),
     "phrase_golden_ratio_grow": TransformDescriptor("phrase_golden_ratio_grow", TransformScope.PHRASE_RELATIVE, phrase_golden_ratio_grow),
     "score_feigenbaum_sequence": TransformDescriptor("score_feigenbaum_sequence", TransformScope.SCORE, score_feigenbaum_sequence),
-    "score_reverse": TransformDescriptor("score_reverse", TransformScope.SCORE_ALL_VOICES, reverse_tones),
-    "score_golden_ratio": TransformDescriptor("score_golden_ratio", TransformScope.SCORE_ALL_VOICES, golden_ratio_transform),
-    "score_invert": TransformDescriptor("score_invert", TransformScope.SCORE_ALL_VOICES, invert_tones),
-    "score_transpose": TransformDescriptor("score_transpose", TransformScope.SCORE_ALL_VOICES, transpose_tones),
-    "score_scale": TransformDescriptor("score_scale", TransformScope.SCORE_ALL_VOICES, scale_transform),
-    "score_delay": TransformDescriptor("score_delay", TransformScope.SCORE_ALL_VOICES, delay_tones),
-    "score_repeat": TransformDescriptor("score_repeat", TransformScope.SCORE_ALL_VOICES, repeat_tones),
-    "score_drift": TransformDescriptor("score_drift", TransformScope.SCORE_ALL_VOICES, drift_transform),
+    "score_reverse": TransformDescriptor("score_reverse", TransformScope.ALL_VOICES, reverse_tones),
+    "score_golden_ratio": TransformDescriptor("score_golden_ratio", TransformScope.ALL_VOICES, golden_ratio_transform),
+    "score_invert": TransformDescriptor("score_invert", TransformScope.ALL_VOICES, invert_tones),
+    "score_transpose": TransformDescriptor("score_transpose", TransformScope.ALL_VOICES, transpose_tones),
+    "score_scale": TransformDescriptor("score_scale", TransformScope.ALL_VOICES, scale_transform),
+    "score_delay": TransformDescriptor("score_delay", TransformScope.ALL_VOICES, delay_tones),
+    "score_repeat": TransformDescriptor("score_repeat", TransformScope.ALL_VOICES, repeat_tones),
+    "score_drift": TransformDescriptor("score_drift", TransformScope.ALL_VOICES, drift_transform),
     "add_pedal_point": TransformDescriptor("add_pedal_point", TransformScope.SCORE, add_pedal_point),
     "stretto": TransformDescriptor("stretto", TransformScope.SCORE_TARGET_MOTIFS, stretto),
     "geological": TransformDescriptor("geological", TransformScope.PHRASE, apply_geological_transform),
     "frost_effect": TransformDescriptor("frost_effect", TransformScope.SCORE, frost_effect),
-    "score_geological": TransformDescriptor("score_geological", TransformScope.SCORE_ALL_VOICES, apply_geological_transform),
+    "score_geological": TransformDescriptor("score_geological", TransformScope.ALL_VOICES, apply_geological_transform),
     "accelerando": TransformDescriptor("accelerando", TransformScope.PHRASE, accelerando_transform),
     "ritardando": TransformDescriptor("ritardando", TransformScope.PHRASE, ritardando_transform),
 }
@@ -416,7 +416,7 @@ def _validate_composition_structure(composition_document: CompositionDocument) -
     return motif_definitions, voice_configs, score_transform_specs
 
 
-def _apply_score_all_voices_transform(
+def _apply_all_voices_transform(
     score: Score,
     descriptor: TransformDescriptor,
     transform_params: TransformParams | None
@@ -472,8 +472,8 @@ def _apply_score_transform_spec(
     if descriptor.scope == TransformScope.SCORE:
         return _apply_score_transform(descriptor.transform, score, transform_params)
 
-    if descriptor.scope == TransformScope.SCORE_ALL_VOICES:
-        return _apply_score_all_voices_transform(score, descriptor, transform_params)
+    if descriptor.scope == TransformScope.ALL_VOICES:
+        return _apply_all_voices_transform(score, descriptor, transform_params)
 
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 

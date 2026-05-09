@@ -31,7 +31,7 @@ class TransformScope(Enum):
     PHRASE_RELATIVE = auto()
     SCORE = auto()
     SCORE_TARGET_MOTIFS = auto()
-    SCORE_ALL_VOICES = auto()
+    ALL_VOICES = auto()
 
 
 @dataclass(frozen=True)
