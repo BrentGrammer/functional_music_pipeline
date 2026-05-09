@@ -267,12 +267,27 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
     ),
     "score_drift": TransformDescriptor("score_drift", TransformScope.ALL_VOICES, drift_transform),
     "add_pedal_point": TransformDescriptor("add_pedal_point", TransformScope.SCORE, add_pedal_point),
-    "stretto": TransformDescriptor("stretto", TransformScope.SCORE_TARGET_MOTIFS, stretto),
+    "stretto": TransformDescriptor(
+        "stretto",
+        TransformScope.SCORE_TARGET_MOTIFS,
+        stretto,
+        params_spec=TransformParamsSpec(required_fields=("motif", "num_times", "spacing")),
+    ),
     "geological": TransformDescriptor("geological", TransformScope.PHRASE, apply_geological_transform),
     "frost_effect": TransformDescriptor("frost_effect", TransformScope.SCORE, frost_effect),
     "score_geological": TransformDescriptor("score_geological", TransformScope.ALL_VOICES, apply_geological_transform),
-    "accelerando": TransformDescriptor("accelerando", TransformScope.PHRASE, accelerando_transform),
-    "ritardando": TransformDescriptor("ritardando", TransformScope.PHRASE, ritardando_transform),
+    "accelerando": TransformDescriptor(
+        "accelerando",
+        TransformScope.PHRASE,
+        accelerando_transform,
+        params_spec=TransformParamsSpec(required_fields=("strength",)),
+    ),
+    "ritardando": TransformDescriptor(
+        "ritardando",
+        TransformScope.PHRASE,
+        ritardando_transform,
+        params_spec=TransformParamsSpec(required_fields=("strength",)),
+    ),
 }
 
 
@@ -470,7 +485,8 @@ def _apply_score_target_motifs_transform(
     transform_params: TransformParams | None,
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
-    if not isinstance(transform_params, dict):
+    _require_params_for_descriptor(descriptor, transform_params)
+    if transform_params is None:
         raise ValueError(f"The '{descriptor.name}' transform requires an object with named fields.")
 
     return descriptor.transform(score, parsed_motifs, **transform_params)

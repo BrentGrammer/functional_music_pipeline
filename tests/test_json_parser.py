@@ -347,6 +347,38 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError, match="must include"):
                 parse_composition(composition_doc)
 
+    def test_accelerando_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["accelerando"]
+        valid_params = {"strength": "medium", "jaggedness": "none"}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "accelerando", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
+    def test_ritardando_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["ritardando"]
+        valid_params = {"strength": "medium", "jaggedness": "none"}
+
+        for required_field in descriptor.params_spec.required_fields:
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "ritardando", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError, match="must include"):
+                parse_phrase(phrase_config, parsed_motifs)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]
@@ -872,3 +904,26 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
             )
     finally:
         TRANSFORMS.pop("_test_score_with_motifs", None)
+
+
+def test_stretto_with_missing_required_fields_raises_error():
+    descriptor = TRANSFORMS["stretto"]
+    valid_params = {
+        "motif": "subject",
+        "num_times": 2,
+        "spacing": "golden_ratio",
+    }
+
+    for required_field in descriptor.params_spec.required_fields:
+        incomplete_params = valid_params.copy()
+        incomplete_params.pop(required_field)
+        composition_doc = {
+            "motifs": {"subject": ["440:0.5"]},
+            "composition": {
+                "voices": [],
+                "score_transforms": [{"name": "stretto", "params": incomplete_params}],
+            },
+        }
+
+        with pytest.raises(ValueError, match="must include"):
+            parse_composition(composition_doc)
