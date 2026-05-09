@@ -6,6 +6,7 @@ import random
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from transforms.duration import (
+    _interpolate_multiplier_at_position,
     feigenbaum_sequence,
     score_feigenbaum_sequence,
     phrase_feigenbaum_shrink,
@@ -67,6 +68,63 @@ class TestPhraseFeigenbaumShrink:
         with pytest.raises(ValueError, match="Cannot apply phrase-feigenbaum-shrink: no preceding phrases exist to relate to."):
             phrase_feigenbaum_shrink(second_phrase, [])
 
+    def test_empty_current_phrase_returns_empty_list(self):
+        reference_frequency = 440.0
+        reference_duration = 1.0
+        previous_phrase = [Tone(reference_frequency, duration=reference_duration)]
+
+        assert phrase_feigenbaum_shrink([], previous_phrase) == []
+
+    def test_zero_current_total_returns_original_tones(self):
+        reference_frequency = 440.0
+        reference_duration = 1.0
+        zero_duration_seconds = 0.0
+        first_current_frequency = 880.0
+        second_current_frequency = 523.0
+        previous_phrase = [Tone(reference_frequency, duration=reference_duration)]
+        zero_duration_phrase = [
+            Tone(first_current_frequency, duration=zero_duration_seconds),
+            Tone(second_current_frequency, duration=zero_duration_seconds),
+        ]
+
+        result = phrase_feigenbaum_shrink(zero_duration_phrase, previous_phrase)
+
+        assert result is zero_duration_phrase
+
+    def test_zero_previous_total_returns_original_tones(self):
+        reference_frequency = 440.0
+        zero_duration_seconds = 0.0
+        current_frequency = 880.0
+        current_duration = 1.0
+        zero_duration_previous_phrase = [Tone(reference_frequency, duration=zero_duration_seconds)]
+        current_phrase = [Tone(current_frequency, duration=current_duration)]
+
+        result = phrase_feigenbaum_shrink(current_phrase, zero_duration_previous_phrase)
+
+        assert result is current_phrase
+
+    def test_relative_scale_on_amplitude_dimension(self):
+        previous_total_amplitude = 0.6
+        first_current_frequency = 880.0
+        second_current_frequency = 523.0
+        current_tone_amplitude = 0.3
+        previous_phrase = [Tone(440.0, amplitude=previous_total_amplitude)]
+        current_phrase = [
+            Tone(first_current_frequency, amplitude=current_tone_amplitude),
+            Tone(second_current_frequency, amplitude=current_tone_amplitude),
+        ]
+
+        transformed_phrase = phrase_feigenbaum_shrink(
+            current_phrase,
+            previous_phrase,
+            dimension="AMPLITUDE",
+        )
+
+        expected_total_amplitude = previous_total_amplitude / FEIGENBAUM_DELTA
+        actual_total_amplitude = sum(tone.amplitude for tone in transformed_phrase)
+
+        assert actual_total_amplitude == pytest.approx(expected_total_amplitude)
+
 class TestPhraseFeigenbaumGrow:
     def test_inverse_relative_scale(self):
         first_phrase_total_duration = 1.0
@@ -91,6 +149,63 @@ class TestPhraseFeigenbaumGrow:
         with pytest.raises(ValueError, match="Cannot apply phrase-feigenbaum-grow: no preceding phrases exist to relate to."):
             phrase_feigenbaum_grow(second_phrase, [])
 
+    def test_empty_current_phrase_returns_empty_list(self):
+        reference_frequency = 440.0
+        reference_duration = 1.0
+        previous_phrase = [Tone(reference_frequency, duration=reference_duration)]
+
+        assert phrase_feigenbaum_grow([], previous_phrase) == []
+
+    def test_zero_current_total_returns_original_tones(self):
+        reference_frequency = 440.0
+        reference_duration = 1.0
+        zero_duration_seconds = 0.0
+        first_current_frequency = 880.0
+        second_current_frequency = 523.0
+        previous_phrase = [Tone(reference_frequency, duration=reference_duration)]
+        zero_duration_phrase = [
+            Tone(first_current_frequency, duration=zero_duration_seconds),
+            Tone(second_current_frequency, duration=zero_duration_seconds),
+        ]
+
+        result = phrase_feigenbaum_grow(zero_duration_phrase, previous_phrase)
+
+        assert result is zero_duration_phrase
+
+    def test_zero_previous_total_returns_original_tones(self):
+        reference_frequency = 440.0
+        zero_duration_seconds = 0.0
+        current_frequency = 880.0
+        current_duration = 1.0
+        zero_duration_previous_phrase = [Tone(reference_frequency, duration=zero_duration_seconds)]
+        current_phrase = [Tone(current_frequency, duration=current_duration)]
+
+        result = phrase_feigenbaum_grow(current_phrase, zero_duration_previous_phrase)
+
+        assert result is current_phrase
+
+    def test_relative_scale_on_frequency_dimension(self):
+        previous_total_frequency = 440.0
+        reference_duration = 1.0
+        current_tone_frequency = 220.0
+        current_tone_duration = 1.0
+        previous_phrase = [Tone(previous_total_frequency, duration=reference_duration)]
+        current_phrase = [
+            Tone(current_tone_frequency, duration=current_tone_duration),
+            Tone(current_tone_frequency, duration=current_tone_duration),
+        ]
+
+        transformed_phrase = phrase_feigenbaum_grow(
+            current_phrase,
+            previous_phrase,
+            dimension="FREQUENCY",
+        )
+
+        expected_total_frequency = previous_total_frequency * FEIGENBAUM_DELTA
+        actual_total_frequency = sum(tone.frequency for tone in transformed_phrase)
+
+        assert actual_total_frequency == pytest.approx(expected_total_frequency)
+
 class TestScoreFeigenbaumDuration:
     def test_score_feigenbaum_duration(self):
         v1 = Voice([Tone(440, 1.0)])
@@ -104,6 +219,62 @@ class TestScoreFeigenbaumDuration:
         assert result_score.voices[0][0].duration == 1.0
         assert result_score.voices[1][0].duration == pytest.approx(1.0 / FEIGENBAUM_DELTA)
         assert result_score.voices[2][0].duration == pytest.approx((1.0 / FEIGENBAUM_DELTA) / FEIGENBAUM_DELTA)
+
+    def test_empty_score_returns_original_score(self):
+        empty_score = Score()
+
+        result = score_feigenbaum_sequence(empty_score)
+
+        assert result is empty_score
+
+    def test_single_voice_score_raises_error(self):
+        reference_frequency = 440.0
+        reference_duration = 1.0
+        single_voice_score = Score([Voice([Tone(reference_frequency, duration=reference_duration)])])
+
+        with pytest.raises(ValueError, match="requires at least 2 voices"):
+            score_feigenbaum_sequence(single_voice_score)
+
+    def test_score_feigenbaum_frequency_scales_each_voice_by_position(self):
+        reference_frequency = 440.0
+        reference_duration = 1.0
+        first_voice = Voice([Tone(reference_frequency, duration=reference_duration)])
+        second_voice = Voice([Tone(reference_frequency, duration=reference_duration)])
+        score = Score([first_voice, second_voice])
+
+        result = score_feigenbaum_sequence(score, dimension="FREQUENCY")
+
+        assert result.voices[0][0].frequency == pytest.approx(reference_frequency)
+        assert result.voices[1][0].frequency == pytest.approx(reference_frequency / FEIGENBAUM_DELTA)
+
+
+class TestFeigenbaumTempoHelpers:
+    def test_interpolate_multiplier_for_single_tone_returns_neutral(self):
+        first_tone_position = 0
+        single_tone_count = 1
+        neutral_start_multiplier = 1.0
+        ending_accelerando_multiplier = 0.1
+        neutral_multiplier = _interpolate_multiplier_at_position(
+            position_index=first_tone_position,
+            total_tones=single_tone_count,
+            start_multiplier=neutral_start_multiplier,
+            end_multiplier=ending_accelerando_multiplier,
+        )
+
+        assert neutral_multiplier == neutral_start_multiplier
+
+    def test_feigenbaum_frequency_clamps_to_minimum_positive_frequency(self):
+        sub_minimum_frequency = 0.5
+        reference_duration = 1.0
+        minimum_allowed_frequency = 1.0
+        tones = [
+            Tone(sub_minimum_frequency, reference_duration),
+            Tone(sub_minimum_frequency, reference_duration),
+        ]
+
+        result = feigenbaum_sequence(tones, dimension=ToneDimension.FREQUENCY)
+
+        assert result[1].frequency == minimum_allowed_frequency
 
 
 class TestMinimumDurationProtection:

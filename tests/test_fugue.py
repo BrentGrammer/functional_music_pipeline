@@ -122,6 +122,18 @@ class TestStretto:
                 spacing="unknown_ratio",
             )
 
+    def test_stretto_rejects_empty_spacing_string(self):
+        empty_spacing_name = ""
+
+        with pytest.raises(ValueError, match="non-empty string"):
+            stretto(
+                Score(),
+                {"subject": [Tone(440.0)]},
+                motif="subject",
+                num_times=1,
+                spacing=empty_spacing_name,
+            )
+
     def test_stretto_golden_ratio_spacing_should_overlap_against_subject_duration(self):
         score = Score()
         parsed_motifs = {
@@ -177,6 +189,18 @@ class TestPedalPoint:
         with pytest.raises(ValueError, match="pulse_duration"):
             add_pedal_point(Score(), frequency=130.81, duration=1.0, mode="repeat")
 
+    def test_repeat_mode_rejects_non_positive_pulse_duration(self):
+        zero_pulse_duration = 0.0
+
+        with pytest.raises(ValueError, match="pulse_duration"):
+            add_pedal_point(
+                Score(),
+                frequency=130.81,
+                duration=1.0,
+                mode="repeat",
+                pulse_duration=zero_pulse_duration,
+            )
+
     def test_rejects_invalid_duration(self):
         with pytest.raises(ValueError, match="duration"):
             add_pedal_point(Score(), frequency=130.81, duration=0)
@@ -188,6 +212,32 @@ class TestPedalPoint:
     def test_rejects_invalid_amplitude(self):
         with pytest.raises(ValueError, match="amplitude"):
             add_pedal_point(Score(), frequency=130.81, duration=1.0, amplitude=1.5)
+
+    def test_rejects_unknown_mode(self):
+        unsupported_mode = "pulse"
+
+        with pytest.raises(ValueError, match="mode"):
+            add_pedal_point(
+                Score(),
+                frequency=130.81,
+                duration=1.0,
+                mode=unsupported_mode,
+            )
+
+    def test_repeat_mode_is_case_insensitive(self):
+        repeated_mode_name = "REPEAT"
+        pulse_duration_seconds = 0.5
+        total_duration_seconds = 1.0
+
+        result = add_pedal_point(
+            Score(),
+            frequency=130.81,
+            duration=total_duration_seconds,
+            mode=repeated_mode_name,
+            pulse_duration=pulse_duration_seconds,
+        )
+
+        assert len(result.voices[0].tones) == 2
 
 
 class TestPedalPointRegistration:
