@@ -107,7 +107,7 @@ Transforms are functions that modify a sequence of tones. Many can be applied to
 #### Time & Sequence
 
 - **`reverse`**: Reverses the order of tones in a phrase.
-- **`delay`**: Adds a period of silence before each tone.
+- **`delay`**: Adds a period of silence before each tone. Use `seconds` to describe the silent duration.
 - **`repeat`**: Repeats the tones in a phrase a specified number of times.
 - **`pad_silence`**: Adds a block of silence to the beginning or end of a phrase.
 - **`accelerando`**: Speeds up the phrase. An optional `jaggedness` parameter adds stochastic variation.
