@@ -54,29 +54,53 @@ Transforms that already use named parameters can remain object-shaped, but the i
 ## Implementation Plan
 
 1. Tighten the schema types.
-   - Change `TransformParams` so scalar values are no longer valid.
-   - Update `TransformConfig.params` to require an object when present.
-   - Keep the types broad enough to cover current named parameter shapes.
+   - 1.1. Inspect current `TransformParams` usage so the type change stays limited to the public composition JSON contract.
+   - 1.2. Change `TransformParams` so scalar values are no longer valid.
+   - 1.3. Keep `TransformParams` broad enough to cover current named parameter shapes, including nested profile configuration.
+   - 1.4. Update `TransformConfig.params` to use the object-only `TransformParams` alias when present.
+   - 1.5. Adjust only schema-adjacent annotations that now disagree with the object-only alias.
+   - 1.6. Run the relevant tests or type checks to identify fallout.
+   - 1.7. Defer runtime parser validation and dispatch changes to step 2.
 
 2. Tighten parser validation.
-   - Reject any `params` value that is not a dictionary/object.
-   - Update error messages to explain that `params` must be an object with named fields.
-   - Remove scalar dispatch paths from transform application helpers.
+   - 2.1. Inspect the current parser paths that read `params` from phrase and score transform specs.
+   - 2.2. Update `_validate_transform_params` to reject any present `params` value that is not a dictionary/object.
+   - 2.3. Update parser error messages to explain that `params` must be an object with named fields.
+   - 2.4. Remove scalar dispatch paths from phrase-level transform application helpers.
+   - 2.5. Remove scalar dispatch paths from score-level transform application helpers.
+   - 2.6. Remove scalar dispatch paths from all-voices score transform application helpers.
+   - 2.7. Verify relative phrase transforms and score target motif transforms still use keyword arguments only.
+   - 2.8. Run the parser-focused tests to identify behavior that still depends on scalar params.
 
 3. Align transform invocation semantics.
-   - Use keyword arguments for every transform call that reads from JSON.
-   - Verify the parser does not need positional fallback for any existing transform.
-   - Make sure score-level and phrase-level transforms follow the same rule.
+   - 3.1. Identify transforms whose Python function signatures currently rely on positional scalar arguments from JSON.
+   - 3.2. Confirm each affected transform has an appropriate keyword parameter name for the new JSON object shape.
+   - 3.3. Update transform signatures only where the existing parameter name does not match the desired public JSON name.
+   - 3.4. Verify phrase-level transforms are invoked with keyword arguments from object-shaped `params`.
+   - 3.5. Verify score-level transforms are invoked with keyword arguments from object-shaped `params`.
+   - 3.6. Verify score-all-voices transforms are invoked with keyword arguments from object-shaped `params`.
+   - 3.7. Search for remaining positional transform calls that originate from parsed JSON params.
+   - 3.8. Run targeted tests for the affected transforms to confirm behavior is unchanged apart from the JSON API shape.
 
 4. Update composition examples.
-   - Rewrite `microtonal_demo.json` to use `{ "semitones": ... }`.
-   - Rewrite `fugue_subject_answer_demo.json` to use named fields for `transpose` and `delay`.
-   - Search the remaining compositions for scalar params and convert them.
+   - 4.1. Search all files in `compositions/` for scalar `params` values.
+   - 4.2. Rewrite `microtonal_demo.json` to use `{ "semitones": ... }` for `transpose`.
+   - 4.3. Rewrite `fugue_subject_answer_demo.json` to use named fields for `transpose` and `delay`.
+   - 4.4. Convert any remaining phrase-level scalar params in `compositions/` to named parameter objects.
+   - 4.5. Convert any remaining score-level scalar params in `compositions/` to named parameter objects.
+   - 4.6. Re-run the scalar `params` search to confirm no composition examples still use raw numeric params.
+   - 4.7. Parse or run the updated example compositions that previously used scalar params.
 
 5. Update tests.
-   - Replace tests that currently expect scalar params to pass.
-   - Add tests that assert scalar params are rejected.
-   - Add tests that confirm the named-parameter form still parses and executes.
+   - 5.1. Search the test suite for scalar `params` values.
+   - 5.2. Identify tests that currently expect scalar phrase transform params to pass.
+   - 5.3. Identify tests that currently expect scalar score transform params to pass.
+   - 5.4. Replace scalar success cases with named-parameter object success cases.
+   - 5.5. Add parser validation tests that assert scalar phrase transform params are rejected.
+   - 5.6. Add parser validation tests that assert scalar score transform params are rejected.
+   - 5.7. Add or update transform execution tests that confirm named-parameter forms still produce the expected musical output.
+   - 5.8. Update expected error messages in tests to match the new object-only `params` validation.
+   - 5.9. Run the full test suite and address failures caused by the API shape change.
 
 6. Review documentation.
    - Update README examples.
