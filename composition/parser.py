@@ -112,7 +112,7 @@ def _apply_transform_with_optional_params(
     if isinstance(transform_params, dict):
         return transform_func(tones, **transform_params)
 
-    return transform_func(tones, transform_params)
+    raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
 
 def _apply_score_with_optional_params(
@@ -126,7 +126,7 @@ def _apply_score_with_optional_params(
     if isinstance(transform_params, dict):
         return transform_func(score, **transform_params)
 
-    return transform_func(score, transform_params)
+    raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
 
 def _apply_all_voices_transform_with_optional_params(
@@ -140,7 +140,7 @@ def _apply_all_voices_transform_with_optional_params(
     if isinstance(transform_params, dict):
         return apply_to_all_voices(transform_func, **transform_params)(score)
 
-    return apply_to_all_voices(transform_func, transform_params)(score)
+    raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
 
 def _require_list(value: object, error_message: str) -> list:
@@ -248,13 +248,27 @@ def apply_phrase_transform(
     transform_params: TransformParams | None,
 ) -> ToneSequence:
     transform_param_requirements = {
-        scale_transform: "The 'scale' transform requires a dictionary of parameters specifying 'dimension' and 'factor'.",
-        pad_silence_tones: "The 'pad_silence' transform requires a dictionary of parameters specifying 'seconds' and 'position'.",
+        scale_transform: "The 'scale' transform requires an object with named fields specifying 'dimension' and 'factor'.",
+        pad_silence_tones: "The 'pad_silence' transform requires an object with named fields specifying 'seconds' and 'position'.",
     }
     if transform_func in transform_param_requirements:
         _require_dict_transform_params(transform_params, transform_param_requirements[transform_func])
 
     return _apply_transform_with_optional_params(transform_func, phrase_tones, transform_params)
+
+
+def _apply_score_with_optional_params(
+    transform_func: Callable[..., Score],
+    score: Score,
+    transform_params: TransformParams | None,
+) -> Score:
+    if transform_params is None:
+        return transform_func(score)
+
+    if isinstance(transform_params, dict):
+        return transform_func(score, **transform_params)
+
+    raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
 
 def _handle_phrase_scope(
@@ -273,14 +287,14 @@ def _handle_phrase_relative_scope(
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     phrase_reference_tones = reference_tones if reference_tones else []
-    
+
     if transform_params is None:
         return descriptor.transform(phrase_tones, phrase_reference_tones)
 
     if isinstance(transform_params, dict):
         return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
 
-    return descriptor.transform(phrase_tones, phrase_reference_tones, transform_params)
+    raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
 
 def _apply_phrase_transform_spec(
@@ -437,7 +451,7 @@ def _apply_score_all_voices_transform(
     if descriptor.transform is scale_transform:
         _require_dict_transform_params(
             transform_params,
-            "The 'score_scale' transform requires a dictionary of parameters specifying 'dimension' and 'factor'.",
+            "The 'score_scale' transform requires an object with named fields specifying 'dimension' and 'factor'.",
         )
 
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
@@ -458,7 +472,7 @@ def _apply_score_target_motifs_transform(
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
     if not isinstance(transform_params, dict):
-        raise ValueError(f"The '{descriptor.name}' transform requires a dictionary of parameters.")
+        raise ValueError(f"The '{descriptor.name}' transform requires an object with named fields.")
 
     return descriptor.transform(score, parsed_motifs, **transform_params)
 
