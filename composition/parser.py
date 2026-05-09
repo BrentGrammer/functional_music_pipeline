@@ -204,8 +204,18 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         golden_ratio_transform,
         params_spec=TransformParamsSpec(),
     ),
-    "invert": TransformDescriptor("invert", TransformScope.PHRASE, invert_tones),
-    "feigenbaum_sequence": TransformDescriptor("feigenbaum_sequence", TransformScope.PHRASE, feigenbaum_sequence),
+    "invert": TransformDescriptor(
+        "invert",
+        TransformScope.PHRASE,
+        invert_tones,
+        params_spec=TransformParamsSpec(),
+    ),
+    "feigenbaum_sequence": TransformDescriptor(
+        "feigenbaum_sequence",
+        TransformScope.PHRASE,
+        feigenbaum_sequence,
+        params_spec=TransformParamsSpec(),
+    ),
     "transpose": TransformDescriptor(
         "transpose",
         TransformScope.PHRASE,
@@ -236,15 +246,30 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         repeat_tones,
         params_spec=TransformParamsSpec(required_fields=("count",)),
     ),
-    "erosion": TransformDescriptor("erosion", TransformScope.PHRASE, erosion_transform),
+    "erosion": TransformDescriptor(
+        "erosion",
+        TransformScope.PHRASE,
+        erosion_transform,
+        params_spec=TransformParamsSpec(),
+    ),
     "drift": TransformDescriptor(
         "drift",
         TransformScope.PHRASE,
         drift_transform,
         params_spec=TransformParamsSpec(required_fields=("dimension", "rate")),
     ),
-    "phrase_feigenbaum_shrink": TransformDescriptor("phrase_feigenbaum_shrink", TransformScope.PHRASE_RELATIVE, phrase_feigenbaum_shrink),
-    "phrase_feigenbaum_grow": TransformDescriptor("phrase_feigenbaum_grow", TransformScope.PHRASE_RELATIVE, phrase_feigenbaum_grow),
+    "phrase_feigenbaum_shrink": TransformDescriptor(
+        "phrase_feigenbaum_shrink",
+        TransformScope.PHRASE_RELATIVE,
+        phrase_feigenbaum_shrink,
+        params_spec=TransformParamsSpec(),
+    ),
+    "phrase_feigenbaum_grow": TransformDescriptor(
+        "phrase_feigenbaum_grow",
+        TransformScope.PHRASE_RELATIVE,
+        phrase_feigenbaum_grow,
+        params_spec=TransformParamsSpec(),
+    ),
     "phrase_golden_ratio_shrink": TransformDescriptor(
         "phrase_golden_ratio_shrink",
         TransformScope.PHRASE_RELATIVE,
@@ -257,7 +282,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         phrase_golden_ratio_grow,
         params_spec=TransformParamsSpec(),
     ),
-    "score_feigenbaum_sequence": TransformDescriptor("score_feigenbaum_sequence", TransformScope.SCORE, score_feigenbaum_sequence),
+    "score_feigenbaum_sequence": TransformDescriptor(
+        "score_feigenbaum_sequence",
+        TransformScope.SCORE,
+        score_feigenbaum_sequence,
+        params_spec=TransformParamsSpec(),
+    ),
     "score_reverse": TransformDescriptor("score_reverse", TransformScope.ALL_VOICES, reverse_tones),
     "score_golden_ratio": TransformDescriptor(
         "score_golden_ratio",
@@ -265,7 +295,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         golden_ratio_transform,
         params_spec=TransformParamsSpec(),
     ),
-    "score_invert": TransformDescriptor("score_invert", TransformScope.ALL_VOICES, invert_tones),
+    "score_invert": TransformDescriptor(
+        "score_invert",
+        TransformScope.ALL_VOICES,
+        invert_tones,
+        params_spec=TransformParamsSpec(),
+    ),
     "score_transpose": TransformDescriptor(
         "score_transpose",
         TransformScope.ALL_VOICES,
@@ -314,7 +349,12 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         apply_geological_transform,
         params_spec=TransformParamsSpec(required_fields=("profile", "dimension", "max_deviation")),
     ),
-    "frost_effect": TransformDescriptor("frost_effect", TransformScope.SCORE, frost_effect),
+    "frost_effect": TransformDescriptor(
+        "frost_effect",
+        TransformScope.SCORE,
+        frost_effect,
+        params_spec=TransformParamsSpec(),
+    ),
     "score_geological": TransformDescriptor(
         "score_geological",
         TransformScope.ALL_VOICES,
