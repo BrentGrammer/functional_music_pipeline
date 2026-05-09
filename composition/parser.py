@@ -430,14 +430,6 @@ def _apply_score_all_voices_transform(
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
 
 
-def _apply_score_transform(
-    score: Score,
-    descriptor: TransformDescriptor,
-    transform_params: TransformParams | None
-) -> Score:
-    return _apply_score_with_optional_params(descriptor.transform, score, transform_params)
-
-
 def _apply_score_target_motifs_transform(
     score: Score,
     descriptor: TransformDescriptor,
@@ -477,6 +469,9 @@ def _apply_score_transform_spec(
     if descriptor.scope == TransformScope.SCORE_TARGET_MOTIFS:
         return _apply_score_target_motifs_transform(score, descriptor, transform_params, parsed_motifs)
 
+    if descriptor.scope == TransformScope.SCORE:
+        return _apply_score_with_optional_params(descriptor.transform, score, transform_params)
+
     if descriptor.scope not in SCORE_TRANSFORM_STRATEGIES:
         raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 
@@ -486,7 +481,6 @@ def _apply_score_transform_spec(
 
 SCORE_TRANSFORM_STRATEGIES = {
     TransformScope.SCORE_ALL_VOICES: _apply_score_all_voices_transform,
-    TransformScope.SCORE: _apply_score_transform,
 }
 
 
