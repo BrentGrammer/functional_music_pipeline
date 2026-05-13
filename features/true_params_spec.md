@@ -92,6 +92,25 @@ This keeps the contract focused on:
 
 Unknown top-level param fields should always be invalid. We do not need an `allow_unknown_fields` option in the public spec model.
 
+## Validator Placement
+
+Validator callables should live in a small dedicated validation module rather than inside the transform functions themselves.
+
+Suggested direction:
+
+- add a module such as `composition/transform_params_validation.py`
+- define transform-specific validators there, such as `validate_add_pedal_point_params(...)`
+- attach those validator callables from the transform descriptors
+
+This keeps responsibilities cleaner:
+
+- transform modules stay focused on musical transformation behavior
+- field metadata handles simple top-level param shape checks
+- validator callables handle cross-field rules, conditional requirements, and nested object validation
+- parser-facing contract validation stays in one obvious place rather than being scattered across transform modules
+
+If a validator needs deeper domain-specific checks, it can delegate to a helper such as the profile factory or a future specialized profile validation helper rather than reimplementing that logic inline.
+
 ## Implementation Plan
 
 1. Define the target shape for `TransformParamsSpec`.
@@ -140,6 +159,7 @@ Unknown top-level param fields should always be invalid. We do not need an `allo
 9. Use transform-level custom validators for conditional cases.
    - Keep conditional rules like `add_pedal_point.mode == "repeat"` requiring `pulse_duration` in dedicated validator hooks first.
    - Use the same mechanism for cross-field constraints and profile-specific geological validation.
+   - Define those validator callables in a dedicated composition-side validation module rather than embedding them in transform modules.
    - Revisit later whether any of these rules should move deeper into the spec model.
 
 10. Add descriptor-driven tests for contract behavior.
