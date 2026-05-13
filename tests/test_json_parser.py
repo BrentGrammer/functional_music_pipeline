@@ -166,7 +166,7 @@ def test_parse_phrase_single_motif_from_motifs_list():
 
     phrase_dict = {
         "motifs": ["seed_a"],
-        "transforms": ["reverse"]
+        "transforms": [{"name": "reverse"}]
     }
 
     result = parse_phrase(phrase_dict, parsed_motifs)
@@ -203,7 +203,7 @@ def test_parse_phrase_reverse_applies_after_grouping_motifs():
 
     phrase_dict = {
         "motifs": ["seed_a", "seed_b"],
-        "transforms": ["reverse"]
+        "transforms": [{"name": "reverse"}]
     }
 
     result = parse_phrase(phrase_dict, parsed_motifs)
@@ -772,7 +772,7 @@ def test_parse_phrase_with_reference_transform():
 
     phrase_dict = {
         "motifs": ["seed_a"],
-        "transforms": ["phrase_golden_ratio_grow"]
+        "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
 
     result = parse_phrase(phrase_dict, parsed_motifs, reference_tones)
@@ -789,7 +789,7 @@ def test_parse_phrase_reference_transform_uses_total_grouped_phrase_duration():
 
     phrase_dict = {
         "motifs": ["seed_a", "seed_b"],
-        "transforms": ["phrase_golden_ratio_grow"]
+        "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
 
     result = parse_phrase(phrase_dict, parsed_motifs, reference_tones)
@@ -813,7 +813,7 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
                 {
                     "phrases": [
                         {"motifs": ["seed_a", "seed_b"]},
-                        {"motifs": ["seed_c"], "transforms": ["phrase_feigenbaum_shrink"]}
+                        {"motifs": ["seed_c"], "transforms": [{"name": "phrase_feigenbaum_shrink"}]}
                     ]
                 }
             ]
@@ -836,7 +836,7 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
 
 def test_parse_phrase_missing_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"transforms": ["reverse"]}
+    phrase_dict = {"transforms": [{"name": "reverse"}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -905,7 +905,7 @@ def test_parse_transform_spec_rejects_scalar_params():
 
 def test_parse_phrase_unknown_transform():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": ["seed_a"], "transforms": ["unknown_transform"]}
+    phrase_dict = {"motifs": ["seed_a"], "transforms": [{"name": "unknown_transform"}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -995,7 +995,7 @@ def test_parse_composition_unknown_score_transform():
         "motifs": {},
         "composition": {
             "voices": [],
-            "score_transforms": ["score_unknown"]
+            "score_transforms": [{"name": "score_unknown"}]
         }
     }
 
@@ -1008,7 +1008,7 @@ def test_parse_composition_rejects_phrase_transform_in_score_transforms():
         "motifs": {"seed": ["440:0.5", "660:0.5"]},
         "composition": {
             "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-            "score_transforms": ["reverse"],
+            "score_transforms": [{"name": "reverse"}],
         },
     }
 
@@ -1027,7 +1027,7 @@ def test_parse_composition_score_reverse_applies_to_all_voices_without_params():
                 {"phrases": [{"motifs": ["voice_a"]}]},
                 {"phrases": [{"motifs": ["voice_b"]}]},
             ],
-            "score_transforms": ["score_reverse"],
+            "score_transforms": [{"name": "score_reverse"}],
         },
     }
 
@@ -1048,7 +1048,7 @@ def test_parse_composition():
             "voices": [
                 {
                     "phrases": [
-                        {"motifs": ["seed_a"], "transforms": ["reverse"]}
+                        {"motifs": ["seed_a"], "transforms": [{"name": "reverse"}]}
                     ]
                 },
                 {
@@ -1057,7 +1057,7 @@ def test_parse_composition():
                     ]
                 }
             ],
-            "score_transforms": ["score_feigenbaum_sequence"]
+            "score_transforms": [{"name": "score_feigenbaum_sequence"}]
         }
     }
 

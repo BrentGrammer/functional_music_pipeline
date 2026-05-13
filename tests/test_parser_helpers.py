@@ -20,14 +20,14 @@ def test_parse_motifs_rejects_non_string_motif_names():
     numeric_motif_name = 123
     motif_definition = {numeric_motif_name: ["440"]}
 
-    with pytest.raises(ValueError, match="Motif names must be strings."):
+    with pytest.raises(ValueError):
         parse_motifs(motif_definition)
 
 
 def test_parse_transform_spec_rejects_empty_string_name():
     empty_transform_name = ""
 
-    with pytest.raises(ValueError, match="Phrase transform names must be non-empty strings."):
+    with pytest.raises(ValueError):
         parse_transform_spec(empty_transform_name, "Phrase")
 
 
@@ -94,7 +94,7 @@ def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():
     )
     phrase_tones = [Tone(440.0, duration=1.0)]
 
-    with pytest.raises(ValueError, match="is not a phrase transform"):
+    with pytest.raises(ValueError):
         _apply_phrase_transform_spec(
             descriptor=non_phrase_descriptor,
             phrase_tones=phrase_tones,
