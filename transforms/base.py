@@ -80,6 +80,55 @@ class EnumParam(ParamSchema):
 
 
 @dataclass(frozen=True)
+class ObjectParam(ParamSchema):
+    fields: dict[str, "TransformParamFieldSpec"]
+    allow_unknown_fields: bool = False
+
+    def validate(self, value: object, field_name: str) -> None:
+        if not isinstance(value, dict):
+            raise ValueError(f"Param '{field_name}' must be an object/dictionary.")
+        
+        required_fields = tuple(k for k, v in self.fields.items() if v.required)
+
+        if not self.allow_unknown_fields:
+            unknown_fields = tuple(k for k in value if k not in self.fields)
+            if unknown_fields:
+                unknown_fields_description = ", ".join(f"'{f}'" for f in unknown_fields)
+                raise ValueError(
+                    f"Param '{field_name}' includes unknown fields: {unknown_fields_description}."
+                )
+
+        missing_fields = tuple(k for k in required_fields if k not in value)
+        if missing_fields:
+            missing_fields_description = ", ".join(f"'{f}'" for f in missing_fields)
+            raise ValueError(
+                f"Param '{field_name}' must include {missing_fields_description}."
+            )
+
+        for child_name, child_value in value.items():
+            if child_name not in self.fields:
+                continue
+            child_spec = self.fields[child_name]
+            if child_spec.schema is not None:
+                schemas = child_spec.schema if isinstance(child_spec.schema, tuple) else (child_spec.schema,)
+                errors = []
+                is_valid = False
+                for schema in schemas:
+                    try:
+                        schema.validate(child_value, f"{field_name}.{child_name}")
+                        is_valid = True
+                        break
+                    except ValueError as e:
+                        errors.append(str(e))
+                        
+                if not is_valid:
+                    if len(errors) == 1:
+                        raise ValueError(errors[0])
+                    else:
+                        raise ValueError(f"Param '{field_name}.{child_name}' failed validation: " + " OR ".join(errors))
+
+
+@dataclass(frozen=True)
 class TransformParamFieldSpec:
     param_type: TransformParamType | tuple[TransformParamType, ...] | None = None
     required: bool = False

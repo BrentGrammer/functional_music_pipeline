@@ -17,6 +17,7 @@ from transforms.base import (
     IntegerParam,
     StringParam,
     EnumParam,
+    ObjectParam,
 )
 from transforms.delay import delay_tones
 from transforms.drift import drift_transform
@@ -383,8 +384,15 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "profile": TransformParamFieldSpec(
-                    param_type=TransformParamType.OBJECT,
                     required=True,
+                    schema=ObjectParam(
+                        fields={
+                            "type": TransformParamFieldSpec(required=True, schema=StringParam()),
+                            "params": TransformParamFieldSpec(
+                                schema=ObjectParam(fields={}, allow_unknown_fields=True)
+                            ),
+                        }
+                    )
                 ),
                 "dimension": TransformParamFieldSpec(
                     required=True,
