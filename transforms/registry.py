@@ -13,6 +13,10 @@ from transforms.base import (
     TransformParamsSpec,
     TransformParamType,
     TransformWithCallable,
+    FloatParam,
+    IntegerParam,
+    StringParam,
+    EnumParam,
 )
 from transforms.delay import delay_tones
 from transforms.drift import drift_transform
@@ -55,8 +59,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -67,8 +70,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -79,8 +81,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -91,7 +92,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "semitones": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 )
             }
@@ -103,12 +104,11 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
                     required=True,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
                 "factor": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
             }
@@ -120,13 +120,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "seconds": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
                 "position": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
                     required=True,
-                    allowed_enum_values=("start", "end"),
+                    schema=EnumParam(allowed_values=("start", "end")),
                 ),
             }
         ),
@@ -137,7 +136,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "seconds": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 )
             }
@@ -149,7 +148,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "count": TransformParamFieldSpec(
-                    param_type=TransformParamType.INTEGER,
+                    schema=IntegerParam(),
                     required=True,
                 )
             }
@@ -161,8 +160,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -173,12 +171,11 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
                     required=True,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
                 "rate": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
             }
@@ -190,8 +187,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -202,8 +198,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -214,8 +209,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -226,8 +220,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -238,8 +231,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -255,8 +247,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -267,8 +258,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
             }
         ),
@@ -279,7 +269,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "semitones": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 )
             }
@@ -291,12 +281,11 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
                     required=True,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
                 "factor": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
             }
@@ -308,7 +297,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "seconds": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 )
             }
@@ -320,7 +309,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "count": TransformParamFieldSpec(
-                    param_type=TransformParamType.INTEGER,
+                    schema=IntegerParam(),
                     required=True,
                 )
             }
@@ -332,12 +321,11 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
                     required=True,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
                 "rate": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
             }
@@ -349,22 +337,21 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "frequency": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
                 "duration": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
                 "amplitude": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                 ),
                 "mode": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
-                    allowed_enum_values=("sustain", "repeat"),
+                    schema=EnumParam(allowed_values=("sustain", "repeat")),
                 ),
                 "pulse_duration": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                 ),
             },
             validator=validate_add_pedal_point_params,
@@ -376,17 +363,16 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    schema=StringParam(),
                     required=True,
                 ),
                 "num_times": TransformParamFieldSpec(
-                    param_type=TransformParamType.INTEGER,
+                    schema=IntegerParam(),
                     required=True,
                 ),
                 "spacing": TransformParamFieldSpec(
-                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
                     required=True,
-                    allowed_enum_values=tuple(NAMED_STRETTO_SPACINGS),
+                    schema=(EnumParam(allowed_values=tuple(NAMED_STRETTO_SPACINGS)), FloatParam()),
                 ),
             }
         ),
@@ -401,12 +387,11 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
                     required=True,
                 ),
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
                     required=True,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
                 "max_deviation": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
             }
@@ -418,7 +403,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "iterations": TransformParamFieldSpec(
-                    param_type=TransformParamType.INTEGER,
+                    schema=IntegerParam(),
                 )
             }
         ),
@@ -433,12 +418,11 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
                     required=True,
                 ),
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.ENUM,
                     required=True,
-                    allowed_enum_values=tuple(ToneDimension),
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
                 ),
                 "max_deviation": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    schema=FloatParam(),
                     required=True,
                 ),
             },
@@ -451,16 +435,14 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "strength": TransformParamFieldSpec(
-                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
                     required=True,
-                    allowed_enum_values=tuple(INTENSITY_LEVELS),
+                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
                 ),
                 "jaggedness": TransformParamFieldSpec(
-                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
-                    allowed_enum_values=tuple(INTENSITY_LEVELS),
+                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
                 ),
                 "seed": TransformParamFieldSpec(
-                    param_type=TransformParamType.INTEGER,
+                    schema=IntegerParam(),
                 ),
             }
         ),
@@ -471,16 +453,14 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         params_spec=TransformParamsSpec(
             fields={
                 "strength": TransformParamFieldSpec(
-                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
                     required=True,
-                    allowed_enum_values=tuple(INTENSITY_LEVELS),
+                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
                 ),
                 "jaggedness": TransformParamFieldSpec(
-                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
-                    allowed_enum_values=tuple(INTENSITY_LEVELS),
+                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
                 ),
                 "seed": TransformParamFieldSpec(
-                    param_type=TransformParamType.INTEGER,
+                    schema=IntegerParam(),
                 ),
             }
         ),

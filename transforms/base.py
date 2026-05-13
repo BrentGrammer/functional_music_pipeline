@@ -81,7 +81,7 @@ class EnumParam(ParamSchema):
 
 @dataclass(frozen=True)
 class TransformParamFieldSpec:
-    param_type: TransformParamType | tuple[TransformParamType, ...]
+    param_type: TransformParamType | tuple[TransformParamType, ...] | None = None
     required: bool = False
     allowed_enum_values: tuple[object, ...] = ()
     schema: ParamSchema | tuple[ParamSchema, ...] | None = None
