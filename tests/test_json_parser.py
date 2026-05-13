@@ -13,6 +13,7 @@ from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
 from transforms.base import (
+    ScoreTargetMotifsTransform,
     TransformDescriptor,
     TransformParamFieldSpec,
     TransformParamType,
@@ -1284,9 +1285,8 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
         captured["parsed_motifs"] = parsed_motifs
         return score
 
-    TRANSFORMS["_test_score_with_motifs"] = TransformDescriptor(
+    TRANSFORMS["_test_score_with_motifs"] = ScoreTargetMotifsTransform(
         "_test_score_with_motifs",
-        TransformScope.SCORE_TARGET_MOTIFS,
         capture_score_target_motifs_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -1297,7 +1297,6 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
             }
         ),
     )
-
     try:
         parse_composition(
             {
