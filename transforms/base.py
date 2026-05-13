@@ -27,14 +27,6 @@ def parse_dimension(dim: ToneDimension | str) -> ToneDimension:
         raise ValueError(f"Invalid dimension: {dim}. Must be one of {', '.join(d.value for d in ToneDimension)}")
 
 
-class TransformScope(Enum):
-    PHRASE = auto()
-    PHRASE_RELATIVE = auto()
-    SCORE = auto()
-    SCORE_TARGET_MOTIFS = auto()
-    ALL_VOICES = auto()
-
-
 class TransformParamType(Enum):
     FLOAT = auto()
     INTEGER = auto()
@@ -60,16 +52,39 @@ class TransformParamsSpec:
 @dataclass(frozen=True)
 class TransformDescriptor:
     name: str
-    scope: TransformScope
-    transform: Callable
-    params_spec: TransformParamsSpec = TransformParamsSpec()
+    params_spec: TransformParamsSpec = field(default_factory=TransformParamsSpec)
+
+
+@dataclass(frozen=True)
+class PhraseTransform(TransformDescriptor):
+    transform: Callable[..., ToneSequence]
+
+
+@dataclass(frozen=True)
+class PhraseRelativeTransform(TransformDescriptor):
+    transform: Callable[..., ToneSequence]
+
+
+@dataclass(frozen=True)
+class ScoreTransform(TransformDescriptor):
+    transform: Callable[..., Score]
+
+
+@dataclass(frozen=True)
+class ScoreTargetMotifsTransform(TransformDescriptor):
+    transform: Callable[..., Score]
+
+
+@dataclass(frozen=True)
+class AllVoicesTransform(TransformDescriptor):
+    transform: Callable[..., ToneSequence]
 
 
 class Transform(Protocol):
     def __call__(self, tones: ToneSequence) -> ToneSequence: ...
 
 
-class ScoreTransform(Protocol):
+class ScoreTransformProtocol(Protocol):
     def __call__(self, score: Score) -> Score: ...
 
 
