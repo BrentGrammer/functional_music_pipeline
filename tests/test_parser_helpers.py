@@ -1,4 +1,3 @@
-from composition.schema import VoiceConfig
 import pytest
 
 from composition.parser import (
@@ -7,12 +6,11 @@ from composition.parser import (
     parse_transform_spec,
     parse_voice,
 )
+from composition.schema import VoiceConfig
 from score_model.tone import Tone
 from transforms.base import (
     PhraseRelativeTransform,
-    PhraseTransform,
     ScoreTransform,
-    TransformDescriptor,
     TransformParamFieldSpec,
     TransformParamsSpec,
     TransformParamType,

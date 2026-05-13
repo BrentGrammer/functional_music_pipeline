@@ -1,18 +1,14 @@
-from composition.schema import CompositionDocument
 import numpy as np
 import pytest
 
 from composition.parser import TRANSFORMS, parse_composition
+from composition.schema import CompositionDocument
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
 from score_model.voice import Voice
 from transforms.base import (
-    AllVoicesTransform,
-    PhraseRelativeTransform,
-    PhraseTransform,
-    ScoreTargetMotifsTransform,
     ScoreTransform,
 )
 from transforms.fugue import add_pedal_point, stretto

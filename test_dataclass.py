@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Callable
 
+
 @dataclass(frozen=True)
 class Base:
     name: str

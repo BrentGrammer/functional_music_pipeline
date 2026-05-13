@@ -1,7 +1,7 @@
-from composition.schema import CompositionDocument
 import pytest
 
 from composition.parser import parse_composition, parse_motifs
+from composition.schema import CompositionDocument
 from score_model.score import Score
 
 

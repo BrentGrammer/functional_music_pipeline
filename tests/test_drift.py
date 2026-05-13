@@ -1,7 +1,7 @@
-from composition.schema import CompositionDocument
 import pytest
 
 from composition.parser import TRANSFORMS, parse_composition
+from composition.schema import CompositionDocument
 from score_model.tone import Tone
 from transforms.base import AllVoicesTransform, ToneDimension
 from transforms.drift import drift_transform

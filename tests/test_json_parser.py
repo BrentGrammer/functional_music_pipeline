@@ -8,17 +8,16 @@ from composition.parser import (
     parse_transform_spec,
     resolve_profile_in_params,
 )
-from composition.schema import CompositionDocument, PhraseConfig, TransformConfig
+from composition.schema import PhraseConfig, TransformConfig
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
 from transforms.base import (
     ScoreTargetMotifsTransform,
-    TransformDescriptor,
     TransformParamFieldSpec,
-    TransformParamType,
     TransformParamsSpec,
-    )
+    TransformParamType,
+)
 from transforms.profiles import WeierstrassProfile
 
 

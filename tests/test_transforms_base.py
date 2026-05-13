@@ -6,7 +6,6 @@ from score_model.voice import Voice
 from transforms.base import (
     PhraseTransform,
     ToneDimension,
-    TransformDescriptor,
     TransformParamFieldSpec,
     TransformParamsSpec,
     TransformParamType,
