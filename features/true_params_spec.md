@@ -220,21 +220,28 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Verify custom conditional validator rules fail correctly.
    - Avoid brittle error-text assertions.
 
-11. Remove transitional compatibility once the descriptor migration is complete.
+11. Revisit `ToneDimension` as a string enum.
+   - `ToneDimension` is currently a Python `Enum`, while composition JSON represents dimensions as strings such as `"frequency"` or `"DURATION"`.
+   - This creates pressure to describe dimension params as a union of enum objects and strings, even though `dimension` is conceptually one domain enum.
+   - Consider converting `ToneDimension` to a string-backed enum such as `StrEnum` so internal code can keep a real domain enum while JSON string values remain natural at the boundary.
+   - After that change, dimension descriptor fields should be expressible as `TransformParamType.ENUM` with `allowed_enum_values=tuple(ToneDimension)` rather than as an enum/string union.
+   - Treat this as a separate cleanup step because `ToneDimension` is shared across transforms and tests.
+
+12. Remove transitional compatibility once the descriptor migration is complete.
    - Remove any temporary compatibility property or bridging code kept only to support the old `required_fields` access pattern.
    - Leave `fields` as the only long-term source of truth inside `TransformParamsSpec`.
 
-12. Collapse duplicate transform-param type definitions in `composition/schema.py`.
+13. Collapse duplicate transform-param type definitions in `composition/schema.py`.
    - Keep `composition/schema.py` focused on coarse composition document structure rather than per-transform param contracts.
    - Remove or relax transform-param aliases such as `StandardTransformParams`, `GeologicalTransformParams`, and the `TransformParams` union once descriptor-driven validation is fully in place.
    - Let descriptor metadata and validator callables be the only source of truth for transform-specific param shape.
    - Keep any remaining schema typing broad enough to model “params is an object” without trying to restate per-transform contracts.
 
-13. Reassess after the first full migration slice.
+14. Reassess after the first full migration slice.
    - After migrating simple flat transforms, one conditional transform, and `geological`, evaluate whether the custom spec still feels clean and proportionate.
    - Only revisit a schema library such as Pydantic if the transform params or composition document become substantially more nested or model-heavy.
 
-14. Use renaming as a fallback only.
+15. Use renaming as a fallback only.
    - If this work is not completed, rename `params_spec` so it no longer implies a full schema.
    - This is the fallback path, not the recommended direction.
 
