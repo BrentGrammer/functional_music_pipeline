@@ -90,20 +90,6 @@ def _parse_tone_string(tone_string: str) -> Tone:
     return Tone(float(normalized_tone_string))
 
 
-def _validate_transform_name(transform_name: object, transform_scope: str) -> str:
-    if not isinstance(transform_name, str) or not transform_name:
-        raise ValueError(f"{transform_scope} transform objects must include a non-empty 'name' string.")
-
-    return transform_name
-
-
-def _validate_transform_params(transform_params: object, transform_scope: str) -> TransformParams | None:
-    if transform_params is not None and not isinstance(transform_params, dict):
-        raise ValueError(f"{transform_scope} transform params must be an object with named fields.")
-
-    return transform_params
-
-
 def _apply_transform_with_optional_params(
     transform_func: Callable[..., ToneSequence],
     tones: ToneSequence,
@@ -123,7 +109,7 @@ def _apply_score_transform(
     descriptor: TransformDescriptor,
     transform_params: TransformParams | None,
 ) -> Score:
-    _require_params_for_descriptor(descriptor, transform_params)
+    _validate_transform_params(descriptor, transform_params)
 
     if transform_params is None:
         return descriptor.transform(score)
@@ -176,21 +162,32 @@ def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[s
     return motif_name, [_parse_tone_string(tone_string) for tone_string in tone_strings]
 
 
-def _require_params_for_descriptor(
+def _validate_transform_params(
     descriptor: TransformDescriptor,
     transform_params: TransformParams | None,
 ) -> None:
-    required_fields = descriptor.params_spec.required_fields
-    if not required_fields:
+    field_specs = descriptor.params_spec.fields
+    required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
+
+    if transform_params is None:
+        if not required_fields:
+            return
+
+        required_fields_description = ", ".join(f"'{field}'" for field in required_fields)
+        raise ValueError(
+            f"The '{descriptor.name}' transform requires an object with named fields specifying "
+            f"{required_fields_description}."
+        )
+
+    if not isinstance(transform_params, dict):
         return
 
-    required_fields_description = ", ".join(f"'{field}'" for field in required_fields)
-    error_message = (
-        f"The '{descriptor.name}' transform requires an object with named fields specifying "
-        f"{required_fields_description}."
-    )
-    if not isinstance(transform_params, dict):
-        raise ValueError(error_message)
+    unknown_fields = tuple(field_name for field_name in transform_params if field_name not in field_specs)
+    if unknown_fields:
+        unknown_fields_description = ", ".join(f"'{field}'" for field in unknown_fields)
+        raise ValueError(
+            f"The '{descriptor.name}' transform params include unknown fields: {unknown_fields_description}."
+        )
 
     missing_fields = tuple(field for field in required_fields if field not in transform_params)
     if missing_fields:
@@ -232,7 +229,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "semitones": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 )
             }
@@ -249,7 +246,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "factor": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
             }
@@ -262,7 +259,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "seconds": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
                 "position": TransformParamFieldSpec(
@@ -279,7 +276,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "seconds": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 )
             }
@@ -315,7 +312,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "rate": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
             }
@@ -376,7 +373,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "semitones": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 )
             }
@@ -393,7 +390,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "factor": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
             }
@@ -406,7 +403,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "seconds": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 )
             }
@@ -436,7 +433,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "rate": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
             }
@@ -449,12 +446,21 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "frequency": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
                 "duration": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
+                ),
+                "amplitude": TransformParamFieldSpec(
+                    param_type=TransformParamType.FLOAT,
+                ),
+                "mode": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+                "pulse_duration": TransformParamFieldSpec(
+                    param_type=TransformParamType.FLOAT,
                 ),
             }
         ),
@@ -474,7 +480,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "spacing": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
             }
@@ -495,7 +501,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "max_deviation": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
             }
@@ -505,7 +511,13 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "frost_effect",
         TransformScope.SCORE,
         frost_effect,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "iterations": TransformParamFieldSpec(
+                    param_type=TransformParamType.INTEGER,
+                )
+            }
+        ),
     ),
     "score_geological": TransformDescriptor(
         "score_geological",
@@ -522,7 +534,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "max_deviation": TransformParamFieldSpec(
-                    param_type=TransformParamType.NUMBER,
+                    param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
             }
@@ -537,7 +549,13 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                 "strength": TransformParamFieldSpec(
                     param_type=TransformParamType.STRING,
                     required=True,
-                )
+                ),
+                "jaggedness": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+                "seed": TransformParamFieldSpec(
+                    param_type=TransformParamType.INTEGER,
+                ),
             }
         ),
     ),
@@ -550,7 +568,13 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                 "strength": TransformParamFieldSpec(
                     param_type=TransformParamType.STRING,
                     required=True,
-                )
+                ),
+                "jaggedness": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+                "seed": TransformParamFieldSpec(
+                    param_type=TransformParamType.INTEGER,
+                ),
             }
         ),
     ),
@@ -582,8 +606,13 @@ def parse_transform_spec(
     if not isinstance(transform_spec, dict):
         raise ValueError(f"{transform_scope} transforms must be strings or objects with a 'name' field.")
 
-    transform_name = _validate_transform_name(transform_spec.get("name"), transform_scope)
-    transform_params = _validate_transform_params(transform_spec.get("params"), transform_scope)
+    transform_name = transform_spec.get("name")
+    if not isinstance(transform_name, str) or not transform_name:
+        raise ValueError(f"{transform_scope} transform objects must include a non-empty 'name' string.")
+
+    transform_params = transform_spec.get("params")
+    if transform_params is not None and not isinstance(transform_params, dict):
+        raise ValueError(f"{transform_scope} transform params must be an object with named fields.")
 
     return transform_name, transform_params
 
@@ -595,7 +624,7 @@ def _apply_phrase_transform_spec(
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     if descriptor.scope == TransformScope.PHRASE:
-        _require_params_for_descriptor(descriptor, transform_params)
+        _validate_transform_params(descriptor, transform_params)
         return _apply_transform_with_optional_params(descriptor.transform, phrase_tones, transform_params)
 
     if descriptor.scope == TransformScope.PHRASE_RELATIVE:
@@ -741,7 +770,7 @@ def _apply_all_voices_transform(
     descriptor: TransformDescriptor,
     transform_params: TransformParams | None
 ) -> Score:
-    _require_params_for_descriptor(descriptor, transform_params)
+    _validate_transform_params(descriptor, transform_params)
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
 
 
@@ -751,7 +780,7 @@ def _apply_score_target_motifs_transform(
     transform_params: TransformParams | None,
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
-    _require_params_for_descriptor(descriptor, transform_params)
+    _validate_transform_params(descriptor, transform_params)
     if transform_params is None:
         raise ValueError(f"The '{descriptor.name}' transform requires an object with named fields.")
 
