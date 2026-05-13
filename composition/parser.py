@@ -1,9 +1,11 @@
 from collections.abc import Callable
+from typing import cast
 
 from composition.profile_factory import build_profile
 from composition.schema import (
     CompositionDocument,
     PhraseConfig,
+    ProfileConfig,
     TransformSpec,
     VoiceConfig,
 )
@@ -56,14 +58,14 @@ from transforms.transpose import transpose_tones
 
 
 def resolve_profile_in_params(
-    transform_params: dict[str, object] | None,
-) -> dict[str, object] | None:
+    transform_params: dict[str, object],
+) -> dict[str, object]:
     """
     If transform_params contains a 'profile' key with a dict value,
     it resolves it into a StochasticProfile instance using the factory.
     Otherwise, it returns the params unchanged.
     """
-    if not isinstance(transform_params, dict) or "profile" not in transform_params:
+    if "profile" not in transform_params:
         return transform_params
 
     profile_config = transform_params.get("profile")
@@ -71,17 +73,12 @@ def resolve_profile_in_params(
         # Allow pre-resolved profiles to pass through without modification.
         return transform_params
 
-    # The type system doesn't know profile_config is ProfileConfig here,
     # but build_profile will validate its structure at runtime.
-    resolved_profile = build_profile(profile_config)  # type: ignore
+    resolved_profile = build_profile(cast(ProfileConfig, profile_config))
 
     # Return a new dictionary with the 'profile' value replaced by the instance.
     new_params = transform_params.copy()
-    # Mypy cannot follow the type transformation here. The function's guards
-    # ensure `transform_params` is a dict, but `copy()`
-    # loses specific type info. Mypy falls back to a broader
-    # type, causing a false positive error.
-    new_params["profile"] = resolved_profile  # type: ignore
+    new_params["profile"] = resolved_profile
     return new_params
 
 
@@ -94,52 +91,33 @@ def _parse_tone_string(tone_string: str) -> Tone:
 
     return Tone(float(normalized_tone_string))
 
-
 def _apply_transform_with_optional_params(
     transform_func: Callable[..., ToneSequence],
     tones: ToneSequence,
-    transform_params: dict[str, object] | None,
+    transform_params: dict[str, object],
 ) -> ToneSequence:
-    if transform_params is None:
-        return transform_func(tones)
+    resolved_transform_params = resolve_profile_in_params(transform_params)
+    return cast(ToneSequence, transform_func(tones, **resolved_transform_params))
 
-    if isinstance(transform_params, dict):
-        resolved_transform_params = resolve_profile_in_params(transform_params)
-        return transform_func(tones, **resolved_transform_params)
-
-    raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
 
 def _apply_score_transform(
     score: Score,
     descriptor: TransformDescriptor,
-    transform_params: dict[str, object] | None,
+    transform_params: dict[str, object],
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
-
-    if transform_params is None:
-        return descriptor.transform(score)
-
-    if isinstance(transform_params, dict):
-        resolved_transform_params = resolve_profile_in_params(transform_params)
-        return descriptor.transform(score, **resolved_transform_params)
-
-    raise AssertionError("Unreachable: transform_params must be None or a dict.")
+    resolved_transform_params = resolve_profile_in_params(transform_params)
+    return cast(Score, descriptor.transform(score, **resolved_transform_params))
 
 
 def _apply_all_voices_transform_with_optional_params(
     transform_func: Callable[..., ToneSequence],
     score: Score,
-    transform_params: dict[str, object] | None,
+    transform_params: dict[str, object],
 ) -> Score:
-    if transform_params is None:
-        return apply_to_all_voices(transform_func)(score)
-
-    if isinstance(transform_params, dict):
-        resolved_transform_params = resolve_profile_in_params(transform_params)
-        return apply_to_all_voices(transform_func, **resolved_transform_params)(score)
-
-    raise AssertionError("Unreachable: transform_params must be None or a dict.")
+    resolved_transform_params = resolve_profile_in_params(transform_params)
+    return apply_to_all_voices(transform_func, **resolved_transform_params)(score)
 
 
 def _require_list(value: object, error_message: str) -> list:
@@ -172,23 +150,10 @@ def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[s
 
 def _validate_transform_params(
     descriptor: TransformDescriptor,
-    transform_params: dict[str, object] | None,
+    transform_params: dict[str, object],
 ) -> None:
     field_specs = descriptor.params_spec.fields
     required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
-
-    if transform_params is None:
-        if not required_fields:
-            return
-
-        required_fields_description = ", ".join(f"'{field}'" for field in required_fields)
-        raise ValueError(
-            f"The '{descriptor.name}' transform requires an object with named fields specifying "
-            f"{required_fields_description}."
-        )
-
-    if not isinstance(transform_params, dict):
-        return
 
     unknown_fields = tuple(field_name for field_name in transform_params if field_name not in field_specs)
     if unknown_fields:
@@ -750,21 +715,16 @@ def parse_motifs(motif_definitions: dict[str, list[str]]) -> dict[str, list[Tone
 def parse_transform_spec(
     transform_spec: TransformSpec,
     transform_scope: str,
-) -> tuple[str, dict[str, object] | None]:
-    if isinstance(transform_spec, str):
-        if not transform_spec:
-            raise ValueError(f"{transform_scope} transform names must be non-empty strings.")
-        return transform_spec, None
-
+) -> tuple[str, dict[str, object]]:
     if not isinstance(transform_spec, dict):
-        raise ValueError(f"{transform_scope} transforms must be strings or objects with a 'name' field.")
+        raise ValueError(f"{transform_scope} transforms must be objects with a 'name' field.")
 
     transform_name = transform_spec.get("name")
     if not isinstance(transform_name, str) or not transform_name:
         raise ValueError(f"{transform_scope} transform objects must include a non-empty 'name' string.")
 
-    transform_params = transform_spec.get("params")
-    if transform_params is not None and not isinstance(transform_params, dict):
+    transform_params = transform_spec.get("params", {})
+    if not isinstance(transform_params, dict):
         raise ValueError(f"{transform_scope} transform params must be an object with named fields.")
 
     return transform_name, transform_params
@@ -773,7 +733,7 @@ def parse_transform_spec(
 def _apply_phrase_transform_spec(
     descriptor: TransformDescriptor,
     phrase_tones: list[Tone],
-    transform_params: dict[str, object] | None,
+    transform_params: dict[str, object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     if descriptor.scope == TransformScope.PHRASE:
@@ -783,11 +743,7 @@ def _apply_phrase_transform_spec(
     if descriptor.scope == TransformScope.PHRASE_RELATIVE:
         _validate_transform_params(descriptor, transform_params)
         phrase_reference_tones = reference_tones if reference_tones else []
-        if transform_params is None:
-            return descriptor.transform(phrase_tones, phrase_reference_tones)
-        if isinstance(transform_params, dict):
-            return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
-        raise AssertionError("Unreachable: transform_params must be None or a dict.")
+        return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
 
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
@@ -921,7 +877,7 @@ def _validate_composition_structure(composition_document: CompositionDocument) -
 def _apply_all_voices_transform(
     score: Score,
     descriptor: TransformDescriptor,
-    transform_params: dict[str, object] | None
+    transform_params: dict[str, object]
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
@@ -930,15 +886,13 @@ def _apply_all_voices_transform(
 def _apply_score_target_motifs_transform(
     score: Score,
     descriptor: TransformDescriptor,
-    transform_params: dict[str, object] | None,
+    transform_params: dict[str, object],
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
-    if transform_params is None:
-        raise ValueError(f"The '{descriptor.name}' transform requires an object with named fields.")
 
     resolved_transform_params = resolve_profile_in_params(transform_params)
-    return descriptor.transform(score, parsed_motifs, **resolved_transform_params)
+    return cast(Score, descriptor.transform(score, parsed_motifs, **resolved_transform_params))
 
 
 def _build_score_voices(voice_configs: list[VoiceConfig], parsed_motifs: dict[str, list[Tone]]) -> list[Voice]:

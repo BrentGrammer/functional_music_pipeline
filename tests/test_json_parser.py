@@ -919,36 +919,12 @@ def test_parse_phrase_requires_params_object_when_transform_params_are_missing()
         parse_phrase(phrase_dict, parsed_motifs)
 
 
-def test_apply_transform_with_optional_params_rejects_non_dict_non_none_params():
-    with pytest.raises(AssertionError):
-        _apply_transform_with_optional_params(lambda tones: tones, [], 1.0)
 
 
-def test_apply_score_transform_rejects_non_dict_non_none_params():
-    descriptor = TransformDescriptor(
-        "_test_score_transform",
-        TransformScope.SCORE,
-        lambda score: score,
-    )
-
-    with pytest.raises(AssertionError):
-        _apply_score_transform(Score([]), descriptor, 1.0)
 
 
-def test_apply_all_voices_transform_with_optional_params_rejects_non_dict_non_none_params():
-    with pytest.raises(AssertionError):
-        _apply_all_voices_transform_with_optional_params(lambda tones: tones, Score([]), 1.0)
 
 
-def test_apply_phrase_transform_spec_rejects_non_dict_non_none_params_for_relative_scope():
-    descriptor = TransformDescriptor(
-        "_test_phrase_relative_transform",
-        TransformScope.PHRASE_RELATIVE,
-        lambda phrase_tones, reference_tones: phrase_tones,
-    )
-
-    with pytest.raises(AssertionError):
-        _apply_phrase_transform_spec(descriptor, [Tone(440)], 1.0, [Tone(220)])
 
 def test_parse_composition_requires_document_object():
     with pytest.raises(ValueError):
@@ -1146,10 +1122,6 @@ class TestResolveProfileInParams:
         params = {"dimension": "FREQUENCY", "max_deviation": 0.1}
         result = resolve_profile_in_params(params)
         assert result is params  # Should be the same object
-
-    def test_pass_through_if_params_not_dict(self):
-        assert resolve_profile_in_params(5) == 5
-        assert resolve_profile_in_params(None) is None
 
     def test_resolves_profile_dict_to_instance(self):
         params: dict[str, object] = {
