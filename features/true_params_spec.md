@@ -19,7 +19,7 @@ Each transform descriptor should declare a real spec for all supported params. A
 
 - field name
 - required or optional
-- expected type or value kind
+- expected parameter type
 
 Conditional rules such as `add_pedal_point.mode == "repeat"` requiring `pulse_duration` should also have a clear home, even if they remain custom validators at first.
 
@@ -55,28 +55,38 @@ Suggested direction:
 - add a `TransformParamFieldSpec`
 - record field name
 - record whether the field is required or optional
-- record the expected type or value kind
-- optionally record default values or allowed values for enum-like fields
+- record the expected parameter type
+- record allowed values for enum-like fields
 - add an optional transform-level validator hook for conditional rules
 
 Conditional requirements should stay minimal at first. For example, `add_pedal_point` can continue using a dedicated validator rule for `mode == "repeat"` requiring `pulse_duration` before deciding whether to generalize that pattern further.
 
 The target shape should stay shallow. We do not want recursive nested specs or a mini schema engine. Top-level transform params should always be strict, and any nested object details should be handled by a dedicated validator for that transform.
 
+Defaults should stay in transform function signatures for now. The spec should define the public JSON parameter shape, while transform functions remain the source of runtime default behavior. This avoids duplicating defaults across the descriptor metadata and the actual function signature.
+
 Proposed end-state sketch:
 
 ```python
+class TransformParamType(Enum):
+    NUMBER = auto()
+    INTEGER = auto()
+    STRING = auto()
+    BOOLEAN = auto()
+    ENUM = auto()
+    OBJECT = auto()
+
+
 @dataclass(frozen=True)
 class TransformParamFieldSpec:
-    kind: str
+    param_type: TransformParamType
     required: bool = False
-    allowed_values: tuple[str, ...] = ()
-    default: object | None = None
+    allowed_values: tuple[object, ...] = ()
 
 
 @dataclass(frozen=True)
 class TransformParamsSpec:
-    fields: dict[str, TransformParamFieldSpec]
+    fields: dict[str, TransformParamFieldSpec] = field(default_factory=dict)
     validator: Callable[[dict[str, object]], None] | None = None
 ```
 
@@ -86,9 +96,15 @@ This keeps the contract focused on:
 
 - which top-level fields exist
 - which ones are required
-- what basic kind of value each field accepts
+- what parameter type each field accepts
 - what enum-like values are allowed
 - what custom validation rules still apply
+
+The split of responsibilities should be:
+
+- transform function signatures own runtime defaults
+- `TransformParamsSpec` owns public JSON param shape
+- validator callables own cross-field, conditional, and nested-object rules
 
 Unknown top-level param fields should always be invalid. We do not need an `allow_unknown_fields` option in the public spec model.
 
@@ -117,11 +133,13 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Add field-level metadata instead of only `required_fields`.
    - Keep the design lightweight and descriptor-driven.
    - Use the spec for runtime validation, not just documentation metadata.
+   - Do not store runtime default values in the spec during this iteration.
 
 2. Introduce a field model.
    - Add something like `TransformParamFieldSpec`.
-   - Record field name, required flag, and expected kind/type.
-   - Keep the first supported kinds small and explicit: `number`, `integer`, `string`, `boolean`, `enum`, and `object`.
+   - Record field name, required flag, and expected parameter type.
+   - Use a `TransformParamType` enum rather than raw strings for supported parameter types.
+   - Keep the first supported parameter types small and explicit: `number`, `integer`, `string`, `boolean`, `enum`, and `object`.
    - Keep the model shallow rather than recursively describing nested object internals.
 
 3. Support transform-level rules.
@@ -132,11 +150,12 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Replace the current validation that only checks for an object and required field presence.
    - Validate missing required fields.
    - Reject unknown top-level fields by default.
-   - Validate basic value kinds where the metadata is clear enough.
+   - Validate basic parameter types where the metadata is clear enough.
    - Do not add coercion. Keep input validation explicit and strict.
 
 5. Preserve the current transform execution model.
    - Keep transforms as plain Python functions invoked with `**transform_params`.
+   - Keep runtime defaults in transform function signatures so direct Python calls and parser-mediated calls behave consistently.
    - Do not introduce a second execution abstraction or a model-per-transform runtime layer.
    - Limit this work to truthful descriptor metadata plus parser validation.
 
@@ -153,7 +172,7 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
 8. Keep `geological` as a nested spec rather than flattening it into separate top-level transforms.
    - The nested `profile` object is a legitimate domain sub-object, not an API smell.
    - Keep `geological` as the canonical transform shape with outer fields like `profile`, `dimension`, and `max_deviation`.
-   - Treat `profile` as a top-level field with kind `object`, then validate its internal shape with a dedicated validator.
+   - Treat `profile` as a top-level field with parameter type `object`, then validate its internal shape with a dedicated validator.
    - If user ergonomics later justify flatter aliases like `weierstrass`, those should be convenience aliases rather than the primary model.
 
 9. Use transform-level custom validators for conditional cases.
