@@ -11,7 +11,6 @@ The current `params_spec` name implies a full schema, but the implementation onl
 - which params are allowed
 - which params are optional
 - what types each param accepts
-- whether extra fields are allowed
 - whether any params are conditionally required
 
 ## Desired Shape
@@ -21,7 +20,6 @@ Each transform descriptor should declare a real spec for all supported params. A
 - field name
 - required or optional
 - expected type or value kind
-- whether unknown fields are allowed
 
 Conditional rules such as `add_pedal_point.mode == "repeat"` requiring `pulse_duration` should also have a clear home, even if they remain custom validators at first.
 
@@ -59,10 +57,40 @@ Suggested direction:
 - record whether the field is required or optional
 - record the expected type or value kind
 - optionally record default values or allowed values for enum-like fields
-- add a transform-level policy for whether unknown fields are allowed
 - add an optional transform-level validator hook for conditional rules
 
 Conditional requirements should stay minimal at first. For example, `add_pedal_point` can continue using a dedicated validator rule for `mode == "repeat"` requiring `pulse_duration` before deciding whether to generalize that pattern further.
+
+The target shape should stay shallow. We do not want recursive nested specs or a mini schema engine. Top-level transform params should always be strict, and any nested object details should be handled by a dedicated validator for that transform.
+
+Proposed end-state sketch:
+
+```python
+@dataclass(frozen=True)
+class TransformParamFieldSpec:
+    kind: str
+    required: bool = False
+    allowed_values: tuple[str, ...] = ()
+    default: object | None = None
+
+
+@dataclass(frozen=True)
+class TransformParamsSpec:
+    fields: dict[str, TransformParamFieldSpec]
+    validator: Callable[[dict[str, object]], None] | None = None
+```
+
+This sketch is intentionally concrete enough to clarify the direction, but it should not be treated as a locked final API until implementation work confirms that it fits the parser and descriptor usage cleanly.
+
+This keeps the contract focused on:
+
+- which top-level fields exist
+- which ones are required
+- what basic kind of value each field accepts
+- what enum-like values are allowed
+- what custom validation rules still apply
+
+Unknown top-level param fields should always be invalid. We do not need an `allow_unknown_fields` option in the public spec model.
 
 ## Implementation Plan
 
@@ -75,17 +103,16 @@ Conditional requirements should stay minimal at first. For example, `add_pedal_p
    - Add something like `TransformParamFieldSpec`.
    - Record field name, required flag, and expected kind/type.
    - Keep the first supported kinds small and explicit: `number`, `integer`, `string`, `boolean`, `enum`, and `object`.
-   - Allow room for nested object specs where a param itself has internal structure.
+   - Keep the model shallow rather than recursively describing nested object internals.
 
 3. Support transform-level rules.
-   - Add a place for whole-object validation such as unknown-field handling and conditional requirements.
-   - Add an optional validator hook for cross-field and conditionally required rules.
+   - Add an optional validator hook for cross-field rules, conditional requirements, and nested object validation.
    - Keep this minimal at first rather than trying to encode every rule in the field model.
 
 4. Upgrade parser validation to be spec-driven.
    - Replace the current validation that only checks for an object and required field presence.
    - Validate missing required fields.
-   - Validate allowed vs unknown fields.
+   - Reject unknown top-level fields by default.
    - Validate basic value kinds where the metadata is clear enough.
    - Do not add coercion. Keep input validation explicit and strict.
 
@@ -107,7 +134,7 @@ Conditional requirements should stay minimal at first. For example, `add_pedal_p
 8. Keep `geological` as a nested spec rather than flattening it into separate top-level transforms.
    - The nested `profile` object is a legitimate domain sub-object, not an API smell.
    - Keep `geological` as the canonical transform shape with outer fields like `profile`, `dimension`, and `max_deviation`.
-   - Add nested spec support so `profile` can declare its own shape such as `type` and `params`.
+   - Treat `profile` as a top-level field with kind `object`, then validate its internal shape with a dedicated validator.
    - If user ergonomics later justify flatter aliases like `weierstrass`, those should be convenience aliases rather than the primary model.
 
 9. Use transform-level custom validators for conditional cases.
@@ -118,7 +145,7 @@ Conditional requirements should stay minimal at first. For example, `add_pedal_p
 10. Add descriptor-driven tests for contract behavior.
    - Verify required and optional fields from the descriptor metadata.
    - Verify wrong basic types are rejected.
-   - Verify unknown fields are rejected when the descriptor disallows them.
+   - Verify unknown top-level fields are always rejected.
    - Verify custom conditional validator rules fail correctly.
    - Avoid brittle error-text assertions.
 
