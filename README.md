@@ -85,7 +85,11 @@ A composition file has two main parts: `motifs` (reusable musical ideas) and `co
         "phrases": [
           {
             "motifs": ["seed_a", "seed_b"],
-            "transforms": ["reverse"]
+            "transforms": [
+              {
+                "name": "reverse"
+              }
+            ]
           }
         ]
       }

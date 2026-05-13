@@ -9,7 +9,11 @@
         "phrases": [
           {
             "motifs": ["seed_a"],
-            "transforms": ["reverse"]
+            "transforms": [
+              {
+                "name": "reverse"
+              }
+            ]
           },
           {
             "motifs": ["seed_b"],
@@ -33,11 +37,19 @@
           },
           {
             "motifs": ["seed_a"],
-            "transforms": ["phrase_feigenbaum_grow"]
+            "transforms": [
+              {
+                "name": "phrase_feigenbaum_grow"
+              }
+            ]
           }
         ]
       }
     ],
-    "score_transforms": ["score_feigenbaum_sequence"]
+    "score_transforms": [
+      {
+        "name": "score_feigenbaum_sequence"
+      }
+    ]
   }
 }
