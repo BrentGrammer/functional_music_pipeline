@@ -322,7 +322,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["scale"]
         valid_params = {"dimension": "duration", "factor": 2.0}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -349,7 +349,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["score_scale"]
         valid_params = {"dimension": "duration", "factor": 2.0}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             composition_doc = {
@@ -368,7 +368,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["transpose"]
         valid_params = {"semitones": 1.0}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -383,7 +383,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["score_transpose"]
         valid_params = {"semitones": 1.0}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             composition_doc = {
@@ -442,7 +442,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["delay"]
         valid_params = {"seconds": 0.25}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -457,7 +457,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["score_delay"]
         valid_params = {"seconds": 0.25}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             composition_doc = {
@@ -476,7 +476,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["repeat"]
         valid_params = {"count": 2}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -491,7 +491,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["score_repeat"]
         valid_params = {"count": 2}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             composition_doc = {
@@ -510,7 +510,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["accelerando"]
         valid_params = {"strength": "medium", "jaggedness": "none"}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -526,7 +526,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["ritardando"]
         valid_params = {"strength": "medium", "jaggedness": "none"}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -542,7 +542,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["drift"]
         valid_params = {"dimension": "frequency", "rate": 0.1}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -557,7 +557,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["score_drift"]
         valid_params = {"dimension": "frequency", "rate": 0.1}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             composition_doc = {
@@ -580,7 +580,7 @@ class TestScaleTransformParsing:
             "max_deviation": 0.1,
         }
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             phrase_config = {
@@ -599,7 +599,7 @@ class TestScaleTransformParsing:
             "max_deviation": 0.1,
         }
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             composition_doc = {
@@ -617,7 +617,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["add_pedal_point"]
         valid_params = {"frequency": 130.81, "duration": 2.0, "amplitude": 0.25}
 
-        for required_field in descriptor.params_spec.required_fields:
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
             composition_doc = {
@@ -675,6 +675,63 @@ class TestScaleTransformParsing:
 
         assert len(score.voices) == 1
         assert score.voices[0].tones[0].frequency == pytest.approx(freq)
+
+    def test_geological_profile_must_be_object(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "geological",
+                    "params": {
+                        "profile": 123,
+                        "dimension": "frequency",
+                        "max_deviation": 0.1,
+                    },
+                }
+            ],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config, parsed_motifs)
+
+    def test_geological_profile_requires_type_field(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "geological",
+                    "params": {
+                        "profile": {"seed": 42},
+                        "dimension": "frequency",
+                        "max_deviation": 0.1,
+                    },
+                }
+            ],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config, parsed_motifs)
+
+    def test_geological_profile_type_field_must_be_string(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "geological",
+                    "params": {
+                        "profile": {"type": 123},
+                        "dimension": "frequency",
+                        "max_deviation": 0.1,
+                    },
+                }
+            ],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config, parsed_motifs)
 
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
@@ -1346,7 +1403,7 @@ def test_stretto_with_missing_required_fields_raises_error():
         "spacing": "golden_ratio",
     }
 
-    for required_field in descriptor.params_spec.required_fields:
+    for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
         incomplete_params = valid_params.copy()
         incomplete_params.pop(required_field)
         composition_doc = {
