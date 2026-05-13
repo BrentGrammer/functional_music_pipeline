@@ -631,6 +631,51 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
+    def test_add_pedal_point_repeat_mode_requires_pulse_duration(self):
+        composition_doc = {
+            "motifs": {},
+            "composition": {
+                "voices": [],
+                "score_transforms": [
+                    {
+                        "name": "add_pedal_point",
+                        "params": {
+                            "frequency": 130.81,
+                            "duration": 2.0,
+                            "mode": "repeat",
+                        },
+                    }
+                ],
+            },
+        }
+
+        with pytest.raises(ValueError):
+            parse_composition(composition_doc)
+
+    def test_add_pedal_point_sustain_mode_allows_omitting_pulse_duration(self):
+        freq = 130.81
+        composition_doc = {
+            "motifs": {},
+            "composition": {
+                "voices": [],
+                "score_transforms": [
+                    {
+                        "name": "add_pedal_point",
+                        "params": {
+                            "frequency": freq,
+                            "duration": 2.0,
+                            "mode": "sustain",
+                        },
+                    }
+                ],
+            },
+        }
+
+        score = parse_composition(composition_doc)
+
+        assert len(score.voices) == 1
+        assert score.voices[0].tones[0].frequency == pytest.approx(freq)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]

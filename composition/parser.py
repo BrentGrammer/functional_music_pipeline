@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from composition.profile_factory import build_profile
+from composition.transform_params_validation import validate_add_pedal_point_params
 from composition.schema import (
     CompositionDocument,
     PhraseConfig,
@@ -206,6 +207,9 @@ def _validate_transform_params(
             raise ValueError(
                 f"The '{descriptor.name}' transform param '{field_name}' has an invalid type."
             )
+
+    if descriptor.params_spec.validator is not None:
+        descriptor.params_spec.validator(transform_params)
 
 
 def _is_valid_transform_param_field(
@@ -537,7 +541,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                 "pulse_duration": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
                 ),
-            }
+            },
+            validator=validate_add_pedal_point_params,
         ),
     ),
     "stretto": TransformDescriptor(
