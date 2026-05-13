@@ -17,6 +17,7 @@ from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
 from transforms.base import (
+    ToneDimension,
     ToneSequence,
     TransformDescriptor,
     TransformParamFieldSpec,
@@ -246,7 +247,12 @@ def _is_valid_transform_param_type(
         case TransformParamType.BOOLEAN:
             return isinstance(field_value, bool)
         case TransformParamType.ENUM:
-            return field_value in field_spec.allowed_enum_values
+            if isinstance(field_value, str):
+                return any(
+                    isinstance(v, str) and v.lower() == field_value.lower()
+                    for v in field_spec.allowed_enum_values
+                )
+            return False
         case TransformParamType.OBJECT:
             return isinstance(field_value, dict) or hasattr(field_value, "__dict__")
 
@@ -298,8 +304,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
                     required=True,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
                 "factor": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
@@ -365,8 +372,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
                     required=True,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
                 "rate": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
@@ -382,7 +390,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
             }
         ),
@@ -394,7 +403,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
             }
         ),
@@ -406,7 +416,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
             }
         ),
@@ -418,7 +429,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
             }
         ),
@@ -467,8 +479,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
                     required=True,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
                 "factor": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
@@ -510,8 +523,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
                     required=True,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
                 "rate": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
@@ -581,8 +595,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
                     required=True,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
                 "max_deviation": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
@@ -614,8 +629,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
                     required=True,
+                    allowed_enum_values=tuple(ToneDimension),
                 ),
                 "max_deviation": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
