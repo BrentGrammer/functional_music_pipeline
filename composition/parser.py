@@ -4,8 +4,8 @@ from composition.profile_factory import build_profile
 from composition.schema import (
     CompositionDocument,
     PhraseConfig,
-    TransformSpec,
     TransformParams,
+    TransformSpec,
     VoiceConfig,
 )
 from score_model.score import Score
@@ -16,12 +16,13 @@ from transforms.base import (
     ToneSequence,
     TransformDescriptor,
     TransformParamFieldSpec,
-    TransformParamType,
     TransformParamsSpec,
+    TransformParamType,
     TransformScope,
     apply_to_all_voices,
 )
 from transforms.delay import delay_tones
+from transforms.drift import drift_transform
 from transforms.duration import (
     INTENSITY_LEVELS,
     accelerando_transform,
@@ -31,24 +32,23 @@ from transforms.duration import (
     ritardando_transform,
     score_feigenbaum_sequence,
 )
-from transforms.drift import drift_transform
 from transforms.erosion import erosion_transform
+from transforms.frost import frost_effect
 from transforms.fugue import NAMED_STRETTO_SPACINGS, add_pedal_point, stretto
+from transforms.geological import (
+    apply_geological_transform,
+)
 from transforms.golden_ratio import (
     golden_ratio_transform,
     phrase_golden_ratio_grow,
     phrase_golden_ratio_shrink,
 )
 from transforms.inversion import invert_tones
+from transforms.pad_silence import pad_silence_tones
 from transforms.repeat import repeat_tones
 from transforms.reversal import reverse_tones
-from transforms.pad_silence import pad_silence_tones
 from transforms.scale import scale_transform
-from transforms.frost import frost_effect
 from transforms.transpose import transpose_tones
-from transforms.geological import (
-    apply_geological_transform,
-)
 
 
 def resolve_profile_in_params(
@@ -100,7 +100,8 @@ def _apply_transform_with_optional_params(
         return transform_func(tones)
 
     if isinstance(transform_params, dict):
-        return transform_func(tones, **transform_params)
+        resolved_transform_params = resolve_profile_in_params(transform_params)
+        return transform_func(tones, **resolved_transform_params)
 
     raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
@@ -116,7 +117,8 @@ def _apply_score_transform(
         return descriptor.transform(score)
 
     if isinstance(transform_params, dict):
-        return descriptor.transform(score, **transform_params)
+        resolved_transform_params = resolve_profile_in_params(transform_params)
+        return descriptor.transform(score, **resolved_transform_params)
 
     raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
@@ -130,7 +132,8 @@ def _apply_all_voices_transform_with_optional_params(
         return apply_to_all_voices(transform_func)(score)
 
     if isinstance(transform_params, dict):
-        return apply_to_all_voices(transform_func, **transform_params)(score)
+        resolved_transform_params = resolve_profile_in_params(transform_params)
+        return apply_to_all_voices(transform_func, **resolved_transform_params)(score)
 
     raise AssertionError("Unreachable: transform_params must be None or a dict.")
 
@@ -196,6 +199,51 @@ def _validate_transform_params(
         raise ValueError(
             f"The '{descriptor.name}' transform params must include {missing_fields_description}."
         )
+
+    for field_name, field_value in transform_params.items():
+        field_spec = field_specs[field_name]
+        if not _is_valid_transform_param_field(field_value, field_spec):
+            raise ValueError(
+                f"The '{descriptor.name}' transform param '{field_name}' has an invalid type."
+            )
+
+
+def _is_valid_transform_param_field(
+    field_value: object,
+    field_spec: TransformParamFieldSpec,
+) -> bool:
+    param_types = field_spec.param_type
+    if not isinstance(param_types, tuple):
+        param_types = (param_types,)
+
+    return any(
+        _is_valid_transform_param_type(field_value, param_type, field_spec)
+        for param_type in param_types
+    )
+
+
+def _is_valid_transform_param_type(
+    field_value: object,
+    param_type: TransformParamType,
+    field_spec: TransformParamFieldSpec,
+) -> bool:
+    match param_type:
+        case TransformParamType.FLOAT:
+            # Python treats bool as an int subclass, but JSON booleans are not numeric params.
+            return isinstance(field_value, (float, int)) and not isinstance(field_value, bool)
+        case TransformParamType.INTEGER:
+            # Python treats bool as an int subclass, but JSON booleans are not numeric params.
+            return isinstance(field_value, int) and not isinstance(field_value, bool)
+        case TransformParamType.STRING:
+            return isinstance(field_value, str)
+        case TransformParamType.BOOLEAN:
+            return isinstance(field_value, bool)
+        case TransformParamType.ENUM:
+            return field_value in field_spec.allowed_enum_values
+        case TransformParamType.OBJECT:
+            return isinstance(field_value, dict) or hasattr(field_value, "__dict__")
+
+    raise AssertionError(f"Unsupported transform param type: {param_type}")
 
 
 TRANSFORMS: dict[str, TransformDescriptor] = {
@@ -636,6 +684,7 @@ def _apply_phrase_transform_spec(
         return _apply_transform_with_optional_params(descriptor.transform, phrase_tones, transform_params)
 
     if descriptor.scope == TransformScope.PHRASE_RELATIVE:
+        _validate_transform_params(descriptor, transform_params)
         phrase_reference_tones = reference_tones if reference_tones else []
         if transform_params is None:
             return descriptor.transform(phrase_tones, phrase_reference_tones)
@@ -653,7 +702,6 @@ def _apply_phrase_transform_specs(
 ) -> list[Tone]:
     for transform_spec in transform_specs:
         transform_name, transform_params = parse_transform_spec(transform_spec, "Phrase")
-        transform_params = resolve_profile_in_params(transform_params)
 
         if transform_name not in TRANSFORMS:
             raise ValueError(f"Unknown transform '{transform_name}'")
@@ -792,7 +840,8 @@ def _apply_score_target_motifs_transform(
     if transform_params is None:
         raise ValueError(f"The '{descriptor.name}' transform requires an object with named fields.")
 
-    return descriptor.transform(score, parsed_motifs, **transform_params)
+    resolved_transform_params = resolve_profile_in_params(transform_params)
+    return descriptor.transform(score, parsed_motifs, **resolved_transform_params)
 
 
 def _build_score_voices(voice_configs: list[VoiceConfig], parsed_motifs: dict[str, list[Tone]]) -> list[Voice]:
@@ -812,7 +861,6 @@ def _apply_score_transform_spec(
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
     transform_name, transform_params = parse_transform_spec(transform_spec, "Score")
-    transform_params = resolve_profile_in_params(transform_params)
 
     if transform_name not in TRANSFORMS:
         raise ValueError(f"Unknown score transform '{transform_name}'")
