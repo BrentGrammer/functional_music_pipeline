@@ -84,25 +84,6 @@ def _apply_all_voices_transform_with_optional_params(
     return apply_to_all_voices(transform_func, **resolved_transform_params)(score)
 
 
-def _require_list(value: object, error_message: str) -> list:
-    if not isinstance(value, list):
-        raise ValueError(error_message)
-
-    return value
-
-
-def _require_non_empty_string_list(value: object, error_message: str) -> list[str]:
-    string_values = _require_list(value, error_message)
-    if not string_values:
-        raise ValueError(error_message)
-
-    for string_value in string_values:
-        if not isinstance(string_value, str) or not string_value:
-            raise ValueError("Phrase 'motifs' entries must be non-empty strings.")
-
-    return string_values
-
-
 def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[str, list[Tone]]:
     if not isinstance(motif_name, str):
         raise ValueError("Motif names must be strings.")
@@ -282,7 +263,13 @@ def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
     if "motifs" not in phrase_config:
         raise ValueError("Phrase definitions must include 'motifs'.")
 
-    motif_names = _require_non_empty_string_list(phrase_config["motifs"], "Phrase 'motifs' must be a non-empty list.")
+    motif_names = phrase_config["motifs"]
+    if not isinstance(motif_names, list) or not motif_names:
+        raise ValueError("Phrase 'motifs' must be a non-empty list.")
+
+    for string_value in motif_names:
+        if not isinstance(string_value, str) or not string_value:
+            raise ValueError("Phrase 'motifs' entries must be non-empty strings.")
 
     return motif_names
 
@@ -358,12 +345,13 @@ def _validate_composition_structure(
     if not isinstance(composition_config, dict):
         raise ValueError("Composition 'composition' must be an object.")
 
-    voice_configs = _require_list(composition_config.get("voices", []), "Composition 'voices' must be a list.")
+    voice_configs = composition_config.get("voices", [])
+    if not isinstance(voice_configs, list):
+        raise ValueError("Composition 'voices' must be a list.")
 
-    score_transform_specs = _require_list(
-        composition_config.get("score_transforms", []),
-        "Composition 'score_transforms' must be a list.",
-    )
+    score_transform_specs = composition_config.get("score_transforms", [])
+    if not isinstance(score_transform_specs, list):
+        raise ValueError("Composition 'score_transforms' must be a list.")
 
     return motif_definitions, voice_configs, score_transform_specs
 
