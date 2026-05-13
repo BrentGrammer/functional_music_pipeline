@@ -68,31 +68,67 @@ Conditional requirements should stay minimal at first. For example, `add_pedal_p
 
 1. Define the target shape for `TransformParamsSpec`.
    - Add field-level metadata instead of only `required_fields`.
-   - Decide whether the spec is just structural metadata or also drives runtime validation.
+   - Keep the design lightweight and descriptor-driven.
+   - Use the spec for runtime validation, not just documentation metadata.
 
 2. Introduce a field model.
    - Add something like `TransformParamFieldSpec`.
-   - Record name, required flag, and expected kind/type.
+   - Record field name, required flag, and expected kind/type.
+   - Keep the first supported kinds small and explicit: `number`, `integer`, `string`, `boolean`, `enum`, and `object`.
+   - Allow room for nested object specs where a param itself has internal structure.
 
 3. Support transform-level rules.
    - Add a place for whole-object validation such as unknown-field handling and conditional requirements.
-   - Keep this minimal at first.
+   - Add an optional validator hook for cross-field and conditionally required rules.
+   - Keep this minimal at first rather than trying to encode every rule in the field model.
 
-4. Migrate descriptors incrementally.
-   - Start with a few simple transforms like `transpose`, `delay`, and `repeat`.
-   - Then migrate multi-field transforms like `scale`, `drift`, and `geological`.
-
-5. Update parser validation to use the richer spec.
+4. Upgrade parser validation to be spec-driven.
+   - Replace the current validation that only checks for an object and required field presence.
    - Validate missing required fields.
-   - Reject unknown fields if that becomes part of the contract.
-   - Add basic type validation where the metadata is clear enough.
+   - Validate allowed vs unknown fields.
+   - Validate basic value kinds where the metadata is clear enough.
+   - Do not add coercion. Keep input validation explicit and strict.
 
-6. Add descriptor-driven tests.
+5. Preserve the current transform execution model.
+   - Keep transforms as plain Python functions invoked with `**transform_params`.
+   - Do not introduce a second execution abstraction or a model-per-transform runtime layer.
+   - Limit this work to truthful descriptor metadata plus parser validation.
+
+6. Migrate descriptors incrementally, starting with the simplest flat transforms.
+   - Start with `transpose`, `delay`, and `repeat`.
+   - These provide the smallest surface area for validating the new field model and parser behavior.
+   - Add descriptor-driven tests for these transforms before moving to more complex cases.
+
+7. Migrate the common multi-field flat transforms.
+   - Continue with `scale`, `drift`, `pad_silence`, `accelerando`, and `ritardando`.
+   - Make enum-like fields explicit in the metadata, such as `dimension` and `position`.
+   - Make optional fields explicit rather than leaving them as implicit kwargs.
+
+8. Keep `geological` as a nested spec rather than flattening it into separate top-level transforms.
+   - The nested `profile` object is a legitimate domain sub-object, not an API smell.
+   - Keep `geological` as the canonical transform shape with outer fields like `profile`, `dimension`, and `max_deviation`.
+   - Add nested spec support so `profile` can declare its own shape such as `type` and `params`.
+   - If user ergonomics later justify flatter aliases like `weierstrass`, those should be convenience aliases rather than the primary model.
+
+9. Use transform-level custom validators for conditional cases.
+   - Keep conditional rules like `add_pedal_point.mode == "repeat"` requiring `pulse_duration` in dedicated validator hooks first.
+   - Use the same mechanism for cross-field constraints and profile-specific geological validation.
+   - Revisit later whether any of these rules should move deeper into the spec model.
+
+10. Add descriptor-driven tests for contract behavior.
    - Verify required and optional fields from the descriptor metadata.
+   - Verify wrong basic types are rejected.
+   - Verify unknown fields are rejected when the descriptor disallows them.
+   - Verify custom conditional validator rules fail correctly.
    - Avoid brittle error-text assertions.
 
-7. Revisit conditional cases.
-   - Decide whether cases like `pulse_duration` should stay as custom runtime checks or move into spec-driven validation.
+11. Reassess after the first full migration slice.
+   - After migrating simple flat transforms, one conditional transform, and `geological`, evaluate whether the custom spec still feels clean and proportionate.
+   - Only revisit a schema library such as Pydantic if the transform params or composition document become substantially more nested or model-heavy.
+
+12. Use renaming as a fallback only.
+   - If this work is not completed, rename `params_spec` so it no longer implies a full schema.
+   - This is the fallback path, not the recommended direction.
 
 ## Notes
 
