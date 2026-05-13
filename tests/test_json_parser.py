@@ -733,6 +733,38 @@ class TestScaleTransformParsing:
         with pytest.raises(ValueError):
             parse_phrase(phrase_config, parsed_motifs)
 
+    def test_erosion_accepts_optional_dimension(self):
+        parsed_motifs = {"seed": [Tone(440, 0.5), Tone(880, 0.5)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [{"name": "erosion", "params": {"dimension": "amplitude"}}],
+        }
+
+        result = parse_phrase(phrase_config, parsed_motifs)
+        # Erosion of amplitude should change the amplitude of the second tone.
+        assert result[1].amplitude < 1.0
+
+    def test_golden_ratio_accepts_optional_dimension(self):
+        parsed_motifs = {"seed": [Tone(440, 1.0)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [{"name": "golden_ratio", "params": {"dimension": "frequency"}}],
+        }
+
+        result = parse_phrase(phrase_config, parsed_motifs)
+        # golden_ratio on frequency scales frequency by 1/GOLDEN_RATIO
+        assert result[0].frequency == pytest.approx(440.0 / GOLDEN_RATIO)
+
+    def test_erosion_rejects_unknown_param(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [{"name": "erosion", "params": {"unexpected": 123}}],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config, parsed_motifs)
+
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5)]

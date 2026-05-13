@@ -269,19 +269,40 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "golden_ratio",
         TransformScope.PHRASE,
         golden_ratio_transform,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
+                ),
+            }
+        ),
     ),
     "invert": TransformDescriptor(
         "invert",
         TransformScope.PHRASE,
         invert_tones,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
+                ),
+            }
+        ),
     ),
     "feigenbaum_sequence": TransformDescriptor(
         "feigenbaum_sequence",
         TransformScope.PHRASE,
         feigenbaum_sequence,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
+                ),
+            }
+        ),
     ),
     "transpose": TransformDescriptor(
         "transpose",
@@ -362,7 +383,14 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "erosion",
         TransformScope.PHRASE,
         erosion_transform,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
+                ),
+            }
+        ),
     ),
     "drift": TransformDescriptor(
         "drift",
@@ -438,7 +466,14 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "score_feigenbaum_sequence",
         TransformScope.SCORE,
         score_feigenbaum_sequence,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
+                ),
+            }
+        ),
     ),
     "score_reverse": TransformDescriptor(
         "score_reverse",
@@ -450,13 +485,27 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "score_golden_ratio",
         TransformScope.ALL_VOICES,
         golden_ratio_transform,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
+                ),
+            }
+        ),
     ),
     "score_invert": TransformDescriptor(
         "score_invert",
         TransformScope.ALL_VOICES,
         invert_tones,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=tuple(ToneDimension),
+                ),
+            }
+        ),
     ),
     "score_transpose": TransformDescriptor(
         "score_transpose",
