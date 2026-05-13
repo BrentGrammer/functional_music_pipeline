@@ -70,7 +70,7 @@ def _apply_score_transform(
     descriptor: ScoreTransform,
     transform_params: Mapping[str, object],
 ) -> Score:
-    _validate_transform_params(descriptor, transform_params)
+    descriptor.validate_params(transform_params)
     resolved_transform_params = resolve_profile_in_params(transform_params)
     return descriptor.transform(score, **resolved_transform_params)
 
@@ -91,81 +91,6 @@ def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[s
         raise ValueError(f"Motif '{motif_name}' must map to a list of tone strings.")
 
     return motif_name, [_parse_tone_string(tone_string) for tone_string in tone_strings]
-
-
-def _validate_transform_params(
-    descriptor: TransformDescriptor,
-    transform_params: Mapping[str, object],
-) -> None:
-    field_specs = descriptor.params_spec.fields
-    required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
-
-    unknown_fields = tuple(field_name for field_name in transform_params if field_name not in field_specs)
-    if unknown_fields:
-        unknown_fields_description = ", ".join(f"'{field}'" for field in unknown_fields)
-        raise ValueError(
-            f"The '{descriptor.name}' transform params include unknown fields: {unknown_fields_description}."
-        )
-
-    missing_fields = tuple(field for field in required_fields if field not in transform_params)
-    if missing_fields:
-        missing_fields_description = ", ".join(f"'{field}'" for field in missing_fields)
-        raise ValueError(
-            f"The '{descriptor.name}' transform params must include {missing_fields_description}."
-        )
-
-    for field_name, field_value in transform_params.items():
-        field_spec = field_specs[field_name]
-        if not _is_valid_transform_param_field(field_value, field_spec):
-            raise ValueError(
-                f"The '{descriptor.name}' transform param '{field_name}' has an invalid type."
-            )
-
-    if descriptor.params_spec.validator is not None:
-        descriptor.params_spec.validator(transform_params)
-
-
-def _is_valid_transform_param_field(
-    field_value: object,
-    field_spec: TransformParamFieldSpec,
-) -> bool:
-    param_types = field_spec.param_type
-    if not isinstance(param_types, tuple):
-        param_types = (param_types,)
-
-    return any(
-        _is_valid_transform_param_type(field_value, param_type, field_spec)
-        for param_type in param_types
-    )
-
-
-def _is_valid_transform_param_type(
-    field_value: object,
-    param_type: TransformParamType,
-    field_spec: TransformParamFieldSpec,
-) -> bool:
-    match param_type:
-        case TransformParamType.FLOAT:
-            # Python treats bool as an int subclass, but JSON booleans are not numeric params.
-            return isinstance(field_value, (float, int)) and not isinstance(field_value, bool)
-        case TransformParamType.INTEGER:
-            # Python treats bool as an int subclass, but JSON booleans are not numeric params.
-            return isinstance(field_value, int) and not isinstance(field_value, bool)
-        case TransformParamType.STRING:
-            return isinstance(field_value, str)
-        case TransformParamType.BOOLEAN:
-            return isinstance(field_value, bool)
-        case TransformParamType.ENUM:
-            if isinstance(field_value, str):
-                return any(
-                    isinstance(v, str) and v.lower() == field_value.lower()
-                    for v in field_spec.allowed_enum_values
-                )
-            return False
-        case TransformParamType.OBJECT:
-            return isinstance(field_value, dict) or hasattr(field_value, "__dict__")
-
-    raise AssertionError(f"Unsupported transform param type: {param_type}")
 
 
 def parse_motifs(motif_definitions: object) -> dict[str, list[Tone]]:
@@ -205,7 +130,7 @@ def _apply_phrase_transform_spec(
     transform_params: Mapping[str, object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
-    _validate_transform_params(descriptor, transform_params)
+    descriptor.validate_params(transform_params)
 
     if isinstance(descriptor, PhraseTransform):
         return _apply_phrase_transform(descriptor.transform, phrase_tones, transform_params)
@@ -361,7 +286,7 @@ def _apply_all_voices_transform(
     descriptor: AllVoicesTransform,
     transform_params: Mapping[str, object],
 ) -> Score:
-    _validate_transform_params(descriptor, transform_params)
+    descriptor.validate_params(transform_params)
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
 
 
@@ -371,7 +296,7 @@ def _apply_score_target_motifs_transform(
     transform_params: Mapping[str, object],
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
-    _validate_transform_params(descriptor, transform_params)
+    descriptor.validate_params(transform_params)
 
     resolved_transform_params = resolve_profile_in_params(transform_params)
     return descriptor.transform(score, parsed_motifs, **resolved_transform_params)

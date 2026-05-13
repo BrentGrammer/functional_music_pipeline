@@ -54,6 +54,77 @@ class TransformDescriptor:
     name: str
     params_spec: TransformParamsSpec = field(default_factory=TransformParamsSpec, kw_only=True)
 
+    def validate_params(self, transform_params: Mapping[str, object]) -> None:
+        field_specs = self.params_spec.fields
+        required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
+
+        unknown_fields = tuple(field_name for field_name in transform_params if field_name not in field_specs)
+        if unknown_fields:
+            unknown_fields_description = ", ".join(f"'{field}'" for field in unknown_fields)
+            raise ValueError(
+                f"The '{self.name}' transform params include unknown fields: {unknown_fields_description}."
+            )
+
+        missing_fields = tuple(field for field in required_fields if field not in transform_params)
+        if missing_fields:
+            missing_fields_description = ", ".join(f"'{field}'" for field in missing_fields)
+            raise ValueError(
+                f"The '{self.name}' transform params must include {missing_fields_description}."
+            )
+
+        for field_name, field_value in transform_params.items():
+            field_spec = field_specs[field_name]
+            if not self._is_valid_transform_param_field(field_value, field_spec):
+                raise ValueError(
+                    f"The '{self.name}' transform param '{field_name}' has an invalid type."
+                )
+
+        if self.params_spec.validator is not None:
+            self.params_spec.validator(transform_params)
+
+    def _is_valid_transform_param_field(
+        self,
+        field_value: object,
+        field_spec: TransformParamFieldSpec,
+    ) -> bool:
+        param_types = field_spec.param_type
+        if not isinstance(param_types, tuple):
+            param_types = (param_types,)
+
+        return any(
+            self._is_valid_transform_param_type(field_value, param_type, field_spec)
+            for param_type in param_types
+        )
+
+    def _is_valid_transform_param_type(
+        self,
+        field_value: object,
+        param_type: TransformParamType,
+        field_spec: TransformParamFieldSpec,
+    ) -> bool:
+        match param_type:
+            case TransformParamType.FLOAT:
+                # Python treats bool as an int subclass, but JSON booleans are not numeric params.
+                return isinstance(field_value, (float, int)) and not isinstance(field_value, bool)
+            case TransformParamType.INTEGER:
+                # Python treats bool as an int subclass, but JSON booleans are not numeric params.
+                return isinstance(field_value, int) and not isinstance(field_value, bool)
+            case TransformParamType.STRING:
+                return isinstance(field_value, str)
+            case TransformParamType.BOOLEAN:
+                return isinstance(field_value, bool)
+            case TransformParamType.ENUM:
+                if isinstance(field_value, str):
+                    return any(
+                        isinstance(v, str) and v.lower() == field_value.lower()
+                        for v in field_spec.allowed_enum_values
+                    )
+                return False
+            case TransformParamType.OBJECT:
+                return isinstance(field_value, dict) or hasattr(field_value, "__dict__")
+
+        raise AssertionError(f"Unsupported transform param type: {param_type}")
+
 
 @dataclass(frozen=True)
 class PhraseTransform(TransformDescriptor):
