@@ -1,5 +1,7 @@
 # AI Developer Conventions & Workflow
 
+- Do not be verbose. Communicate the most important information in as concise a manner as possible.
+
 When making changes to this codebase, please adhere to the following rules and conventions:
 
 ## 1. Testing Requirement

@@ -36,7 +36,7 @@ class TransformScope(Enum):
 
 
 class TransformParamType(Enum):
-    NUMBER = auto()
+    FLOAT = auto()
     INTEGER = auto()
     STRING = auto()
     BOOLEAN = auto()

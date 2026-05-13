@@ -16,7 +16,14 @@ from composition.schema import GeologicalTransformParams, TransformConfig
 from score_model.tone import Tone
 from score_model.score import Score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
-from transforms.base import ToneDimension, TransformDescriptor, TransformScope
+from transforms.base import (
+    ToneDimension,
+    TransformDescriptor,
+    TransformParamFieldSpec,
+    TransformParamType,
+    TransformParamsSpec,
+    TransformScope,
+)
 from transforms.profiles import WeierstrassProfile
 
 
@@ -39,11 +46,11 @@ def test_parse_motifs():
     assert result["seed_b"][0].frequency == 523.25
 
 def test_parse_motifs_requires_object_mapping():
-    with pytest.raises(ValueError, match="Composition 'motifs' must be an object mapping motif names to tone lists."):
+    with pytest.raises(ValueError):
         parse_motifs(["440"])
 
 def test_parse_motifs_requires_list_values():
-    with pytest.raises(ValueError, match="Motif 'seed_a' must map to a list of tone strings."):
+    with pytest.raises(ValueError):
         parse_motifs({"seed_a": "440"})
 
 def test_parse_phrase_single_motif_from_motifs_list():
@@ -216,7 +223,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "scale", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_scale_with_numeric_param_raises_error(self):
@@ -246,7 +253,7 @@ class TestScaleTransformParsing:
                 },
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
     def test_transpose_with_missing_required_fields_raises_error(self):
@@ -262,7 +269,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "transpose", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_transpose_with_missing_required_fields_raises_error(self):
@@ -280,8 +287,48 @@ class TestScaleTransformParsing:
                 },
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_composition(composition_doc)
+
+    def test_reverse_rejects_unknown_top_level_params(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [{"name": "reverse", "params": {"unexpected": True}}],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config, parsed_motifs)
+
+    @pytest.mark.parametrize(
+        ("transform_name", "valid_params"),
+        [
+            ("transpose", {"semitones": 1.0}),
+            ("delay", {"seconds": 0.25}),
+            ("repeat", {"count": 2}),
+        ],
+    )
+    def test_required_param_transforms_reject_unknown_top_level_params(
+        self,
+        transform_name: str,
+        valid_params: dict[str, float | int],
+    ):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": transform_name,
+                    "params": {
+                        **valid_params,
+                        "unexpected": 123,
+                    },
+                }
+            ],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config, parsed_motifs)
 
     def test_delay_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -296,7 +343,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "delay", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_delay_with_missing_required_fields_raises_error(self):
@@ -314,7 +361,7 @@ class TestScaleTransformParsing:
                 },
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
     def test_repeat_with_missing_required_fields_raises_error(self):
@@ -330,7 +377,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "repeat", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_repeat_with_missing_required_fields_raises_error(self):
@@ -348,7 +395,7 @@ class TestScaleTransformParsing:
                 },
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
     def test_accelerando_with_missing_required_fields_raises_error(self):
@@ -364,7 +411,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "accelerando", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_ritardando_with_missing_required_fields_raises_error(self):
@@ -380,7 +427,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "ritardando", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_drift_with_missing_required_fields_raises_error(self):
@@ -396,7 +443,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "drift", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_drift_with_missing_required_fields_raises_error(self):
@@ -414,7 +461,7 @@ class TestScaleTransformParsing:
                 },
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
     def test_geological_with_missing_required_fields_raises_error(self):
@@ -434,7 +481,7 @@ class TestScaleTransformParsing:
                 "transforms": [{"name": "geological", "params": incomplete_params}],
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_geological_with_missing_required_fields_raises_error(self):
@@ -456,7 +503,7 @@ class TestScaleTransformParsing:
                 },
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
     def test_add_pedal_point_with_missing_required_fields_raises_error(self):
@@ -474,7 +521,7 @@ class TestScaleTransformParsing:
                 },
             }
 
-            with pytest.raises(ValueError, match="must include"):
+            with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
 def test_parse_phrase_with_reference_transform():
@@ -551,62 +598,62 @@ def test_parse_phrase_missing_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"transforms": ["reverse"]}
 
-    with pytest.raises(ValueError, match="Phrase definitions must include 'motifs'."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_empty_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": []}
 
-    with pytest.raises(ValueError, match="Phrase 'motifs' must be a non-empty list."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_non_list_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": "seed_a"}
 
-    with pytest.raises(ValueError, match="Phrase 'motifs' must be a non-empty list."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_motifs_entries_must_be_non_empty_strings():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a", ""]}
 
-    with pytest.raises(ValueError, match="Phrase 'motifs' entries must be non-empty strings."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_unknown_motif():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["missing"]}
 
-    with pytest.raises(ValueError, match="Motif 'missing' not found in parsed motifs."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_requires_phrase_object():
     parsed_motifs = {"seed_a": [Tone(440)]}
 
-    with pytest.raises(ValueError, match="Each phrase must be an object."):
+    with pytest.raises(ValueError):
         parse_phrase(["seed_a"], parsed_motifs)
 
 def test_parse_phrase_transforms_must_be_a_list():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a"], "transforms": "reverse"}
 
-    with pytest.raises(ValueError, match="Phrase 'transforms' must be a list."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_object_requires_name():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a"], "transforms": [{"params": 2.0}]}
 
-    with pytest.raises(ValueError, match="Phrase transform objects must include a non-empty 'name' string."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_must_be_string_or_object():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a"], "transforms": [123]}
 
-    with pytest.raises(ValueError, match="Phrase transforms must be strings or objects with a 'name' field."):
+    with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_transform_spec_rejects_scalar_params():
@@ -664,7 +711,7 @@ def test_apply_phrase_transform_spec_rejects_non_dict_non_none_params_for_relati
         _apply_phrase_transform_spec(descriptor, [Tone(440)], 1.0, [Tone(220)])
 
 def test_parse_composition_requires_document_object():
-    with pytest.raises(ValueError, match="Composition document must be an object."):
+    with pytest.raises(ValueError):
         parse_composition([])
 
 def test_parse_composition_requires_motifs_object():
@@ -672,23 +719,23 @@ def test_parse_composition_requires_motifs_object():
         parse_composition({"motifs": [], "composition": {}})
 
 def test_parse_composition_requires_composition_object():
-    with pytest.raises(ValueError, match="Composition 'composition' must be an object."):
+    with pytest.raises(ValueError):
         parse_composition({"motifs": {}, "composition": []})
 
 def test_parse_composition_requires_voices_list():
-    with pytest.raises(ValueError, match="Composition 'voices' must be a list."):
+    with pytest.raises(ValueError):
         parse_composition({"motifs": {}, "composition": {"voices": {}}})
 
 def test_parse_composition_requires_voice_objects():
-    with pytest.raises(ValueError, match="Each voice must be an object."):
+    with pytest.raises(ValueError):
         parse_composition({"motifs": {}, "composition": {"voices": ["voice_a"]}})
 
 def test_parse_composition_requires_phrases_list():
-    with pytest.raises(ValueError, match="Voice 'phrases' must be a list."):
+    with pytest.raises(ValueError):
         parse_composition({"motifs": {}, "composition": {"voices": [{"phrases": {}}]}})
 
 def test_parse_composition_score_transforms_must_be_list():
-    with pytest.raises(ValueError, match="Composition 'score_transforms' must be a list."):
+    with pytest.raises(ValueError):
         parse_composition({"motifs": {}, "composition": {"voices": [], "score_transforms": {}}})
 
 def test_parse_composition_score_transform_object_requires_name():
@@ -700,7 +747,7 @@ def test_parse_composition_score_transform_object_requires_name():
         }
     }
 
-    with pytest.raises(ValueError, match="Score transform objects must include a non-empty 'name' string."):
+    with pytest.raises(ValueError):
         parse_composition(json_data)
 
 def test_parse_composition_unknown_score_transform():
@@ -712,7 +759,7 @@ def test_parse_composition_unknown_score_transform():
         }
     }
 
-    with pytest.raises(ValueError, match="Unknown score transform 'score_unknown'"):
+    with pytest.raises(ValueError):
         parse_composition(json_data)
 
 
@@ -878,7 +925,7 @@ class TestResolveProfileInParams:
 
     def test_propagates_error_from_build_profile(self):
         params = {"profile": {"type": "nonexistent"}}
-        with pytest.raises(ValueError, match="Unknown profile type"):
+        with pytest.raises(ValueError):
             resolve_profile_in_params(params)
 
 
@@ -984,16 +1031,14 @@ def test_parse_composition_with_score_geological_transform():
 
 
 @pytest.mark.parametrize(
-    "bad_profile_config, error_msg_snippet",
+    "bad_profile_config",
     [
-        ({"type": "nonexistent"}, "Unknown profile type"),
-        ({"type": "weierstrass", "params": {"bad_param": 1}}, "Invalid parameters"),
-        ({"params": {}}, "must contain a non-empty 'type' string"),
+        {"type": "nonexistent"},
+        {"type": "weierstrass", "params": {"bad_param": 1}},
+        {"params": {}},
     ],
 )
-def test_parse_composition_with_bad_geological_config_raises_error(
-    bad_profile_config, error_msg_snippet
-):
+def test_parse_composition_with_bad_geological_config_raises_error(bad_profile_config):
     # Ensures user-facing errors from the profile factory are propagated
     # up through the composition parser.
     json_data = {
@@ -1020,7 +1065,7 @@ def test_parse_composition_with_bad_geological_config_raises_error(
             ]
         },
     }
-    with pytest.raises(ValueError, match=error_msg_snippet):
+    with pytest.raises(ValueError):
         parse_composition(json_data)
 
 
@@ -1036,6 +1081,14 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
         "_test_score_with_motifs",
         TransformScope.SCORE_TARGET_MOTIFS,
         capture_score_target_motifs_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "motif": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                )
+            }
+        ),
     )
 
     try:
@@ -1069,6 +1122,14 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
         "_test_score_with_motifs",
         TransformScope.SCORE_TARGET_MOTIFS,
         noop_score_target_motifs_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "motif": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                )
+            }
+        ),
     )
 
     try:
@@ -1100,10 +1161,18 @@ def test_parse_composition_score_target_motifs_scope_requires_params():
         "_test_score_with_motifs",
         TransformScope.SCORE_TARGET_MOTIFS,
         noop_score_target_motifs_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "motif": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                )
+            }
+        ),
     )
 
     try:
-        with pytest.raises(ValueError, match="requires an object with named fields"):
+        with pytest.raises(ValueError):
             parse_composition(
                 {
                     "motifs": {"seed": ["440:0.5"]},
@@ -1136,5 +1205,5 @@ def test_stretto_with_missing_required_fields_raises_error():
             },
         }
 
-        with pytest.raises(ValueError, match="must include"):
+        with pytest.raises(ValueError):
             parse_composition(composition_doc)

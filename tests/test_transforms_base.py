@@ -91,7 +91,7 @@ def test_transform_descriptor_preserves_explicit_params_spec():
     expected_params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
-                param_type=TransformParamType.NUMBER,
+                param_type=TransformParamType.FLOAT,
                 required=True,
             )
         }
@@ -110,7 +110,7 @@ def test_transform_params_spec_derives_required_fields_from_field_metadata():
     params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
-                param_type=TransformParamType.NUMBER,
+                param_type=TransformParamType.FLOAT,
                 required=True,
             ),
             "position": TransformParamFieldSpec(
