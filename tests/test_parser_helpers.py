@@ -1,3 +1,4 @@
+from composition.schema import VoiceConfig
 import pytest
 
 from composition.parser import (
@@ -25,17 +26,15 @@ def test_parse_motifs_rejects_non_string_motif_names():
 
 
 def test_parse_transform_spec_rejects_empty_string_name():
-    empty_transform_name = ""
-
     with pytest.raises(ValueError):
-        parse_transform_spec(empty_transform_name, "Phrase")
+        parse_transform_spec({"name": ""}, "Phrase")
 
 
 def test_parse_voice_uses_first_phrase_as_reference_for_later_relative_phrase_transform():
     seed_frequency = 440.0
     seed_duration = 1.0
     parsed_motifs = {"seed": [Tone(seed_frequency, duration=seed_duration)]}
-    voice_config = {
+    voice_config: VoiceConfig = {
         "phrases": [
             {"motifs": ["seed"]},
             {
@@ -64,7 +63,7 @@ def test_parse_voice_uses_previous_voice_as_reference_when_first_phrase_is_relat
     seed_duration = 1.0
     parsed_motifs = {"seed": [Tone(seed_frequency, duration=seed_duration)]}
     previous_voice_tones = [Tone(220.0, duration=2.0)]
-    voice_config = {
+    voice_config: VoiceConfig = {
         "phrases": [
             {
                 "motifs": ["seed"],

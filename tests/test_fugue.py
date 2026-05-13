@@ -1,3 +1,4 @@
+from composition.schema import CompositionDocument
 import numpy as np
 import pytest
 
@@ -254,7 +255,7 @@ class TestPedalPointRegistration:
 
 class TestPedalPointComposition:
     def test_add_pedal_point_applies_from_composition_json(self):
-        composition_document = {
+        composition_document: CompositionDocument = {
             "motifs": {
                 "subject": ["261.63:0.5", "293.66:0.5"],
             },
@@ -285,7 +286,7 @@ class TestPedalPointComposition:
 
 class TestStrettoComposition:
     def test_stretto_applies_from_composition_json(self):
-        composition_document = {
+        composition_document: CompositionDocument = {
             "motifs": {
                 "subject": ["261.63:0.5", "329.63:0.25"],
             },
@@ -314,7 +315,7 @@ class TestStrettoComposition:
         assert score.voices[2].tones[0].duration == pytest.approx(((0.5 + 0.25) / GOLDEN_RATIO) * 2)
 
     def test_stretto_rendering_overlaps_voice_onsets(self):
-        composition_document = {
+        composition_document: CompositionDocument = {
             "motifs": {
                 "subject": [
                     "261.63:0.5",

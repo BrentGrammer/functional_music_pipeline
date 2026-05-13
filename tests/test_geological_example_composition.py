@@ -1,3 +1,4 @@
+from composition.schema import CompositionDocument
 import pytest
 
 from composition.parser import parse_composition, parse_motifs
@@ -109,7 +110,7 @@ class TestGeologicalExampleComposition:
         # This test ensures the example composition file is valid JSON and
         # can be successfully parsed by the composition engine, serving as a
         # basic integration test for the unified geological transform API.
-        composition_data = _build_geological_example_composition()
+        composition_data: CompositionDocument = _build_geological_example_composition()
 
         score = parse_composition(composition_data)
 
@@ -124,7 +125,7 @@ class TestGeologicalExampleComposition:
         # Geological transforms are seeded, so repeated parsing of the same
         # composition must yield identical musical output. This test locks in
         # that invariant.
-        composition_data = _build_geological_example_composition()
+        composition_data: CompositionDocument = _build_geological_example_composition()
 
         score1 = parse_composition(composition_data)
         score2 = parse_composition(composition_data)
@@ -141,7 +142,7 @@ class TestGeologicalExampleComposition:
     def test_structural_invariants(self):
         # Verifies the user-visible guarantees of the geological transform API
         # at the composition boundary.
-        composition_data = _build_geological_example_composition()
+        composition_data: CompositionDocument = _build_geological_example_composition()
 
         score = parse_composition(composition_data)
 

@@ -1,3 +1,4 @@
+from composition.schema import CompositionDocument
 import pytest
 
 from composition.parser import TRANSFORMS, parse_composition
@@ -248,7 +249,7 @@ class TestScoreDriftApplication:
         FREQ_A = 440.0
         FREQ_B = 220.0
 
-        composition_document = {
+        composition_document: CompositionDocument = {
             "motifs": {
                 "high": [f"{FREQ_A}:0.3", f"{FREQ_A}:0.3"],
                 "low": [f"{FREQ_B}:0.3", f"{FREQ_B}:0.3"],

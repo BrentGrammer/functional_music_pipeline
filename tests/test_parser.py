@@ -1,11 +1,12 @@
 from composition.parser import parse_composition
+from composition.schema import CompositionDocument
 
 
 class TestAccelerandoParserIntegration:
     """Tests that accelerando can be invoked from composition JSON."""
 
     def test_accelerando_with_preset_params(self):
-        composition = {
+        composition: CompositionDocument = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -41,7 +42,7 @@ class TestAccelerandoParserIntegration:
         assert tones[1].duration > tones[2].duration
 
     def test_accelerando_with_numeric_params(self):
-        composition = {
+        composition: CompositionDocument = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -74,7 +75,7 @@ class TestAccelerandoParserIntegration:
         assert tones[0].duration > tones[2].duration
 
     def test_accelerando_preserves_frequencies(self):
-        composition = {
+        composition: CompositionDocument = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -112,7 +113,7 @@ class TestRitardandoParserIntegration:
     """Tests that ritardando can be invoked from composition JSON."""
 
     def test_ritardando_with_preset_params(self):
-        composition = {
+        composition: CompositionDocument = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -148,7 +149,7 @@ class TestRitardandoParserIntegration:
         assert tones[1].duration < tones[2].duration
 
     def test_ritardando_with_numeric_params(self):
-        composition = {
+        composition: CompositionDocument = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -181,7 +182,7 @@ class TestRitardandoParserIntegration:
         assert tones[0].duration < tones[2].duration
 
     def test_ritardando_preserves_frequencies(self):
-        composition = {
+        composition: CompositionDocument = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
