@@ -14,13 +14,13 @@ The recent migration to a descriptor-driven transform system has introduced a si
 - **Normalize at the Boundary:** When the parser reads a transform object without a `params` field, it should default the params to an empty dictionary `{}` immediately: `transform_params = transform_config.get("params", {})`.
 - **Remove Cascading Complexity:** Because `transform_params` is now guaranteed to be a dictionary, we can remove `| None` from all internal type hints. We can delete all `if transform_params is None:` branching logic and confidently unpack `**transform_params` everywhere, completely eliminating the smell without `@overload` hacks.
 
-### 2. The "Callable Opaque" Smell
+### 2. The "Callable Opaque" Smell (Subclassing)
 **Symptom:** Mypy complains `Returning Any from function declared to return "Score"` (or `list[Tone]`).
 **Root Cause:** In `transforms/base.py`, the `TransformDescriptor` defines its `transform` field simply as a generic `Callable`. To Mypy, `Callable` means "a function that takes anything and returns `Any`." When the parser executes `descriptor.transform(...)`, Mypy loses all type safety and assumes the result is `Any`.
 **Resolution:**
-- Make `TransformDescriptor` a **Generic** class (`TransformDescriptor[T_Transform]`).
-- Define specific `Protocol` types for our different transform signatures (e.g., `PhraseTransformProtocol`, `ScoreTransformProtocol`).
-- This allows Mypy to know exactly what kind of function is inside the descriptor and, crucially, exactly what it returns.
+- **Subclassing / Type Guard Pattern:** Create specific descriptor subclasses (e.g., `PhraseDescriptor`, `ScoreDescriptor`) inheriting from `TransformDescriptor`.
+- Each subclass will strictly type its `transform` field to return the appropriate type (e.g., `Callable[..., list[Tone]]` for phrases).
+- In the parser, use `isinstance(descriptor, PhraseDescriptor)` as a type guard. Mypy will automatically narrow the type, confirming the expected return type without any `cast` calls. This centralizes our registry while maintaining perfect type safety and scaling elegantly.
 
 ### 3. The "TypedDict Variance" Smell (The Bulk of the Test Errors)
 **Symptom:** Dozens of errors in tests like `Argument 1 to "parse_composition" has incompatible type "dict[str, object]"; expected "CompositionDocument"`.
@@ -45,7 +45,7 @@ To keep the steps small and manageable, we will tackle the smells in the followi
    - **1b. Normalize at Boundary:** Update `parse_transform_spec` in `composition/parser.py` to only accept a `TransformConfig` object, and default missing `params` to `{}`. Change its return type to guarantee a `dict[str, object]`.
    - **1c. Rip out Internal Branching:** Remove `| None` from `transform_params` type hints in all `_apply_*` functions. Delete all `if transform_params is None:` branches and clean up `resolve_profile_in_params` to only accept/return `dict`.
    - **1d. Update Tests:** Update any tests still using the string shorthand (e.g., `"reverse"`) to use the new strict object format (`{"name": "reverse"}`).
-2. **Generics & Protocols:** Make `TransformDescriptor` generic and strictly type the transform callables.
+2. **Subclassing Descriptors:** Replace generic `TransformDescriptor` usage and `TransformScope` enums with specific subclass descriptors (e.g., `PhraseDescriptor`, `ScoreDescriptor`). Update the parser to use `isinstance` type guards for safe execution without `cast`.
 3. **Test Annotations:** Go through the test suite and properly annotate the raw dictionaries as `CompositionDocument`, `PhraseConfig`, etc.
 4. **Minor Arithmetic:** Clean up the isolated return type errors in the transform math and tone definitions.
 
