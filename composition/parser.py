@@ -12,9 +12,6 @@ from transforms.base import (
     ScoreTargetMotifsTransform,
     ScoreTransform,
     ToneSequence,
-    TransformDescriptor,
-    TransformParamFieldSpec,
-    TransformParamType,
     TransformWithCallable,
     apply_to_all_voices,
 )
