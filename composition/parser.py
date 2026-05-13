@@ -892,13 +892,13 @@ def _apply_score_transform_spec(
 
     descriptor = TRANSFORMS[transform_name]
 
-    if descriptor.scope == TransformScope.SCORE_TARGET_MOTIFS:
+    if isinstance(descriptor, ScoreTargetMotifsTransform):
         return _apply_score_target_motifs_transform(score, descriptor, transform_params, parsed_motifs)
 
-    if descriptor.scope == TransformScope.SCORE:
+    if isinstance(descriptor, ScoreTransform):
         return _apply_score_transform(score, descriptor, transform_params)
 
-    if descriptor.scope == TransformScope.ALL_VOICES:
+    if isinstance(descriptor, AllVoicesTransform):
         return _apply_all_voices_transform(score, descriptor, transform_params)
 
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")

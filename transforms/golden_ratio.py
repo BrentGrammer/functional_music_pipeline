@@ -4,8 +4,8 @@ from transforms.scale import scale_transform
 
 
 def _get_total(tones: ToneSequence, dim: ToneDimension) -> float:
-    attr = dim.name.lower()
-    return sum(getattr(t, attr) for t in tones)
+    attr = dim.value
+    return float(sum(getattr(t, attr) for t in tones))
 
 
 def golden_ratio_transform(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION) -> ToneSequence:

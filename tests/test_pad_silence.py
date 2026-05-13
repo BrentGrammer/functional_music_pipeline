@@ -3,7 +3,7 @@ import pytest
 
 from composition.parser import TRANSFORMS, parse_composition, parse_phrase
 from score_model.tone import Tone
-from transforms.base import TransformScope
+from transforms.base import PhraseTransform
 from transforms.pad_silence import pad_silence_tones
 
 
@@ -75,7 +75,8 @@ def test_pad_silence_rejects_invalid_position():
 
 def test_pad_silence_registered():
     assert "pad_silence" in TRANSFORMS
-    assert TRANSFORMS["pad_silence"].scope == TransformScope.PHRASE
+    descriptor = TRANSFORMS["pad_silence"]
+    assert isinstance(descriptor, PhraseTransform)
     assert TRANSFORMS["pad_silence"].transform is pad_silence_tones
 
 

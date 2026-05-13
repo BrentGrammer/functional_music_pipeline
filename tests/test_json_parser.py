@@ -2,10 +2,6 @@ import pytest
 
 from composition.parser import (
     TRANSFORMS,
-    _apply_all_voices_transform_with_optional_params,
-    _apply_phrase_transform_spec,
-    _apply_score_transform,
-    _apply_transform_with_optional_params,
     parse_composition,
     parse_motifs,
     parse_phrase,
@@ -19,10 +15,9 @@ from score_model.tone import Tone
 from transforms.base import (
     TransformDescriptor,
     TransformParamFieldSpec,
-    TransformParamsSpec,
     TransformParamType,
-    TransformScope,
-)
+    TransformParamsSpec,
+    )
 from transforms.profiles import WeierstrassProfile
 
 
@@ -1330,9 +1325,8 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
     def noop_score_target_motifs_transform(score, parsed_motifs, motif):
         return score
 
-    TRANSFORMS["_test_score_with_motifs"] = TransformDescriptor(
+    TRANSFORMS["_test_score_with_motifs"] = ScoreTargetMotifsTransform(
         "_test_score_with_motifs",
-        TransformScope.SCORE_TARGET_MOTIFS,
         noop_score_target_motifs_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -1343,7 +1337,6 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
             }
         ),
     )
-
     try:
         invalid_raw_scalar_param = 1.0
         with pytest.raises(ValueError):
@@ -1369,9 +1362,8 @@ def test_parse_composition_score_target_motifs_scope_requires_params():
     def noop_score_target_motifs_transform(score, parsed_motifs, motif):
         return score
 
-    TRANSFORMS["_test_score_with_motifs"] = TransformDescriptor(
+    TRANSFORMS["_test_score_with_motifs"] = ScoreTargetMotifsTransform(
         "_test_score_with_motifs",
-        TransformScope.SCORE_TARGET_MOTIFS,
         noop_score_target_motifs_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -1382,7 +1374,6 @@ def test_parse_composition_score_target_motifs_scope_requires_params():
             }
         ),
     )
-
     try:
         with pytest.raises(ValueError):
             parse_composition(
@@ -1418,6 +1409,4 @@ def test_stretto_with_missing_required_fields_raises_error():
         }
 
         with pytest.raises(ValueError):
-            parse_composition(composition_doc)
-     with pytest.raises(ValueError):
             parse_composition(composition_doc)

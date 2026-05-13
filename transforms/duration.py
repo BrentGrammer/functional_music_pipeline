@@ -268,8 +268,8 @@ def ritardando_transform(
 
 
 def _get_total(tones: ToneSequence, dim: ToneDimension) -> float:
-    attr = dim.name.lower()
-    return sum(getattr(t, attr) for t in tones)
+    attr = dim.value
+    return float(sum(getattr(t, attr) for t in tones))
 
 
 def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION) -> ToneSequence:

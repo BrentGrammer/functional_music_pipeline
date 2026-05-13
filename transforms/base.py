@@ -52,7 +52,7 @@ class TransformParamsSpec:
 @dataclass(frozen=True)
 class TransformDescriptor:
     name: str
-    params_spec: TransformParamsSpec = field(default_factory=TransformParamsSpec)
+    params_spec: TransformParamsSpec = field(default_factory=TransformParamsSpec, kw_only=True)
 
 
 @dataclass(frozen=True)

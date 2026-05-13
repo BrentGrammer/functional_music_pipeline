@@ -3,7 +3,7 @@ import pytest
 
 from composition.parser import TRANSFORMS, parse_composition
 from score_model.tone import Tone
-from transforms.base import ToneDimension, TransformScope
+from transforms.base import ToneDimension
 from transforms.drift import drift_transform
 
 

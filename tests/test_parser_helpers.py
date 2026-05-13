@@ -9,11 +9,13 @@ from composition.parser import (
 )
 from score_model.tone import Tone
 from transforms.base import (
+    PhraseRelativeTransform,
+    PhraseTransform,
+    ScoreTransform,
     TransformDescriptor,
     TransformParamFieldSpec,
     TransformParamsSpec,
     TransformParamType,
-    TransformScope,
 )
 
 
@@ -85,9 +87,8 @@ def test_parse_voice_uses_previous_voice_as_reference_when_first_phrase_is_relat
 
 
 def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():
-    non_phrase_descriptor = TransformDescriptor(
+    non_phrase_descriptor = ScoreTransform(
         name="score_reverse",
-        scope=TransformScope.SCORE,
         transform=lambda score: score,
         params_spec=TransformParamsSpec(),
     )
@@ -97,7 +98,7 @@ def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():
         _apply_phrase_transform_spec(
             descriptor=non_phrase_descriptor,
             phrase_tones=phrase_tones,
-            transform_params=None,
+            transform_params={},
             reference_tones=None,
         )
 
@@ -105,9 +106,8 @@ def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():
 def test_apply_phrase_transform_spec_relative_scope_forwards_named_params():
     phrase_tones = [Tone(440.0, amplitude=0.5), Tone(660.0, amplitude=0.5)]
     reference_tones = [Tone(330.0, amplitude=0.6)]
-    relative_descriptor = TransformDescriptor(
+    relative_descriptor = PhraseRelativeTransform(
         name="phrase_golden_ratio_shrink",
-        scope=TransformScope.PHRASE_RELATIVE,
         transform=lambda tones, previous_tones, dimension="DURATION": [
             Tone(
                 frequency=tone.frequency,

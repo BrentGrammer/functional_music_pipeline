@@ -8,7 +8,13 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
 from score_model.voice import Voice
-from transforms.base import TransformScope
+from transforms.base import (
+    AllVoicesTransform,
+    PhraseRelativeTransform,
+    PhraseTransform,
+    ScoreTargetMotifsTransform,
+    ScoreTransform,
+)
 from transforms.fugue import add_pedal_point, stretto
 
 
@@ -247,7 +253,8 @@ class TestPedalPointRegistration:
         assert "add_pedal_point" in TRANSFORMS
 
     def test_add_pedal_point_has_score_scope(self):
-        assert TRANSFORMS["add_pedal_point"].scope == TransformScope.SCORE
+        descriptor = TRANSFORMS["add_pedal_point"]
+        assert isinstance(descriptor, ScoreTransform)
 
     def test_add_pedal_point_wraps_transform(self):
         assert TRANSFORMS["add_pedal_point"].transform is add_pedal_point

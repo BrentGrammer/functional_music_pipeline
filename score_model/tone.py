@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import NDArray
 
 DEFAULT_DURATION_SECONDS = 0.5
 DEFAULT_SAMPLE_RATE_HZ = 44100
@@ -20,7 +21,7 @@ class Tone:
         self.sample_rate = sample_rate
         self.amplitude = amplitude
 
-    def generate_tone(self) -> np.ndarray:
+    def generate_tone(self) -> NDArray[np.int16]:
         if self.frequency == 0 or self.amplitude == 0:
             return np.zeros(int(self.sample_rate * self.duration), dtype=np.int16)
 

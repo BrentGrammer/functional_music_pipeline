@@ -4,12 +4,12 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import (
+    PhraseTransform,
     ToneDimension,
     TransformDescriptor,
     TransformParamFieldSpec,
     TransformParamsSpec,
     TransformParamType,
-    TransformScope,
     apply_to_all_voices,
     apply_to_voice,
     parse_dimension,
@@ -89,9 +89,8 @@ def test_transform_param_field_spec_accepts_union_parameter_types():
 
 
 def test_transform_descriptor_defaults_to_empty_params_spec():
-    descriptor = TransformDescriptor(
+    descriptor = PhraseTransform(
         name="reverse",
-        scope=TransformScope.PHRASE,
         transform=lambda tones: list(reversed(tones)),
     )
 
@@ -107,9 +106,8 @@ def test_transform_descriptor_preserves_explicit_params_spec():
             )
         }
     )
-    descriptor = TransformDescriptor(
+    descriptor = PhraseTransform(
         name="delay",
-        scope=TransformScope.PHRASE,
         transform=lambda tones, **_: tones,
         params_spec=expected_params_spec,
     )
