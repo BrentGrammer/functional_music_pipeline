@@ -82,7 +82,7 @@ class TransformParamType(Enum):
 class TransformParamFieldSpec:
     param_type: TransformParamType | tuple[TransformParamType, ...]
     required: bool = False
-    allowed_values: tuple[object, ...] = ()
+    allowed_enum_values: tuple[object, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -106,7 +106,7 @@ TransformParamFieldSpec(
 TransformParamFieldSpec(
     param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
     required=True,
-    allowed_values=("none", "low", "medium", "high", "extreme"),
+    allowed_enum_values=("none", "low", "medium", "high", "extreme"),
 )
 ```
 
@@ -182,7 +182,7 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Validate missing required fields by reading the per-field `required` metadata.
    - Reject unknown top-level fields by default.
    - Validate basic parameter types, including tuple-based union types such as `(enum, float)`.
-   - Treat `enum` plus `allowed_values` as an allowed-value check for the enum branch of a union.
+   - Treat `enum` plus `allowed_enum_values` as an allowed-value check for the enum branch of a union.
    - Do not add coercion. Keep input validation explicit and strict.
 
 5. Preserve the current transform execution model.

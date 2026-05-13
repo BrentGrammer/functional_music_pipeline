@@ -23,6 +23,7 @@ from transforms.base import (
 )
 from transforms.delay import delay_tones
 from transforms.duration import (
+    INTENSITY_LEVELS,
     accelerando_transform,
     feigenbaum_sequence,
     phrase_feigenbaum_grow,
@@ -32,7 +33,7 @@ from transforms.duration import (
 )
 from transforms.drift import drift_transform
 from transforms.erosion import erosion_transform
-from transforms.fugue import add_pedal_point, stretto
+from transforms.fugue import NAMED_STRETTO_SPACINGS, add_pedal_point, stretto
 from transforms.golden_ratio import (
     golden_ratio_transform,
     phrase_golden_ratio_grow,
@@ -263,8 +264,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "position": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
                     required=True,
+                    allowed_enum_values=("start", "end"),
                 ),
             }
         ),
@@ -457,7 +459,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     param_type=TransformParamType.FLOAT,
                 ),
                 "mode": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=TransformParamType.ENUM,
+                    allowed_enum_values=("sustain", "repeat"),
                 ),
                 "pulse_duration": TransformParamFieldSpec(
                     param_type=TransformParamType.FLOAT,
@@ -480,8 +483,9 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     required=True,
                 ),
                 "spacing": TransformParamFieldSpec(
-                    param_type=TransformParamType.FLOAT,
+                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
                     required=True,
+                    allowed_enum_values=tuple(NAMED_STRETTO_SPACINGS),
                 ),
             }
         ),
@@ -547,11 +551,13 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "strength": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
                     required=True,
+                    allowed_enum_values=tuple(INTENSITY_LEVELS),
                 ),
                 "jaggedness": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
+                    allowed_enum_values=tuple(INTENSITY_LEVELS),
                 ),
                 "seed": TransformParamFieldSpec(
                     param_type=TransformParamType.INTEGER,
@@ -566,11 +572,13 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         params_spec=TransformParamsSpec(
             fields={
                 "strength": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
                     required=True,
+                    allowed_enum_values=tuple(INTENSITY_LEVELS),
                 ),
                 "jaggedness": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
+                    allowed_enum_values=tuple(INTENSITY_LEVELS),
                 ),
                 "seed": TransformParamFieldSpec(
                     param_type=TransformParamType.INTEGER,

@@ -27,6 +27,36 @@ from transforms.base import (
 from transforms.profiles import WeierstrassProfile
 
 
+def test_stretto_spacing_descriptor_accepts_named_or_float_spacing():
+    spacing_spec = TRANSFORMS["stretto"].params_spec.fields["spacing"]
+
+    assert spacing_spec.param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert spacing_spec.required is True
+    assert spacing_spec.allowed_enum_values == ("golden_ratio", "feigenbaum_delta")
+
+
+@pytest.mark.parametrize("transform_name", ["accelerando", "ritardando"])
+def test_tempo_curve_descriptor_accepts_preset_or_float_controls(transform_name):
+    fields = TRANSFORMS[transform_name].params_spec.fields
+
+    assert fields["strength"].param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert fields["strength"].required is True
+    assert fields["strength"].allowed_enum_values == ("none", "low", "medium", "high", "extreme")
+    assert fields["jaggedness"].param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert fields["jaggedness"].required is False
+    assert fields["jaggedness"].allowed_enum_values == ("none", "low", "medium", "high", "extreme")
+
+
+def test_fixed_string_descriptors_use_enum_metadata():
+    position_spec = TRANSFORMS["pad_silence"].params_spec.fields["position"]
+    mode_spec = TRANSFORMS["add_pedal_point"].params_spec.fields["mode"]
+
+    assert position_spec.param_type is TransformParamType.ENUM
+    assert position_spec.allowed_enum_values == ("start", "end")
+    assert mode_spec.param_type is TransformParamType.ENUM
+    assert mode_spec.allowed_enum_values == ("sustain", "repeat")
+
+
 def test_parse_motifs():
     motifs_dict = {
         "seed_a": ["440:0.25", "880"],

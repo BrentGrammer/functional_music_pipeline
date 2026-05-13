@@ -65,16 +65,28 @@ def test_transform_params_spec_defaults_to_no_required_fields():
     assert params_spec.validator is None
 
 
-def test_transform_param_field_spec_preserves_parameter_type_and_allowed_values():
+def test_transform_param_field_spec_preserves_parameter_type_and_allowed_enum_values():
     field_spec = TransformParamFieldSpec(
         param_type=TransformParamType.ENUM,
         required=True,
-        allowed_values=("start", "end"),
+        allowed_enum_values=("start", "end"),
     )
 
     assert field_spec.param_type is TransformParamType.ENUM
     assert field_spec.required is True
-    assert field_spec.allowed_values == ("start", "end")
+    assert field_spec.allowed_enum_values == ("start", "end")
+
+
+def test_transform_param_field_spec_accepts_union_parameter_types():
+    field_spec = TransformParamFieldSpec(
+        param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
+        required=True,
+        allowed_enum_values=("low", "medium", "high"),
+    )
+
+    assert field_spec.param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert field_spec.required is True
+    assert field_spec.allowed_enum_values == ("low", "medium", "high")
 
 
 def test_transform_descriptor_defaults_to_empty_params_spec():

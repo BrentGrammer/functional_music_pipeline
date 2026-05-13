@@ -9,36 +9,32 @@ from transforms.duration import (
     _resolve_accelerando_final_duration_multiplier,
     _resolve_ritardando_final_duration_multiplier,
     _interpolate_multiplier_at_position,
-    STRENGTH_NONE,
-    STRENGTH_LOW,
-    STRENGTH_MEDIUM,
-    STRENGTH_HIGH,
-    STRENGTH_EXTREME,
+    INTENSITY_LEVELS,
 )
 
 
 class TestResolveStrength:
     def test_default_is_medium(self):
-        assert resolve_strength() == STRENGTH_MEDIUM
+        assert resolve_strength() == INTENSITY_LEVELS["medium"]
 
     def test_presets_case_insensitive(self):
-        assert resolve_strength("none") == STRENGTH_NONE
-        assert resolve_strength("NONE") == STRENGTH_NONE
-        assert resolve_strength("None") == STRENGTH_NONE
-        assert resolve_strength("low") == STRENGTH_LOW
-        assert resolve_strength("medium") == STRENGTH_MEDIUM
-        assert resolve_strength("high") == STRENGTH_HIGH
-        assert resolve_strength("extreme") == STRENGTH_EXTREME
+        assert resolve_strength("none") == INTENSITY_LEVELS["none"]
+        assert resolve_strength("NONE") == INTENSITY_LEVELS["none"]
+        assert resolve_strength("None") == INTENSITY_LEVELS["none"]
+        assert resolve_strength("low") == INTENSITY_LEVELS["low"]
+        assert resolve_strength("medium") == INTENSITY_LEVELS["medium"]
+        assert resolve_strength("high") == INTENSITY_LEVELS["high"]
+        assert resolve_strength("extreme") == INTENSITY_LEVELS["extreme"]
 
     def test_numeric_values_in_range(self):
-        assert resolve_strength(0.0) == STRENGTH_NONE
-        assert resolve_strength(0.5) == STRENGTH_MEDIUM
-        assert resolve_strength(1.0) == STRENGTH_EXTREME
+        assert resolve_strength(0.0) == INTENSITY_LEVELS["none"]
+        assert resolve_strength(0.5) == INTENSITY_LEVELS["medium"]
+        assert resolve_strength(1.0) == INTENSITY_LEVELS["extreme"]
         assert resolve_strength(0.37) == 0.37
 
     def test_integer_values_in_range(self):
-        assert resolve_strength(0) == STRENGTH_NONE
-        assert resolve_strength(1) == STRENGTH_EXTREME
+        assert resolve_strength(0) == INTENSITY_LEVELS["none"]
+        assert resolve_strength(1) == INTENSITY_LEVELS["extreme"]
 
     def test_invalid_preset_raises_valueerror(self):
         with pytest.raises(ValueError):
@@ -67,20 +63,20 @@ class TestResolveStrength:
 
 class TestResolveJaggedness:
     def test_default_is_none(self):
-        assert resolve_jaggedness() == STRENGTH_NONE
+        assert resolve_jaggedness() == INTENSITY_LEVELS["none"]
 
     def test_presets_case_insensitive(self):
-        assert resolve_jaggedness("none") == STRENGTH_NONE
-        assert resolve_jaggedness("NONE") == STRENGTH_NONE
-        assert resolve_jaggedness("low") == STRENGTH_LOW
-        assert resolve_jaggedness("medium") == STRENGTH_MEDIUM
-        assert resolve_jaggedness("high") == STRENGTH_HIGH
-        assert resolve_jaggedness("extreme") == STRENGTH_EXTREME
+        assert resolve_jaggedness("none") == INTENSITY_LEVELS["none"]
+        assert resolve_jaggedness("NONE") == INTENSITY_LEVELS["none"]
+        assert resolve_jaggedness("low") == INTENSITY_LEVELS["low"]
+        assert resolve_jaggedness("medium") == INTENSITY_LEVELS["medium"]
+        assert resolve_jaggedness("high") == INTENSITY_LEVELS["high"]
+        assert resolve_jaggedness("extreme") == INTENSITY_LEVELS["extreme"]
 
     def test_numeric_values_in_range(self):
-        assert resolve_jaggedness(0.0) == STRENGTH_NONE
-        assert resolve_jaggedness(0.5) == STRENGTH_MEDIUM
-        assert resolve_jaggedness(1.0) == STRENGTH_EXTREME
+        assert resolve_jaggedness(0.0) == INTENSITY_LEVELS["none"]
+        assert resolve_jaggedness(0.5) == INTENSITY_LEVELS["medium"]
+        assert resolve_jaggedness(1.0) == INTENSITY_LEVELS["extreme"]
 
     def test_invalid_preset_raises_valueerror(self):
         with pytest.raises(ValueError):
@@ -103,37 +99,37 @@ class TestResolveJaggedness:
 
 class TestResolveAccelerandoFinalDurationMultiplier:
     def test_strength_none_returns_neutral(self):
-        assert _resolve_accelerando_final_duration_multiplier(STRENGTH_NONE) == 1.0
+        assert _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["none"]) == 1.0
 
     def test_strength_extreme_returns_minimum_ratio(self):
-        multiplier = _resolve_accelerando_final_duration_multiplier(STRENGTH_EXTREME)
+        multiplier = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["extreme"])
         assert 0.0 < multiplier <= 0.10
 
     def test_strength_medium_returns_multiplier_between_neutral_and_minimum(self):
-        multiplier = _resolve_accelerando_final_duration_multiplier(STRENGTH_MEDIUM)
+        multiplier = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["medium"])
         assert 0.10 < multiplier < 1.0
 
     def test_higher_strength_produces_shorter_durations(self):
-        final_duration_multiplier_low_strength = _resolve_accelerando_final_duration_multiplier(STRENGTH_LOW)
-        final_duration_multiplier_high_strength = _resolve_accelerando_final_duration_multiplier(STRENGTH_HIGH)
+        final_duration_multiplier_low_strength = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["low"])
+        final_duration_multiplier_high_strength = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["high"])
         assert final_duration_multiplier_low_strength > final_duration_multiplier_high_strength
 
 
 class TestResolveRitardandoFinalDurationMultiplier:
     def test_strength_none_returns_neutral(self):
-        assert _resolve_ritardando_final_duration_multiplier(STRENGTH_NONE) == 1.0
+        assert _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["none"]) == 1.0
 
     def test_strength_extreme_returns_maximum_ratio(self):
-        multiplier = _resolve_ritardando_final_duration_multiplier(STRENGTH_EXTREME)
+        multiplier = _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["extreme"])
         assert multiplier == 4.0
 
     def test_strength_medium_returns_multiplier_between_neutral_and_maximum(self):
-        multiplier = _resolve_ritardando_final_duration_multiplier(STRENGTH_MEDIUM)
+        multiplier = _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["medium"])
         assert 1.0 < multiplier < 4.0
 
     def test_higher_strength_produces_longer_durations(self):
-        final_duration_multiplier_low_strength = _resolve_ritardando_final_duration_multiplier(STRENGTH_LOW)
-        final_duration_multiplier_high_strength = _resolve_ritardando_final_duration_multiplier(STRENGTH_HIGH)
+        final_duration_multiplier_low_strength = _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["low"])
+        final_duration_multiplier_high_strength = _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["high"])
         assert final_duration_multiplier_low_strength < final_duration_multiplier_high_strength
 
 
@@ -189,7 +185,7 @@ class TestAccelerandoTransform:
         result = accelerando_transform(tones, strength="high", jaggedness="none")
         assert result[0].duration == 2.0
 
-        final_multiplier = _resolve_accelerando_final_duration_multiplier(STRENGTH_HIGH)
+        final_multiplier = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["high"])
         multiplier_at_position_1 = _interpolate_multiplier_at_position(
             position_index=1, total_tones=len(tones), start_multiplier=1.0, end_multiplier=final_multiplier
         )
@@ -235,7 +231,7 @@ class TestRitardandoTransform:
         result = ritardando_transform(tones, strength="high", jaggedness="none")
         assert result[0].duration == 1.0
 
-        final_multiplier = _resolve_ritardando_final_duration_multiplier(STRENGTH_HIGH)
+        final_multiplier = _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["high"])
         multiplier_for_second_tone = _interpolate_multiplier_at_position(
             position_index=1, total_tones=len(tones), start_multiplier=1.0, end_multiplier=final_multiplier
         )

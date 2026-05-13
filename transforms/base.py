@@ -46,9 +46,9 @@ class TransformParamType(Enum):
 
 @dataclass(frozen=True)
 class TransformParamFieldSpec:
-    param_type: TransformParamType
+    param_type: TransformParamType | tuple[TransformParamType, ...]
     required: bool = False
-    allowed_values: tuple[object, ...] = ()
+    allowed_enum_values: tuple[object, ...] = ()
 
 
 @dataclass(frozen=True)
