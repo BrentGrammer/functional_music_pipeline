@@ -40,7 +40,11 @@ The recent migration to a descriptor-driven transform system has introduced a si
 
 To keep the steps small and manageable, we will tackle the smells in the following order:
 
-1. **Enforce Consistent API:** Update `TransformSpec` to strictly be an object. Normalize missing `params` to `{}` at the parsing boundary and rip out all `is None` branching logic in `parser.py`.
+1. **Enforce Consistent API (Removing None Unpacking):**
+   - **1a. Update Schema:** Modify `TransformSpec` in `composition/schema.py` from `str | TransformConfig` to just `TransformConfig`, officially removing the string shorthand.
+   - **1b. Normalize at Boundary:** Update `parse_transform_spec` in `composition/parser.py` to only accept a `TransformConfig` object, and default missing `params` to `{}`. Change its return type to guarantee a `dict[str, object]`.
+   - **1c. Rip out Internal Branching:** Remove `| None` from `transform_params` type hints in all `_apply_*` functions. Delete all `if transform_params is None:` branches and clean up `resolve_profile_in_params` to only accept/return `dict`.
+   - **1d. Update Tests:** Update any tests still using the string shorthand (e.g., `"reverse"`) to use the new strict object format (`{"name": "reverse"}`).
 2. **Generics & Protocols:** Make `TransformDescriptor` generic and strictly type the transform callables.
 3. **Test Annotations:** Go through the test suite and properly annotate the raw dictionaries as `CompositionDocument`, `PhraseConfig`, etc.
 4. **Minor Arithmetic:** Clean up the isolated return type errors in the transform math and tone definitions.
