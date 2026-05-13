@@ -117,15 +117,17 @@ Here is a step-by-step implementation plan designed to introduce the Polymorphic
 *   **Action:** Now that all transforms use the `schema` field, remove `TransformParamType`, `allowed_enum_values`, and the legacy fallback logic (`_is_valid_transform_param_field`, `_is_valid_transform_param_type`) from `transforms/base.py`.
 *   **Action:** Make the `schema` parameter on `TransformParamFieldSpec` strictly required instead of optional.
 
-### Step 6: Eliminate Polymorphic Profile Escape Hatch
-*   **Action:** Standardize the parameters for the truly "geological" profiles (`TerracedBrownianProfile`, `RidgedMultifractalProfile`, `RandomDropProfile`) so they share a single, consistent API (e.g., a common set of fields like `seed`, `drop_intensity`, etc.).
-*   **Action:** Update the `ObjectParam` for the `geological` and `score_geological` transforms in `transforms/registry.py` to define this strict, consistent schema, replacing the empty dictionary and removing `allow_unknown_fields=True`.
+### Step 6: Flatten Stochastic Profiles into Top-Level Transforms
+*   **Action:** Abandon the generic `geological` transform grouping entirely.
+*   **Action:** Create new, distinct top-level transforms for every stochastic profile (e.g., `weierstrass`, `terraced_drift`, `cellular_automata`, `ridged_drop`, `random_drop`).
+*   **Action:** In `transforms/registry.py`, define explicit, strict schemas for each of these new transforms. They will no longer use the `ObjectParam` escape hatch; instead, they will define their specific parameters (like `seed`, `step_size`, or `octaves`) directly at the top level of their `TransformParamsSpec`.
 
-### Step 7: Extract Non-Geological Profiles into Top-Level Transforms
-*   **Action:** Remove `WeierstrassProfile` and `CellularAutomataProfile` from the `geological` profile factory and transform context.
-*   **Action:** Create new, distinct top-level transforms for them (e.g., `weierstrass` and `cellular_automata`), each with its own explicit, strict schema in `transforms/registry.py`.
-*   **Action:** Update the transformation logic and tests to support these as independent transforms rather than profiles of the generic `geological` transform.
+### Step 7: Refactor Transform Applicators
+*   **Action:** Update the transformation logic (currently `apply_geological_transform`) to become a generic applicator (e.g., `apply_stochastic_profile`) that accepts any object fulfilling the `StochasticProfile` protocol.
+*   **Action:** Write the individual transform functions (e.g., `apply_weierstrass_transform`) so they accept their specific, validated scalar arguments, instantiate their specific profile class, and call the generic applicator.
 
-### Step 8: Complete the Abstraction (Domain Object Instantiation)
+### Step 8: Complete the Abstraction and Clean Up
+*   **Action:** Delete the obsolete `geological` and `score_geological` transforms from the registry.
+*   **Action:** Delete `composition/profile_factory.py` entirely, as the registry-within-a-registry is no longer needed.
 *   **Action:** Delete `resolve_profile_in_params` from `composition/parser.py`.
-*   **Action:** Update the specific transform functions (e.g., `apply_geological_transform`, `apply_weierstrass_transform`) so that instead of expecting a fully built object, they accept a validated `dict` and instantiate their respective domain objects internally.
+*   **Action:** Update the test suite to use the new top-level transform names instead of the old nested `geological` syntax.
