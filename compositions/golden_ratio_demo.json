@@ -1,0 +1,64 @@
+{
+  "description": "A clear golden-ratio demo. The same motif is stated plainly, then repeated as a pitch-scaled version and a duration-scaled version so the effect is easy to hear.",
+  "motifs": {
+    "subject": ["261.63:0.45", "329.63:0.45", "392.00:0.45", "523.25:0.6"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Plain subject statement.",
+            "motifs": ["subject"]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "comment": "The same subject, shifted down by the golden ratio in pitch.",
+            "motifs": ["subject"],
+            "transforms": [
+              {
+                "name": "golden_ratio",
+                "params": {
+                  "dimension": "frequency"
+                }
+              },
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 2.2,
+                  "position": "start"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "comment": "The same subject, compressed in time by the golden ratio.",
+            "motifs": ["subject"],
+            "transforms": [
+              {
+                "name": "golden_ratio",
+                "params": {
+                  "dimension": "duration"
+                }
+              },
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 4.7,
+                  "position": "start"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
