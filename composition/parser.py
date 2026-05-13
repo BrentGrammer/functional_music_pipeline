@@ -18,13 +18,17 @@ from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
 from transforms.base import (
+    AllVoicesTransform,
+    PhraseRelativeTransform,
+    PhraseTransform,
+    ScoreTargetMotifsTransform,
+    ScoreTransform,
     ToneDimension,
     ToneSequence,
     TransformDescriptor,
     TransformParamFieldSpec,
     TransformParamsSpec,
     TransformParamType,
-    TransformScope,
     apply_to_all_voices,
 )
 from transforms.delay import delay_tones
@@ -224,15 +228,13 @@ def _is_valid_transform_param_type(
 
 
 TRANSFORMS: dict[str, TransformDescriptor] = {
-    "reverse": TransformDescriptor(
+    "reverse": PhraseTransform(
         "reverse",
-        TransformScope.PHRASE,
         reverse_tones,
         params_spec=TransformParamsSpec(),
     ),
-    "golden_ratio": TransformDescriptor(
+    "golden_ratio": PhraseTransform(
         "golden_ratio",
-        TransformScope.PHRASE,
         golden_ratio_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -243,9 +245,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "invert": TransformDescriptor(
+    "invert": PhraseTransform(
         "invert",
-        TransformScope.PHRASE,
         invert_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -256,9 +257,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "feigenbaum_sequence": TransformDescriptor(
+    "feigenbaum_sequence": PhraseTransform(
         "feigenbaum_sequence",
-        TransformScope.PHRASE,
         feigenbaum_sequence,
         params_spec=TransformParamsSpec(
             fields={
@@ -269,9 +269,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "transpose": TransformDescriptor(
+    "transpose": PhraseTransform(
         "transpose",
-        TransformScope.PHRASE,
         transpose_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -282,9 +281,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "scale": TransformDescriptor(
+    "scale": PhraseTransform(
         "scale",
-        TransformScope.PHRASE,
         scale_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -300,9 +298,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "pad_silence": TransformDescriptor(
+    "pad_silence": PhraseTransform(
         "pad_silence",
-        TransformScope.PHRASE,
         pad_silence_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -318,9 +315,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "delay": TransformDescriptor(
+    "delay": PhraseTransform(
         "delay",
-        TransformScope.PHRASE,
         delay_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -331,9 +327,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "repeat": TransformDescriptor(
+    "repeat": PhraseTransform(
         "repeat",
-        TransformScope.PHRASE,
         repeat_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -344,9 +339,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "erosion": TransformDescriptor(
+    "erosion": PhraseTransform(
         "erosion",
-        TransformScope.PHRASE,
         erosion_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -357,9 +351,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "drift": TransformDescriptor(
+    "drift": PhraseTransform(
         "drift",
-        TransformScope.PHRASE,
         drift_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -375,9 +368,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "phrase_feigenbaum_shrink": TransformDescriptor(
+    "phrase_feigenbaum_shrink": PhraseRelativeTransform(
         "phrase_feigenbaum_shrink",
-        TransformScope.PHRASE_RELATIVE,
         phrase_feigenbaum_shrink,
         params_spec=TransformParamsSpec(
             fields={
@@ -388,9 +380,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "phrase_feigenbaum_grow": TransformDescriptor(
+    "phrase_feigenbaum_grow": PhraseRelativeTransform(
         "phrase_feigenbaum_grow",
-        TransformScope.PHRASE_RELATIVE,
         phrase_feigenbaum_grow,
         params_spec=TransformParamsSpec(
             fields={
@@ -401,9 +392,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "phrase_golden_ratio_shrink": TransformDescriptor(
+    "phrase_golden_ratio_shrink": PhraseRelativeTransform(
         "phrase_golden_ratio_shrink",
-        TransformScope.PHRASE_RELATIVE,
         phrase_golden_ratio_shrink,
         params_spec=TransformParamsSpec(
             fields={
@@ -414,9 +404,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "phrase_golden_ratio_grow": TransformDescriptor(
+    "phrase_golden_ratio_grow": PhraseRelativeTransform(
         "phrase_golden_ratio_grow",
-        TransformScope.PHRASE_RELATIVE,
         phrase_golden_ratio_grow,
         params_spec=TransformParamsSpec(
             fields={
@@ -427,9 +416,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_feigenbaum_sequence": TransformDescriptor(
+    "score_feigenbaum_sequence": ScoreTransform(
         "score_feigenbaum_sequence",
-        TransformScope.SCORE,
         score_feigenbaum_sequence,
         params_spec=TransformParamsSpec(
             fields={
@@ -440,15 +428,13 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_reverse": TransformDescriptor(
+    "score_reverse": AllVoicesTransform(
         "score_reverse",
-        TransformScope.ALL_VOICES,
         reverse_tones,
         params_spec=TransformParamsSpec(),
     ),
-    "score_golden_ratio": TransformDescriptor(
+    "score_golden_ratio": AllVoicesTransform(
         "score_golden_ratio",
-        TransformScope.ALL_VOICES,
         golden_ratio_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -459,9 +445,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_invert": TransformDescriptor(
+    "score_invert": AllVoicesTransform(
         "score_invert",
-        TransformScope.ALL_VOICES,
         invert_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -472,9 +457,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_transpose": TransformDescriptor(
+    "score_transpose": AllVoicesTransform(
         "score_transpose",
-        TransformScope.ALL_VOICES,
         transpose_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -485,9 +469,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_scale": TransformDescriptor(
+    "score_scale": AllVoicesTransform(
         "score_scale",
-        TransformScope.ALL_VOICES,
         scale_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -503,9 +486,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_delay": TransformDescriptor(
+    "score_delay": AllVoicesTransform(
         "score_delay",
-        TransformScope.ALL_VOICES,
         delay_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -516,9 +498,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_repeat": TransformDescriptor(
+    "score_repeat": AllVoicesTransform(
         "score_repeat",
-        TransformScope.ALL_VOICES,
         repeat_tones,
         params_spec=TransformParamsSpec(
             fields={
@@ -529,9 +510,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_drift": TransformDescriptor(
+    "score_drift": AllVoicesTransform(
         "score_drift",
-        TransformScope.ALL_VOICES,
         drift_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -547,9 +527,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "add_pedal_point": TransformDescriptor(
+    "add_pedal_point": ScoreTransform(
         "add_pedal_point",
-        TransformScope.SCORE,
         add_pedal_point,
         params_spec=TransformParamsSpec(
             fields={
@@ -575,9 +554,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             validator=validate_add_pedal_point_params,
         ),
     ),
-    "stretto": TransformDescriptor(
+    "stretto": ScoreTargetMotifsTransform(
         "stretto",
-        TransformScope.SCORE_TARGET_MOTIFS,
         stretto,
         params_spec=TransformParamsSpec(
             fields={
@@ -597,9 +575,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "geological": TransformDescriptor(
+    "geological": PhraseTransform(
         "geological",
-        TransformScope.PHRASE,
         apply_geological_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -619,9 +596,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "frost_effect": TransformDescriptor(
+    "frost_effect": ScoreTransform(
         "frost_effect",
-        TransformScope.SCORE,
         frost_effect,
         params_spec=TransformParamsSpec(
             fields={
@@ -631,9 +607,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "score_geological": TransformDescriptor(
+    "score_geological": AllVoicesTransform(
         "score_geological",
-        TransformScope.ALL_VOICES,
         apply_geological_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -654,9 +629,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             validator=validate_geological_params,
         ),
     ),
-    "accelerando": TransformDescriptor(
+    "accelerando": PhraseTransform(
         "accelerando",
-        TransformScope.PHRASE,
         accelerando_transform,
         params_spec=TransformParamsSpec(
             fields={
@@ -675,9 +649,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
             }
         ),
     ),
-    "ritardando": TransformDescriptor(
+    "ritardando": PhraseTransform(
         "ritardando",
-        TransformScope.PHRASE,
         ritardando_transform,
         params_spec=TransformParamsSpec(
             fields={
