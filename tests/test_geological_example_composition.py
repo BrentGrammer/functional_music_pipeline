@@ -6,7 +6,11 @@ from score_model.score import Score
 
 def _build_geological_example_composition() -> dict:
     return {
-        "description": "A showcase of the four geological profiles. Each voice plays the same C major arpeggio, but has a different stochastic transform applied to a different musical dimension (frequency, duration, or amplitude). A score-level transform is also applied to all voices.",
+        "description": (
+            "A showcase of the four geological profiles. Each voice plays the same C major arpeggio, "
+            "but has a different stochastic transform applied to a different musical dimension "
+            "(frequency, duration, or amplitude). A score-level transform is also applied to all voices."
+        ),
         "motifs": {
             "c_major_arpeggio": [
                 "261.63:0.5",
