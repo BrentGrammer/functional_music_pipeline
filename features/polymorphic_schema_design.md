@@ -131,3 +131,8 @@ Here is a step-by-step implementation plan designed to introduce the Polymorphic
 *   **Action:** Delete `composition/profile_factory.py` entirely, as the registry-within-a-registry is no longer needed.
 *   **Action:** Delete `resolve_profile_in_params` from `composition/parser.py`.
 *   **Action:** Update the test suite to use the new top-level transform names instead of the old nested `geological` syntax.
+
+### Step 9: Colocate Schemas with Implementations (DRY Refactor)
+*   **Action:** To remove the duplication between the internal Python arguments and the external validation schema, move the `TransformParamsSpec` definitions out of the monolithic `transforms/registry.py` file.
+*   **Action:** Define each schema directly inside the implementation file next to its corresponding wrapper function (e.g., `WEIERSTRASS_SPEC` in `transforms/geological.py`).
+*   **Action:** Update `transforms/registry.py` to simply import the implementation function and its colocated spec, assembling the final registry without defining the schemas inline.
