@@ -1,28 +1,33 @@
 {
+  "description": "A short canon built from a single motif. The motif is presented plainly, then repeated later as a transposed answer and a reversed answer so the relationship stays easy to hear.",
   "motifs": {
-    "seed_a": ["155.56:0.3", "185.00:0.15", "207.65:0.15"],
-    "seed_b": ["622.25:0.2", "220:0.3"]
+    "subject": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "392.00:0.6"]
   },
   "composition": {
     "voices": [
       {
         "phrases": [
           {
-            "motifs": ["seed_a"],
-            "transforms": [
-              {
-                "name": "reverse"
-              }
-            ]
-          },
+            "motifs": ["subject"]
+          }
+        ]
+      },
+      {
+        "phrases": [
           {
-            "motifs": ["seed_b"],
+            "motifs": ["subject"],
             "transforms": [
               {
-                "name": "scale",
+                "name": "transpose",
                 "params": {
-                  "dimension": "duration",
-                  "factor": 0.5
+                  "semitones": 7.0
+                }
+              },
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 2.2,
+                  "position": "start"
                 }
               }
             ]
@@ -32,23 +37,21 @@
       {
         "phrases": [
           {
-            "motifs": ["seed_b"],
-            "transforms": []
-          },
-          {
-            "motifs": ["seed_a"],
+            "motifs": ["subject"],
             "transforms": [
               {
-                "name": "phrase_feigenbaum_grow"
+                "name": "reverse"
+              },
+              {
+                "name": "pad_silence",
+                "params": {
+                  "seconds": 4.6,
+                  "position": "start"
+                }
               }
             ]
           }
         ]
-      }
-    ],
-    "score_transforms": [
-      {
-        "name": "score_feigenbaum_sequence"
       }
     ]
   }
