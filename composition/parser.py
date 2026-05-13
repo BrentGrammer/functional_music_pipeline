@@ -372,25 +372,49 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "phrase_feigenbaum_shrink",
         TransformScope.PHRASE_RELATIVE,
         phrase_feigenbaum_shrink,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+            }
+        ),
     ),
     "phrase_feigenbaum_grow": TransformDescriptor(
         "phrase_feigenbaum_grow",
         TransformScope.PHRASE_RELATIVE,
         phrase_feigenbaum_grow,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+            }
+        ),
     ),
     "phrase_golden_ratio_shrink": TransformDescriptor(
         "phrase_golden_ratio_shrink",
         TransformScope.PHRASE_RELATIVE,
         phrase_golden_ratio_shrink,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+            }
+        ),
     ),
     "phrase_golden_ratio_grow": TransformDescriptor(
         "phrase_golden_ratio_grow",
         TransformScope.PHRASE_RELATIVE,
         phrase_golden_ratio_grow,
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+            }
+        ),
     ),
     "score_feigenbaum_sequence": TransformDescriptor(
         "score_feigenbaum_sequence",

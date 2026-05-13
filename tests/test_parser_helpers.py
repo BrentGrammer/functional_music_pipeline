@@ -7,7 +7,13 @@ from composition.parser import (
     parse_voice,
 )
 from score_model.tone import Tone
-from transforms.base import TransformDescriptor, TransformParamsSpec, TransformScope
+from transforms.base import (
+    TransformDescriptor,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    TransformParamType,
+    TransformScope,
+)
 
 
 def test_parse_motifs_rejects_non_string_motif_names():
@@ -112,7 +118,13 @@ def test_apply_phrase_transform_spec_relative_scope_forwards_named_params():
             )
             for tone in tones
         ],
-        params_spec=TransformParamsSpec(),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                ),
+            }
+        ),
     )
     transform_params = {"dimension": "AMPLITUDE"}
 

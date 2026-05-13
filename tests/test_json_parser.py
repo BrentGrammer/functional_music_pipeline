@@ -57,6 +57,83 @@ def test_fixed_string_descriptors_use_enum_metadata():
     assert mode_spec.allowed_enum_values == ("sustain", "repeat")
 
 
+@pytest.mark.parametrize(
+    ("transform_name", "params"),
+    [
+        ("delay", {"seconds": True}),
+        ("delay", {"seconds": "slow"}),
+        ("repeat", {"count": True}),
+        ("repeat", {"count": 1.5}),
+    ],
+)
+def test_phrase_transform_params_reject_invalid_basic_types(transform_name, params):
+    parsed_motifs = {"seed": [Tone(440)]}
+    phrase_config = {
+        "motifs": ["seed"],
+        "transforms": [{"name": transform_name, "params": params}],
+    }
+
+    with pytest.raises(ValueError):
+        parse_phrase(phrase_config, parsed_motifs)
+
+
+def test_phrase_transform_params_reject_unknown_enum_value():
+    parsed_motifs = {"seed": [Tone(440)]}
+    phrase_config = {
+        "motifs": ["seed"],
+        "transforms": [
+            {
+                "name": "pad_silence",
+                "params": {"seconds": 0.5, "position": "middle"},
+            }
+        ],
+    }
+
+    with pytest.raises(ValueError):
+        parse_phrase(phrase_config, parsed_motifs)
+
+
+@pytest.mark.parametrize(
+    "strength",
+    ["high", 0.75],
+)
+def test_union_transform_params_accept_enum_or_float_values(strength):
+    parsed_motifs = {"seed": [Tone(440, 0.5), Tone(660, 0.5)]}
+    phrase_config = {
+        "motifs": ["seed"],
+        "transforms": [
+            {
+                "name": "accelerando",
+                "params": {"strength": strength, "jaggedness": "none"},
+            }
+        ],
+    }
+
+    result = parse_phrase(phrase_config, parsed_motifs)
+
+    assert len(result) == 2
+
+
+@pytest.mark.parametrize(
+    "strength",
+    ["wild", True, []],
+)
+def test_union_transform_params_reject_values_outside_all_branches(strength):
+    parsed_motifs = {"seed": [Tone(440, 0.5), Tone(660, 0.5)]}
+    phrase_config = {
+        "motifs": ["seed"],
+        "transforms": [
+            {
+                "name": "accelerando",
+                "params": {"strength": strength, "jaggedness": "none"},
+            }
+        ],
+    }
+
+    with pytest.raises(ValueError):
+        parse_phrase(phrase_config, parsed_motifs)
+
+
 def test_parse_motifs():
     motifs_dict = {
         "seed_a": ["440:0.25", "880"],
@@ -970,7 +1047,7 @@ def test_parse_phrase_with_geological_transform_prebuilt_profile():
                 "name": "geological",
                 "params": {
                     "profile": WeierstrassProfile(seed=42),
-                    "dimension": ToneDimension.FREQUENCY,
+                    "dimension": "FREQUENCY",
                     "max_deviation": 0.1,
                 },
             }

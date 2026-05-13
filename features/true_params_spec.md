@@ -153,6 +153,33 @@ This keeps responsibilities cleaner:
 
 If a validator needs deeper domain-specific checks, it can delegate to a helper such as the profile factory or a future specialized profile validation helper rather than reimplementing that logic inline.
 
+## Current Implementation Status
+
+Last updated after the initial parser-validation slice.
+
+Completed:
+
+- `TransformParamFieldSpec.param_type` now supports either a single `TransformParamType` or a tuple of `TransformParamType` values for simple unions.
+- `TransformParamFieldSpec.allowed_values` was renamed to `allowed_enum_values` so it is clear the field only constrains the enum branch of a param spec.
+- `INTENSITY_LEVELS` in `transforms/duration.py` is now the source of truth for `none`, `low`, `medium`, `high`, and `extreme`; the older `STRENGTH_*` constants were removed.
+- Descriptors now use enum metadata for fixed string params such as `pad_silence.position` and `add_pedal_point.mode`.
+- Descriptors now use tuple-based union metadata for params such as `accelerando.strength`, `accelerando.jaggedness`, `ritardando.strength`, `ritardando.jaggedness`, and `stretto.spacing`.
+- `_validate_transform_params(...)` now validates unknown fields, required fields, basic types, enum values, and tuple-based union types.
+- Profile resolution for geological params was moved later so parser validation sees the public `profile` object before it is converted into a runtime profile instance.
+- Relative phrase transform descriptors now declare their optional `dimension` param so strict unknown-field validation does not reject valid relative-transform configs.
+- Focused parser-contract tests were added in `tests/test_json_parser.py` for invalid basic types, invalid enum values, and union param acceptance/rejection.
+
+Known follow-up:
+
+- Full pytest has not been run by the agent because this environment lacks dependencies. The user is running tests locally.
+- If tests fail around dimension values, avoid widening all dimension descriptors to `(ENUM, STRING)` for now. The preferred cleanup is the deferred `ToneDimension` string-enum step below.
+- `test_parse_phrase_with_geological_transform_prebuilt_profile` was adjusted to use `"FREQUENCY"` for `dimension` until the `ToneDimension` string-enum cleanup happens.
+
+Recommended pickup point:
+
+- Continue from implementation plan step 9: add transform-level custom validators in a dedicated module, starting with `add_pedal_point.mode == "repeat"` requiring `pulse_duration`, then geological profile validation.
+- After custom validators, revisit whether descriptor migration and parser tests are complete enough to remove the derived `required_fields` compatibility property.
+
 ## Implementation Plan
 
 1. Define the target shape for `TransformParamsSpec`.
