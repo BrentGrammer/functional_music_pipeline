@@ -18,7 +18,5 @@ Further simplifications can be achieved by refactoring the other helper function
 
 1. **Inline Trivial Type Checkers:**
    *   Helpers like `_require_list` and `_require_non_empty_string_list` are mostly 2-3 lines of code. While DRY, abstracting simple `isinstance` checks interrupts readability. Inlining these directly into functions like `parse_phrase` or `parse_composition` would make the logic flow more linearly.
-2. **Move Domain Parsing Logic:**
-   *   `_parse_tone_string` (which turns `"440:0.5"` into a `Tone`) belongs closer to the `Tone` domain entity, potentially as a factory method like `Tone.from_string("440:0.5")`.
 3. **Move Validation Logic to Descriptors:**
    *   The large block of functions (`_validate_transform_params`, `_is_valid_transform_param_field`, `_is_valid_transform_param_type`) handles domain logic for transforms. This logic should be moved into a `validate_params` method on the `TransformDescriptor` base class in `transforms/base.py`. The parser would then just call `descriptor.validate_params(params)`.
