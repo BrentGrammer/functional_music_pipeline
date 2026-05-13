@@ -1,11 +1,11 @@
 import pytest
 
 from composition.parser import (
+    TRANSFORMS,
     _apply_all_voices_transform_with_optional_params,
     _apply_phrase_transform_spec,
     _apply_score_transform,
     _apply_transform_with_optional_params,
-    TRANSFORMS,
     parse_composition,
     parse_motifs,
     parse_phrase,
@@ -13,15 +13,14 @@ from composition.parser import (
     resolve_profile_in_params,
 )
 from composition.schema import TransformConfig
-from score_model.tone import Tone
-from score_model.score import Score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
+from score_model.score import Score
+from score_model.tone import Tone
 from transforms.base import (
-    ToneDimension,
     TransformDescriptor,
     TransformParamFieldSpec,
-    TransformParamType,
     TransformParamsSpec,
+    TransformParamType,
     TransformScope,
 )
 from transforms.profiles import WeierstrassProfile

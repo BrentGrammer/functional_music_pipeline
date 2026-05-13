@@ -1,10 +1,11 @@
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from score_model.tone import Tone
 from score_model.voice import Voice
+
 
 class TestVoice:
     def test_voice_initialization(self):

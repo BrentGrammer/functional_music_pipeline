@@ -7,7 +7,6 @@ from score_model.voice import Voice
 from transforms.base import ToneDimension, ToneSequence, parse_dimension
 from transforms.scale import scale_transform
 
-
 INTENSITY_LEVELS: dict[str, float] = {
     "none": 0.0,
     "low": 0.25,

@@ -1,4 +1,4 @@
-from typing import TypedDict, NotRequired, TypeAlias
+from typing import NotRequired, TypeAlias, TypedDict
 
 
 class ProfileConfig(TypedDict):

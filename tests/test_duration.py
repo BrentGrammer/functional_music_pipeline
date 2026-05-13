@@ -1,27 +1,29 @@
-import sys
 import os
-import pytest
 import random
+import sys
+
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from transforms.duration import (
-    _interpolate_multiplier_at_position,
-    feigenbaum_sequence,
-    score_feigenbaum_sequence,
-    phrase_feigenbaum_shrink,
-    phrase_feigenbaum_grow,
-    accelerando_transform,
-    ritardando_transform,
-    resolve_strength,
-    resolve_jaggedness,
-    INTENSITY_LEVELS,
-)
 from score_model.math_constants import FEIGENBAUM_DELTA
+from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
-from score_model.score import Score
 from transforms.base import ToneDimension
+from transforms.duration import (
+    INTENSITY_LEVELS,
+    _interpolate_multiplier_at_position,
+    accelerando_transform,
+    feigenbaum_sequence,
+    phrase_feigenbaum_grow,
+    phrase_feigenbaum_shrink,
+    resolve_jaggedness,
+    resolve_strength,
+    ritardando_transform,
+    score_feigenbaum_sequence,
+)
+
 
 class TestFeigenbaumDurationSequence:
     def test_feigenbaum_duration(self):

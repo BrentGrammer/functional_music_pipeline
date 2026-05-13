@@ -1,15 +1,15 @@
 from collections.abc import Callable
 
 from composition.profile_factory import build_profile
-from composition.transform_params_validation import (
-    validate_add_pedal_point_params,
-    validate_geological_params,
-)
 from composition.schema import (
     CompositionDocument,
     PhraseConfig,
     TransformSpec,
     VoiceConfig,
+)
+from composition.transform_params_validation import (
+    validate_add_pedal_point_params,
+    validate_geological_params,
 )
 from score_model.score import Score
 from score_model.tone import Tone

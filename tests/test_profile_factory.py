@@ -19,6 +19,7 @@ from transforms.profiles import (
     WeierstrassProfile,
 )
 
+
 class TestProfileSchema:
     def test_profile_config_is_importable_and_definable(self):
         # Verifies ProfileConfig is correctly defined and importable.

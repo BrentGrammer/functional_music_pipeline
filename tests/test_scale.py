@@ -1,4 +1,5 @@
 import pytest
+
 from score_model.tone import Tone
 from transforms.base import ToneDimension
 from transforms.scale import scale_transform

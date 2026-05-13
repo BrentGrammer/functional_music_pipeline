@@ -1,12 +1,14 @@
-import sys
 import os
-import pytest
+import sys
+
 import numpy as np
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from transforms.delay import delay_tones
 from score_model.tone import Tone
+from transforms.delay import delay_tones
+
 
 def test_delay_zero():
     """Zero delay should return original tones."""

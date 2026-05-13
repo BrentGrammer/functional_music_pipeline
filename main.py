@@ -1,9 +1,8 @@
 import argparse
 import logging
 import sys
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import NoReturn
-from pathlib import PurePosixPath, PureWindowsPath
-from pathlib import Path
 
 from audio_rendering.wav_writer import save_score_to_wav
 from composition.loader import load_composition_score

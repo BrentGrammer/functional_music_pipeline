@@ -1,12 +1,14 @@
-import sys
 import os
+import sys
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from score_model.pitch_utils import semitones_to_frequency
-from transforms.transpose import transpose_tones
 from score_model.tone import Tone
+from transforms.transpose import transpose_tones
+
 
 class TestTransposeTones:
     def test_transpose_up_octave(self):

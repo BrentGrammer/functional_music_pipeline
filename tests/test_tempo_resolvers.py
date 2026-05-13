@@ -1,15 +1,16 @@
 import pytest
+
 from score_model.tone import Tone
 from transforms.duration import (
-    resolve_strength,
-    resolve_jaggedness,
-    accelerando_transform,
-    ritardando_transform,
+    INTENSITY_LEVELS,
     _compute_tempo_change_factors,
+    _interpolate_multiplier_at_position,
     _resolve_accelerando_final_duration_multiplier,
     _resolve_ritardando_final_duration_multiplier,
-    _interpolate_multiplier_at_position,
-    INTENSITY_LEVELS,
+    accelerando_transform,
+    resolve_jaggedness,
+    resolve_strength,
+    ritardando_transform,
 )
 
 
@@ -262,16 +263,18 @@ class TestComputeJaggednessWeights:
         assert all(w == 1.0 for w in weights)
 
     def test_high_jaggedness_produces_variation_with_seed(self):
-        from transforms.duration import _compute_jaggedness_weights
         import random
+
+        from transforms.duration import _compute_jaggedness_weights
         seed = 42
         weights = _compute_jaggedness_weights(5, 1.0, random.Random(seed))
         assert len(weights) == 5
         assert any(w != 1.0 for w in weights)
         
     def test_jaggedness_output_is_deterministic_with_same_seed(self):
-        from transforms.duration import _compute_jaggedness_weights
         import random
+
+        from transforms.duration import _compute_jaggedness_weights
         seed = 123
         weights_1 = _compute_jaggedness_weights(10, 0.5, random.Random(seed))
         weights_2 = _compute_jaggedness_weights(10, 0.5, random.Random(seed))

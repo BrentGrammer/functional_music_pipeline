@@ -1,6 +1,7 @@
 from unittest.mock import patch
-from mido import MidiFile  # type: ignore[import-untyped]
+
 import pytest
+from mido import MidiFile  # type: ignore[import-untyped]
 
 from midi_rendering.midi_writer import (
     MidiPitch,

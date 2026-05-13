@@ -2,9 +2,7 @@ from typing import TypeAlias
 
 from score_model.tone import Tone
 from transforms.base import ToneDimension, parse_dimension
-from transforms.profiles import (
-    StochasticProfile
-)
+from transforms.profiles import StochasticProfile
 
 ToneSequence: TypeAlias = list[Tone]
 

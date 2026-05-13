@@ -1,12 +1,14 @@
-import sys
 import os
+import sys
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from transforms.duration import feigenbaum_sequence
-from score_model.tone import Tone
 from score_model.math_constants import FEIGENBAUM_DELTA
+from score_model.tone import Tone
+from transforms.duration import feigenbaum_sequence
+
 
 class TestFeigenbaumDuration:
     def test_basic_sequence(self):

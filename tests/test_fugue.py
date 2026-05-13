@@ -10,6 +10,7 @@ from score_model.voice import Voice
 from transforms.base import TransformScope
 from transforms.fugue import add_pedal_point, stretto
 
+
 class TestStretto:
     def test_stretto_appends_fixed_spacing_entries_from_motif(self):
         score = Score([Voice([Tone(880.0, duration=0.25)])])

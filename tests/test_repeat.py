@@ -1,11 +1,13 @@
-import sys
 import os
+import sys
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from transforms.repeat import repeat_tones
 from score_model.tone import Tone
+from transforms.repeat import repeat_tones
+
 
 class TestRepeatTones:
     def test_repeat_once(self):

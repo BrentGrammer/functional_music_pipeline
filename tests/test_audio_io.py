@@ -1,14 +1,16 @@
-import sys
 import os
-import pytest
+import sys
+
 import numpy as np
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from audio_rendering.wav_writer import mix_waveforms, save_score_to_wav
 from score_model.score import Score
-from score_model.voice import Voice
 from score_model.tone import Tone
+from score_model.voice import Voice
+
 
 class TestMixWaveforms:
     def test_mix_empty(self):

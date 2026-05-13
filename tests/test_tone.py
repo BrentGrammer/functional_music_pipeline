@@ -1,10 +1,12 @@
-import sys
 import os
+import sys
+
 import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from score_model.tone import Tone
+
 
 class TestTone:
     def test_generate_tone_type_and_shape(self):
