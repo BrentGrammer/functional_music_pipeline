@@ -1,7 +1,10 @@
 from collections.abc import Callable
 
 from composition.profile_factory import build_profile
-from composition.transform_params_validation import validate_add_pedal_point_params
+from composition.transform_params_validation import (
+    validate_add_pedal_point_params,
+    validate_geological_params,
+)
 from composition.schema import (
     CompositionDocument,
     PhraseConfig,
@@ -618,7 +621,8 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
                     param_type=TransformParamType.FLOAT,
                     required=True,
                 ),
-            }
+            },
+            validator=validate_geological_params,
         ),
     ),
     "accelerando": TransformDescriptor(

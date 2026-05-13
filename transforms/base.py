@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 from typing import Protocol, TypeAlias
 
 from score_model.score import Score
@@ -12,7 +12,7 @@ ScorePipelineStep: TypeAlias = Callable[[Score], Score]
 TransformParamsValidator: TypeAlias = Callable[[dict[str, object]], None]
 
 
-class ToneDimension(Enum):
+class ToneDimension(StrEnum):
     FREQUENCY = auto()
     DURATION = auto()
     AMPLITUDE = auto()
@@ -22,9 +22,9 @@ def parse_dimension(dim: ToneDimension | str) -> ToneDimension:
     if isinstance(dim, ToneDimension):
         return dim
     try:
-        return ToneDimension[str(dim).upper()]
-    except KeyError:
-        raise ValueError(f"Invalid dimension: {dim}. Must be one of {', '.join(d.name for d in ToneDimension)}")
+        return ToneDimension(str(dim).lower())
+    except ValueError:
+        raise ValueError(f"Invalid dimension: {dim}. Must be one of {', '.join(d.value for d in ToneDimension)}")
 
 
 class TransformScope(Enum):
@@ -55,10 +55,6 @@ class TransformParamFieldSpec:
 class TransformParamsSpec:
     fields: dict[str, TransformParamFieldSpec] = field(default_factory=dict)
     validator: TransformParamsValidator | None = None
-
-    @property
-    def required_fields(self) -> tuple[str, ...]:
-        return tuple(field_name for field_name, field_spec in self.fields.items() if field_spec.required)
 
 
 @dataclass(frozen=True)

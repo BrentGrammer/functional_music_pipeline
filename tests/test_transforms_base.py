@@ -57,10 +57,9 @@ def test_parse_dimension_rejects_unknown_dimension_with_valid_options_in_message
         parse_dimension(invalid_dimension)
 
 
-def test_transform_params_spec_defaults_to_no_required_fields():
+def test_transform_params_spec_defaults_to_no_fields():
     params_spec = TransformParamsSpec()
 
-    assert params_spec.required_fields == ()
     assert params_spec.fields == {}
     assert params_spec.validator is None
 
@@ -118,7 +117,7 @@ def test_transform_descriptor_preserves_explicit_params_spec():
     assert descriptor.params_spec is expected_params_spec
 
 
-def test_transform_params_spec_derives_required_fields_from_field_metadata():
+def test_transform_params_spec_identifies_required_fields_from_metadata():
     params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
@@ -132,7 +131,8 @@ def test_transform_params_spec_derives_required_fields_from_field_metadata():
         }
     )
 
-    assert params_spec.required_fields == ("seconds",)
+    required_fields = tuple(f for f, s in params_spec.fields.items() if s.required)
+    assert required_fields == ("seconds",)
 
 
 def test_apply_to_voice_updates_only_target_voice_and_preserves_others():

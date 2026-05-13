@@ -117,7 +117,7 @@ def test_parse_phrase_pad_silence_requires_missing_required_fields():
     descriptor = TRANSFORMS["pad_silence"]
     valid_params = {"seconds": 0.3, "position": "end"}
 
-    for required_field in descriptor.params_spec.required_fields:
+    for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
         incomplete_params = valid_params.copy()
         incomplete_params.pop(required_field)
         phrase_config = {
