@@ -15,6 +15,8 @@ from score_model.voice import Voice
 from transforms.base import (
     ToneSequence,
     TransformDescriptor,
+    TransformParamFieldSpec,
+    TransformParamType,
     TransformParamsSpec,
     TransformScope,
     apply_to_all_voices,
@@ -227,31 +229,74 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "transpose",
         TransformScope.PHRASE,
         transpose_tones,
-        params_spec=TransformParamsSpec(required_fields=("semitones",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "semitones": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                )
+            }
+        ),
     ),
     "scale": TransformDescriptor(
         "scale",
         TransformScope.PHRASE,
         scale_transform,
-        params_spec=TransformParamsSpec(required_fields=("dimension", "factor")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+                "factor": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "pad_silence": TransformDescriptor(
         "pad_silence",
         TransformScope.PHRASE,
         pad_silence_tones,
-        params_spec=TransformParamsSpec(required_fields=("seconds", "position")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "seconds": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+                "position": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "delay": TransformDescriptor(
         "delay",
         TransformScope.PHRASE,
         delay_tones,
-        params_spec=TransformParamsSpec(required_fields=("seconds",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "seconds": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                )
+            }
+        ),
     ),
     "repeat": TransformDescriptor(
         "repeat",
         TransformScope.PHRASE,
         repeat_tones,
-        params_spec=TransformParamsSpec(required_fields=("count",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "count": TransformParamFieldSpec(
+                    param_type=TransformParamType.INTEGER,
+                    required=True,
+                )
+            }
+        ),
     ),
     "erosion": TransformDescriptor(
         "erosion",
@@ -263,7 +308,18 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "drift",
         TransformScope.PHRASE,
         drift_transform,
-        params_spec=TransformParamsSpec(required_fields=("dimension", "rate")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+                "rate": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "phrase_feigenbaum_shrink": TransformDescriptor(
         "phrase_feigenbaum_shrink",
@@ -317,49 +373,133 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "score_transpose",
         TransformScope.ALL_VOICES,
         transpose_tones,
-        params_spec=TransformParamsSpec(required_fields=("semitones",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "semitones": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                )
+            }
+        ),
     ),
     "score_scale": TransformDescriptor(
         "score_scale",
         TransformScope.ALL_VOICES,
         scale_transform,
-        params_spec=TransformParamsSpec(required_fields=("dimension", "factor")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+                "factor": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "score_delay": TransformDescriptor(
         "score_delay",
         TransformScope.ALL_VOICES,
         delay_tones,
-        params_spec=TransformParamsSpec(required_fields=("seconds",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "seconds": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                )
+            }
+        ),
     ),
     "score_repeat": TransformDescriptor(
         "score_repeat",
         TransformScope.ALL_VOICES,
         repeat_tones,
-        params_spec=TransformParamsSpec(required_fields=("count",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "count": TransformParamFieldSpec(
+                    param_type=TransformParamType.INTEGER,
+                    required=True,
+                )
+            }
+        ),
     ),
     "score_drift": TransformDescriptor(
         "score_drift",
         TransformScope.ALL_VOICES,
         drift_transform,
-        params_spec=TransformParamsSpec(required_fields=("dimension", "rate")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+                "rate": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "add_pedal_point": TransformDescriptor(
         "add_pedal_point",
         TransformScope.SCORE,
         add_pedal_point,
-        params_spec=TransformParamsSpec(required_fields=("frequency", "duration")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "frequency": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+                "duration": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "stretto": TransformDescriptor(
         "stretto",
         TransformScope.SCORE_TARGET_MOTIFS,
         stretto,
-        params_spec=TransformParamsSpec(required_fields=("motif", "num_times", "spacing")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "motif": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+                "num_times": TransformParamFieldSpec(
+                    param_type=TransformParamType.INTEGER,
+                    required=True,
+                ),
+                "spacing": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "geological": TransformDescriptor(
         "geological",
         TransformScope.PHRASE,
         apply_geological_transform,
-        params_spec=TransformParamsSpec(required_fields=("profile", "dimension", "max_deviation")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "profile": TransformParamFieldSpec(
+                    param_type=TransformParamType.OBJECT,
+                    required=True,
+                ),
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "frost_effect": TransformDescriptor(
         "frost_effect",
@@ -371,19 +511,48 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
         "score_geological",
         TransformScope.ALL_VOICES,
         apply_geological_transform,
-        params_spec=TransformParamsSpec(required_fields=("profile", "dimension", "max_deviation")),
+        params_spec=TransformParamsSpec(
+            fields={
+                "profile": TransformParamFieldSpec(
+                    param_type=TransformParamType.OBJECT,
+                    required=True,
+                ),
+                "dimension": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    param_type=TransformParamType.NUMBER,
+                    required=True,
+                ),
+            }
+        ),
     ),
     "accelerando": TransformDescriptor(
         "accelerando",
         TransformScope.PHRASE,
         accelerando_transform,
-        params_spec=TransformParamsSpec(required_fields=("strength",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "strength": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                )
+            }
+        ),
     ),
     "ritardando": TransformDescriptor(
         "ritardando",
         TransformScope.PHRASE,
         ritardando_transform,
-        params_spec=TransformParamsSpec(required_fields=("strength",)),
+        params_spec=TransformParamsSpec(
+            fields={
+                "strength": TransformParamFieldSpec(
+                    param_type=TransformParamType.STRING,
+                    required=True,
+                )
+            }
+        ),
     ),
 }
 

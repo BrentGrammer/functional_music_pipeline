@@ -6,6 +6,8 @@ from score_model.voice import Voice
 from transforms.base import (
     ToneDimension,
     TransformDescriptor,
+    TransformParamFieldSpec,
+    TransformParamType,
     TransformParamsSpec,
     TransformScope,
     apply_to_all_voices,
@@ -59,6 +61,20 @@ def test_transform_params_spec_defaults_to_no_required_fields():
     params_spec = TransformParamsSpec()
 
     assert params_spec.required_fields == ()
+    assert params_spec.fields == {}
+    assert params_spec.validator is None
+
+
+def test_transform_param_field_spec_preserves_parameter_type_and_allowed_values():
+    field_spec = TransformParamFieldSpec(
+        param_type=TransformParamType.ENUM,
+        required=True,
+        allowed_values=("start", "end"),
+    )
+
+    assert field_spec.param_type is TransformParamType.ENUM
+    assert field_spec.required is True
+    assert field_spec.allowed_values == ("start", "end")
 
 
 def test_transform_descriptor_defaults_to_empty_params_spec():
@@ -72,7 +88,14 @@ def test_transform_descriptor_defaults_to_empty_params_spec():
 
 
 def test_transform_descriptor_preserves_explicit_params_spec():
-    expected_params_spec = TransformParamsSpec(required_fields=("seconds",))
+    expected_params_spec = TransformParamsSpec(
+        fields={
+            "seconds": TransformParamFieldSpec(
+                param_type=TransformParamType.NUMBER,
+                required=True,
+            )
+        }
+    )
     descriptor = TransformDescriptor(
         name="delay",
         scope=TransformScope.PHRASE,
@@ -81,6 +104,23 @@ def test_transform_descriptor_preserves_explicit_params_spec():
     )
 
     assert descriptor.params_spec is expected_params_spec
+
+
+def test_transform_params_spec_derives_required_fields_from_field_metadata():
+    params_spec = TransformParamsSpec(
+        fields={
+            "seconds": TransformParamFieldSpec(
+                param_type=TransformParamType.NUMBER,
+                required=True,
+            ),
+            "position": TransformParamFieldSpec(
+                param_type=TransformParamType.STRING,
+                required=False,
+            ),
+        }
+    )
+
+    assert params_spec.required_fields == ("seconds",)
 
 
 def test_apply_to_voice_updates_only_target_voice_and_preserves_others():

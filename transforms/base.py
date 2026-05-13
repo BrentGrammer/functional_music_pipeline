@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Protocol, TypeAlias
 
@@ -9,6 +9,7 @@ from score_model.voice import Voice
 
 ToneSequence: TypeAlias = list[Tone]
 ScorePipelineStep: TypeAlias = Callable[[Score], Score]
+TransformParamsValidator: TypeAlias = Callable[[dict[str, object]], None]
 
 
 class ToneDimension(Enum):
@@ -34,9 +35,30 @@ class TransformScope(Enum):
     ALL_VOICES = auto()
 
 
+class TransformParamType(Enum):
+    NUMBER = auto()
+    INTEGER = auto()
+    STRING = auto()
+    BOOLEAN = auto()
+    ENUM = auto()
+    OBJECT = auto()
+
+
+@dataclass(frozen=True)
+class TransformParamFieldSpec:
+    param_type: TransformParamType
+    required: bool = False
+    allowed_values: tuple[object, ...] = ()
+
+
 @dataclass(frozen=True)
 class TransformParamsSpec:
-    required_fields: tuple[str, ...] = ()
+    fields: dict[str, TransformParamFieldSpec] = field(default_factory=dict)
+    validator: TransformParamsValidator | None = None
+
+    @property
+    def required_fields(self) -> tuple[str, ...]:
+        return tuple(field_name for field_name, field_spec in self.fields.items() if field_spec.required)
 
 
 @dataclass(frozen=True)
