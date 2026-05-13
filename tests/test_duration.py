@@ -15,11 +15,7 @@ from transforms.duration import (
     ritardando_transform,
     resolve_strength,
     resolve_jaggedness,
-    STRENGTH_NONE,
-    STRENGTH_LOW,
-    STRENGTH_MEDIUM,
-    STRENGTH_HIGH,
-    STRENGTH_EXTREME,
+    INTENSITY_LEVELS,
 )
 from score_model.math_constants import FEIGENBAUM_DELTA
 from score_model.tone import Tone
@@ -396,7 +392,7 @@ class TestJaggednessPresetEquivalence:
     def test_jaggedness_none_preset_matches_none_numeric(self):
         tones = [Tone(440, 1.0), Tone(880, 1.0)]
         result_preset = accelerando_transform(tones, strength="medium", jaggedness="none")
-        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=STRENGTH_NONE)
+        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=INTENSITY_LEVELS["none"])
 
         assert result_preset[0].duration == pytest.approx(result_numeric[0].duration)
         assert result_preset[1].duration == pytest.approx(result_numeric[1].duration)
@@ -404,7 +400,7 @@ class TestJaggednessPresetEquivalence:
     def test_jaggedness_low_preset_is_accepted(self):
         tones = [Tone(440, 1.0), Tone(880, 1.0), Tone(523, 1.0)]
         result_preset = accelerando_transform(tones, strength="low", jaggedness="low")
-        result_numeric = accelerando_transform(tones, strength="low", jaggedness=STRENGTH_LOW)
+        result_numeric = accelerando_transform(tones, strength="low", jaggedness=INTENSITY_LEVELS["low"])
 
         assert len(result_preset) == len(tones)
         assert len(result_numeric) == len(tones)
@@ -416,7 +412,7 @@ class TestJaggednessPresetEquivalence:
     def test_jaggedness_extreme_preset_is_accepted(self):
         tones = [Tone(440, 1.0), Tone(880, 1.0)]
         result_preset = accelerando_transform(tones, strength="medium", jaggedness="extreme")
-        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=STRENGTH_EXTREME)
+        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=INTENSITY_LEVELS["extreme"])
 
         assert len(result_preset) == len(result_numeric)
 
@@ -533,18 +529,18 @@ class TestStrengthResolver:
     """Tests for the resolve_strength function."""
 
     def test_preset_strings_resolve_correctly(self):
-        assert resolve_strength("none") == STRENGTH_NONE
-        assert resolve_strength("low") == STRENGTH_LOW
-        assert resolve_strength("medium") == STRENGTH_MEDIUM
-        assert resolve_strength("high") == STRENGTH_HIGH
-        assert resolve_strength("extreme") == STRENGTH_EXTREME
+        assert resolve_strength("none") == INTENSITY_LEVELS["none"]
+        assert resolve_strength("low") == INTENSITY_LEVELS["low"]
+        assert resolve_strength("medium") == INTENSITY_LEVELS["medium"]
+        assert resolve_strength("high") == INTENSITY_LEVELS["high"]
+        assert resolve_strength("extreme") == INTENSITY_LEVELS["extreme"]
 
     def test_presets_are_case_insensitive(self):
-        assert resolve_strength("NONE") == STRENGTH_NONE
-        assert resolve_strength("Low") == STRENGTH_LOW
-        assert resolve_strength("MEDIUM") == STRENGTH_MEDIUM
-        assert resolve_strength("High") == STRENGTH_HIGH
-        assert resolve_strength("EXTREME") == STRENGTH_EXTREME
+        assert resolve_strength("NONE") == INTENSITY_LEVELS["none"]
+        assert resolve_strength("Low") == INTENSITY_LEVELS["low"]
+        assert resolve_strength("MEDIUM") == INTENSITY_LEVELS["medium"]
+        assert resolve_strength("High") == INTENSITY_LEVELS["high"]
+        assert resolve_strength("EXTREME") == INTENSITY_LEVELS["extreme"]
 
     def test_numeric_values_resolve_correctly(self):
         assert resolve_strength(0.0) == 0.0
@@ -578,18 +574,18 @@ class TestJaggednessResolver:
     """Tests for the resolve_jaggedness function."""
 
     def test_preset_strings_resolve_correctly(self):
-        assert resolve_jaggedness("none") == STRENGTH_NONE
-        assert resolve_jaggedness("low") == STRENGTH_LOW
-        assert resolve_jaggedness("medium") == STRENGTH_MEDIUM
-        assert resolve_jaggedness("high") == STRENGTH_HIGH
-        assert resolve_jaggedness("extreme") == STRENGTH_EXTREME
+        assert resolve_jaggedness("none") == INTENSITY_LEVELS["none"]
+        assert resolve_jaggedness("low") == INTENSITY_LEVELS["low"]
+        assert resolve_jaggedness("medium") == INTENSITY_LEVELS["medium"]
+        assert resolve_jaggedness("high") == INTENSITY_LEVELS["high"]
+        assert resolve_jaggedness("extreme") == INTENSITY_LEVELS["extreme"]
 
     def test_presets_are_case_insensitive(self):
-        assert resolve_jaggedness("NONE") == STRENGTH_NONE
-        assert resolve_jaggedness("Low") == STRENGTH_LOW
-        assert resolve_jaggedness("MEDIUM") == STRENGTH_MEDIUM
-        assert resolve_jaggedness("High") == STRENGTH_HIGH
-        assert resolve_jaggedness("EXTREME") == STRENGTH_EXTREME
+        assert resolve_jaggedness("NONE") == INTENSITY_LEVELS["none"]
+        assert resolve_jaggedness("Low") == INTENSITY_LEVELS["low"]
+        assert resolve_jaggedness("MEDIUM") == INTENSITY_LEVELS["medium"]
+        assert resolve_jaggedness("High") == INTENSITY_LEVELS["high"]
+        assert resolve_jaggedness("EXTREME") == INTENSITY_LEVELS["extreme"]
 
     def test_numeric_values_resolve_correctly(self):
         assert resolve_jaggedness(0.0) == 0.0

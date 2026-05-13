@@ -8,18 +8,12 @@ from transforms.base import ToneDimension, ToneSequence, parse_dimension
 from transforms.scale import scale_transform
 
 
-STRENGTH_NONE = 0.0
-STRENGTH_LOW = 0.25
-STRENGTH_MEDIUM = 0.5
-STRENGTH_HIGH = 0.75
-STRENGTH_EXTREME = 1.0
-
-PRESET_MAP: dict[str, float] = {
-    "none": STRENGTH_NONE,
-    "low": STRENGTH_LOW,
-    "medium": STRENGTH_MEDIUM,
-    "high": STRENGTH_HIGH,
-    "extreme": STRENGTH_EXTREME,
+INTENSITY_LEVELS: dict[str, float] = {
+    "none": 0.0,
+    "low": 0.25,
+    "medium": 0.5,
+    "high": 0.75,
+    "extreme": 1.0,
 }
 
 
@@ -38,7 +32,7 @@ def resolve_strength(value: str | float | int = "medium") -> float:
         )
     if isinstance(value, str):
         lower_value = value.lower()
-        if lower_value not in PRESET_MAP:
+        if lower_value not in INTENSITY_LEVELS:
             raise ValueError(
                 f"Invalid strength: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
             )
@@ -46,7 +40,7 @@ def resolve_strength(value: str | float | int = "medium") -> float:
             raise ValueError(
                 f"Invalid strength: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
             )
-        return PRESET_MAP[lower_value]
+        return INTENSITY_LEVELS[lower_value]
     if isinstance(value, (int, float)):
         if not (0.0 <= value <= 1.0):
             raise ValueError(
@@ -65,7 +59,7 @@ def resolve_jaggedness(value: str | float | int = "none") -> float:
         )
     if isinstance(value, str):
         lower_value = value.lower()
-        if lower_value not in PRESET_MAP:
+        if lower_value not in INTENSITY_LEVELS:
             raise ValueError(
                 f"Invalid jaggedness: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
             )
@@ -73,7 +67,7 @@ def resolve_jaggedness(value: str | float | int = "none") -> float:
             raise ValueError(
                 f"Invalid jaggedness: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
             )
-        return PRESET_MAP[lower_value]
+        return INTENSITY_LEVELS[lower_value]
     if isinstance(value, (int, float)):
         if not (0.0 <= value <= 1.0):
             raise ValueError(
