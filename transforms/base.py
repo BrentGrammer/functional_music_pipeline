@@ -36,11 +36,55 @@ class TransformParamType(Enum):
     OBJECT = auto()
 
 
+class ParamSchema:
+    """Base class for all parameter shapes/types."""
+    def validate(self, value: object, field_name: str) -> None:
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class FloatParam(ParamSchema):
+    def validate(self, value: object, field_name: str) -> None:
+        if not isinstance(value, (float, int)) or isinstance(value, bool):
+            raise ValueError(f"Param '{field_name}' must be a float.")
+
+
+@dataclass(frozen=True)
+class IntegerParam(ParamSchema):
+    def validate(self, value: object, field_name: str) -> None:
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ValueError(f"Param '{field_name}' must be an integer.")
+
+
+@dataclass(frozen=True)
+class StringParam(ParamSchema):
+    def validate(self, value: object, field_name: str) -> None:
+        if not isinstance(value, str):
+            raise ValueError(f"Param '{field_name}' must be a string.")
+
+
+@dataclass(frozen=True)
+class BooleanParam(ParamSchema):
+    def validate(self, value: object, field_name: str) -> None:
+        if not isinstance(value, bool):
+            raise ValueError(f"Param '{field_name}' must be a boolean.")
+
+
+@dataclass(frozen=True)
+class EnumParam(ParamSchema):
+    allowed_values: tuple[str, ...]
+
+    def validate(self, value: object, field_name: str) -> None:
+        if not isinstance(value, str) or value.lower() not in (v.lower() for v in self.allowed_values):
+            raise ValueError(f"Param '{field_name}' must be one of {self.allowed_values}.")
+
+
 @dataclass(frozen=True)
 class TransformParamFieldSpec:
     param_type: TransformParamType | tuple[TransformParamType, ...]
     required: bool = False
     allowed_enum_values: tuple[object, ...] = ()
+    schema: ParamSchema | tuple[ParamSchema, ...] | None = None
 
 
 @dataclass(frozen=True)
