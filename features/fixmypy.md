@@ -6,13 +6,13 @@ The recent migration to a descriptor-driven transform system has introduced a si
 
 ## Error Categories & Root Causes
 
-### 1. The "None Unpacking" Smell
+### 1. The "None Unpacking" Smell (Inconsistent API)
 **Symptom:** Mypy complains `Argument after ** must be a mapping, not "dict[str, object] | None"` in `composition/parser.py`.
-**Root Cause:** The function `resolve_profile_in_params` accepts `dict | None` and returns `dict | None`. When we pass a `dict` into it, Mypy doesn't know that we are guaranteed to get a `dict` back. Using `assert x is not None` in production code just to satisfy a linter is an anti-pattern.
+**Root Cause:** Currently, our API is inconsistent. A transform can be declared as an object (`{"name": "scale", "params": {...}}`) or as a shorthand string (`"reverse"`). When the parser reads the string shorthand, it sets internal `transform_params` to `None`. This `None` cascades through all our `_apply_*` functions, forcing branching logic (`if transform_params is None:`) and leading to unpacking errors (`**None`).
 **Resolution:**
-- Use `@overload` from the `typing` module to explicitly define the input/output relationships.
-- `(dict) -> dict` and `(None) -> None`.
-- This tells Mypy exactly what to expect, allowing us to remove all the `assert` and `cast` hacks around parameter unpacking.
+- **Enforce Structural Consistency:** Remove the string shorthand. Every transform must be declared as an object (`TransformConfig`), even if it requires no parameters (e.g., `{"name": "reverse"}`). Update `TransformSpec` in `schema.py` to reflect this.
+- **Normalize at the Boundary:** When the parser reads a transform object without a `params` field, it should default the params to an empty dictionary `{}` immediately: `transform_params = transform_config.get("params", {})`.
+- **Remove Cascading Complexity:** Because `transform_params` is now guaranteed to be a dictionary, we can remove `| None` from all internal type hints. We can delete all `if transform_params is None:` branching logic and confidently unpack `**transform_params` everywhere, completely eliminating the smell without `@overload` hacks.
 
 ### 2. The "Callable Opaque" Smell
 **Symptom:** Mypy complains `Returning Any from function declared to return "Score"` (or `list[Tone]`).
@@ -40,7 +40,7 @@ The recent migration to a descriptor-driven transform system has introduced a si
 
 To keep the steps small and manageable, we will tackle the smells in the following order:
 
-1. **Overloads:** Fix `resolve_profile_in_params` with `@overload` and remove the `assert` statements.
+1. **Enforce Consistent API:** Update `TransformSpec` to strictly be an object. Normalize missing `params` to `{}` at the parsing boundary and rip out all `is None` branching logic in `parser.py`.
 2. **Generics & Protocols:** Make `TransformDescriptor` generic and strictly type the transform callables.
 3. **Test Annotations:** Go through the test suite and properly annotate the raw dictionaries as `CompositionDocument`, `PhraseConfig`, etc.
 4. **Minor Arithmetic:** Clean up the isolated return type errors in the transform math and tone definitions.
