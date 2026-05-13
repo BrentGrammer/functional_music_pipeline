@@ -118,10 +118,29 @@ class TransformDescriptor:
 
         for field_name, field_value in transform_params.items():
             field_spec = field_specs[field_name]
-            if not self._is_valid_transform_param_field(field_value, field_spec):
-                raise ValueError(
-                    f"The '{self.name}' transform param '{field_name}' has an invalid type."
-                )
+            
+            if field_spec.schema is not None:
+                schemas = field_spec.schema if isinstance(field_spec.schema, tuple) else (field_spec.schema,)
+                errors = []
+                is_valid = False
+                for schema in schemas:
+                    try:
+                        schema.validate(field_value, field_name)
+                        is_valid = True
+                        break
+                    except ValueError as e:
+                        errors.append(str(e))
+                        
+                if not is_valid:
+                    if len(errors) == 1:
+                        raise ValueError(errors[0])
+                    else:
+                        raise ValueError(f"Param '{field_name}' failed validation: " + " OR ".join(errors))
+            else:
+                if not self._is_valid_transform_param_field(field_value, field_spec):
+                    raise ValueError(
+                        f"The '{self.name}' transform param '{field_name}' has an invalid type."
+                    )
 
         if self.params_spec.validator is not None:
             self.params_spec.validator(transform_params)
