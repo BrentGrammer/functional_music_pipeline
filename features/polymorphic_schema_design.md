@@ -92,3 +92,31 @@ GEOLOGICAL_SPEC = TransformParamsSpec(
 2. **Infinite Nesting:** An `ObjectParam` can cleanly contain other `ObjectParam`s, allowing for fully recursive validation without special-case logic in the parser.
 3. **Single Source of Truth:** We avoid structural conflicts in the dataclasses (e.g., avoiding cases where a developer sets `param_type=FLOAT` but also tries to define nested `fields`).
 4. **Separation of Concerns:** The parser strictly validates the data shape. The individual transform functions remain responsible for taking that validated dictionary and instantiating domain objects (like `StochasticProfile`) as needed.
+
+## Implementation Plan
+
+Here is a step-by-step implementation plan designed to introduce the Polymorphic Schema approach incrementally. By introducing the new system alongside the old one, we ensure the tests keep passing at every single step.
+
+### Step 1: Lay the Foundation (Additive Change)
+*   **Action:** In `transforms/base.py`, define the new `ParamSchema` base class and the simple primitive subclasses (`FloatParam`, `IntegerParam`, `StringParam`, `BooleanParam`, `EnumParam`).
+*   **Action:** Update `TransformParamFieldSpec` to include a new `schema: ParamSchema | None = None` field, keeping the old `param_type` and `allowed_enum_values` for now.
+
+### Step 2: Bridge the Validation Logic
+*   **Action:** Update `TransformDescriptor.validate_params` (and its helper methods) to first check if a `schema` is present on the field spec.
+*   **Action:** If `schema` is present, use `schema.validate(field_value, field_name)`. If it is *not* present, fall back to the existing `_is_valid_transform_param_type` enum-based logic.
+
+### Step 3: Incremental Migration of Primitive Transforms
+*   **Action:** Go through the simple transforms one by one (e.g., `duration.py`, `transpose.py`, `delay.py`) and update their `TransformParamsSpec` to use the new `schema` field instead of `param_type`.
+*   **Validation:** Run tests after migrating each batch of transforms to ensure the new primitive validators work exactly as the old enum validators did.
+
+### Step 4: Implement Object Schema and Migrate Complex Transforms
+*   **Action:** Implement the `ObjectParam` schema class in `transforms/base.py` with recursive validation logic.
+*   **Action:** Migrate the complex transforms (like `geological.py` and `erosion.py`) that use the `"profile"` parameter to use the new `ObjectParam` schema.
+
+### Step 5: Clean Up the Old System (Destructive Change)
+*   **Action:** Now that all transforms use the `schema` field, remove `TransformParamType`, `allowed_enum_values`, and the legacy fallback logic (`_is_valid_transform_param_field`, `_is_valid_transform_param_type`) from `transforms/base.py`.
+*   **Action:** Make the `schema` parameter on `TransformParamFieldSpec` strictly required instead of optional.
+
+### Step 6: Complete the Abstraction (Domain Object Instantiation)
+*   **Action:** Delete `resolve_profile_in_params` from `composition/parser.py`.
+*   **Action:** Update the specific transform functions (e.g., `apply_geological_transform`, `apply_erosion_transform`) so that instead of expecting a fully built `StochasticProfile` object, they accept a `dict` and call `build_profile(dict)` themselves internally.
