@@ -7,11 +7,6 @@ When making changes to this codebase, please adhere to the following rules and c
 ## 1. Testing Requirement
 
 - Write tests that cover all new behavior added to the program.
-- **Always run the tests** after modifying the codebase.
-- Tests can be run from the `src` directory using the command: `python -m pytest tests/`
-- **Do not consider a task complete** until all tests pass successfully.
-- If a change causes a test to fail, debug and fix the issue before moving on.
-- When adding new features or transforms, write appropriate tests in the `tests/` directory to cover the new behavior without generating actual `.wav` files (use mocking for I/O).
 - Do not tie tests too closely to implementation details. Tests should cover observable behavior, survive refactoring of the production code and not be brittle.
 
 ## 2. Iterative Development
