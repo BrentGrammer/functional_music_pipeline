@@ -8,7 +8,9 @@ from transforms.base import (
     ToneDimension,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    TransformParamType,
+    EnumParam,
+    FloatParam,
+    StringParam,
     apply_to_all_voices,
     apply_to_voice,
     parse_dimension,
@@ -63,28 +65,29 @@ def test_transform_params_spec_defaults_to_no_fields():
     assert params_spec.validator is None
 
 
-def test_transform_param_field_spec_preserves_parameter_type_and_allowed_enum_values():
+def test_transform_param_field_spec_preserves_schema():
     field_spec = TransformParamFieldSpec(
-        param_type=TransformParamType.ENUM,
+        schema=EnumParam(allowed_values=("start", "end")),
         required=True,
-        allowed_enum_values=("start", "end"),
     )
 
-    assert field_spec.param_type is TransformParamType.ENUM
+    assert isinstance(field_spec.schema, EnumParam)
     assert field_spec.required is True
-    assert field_spec.allowed_enum_values == ("start", "end")
+    assert field_spec.schema.allowed_values == ("start", "end")
 
 
-def test_transform_param_field_spec_accepts_union_parameter_types():
+def test_transform_param_field_spec_accepts_union_schemas():
     field_spec = TransformParamFieldSpec(
-        param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
+        schema=(EnumParam(allowed_values=("low", "medium", "high")), FloatParam()),
         required=True,
-        allowed_enum_values=("low", "medium", "high"),
     )
 
-    assert field_spec.param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert isinstance(field_spec.schema, tuple)
+    assert len(field_spec.schema) == 2
     assert field_spec.required is True
-    assert field_spec.allowed_enum_values == ("low", "medium", "high")
+    assert isinstance(field_spec.schema[0], EnumParam)
+    assert field_spec.schema[0].allowed_values == ("low", "medium", "high")
+    assert isinstance(field_spec.schema[1], FloatParam)
 
 
 def test_transform_descriptor_defaults_to_empty_params_spec():
@@ -100,7 +103,7 @@ def test_transform_descriptor_preserves_explicit_params_spec():
     expected_params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
-                param_type=TransformParamType.FLOAT,
+                schema=FloatParam(),
                 required=True,
             )
         }
@@ -118,11 +121,11 @@ def test_transform_params_spec_identifies_required_fields_from_metadata():
     params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
-                param_type=TransformParamType.FLOAT,
+                schema=FloatParam(),
                 required=True,
             ),
             "position": TransformParamFieldSpec(
-                param_type=TransformParamType.STRING,
+                schema=StringParam(),
                 required=False,
             ),
         }

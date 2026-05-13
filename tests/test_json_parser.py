@@ -16,7 +16,9 @@ from transforms.base import (
     ScoreTargetMotifsTransform,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    TransformParamType,
+    EnumParam,
+    FloatParam,
+    StringParam,
 )
 from transforms.profiles import WeierstrassProfile
 
@@ -24,31 +26,31 @@ from transforms.profiles import WeierstrassProfile
 def test_stretto_spacing_descriptor_accepts_named_or_float_spacing():
     spacing_spec = TRANSFORMS["stretto"].params_spec.fields["spacing"]
 
-    assert spacing_spec.param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert isinstance(spacing_spec.schema, tuple)
     assert spacing_spec.required is True
-    assert spacing_spec.allowed_enum_values == ("golden_ratio", "feigenbaum_delta")
+    assert spacing_spec.schema[0].allowed_values == ("golden_ratio", "feigenbaum_delta")
 
 
 @pytest.mark.parametrize("transform_name", ["accelerando", "ritardando"])
 def test_tempo_curve_descriptor_accepts_preset_or_float_controls(transform_name):
     fields = TRANSFORMS[transform_name].params_spec.fields
 
-    assert fields["strength"].param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert isinstance(fields["strength"].schema, tuple)
     assert fields["strength"].required is True
-    assert fields["strength"].allowed_enum_values == ("none", "low", "medium", "high", "extreme")
-    assert fields["jaggedness"].param_type == (TransformParamType.ENUM, TransformParamType.FLOAT)
+    assert fields["strength"].schema[0].allowed_values == ("none", "low", "medium", "high", "extreme")
+    assert isinstance(fields["jaggedness"].schema, tuple)
     assert fields["jaggedness"].required is False
-    assert fields["jaggedness"].allowed_enum_values == ("none", "low", "medium", "high", "extreme")
+    assert fields["jaggedness"].schema[0].allowed_values == ("none", "low", "medium", "high", "extreme")
 
 
 def test_fixed_string_descriptors_use_enum_metadata():
     position_spec = TRANSFORMS["pad_silence"].params_spec.fields["position"]
     mode_spec = TRANSFORMS["add_pedal_point"].params_spec.fields["mode"]
 
-    assert position_spec.param_type is TransformParamType.ENUM
-    assert position_spec.allowed_enum_values == ("start", "end")
-    assert mode_spec.param_type is TransformParamType.ENUM
-    assert mode_spec.allowed_enum_values == ("sustain", "repeat")
+    assert isinstance(position_spec.schema, EnumParam)
+    assert position_spec.schema.allowed_values == ("start", "end")
+    assert isinstance(mode_spec.schema, EnumParam)
+    assert mode_spec.schema.allowed_values == ("sustain", "repeat")
 
 
 @pytest.mark.parametrize(
@@ -1290,7 +1292,7 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    schema=StringParam(),
                     required=True,
                 )
             }
@@ -1329,7 +1331,7 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    schema=StringParam(),
                     required=True,
                 )
             }
@@ -1366,7 +1368,7 @@ def test_parse_composition_score_target_motifs_scope_requires_params():
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
+                    schema=StringParam(),
                     required=True,
                 )
             }

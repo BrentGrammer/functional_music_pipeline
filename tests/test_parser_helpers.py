@@ -13,7 +13,7 @@ from transforms.base import (
     ScoreTransform,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    TransformParamType,
+    StringParam,
 )
 
 

@@ -27,15 +27,6 @@ def parse_dimension(dim: ToneDimension | str) -> ToneDimension:
         raise ValueError(f"Invalid dimension: {dim}. Must be one of {', '.join(d.value for d in ToneDimension)}")
 
 
-class TransformParamType(Enum):
-    FLOAT = auto()
-    INTEGER = auto()
-    STRING = auto()
-    BOOLEAN = auto()
-    ENUM = auto()
-    OBJECT = auto()
-
-
 class ParamSchema:
     """Base class for all parameter shapes/types."""
     def validate(self, value: object, field_name: str) -> None:
@@ -130,10 +121,8 @@ class ObjectParam(ParamSchema):
 
 @dataclass(frozen=True)
 class TransformParamFieldSpec:
-    param_type: TransformParamType | tuple[TransformParamType, ...] | None = None
+    schema: ParamSchema | tuple[ParamSchema, ...]
     required: bool = False
-    allowed_enum_values: tuple[object, ...] = ()
-    schema: ParamSchema | tuple[ParamSchema, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -168,74 +157,25 @@ class TransformDescriptor:
         for field_name, field_value in transform_params.items():
             field_spec = field_specs[field_name]
             
-            if field_spec.schema is not None:
-                schemas = field_spec.schema if isinstance(field_spec.schema, tuple) else (field_spec.schema,)
-                errors = []
-                is_valid = False
-                for schema in schemas:
-                    try:
-                        schema.validate(field_value, field_name)
-                        is_valid = True
-                        break
-                    except ValueError as e:
-                        errors.append(str(e))
-                        
-                if not is_valid:
-                    if len(errors) == 1:
-                        raise ValueError(errors[0])
-                    else:
-                        raise ValueError(f"Param '{field_name}' failed validation: " + " OR ".join(errors))
-            else:
-                if not self._is_valid_transform_param_field(field_value, field_spec):
-                    raise ValueError(
-                        f"The '{self.name}' transform param '{field_name}' has an invalid type."
-                    )
+            schemas = field_spec.schema if isinstance(field_spec.schema, tuple) else (field_spec.schema,)
+            errors = []
+            is_valid = False
+            for schema in schemas:
+                try:
+                    schema.validate(field_value, field_name)
+                    is_valid = True
+                    break
+                except ValueError as e:
+                    errors.append(str(e))
+                    
+            if not is_valid:
+                if len(errors) == 1:
+                    raise ValueError(errors[0])
+                else:
+                    raise ValueError(f"Param '{field_name}' failed validation: " + " OR ".join(errors))
 
         if self.params_spec.validator is not None:
             self.params_spec.validator(transform_params)
-
-    def _is_valid_transform_param_field(
-        self,
-        field_value: object,
-        field_spec: TransformParamFieldSpec,
-    ) -> bool:
-        param_types = field_spec.param_type
-        if not isinstance(param_types, tuple):
-            param_types = (param_types,)
-
-        return any(
-            self._is_valid_transform_param_type(field_value, param_type, field_spec)
-            for param_type in param_types
-        )
-
-    def _is_valid_transform_param_type(
-        self,
-        field_value: object,
-        param_type: TransformParamType,
-        field_spec: TransformParamFieldSpec,
-    ) -> bool:
-        match param_type:
-            case TransformParamType.FLOAT:
-                # Python treats bool as an int subclass, but JSON booleans are not numeric params.
-                return isinstance(field_value, (float, int)) and not isinstance(field_value, bool)
-            case TransformParamType.INTEGER:
-                # Python treats bool as an int subclass, but JSON booleans are not numeric params.
-                return isinstance(field_value, int) and not isinstance(field_value, bool)
-            case TransformParamType.STRING:
-                return isinstance(field_value, str)
-            case TransformParamType.BOOLEAN:
-                return isinstance(field_value, bool)
-            case TransformParamType.ENUM:
-                if isinstance(field_value, str):
-                    return any(
-                        isinstance(v, str) and v.lower() == field_value.lower()
-                        for v in field_spec.allowed_enum_values
-                    )
-                return False
-            case TransformParamType.OBJECT:
-                return isinstance(field_value, dict) or hasattr(field_value, "__dict__")
-
-        raise AssertionError(f"Unsupported transform param type: {param_type}")
 
 
 @dataclass(frozen=True)
