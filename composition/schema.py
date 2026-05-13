@@ -11,7 +11,7 @@ class TransformConfig(TypedDict):
     params: NotRequired[dict[str, object]]
 
 
-TransformSpec: TypeAlias = str | TransformConfig
+TransformSpec: TypeAlias = TransformConfig
 
 
 class PhraseConfig(TypedDict):
