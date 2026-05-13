@@ -12,8 +12,4 @@ The `resolve_profile_in_params` function in `composition/parser.py` is a signifi
 *   **Option A (Transform Handles It):** Update the specific transform functions (e.g., `apply_geological_transform`) to accept either a `dict` or a `StochasticProfile`. The parser passes the raw dictionary, and the transform calls `build_profile` internally. The parser remains ignorant of the profile.
 *   **Option B (Deserializer in Spec):** Add an optional `deserializer` callback to the `TransformParamFieldSpec` dataclass in `transforms/base.py`. During parameter validation/processing, if a deserializer exists for a field, the raw JSON value is passed through it. This keeps the transform functions pure while keeping the parser generic.
 
-## Other Helper Reductions
-
-Further simplifications can be achieved by refactoring the other helper functions in `parser.py`:
-
 
