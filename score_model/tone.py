@@ -25,6 +25,11 @@ class Tone:
         if self.frequency == 0 or self.amplitude == 0:
             return np.zeros(int(self.sample_rate * self.duration), dtype=np.int16)
 
-        t = np.linspace(0, self.duration, int(self.sample_rate * self.duration), endpoint=False)
-        wave = self.amplitude * np.sin(TWO_PI * self.frequency * t)
-        return (wave * MAX_16BIT_PCM).astype(np.int16)
+        t: NDArray[np.float64] = np.linspace(
+            0,
+            self.duration,
+            int(self.sample_rate * self.duration),
+            endpoint=False,
+        )
+        wave: NDArray[np.float64] = self.amplitude * np.sin(TWO_PI * self.frequency * t)
+        return np.asarray(wave * MAX_16BIT_PCM, dtype=np.int16)

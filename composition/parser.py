@@ -1,13 +1,9 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import cast
 
 from composition.profile_factory import build_profile
 from composition.schema import (
-    CompositionDocument,
-    PhraseConfig,
     ProfileConfig,
-    TransformSpec,
-    VoiceConfig,
 )
 from composition.transform_params_validation import (
     validate_add_pedal_point_params,
@@ -29,6 +25,7 @@ from transforms.base import (
     TransformParamFieldSpec,
     TransformParamsSpec,
     TransformParamType,
+    TransformWithCallable,
     apply_to_all_voices,
 )
 from transforms.delay import delay_tones
@@ -62,7 +59,7 @@ from transforms.transpose import transpose_tones
 
 
 def resolve_profile_in_params(
-    transform_params: dict[str, object],
+    transform_params: Mapping[str, object],
 ) -> dict[str, object]:
     """
     If transform_params contains a 'profile' key with a dict value,
@@ -70,18 +67,18 @@ def resolve_profile_in_params(
     Otherwise, it returns the params unchanged.
     """
     if "profile" not in transform_params:
-        return transform_params
+        return dict(transform_params)
 
     profile_config = transform_params.get("profile")
     if not isinstance(profile_config, dict):
         # Allow pre-resolved profiles to pass through without modification.
-        return transform_params
+        return dict(transform_params)
 
     # but build_profile will validate its structure at runtime.
     resolved_profile = build_profile(cast(ProfileConfig, profile_config))
 
     # Return a new dictionary with the 'profile' value replaced by the instance.
-    new_params = transform_params.copy()
+    new_params = dict(transform_params)
     new_params["profile"] = resolved_profile
     return new_params
 
@@ -98,27 +95,27 @@ def _parse_tone_string(tone_string: str) -> Tone:
 def _apply_phrase_transform(
     transform_func: Callable[..., ToneSequence],
     tones: ToneSequence,
-    transform_params: dict[str, object],
+    transform_params: Mapping[str, object],
 ) -> ToneSequence:
     resolved_transform_params = resolve_profile_in_params(transform_params)
-    return cast(ToneSequence, transform_func(tones, **resolved_transform_params))
+    return transform_func(tones, **resolved_transform_params)
 
 
 
 def _apply_score_transform(
     score: Score,
-    descriptor: TransformDescriptor,
-    transform_params: dict[str, object],
+    descriptor: ScoreTransform,
+    transform_params: Mapping[str, object],
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
     resolved_transform_params = resolve_profile_in_params(transform_params)
-    return cast(Score, descriptor.transform(score, **resolved_transform_params))
+    return descriptor.transform(score, **resolved_transform_params)
 
 
 def _apply_all_voices_transform_with_optional_params(
     transform_func: Callable[..., ToneSequence],
     score: Score,
-    transform_params: dict[str, object],
+    transform_params: Mapping[str, object],
 ) -> Score:
     resolved_transform_params = resolve_profile_in_params(transform_params)
     return apply_to_all_voices(transform_func, **resolved_transform_params)(score)
@@ -154,7 +151,7 @@ def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[s
 
 def _validate_transform_params(
     descriptor: TransformDescriptor,
-    transform_params: dict[str, object],
+    transform_params: Mapping[str, object],
 ) -> None:
     field_specs = descriptor.params_spec.fields
     required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
@@ -227,7 +224,7 @@ def _is_valid_transform_param_type(
     raise AssertionError(f"Unsupported transform param type: {param_type}")
 
 
-TRANSFORMS: dict[str, TransformDescriptor] = {
+TRANSFORMS: dict[str, TransformWithCallable] = {
     "reverse": PhraseTransform(
         "reverse",
         reverse_tones,
@@ -672,7 +669,7 @@ TRANSFORMS: dict[str, TransformDescriptor] = {
 }
 
 
-def parse_motifs(motif_definitions: dict[str, list[str]]) -> dict[str, list[Tone]]:
+def parse_motifs(motif_definitions: object) -> dict[str, list[Tone]]:
     if not isinstance(motif_definitions, dict):
         raise ValueError("Composition 'motifs' must be an object mapping motif names to tone lists.")
 
@@ -686,7 +683,7 @@ def parse_motifs(motif_definitions: dict[str, list[str]]) -> dict[str, list[Tone
 
 
 def parse_transform_spec(
-    transform_spec: TransformSpec,
+    transform_spec: object,
     transform_scope: str,
 ) -> tuple[str, dict[str, object]]:
     if not isinstance(transform_spec, dict):
@@ -704,9 +701,9 @@ def parse_transform_spec(
 
 
 def _apply_phrase_transform_spec(
-    descriptor: TransformDescriptor,
+    descriptor: TransformWithCallable,
     phrase_tones: list[Tone],
-    transform_params: dict[str, object],
+    transform_params: Mapping[str, object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     _validate_transform_params(descriptor, transform_params)
@@ -724,7 +721,7 @@ def _apply_phrase_transform_spec(
 
 def _apply_phrase_transform_specs(
     phrase_tones: list[Tone],
-    transform_specs: list[TransformSpec],
+    transform_specs: list[object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     for transform_spec in transform_specs:
@@ -740,7 +737,7 @@ def _apply_phrase_transform_specs(
 
 
 def _build_voice_tones(
-    phrase_configs: list[PhraseConfig],
+    phrase_configs: list[object],
     parsed_motifs: dict[str, list[Tone]],
     previous_voice_tones: list[Tone],
 ) -> list[Tone]:
@@ -754,7 +751,7 @@ def _build_voice_tones(
     return combined_tones
 
 
-def _validate_and_extract_motifs(phrase_config: PhraseConfig) -> list[str]:
+def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
     """
     Validates the phrase config structure and extracts the motif names.
     
@@ -773,7 +770,7 @@ def _validate_and_extract_motifs(phrase_config: PhraseConfig) -> list[str]:
 
 
 def _build_base_phrase_tones(
-    phrase_config: PhraseConfig,
+    phrase_config: object,
     parsed_motifs: dict[str, list[Tone]],
 ) -> list[Tone]:
     motif_names = _validate_and_extract_motifs(phrase_config)
@@ -790,10 +787,13 @@ def _build_base_phrase_tones(
 
 
 def parse_phrase(
-    phrase_config: PhraseConfig,
+    phrase_config: object,
     parsed_motifs: dict[str, list[Tone]],
     reference_tones: list[Tone] | None = None,
 ) -> list[Tone]:
+    if not isinstance(phrase_config, dict):
+        raise ValueError("Each phrase must be an object.")
+
     phrase_tones = _build_base_phrase_tones(phrase_config, parsed_motifs)
 
     transform_specs = phrase_config.get("transforms", [])
@@ -804,7 +804,7 @@ def parse_phrase(
 
 
 def parse_voice(
-    voice_config: VoiceConfig,
+    voice_config: object,
     parsed_motifs: dict[str, list[Tone]],
     previous_voice_tones: list[Tone],
 ) -> tuple[Voice, list[Tone]]:
@@ -820,7 +820,9 @@ def parse_voice(
     return Voice(combined_tones), combined_tones
 
 
-def _validate_composition_structure(composition_document: CompositionDocument) -> tuple[dict, list, list]:
+def _validate_composition_structure(
+    composition_document: object,
+) -> tuple[dict[object, object], list[object], list[object]]:
     """
     Validates the structure of the composition document and extracts key sections.
     
@@ -850,8 +852,8 @@ def _validate_composition_structure(composition_document: CompositionDocument) -
 
 def _apply_all_voices_transform(
     score: Score,
-    descriptor: TransformDescriptor,
-    transform_params: dict[str, object]
+    descriptor: AllVoicesTransform,
+    transform_params: Mapping[str, object],
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
@@ -859,17 +861,17 @@ def _apply_all_voices_transform(
 
 def _apply_score_target_motifs_transform(
     score: Score,
-    descriptor: TransformDescriptor,
-    transform_params: dict[str, object],
+    descriptor: ScoreTargetMotifsTransform,
+    transform_params: Mapping[str, object],
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
 
     resolved_transform_params = resolve_profile_in_params(transform_params)
-    return cast(Score, descriptor.transform(score, parsed_motifs, **resolved_transform_params))
+    return descriptor.transform(score, parsed_motifs, **resolved_transform_params)
 
 
-def _build_score_voices(voice_configs: list[VoiceConfig], parsed_motifs: dict[str, list[Tone]]) -> list[Voice]:
+def _build_score_voices(voice_configs: list[object], parsed_motifs: dict[str, list[Tone]]) -> list[Voice]:
     voices: list[Voice] = []
     previous_voice_tones: list[Tone] = []
 
@@ -882,7 +884,7 @@ def _build_score_voices(voice_configs: list[VoiceConfig], parsed_motifs: dict[st
 
 def _apply_score_transform_spec(
     score: Score,
-    transform_spec: TransformSpec,
+    transform_spec: object,
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
     transform_name, transform_params = parse_transform_spec(transform_spec, "Score")
@@ -904,7 +906,7 @@ def _apply_score_transform_spec(
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 
 
-def parse_composition(composition_document: CompositionDocument) -> Score:
+def parse_composition(composition_document: object) -> Score:
     motif_definitions, voice_configs, score_transform_specs = _validate_composition_structure(composition_document)
 
     parsed_motifs = parse_motifs(motif_definitions)

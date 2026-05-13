@@ -103,7 +103,7 @@ def test_parse_phrase_pad_silence_requires_dict_params():
     subject_duration = 0.5
     invalid_params = 0.3
     parsed_motifs = {"subject": [Tone(subject_frequency, duration=subject_duration)]}
-    phrase_config: PhraseConfig = {
+    phrase_config = {
         "motifs": ["subject"],
         "transforms": [{"name": "pad_silence", "params": invalid_params}],
     }

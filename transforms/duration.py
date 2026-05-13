@@ -24,7 +24,7 @@ def _is_numeric_string(value: str) -> bool:
         return False
 
 
-def resolve_strength(value: str | float | int = "medium") -> float:
+def resolve_strength(value: object = "medium") -> float:
     if isinstance(value, bool):
         raise ValueError(
             f"Invalid strength: {repr(value)}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
@@ -51,7 +51,7 @@ def resolve_strength(value: str | float | int = "medium") -> float:
     )
 
 
-def resolve_jaggedness(value: str | float | int = "none") -> float:
+def resolve_jaggedness(value: object = "none") -> float:
     if isinstance(value, bool):
         raise ValueError(
             f"Invalid jaggedness: {repr(value)}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."

@@ -15,7 +15,7 @@ def stretto(
     parsed_motifs: dict[str, list[Tone]],
     motif: str,
     num_times: int,
-    spacing: float | int | str,
+    spacing: object,
 ) -> Score:
     if motif not in parsed_motifs:
         raise ValueError(f"Stretto motif '{motif}' was not found.")
@@ -61,7 +61,7 @@ def add_pedal_point(
     return Score(score.voices + [Voice(pedal_tones)])
 
 
-def _resolve_stretto_spacing(spacing: float | int | str, motif_duration: float) -> float:
+def _resolve_stretto_spacing(spacing: object, motif_duration: float) -> float:
     if isinstance(spacing, (int, float)):
         if spacing <= 0:
             raise ValueError("Stretto spacing must be greater than 0 when provided.")

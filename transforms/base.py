@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum, StrEnum, auto
 from typing import Protocol, TypeAlias
@@ -9,7 +9,7 @@ from score_model.voice import Voice
 
 ToneSequence: TypeAlias = list[Tone]
 ScorePipelineStep: TypeAlias = Callable[[Score], Score]
-TransformParamsValidator: TypeAlias = Callable[[dict[str, object]], None]
+TransformParamsValidator: TypeAlias = Callable[[Mapping[str, object]], None]
 
 
 class ToneDimension(StrEnum):
@@ -80,6 +80,11 @@ class AllVoicesTransform(TransformDescriptor):
     transform: Callable[..., ToneSequence]
 
 
+TransformWithCallable: TypeAlias = (
+    PhraseTransform | PhraseRelativeTransform | ScoreTransform | ScoreTargetMotifsTransform | AllVoicesTransform
+)
+
+
 class Transform(Protocol):
     def __call__(self, tones: ToneSequence) -> ToneSequence: ...
 
@@ -92,7 +97,7 @@ def apply_to_voice(
     voice_index: int,
     transform_func: Callable[..., ToneSequence],
     *args: int | float,
-    **kwargs: int | float | str | bool,
+    **kwargs: object,
 ) -> ScorePipelineStep:
     def wrapper(score: Score) -> Score:
         if 0 <= voice_index < len(score.voices):
@@ -106,7 +111,7 @@ def apply_to_voice(
 def apply_to_all_voices(
     transform_func: Callable[..., ToneSequence],
     *args: int | float,
-    **kwargs: int | float | str | bool,
+    **kwargs: object,
 ) -> ScorePipelineStep:
     def wrapper(score: Score) -> Score:
         for i, voice in enumerate(score.voices):

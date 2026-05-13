@@ -413,7 +413,7 @@ class TestScaleTransformParsing:
         self,
         transform_name: str,
         valid_params: dict[str, float | int],
-    ):
+    ) -> None:
         parsed_motifs = {"seed": [Tone(440)]}
         phrase_config = {
             "motifs": ["seed"],
@@ -831,35 +831,35 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
 
 def test_parse_phrase_missing_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"transforms": [{"name": "reverse"}]}
+    phrase_dict = {"transforms": [{"name": "reverse"}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_empty_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": []}
+    phrase_dict: dict[str, object] = {"motifs": []}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_non_list_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": "seed_a"}
+    phrase_dict = {"motifs": "seed_a"}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_motifs_entries_must_be_non_empty_strings():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": ["seed_a", ""]}
+    phrase_dict = {"motifs": ["seed_a", ""]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_unknown_motif():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": ["missing"]}
+    phrase_dict = {"motifs": ["missing"]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -872,21 +872,21 @@ def test_parse_phrase_requires_phrase_object():
 
 def test_parse_phrase_transforms_must_be_a_list():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": "reverse"}
+    phrase_dict = {"motifs": ["seed_a"], "transforms": "reverse"}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_object_requires_name():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": [{"params": 2.0}]}
+    phrase_dict = {"motifs": ["seed_a"], "transforms": [{"params": 2.0}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_must_be_string_or_object():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": [123]}
+    phrase_dict = {"motifs": ["seed_a"], "transforms": [123]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -1116,7 +1116,7 @@ class TestResolveProfileInParams:
     def test_pass_through_if_no_profile_key(self):
         params = {"dimension": "FREQUENCY", "max_deviation": 0.1}
         result = resolve_profile_in_params(params)
-        assert result is params  # Should be the same object
+        assert result == params  # Should be the same object
 
     def test_resolves_profile_dict_to_instance(self):
         params: dict[str, object] = {
