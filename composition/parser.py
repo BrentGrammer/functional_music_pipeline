@@ -1,10 +1,6 @@
 from collections.abc import Callable, Mapping
-from typing import cast
 
 from composition.profile_factory import build_profile
-from composition.schema import (
-    ProfileConfig,
-)
 from composition.transform_params_validation import (
     validate_add_pedal_point_params,
     validate_geological_params,
@@ -74,8 +70,8 @@ def resolve_profile_in_params(
         # Allow pre-resolved profiles to pass through without modification.
         return dict(transform_params)
 
-    # but build_profile will validate its structure at runtime.
-    resolved_profile = build_profile(cast(ProfileConfig, profile_config))
+    # build_profile validates its structure at runtime.
+    resolved_profile = build_profile(profile_config)
 
     # Return a new dictionary with the 'profile' value replaced by the instance.
     new_params = dict(transform_params)
