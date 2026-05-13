@@ -106,6 +106,12 @@ The split of responsibilities should be:
 - `TransformParamsSpec` owns public JSON param shape
 - validator callables own cross-field, conditional, and nested-object rules
 
+The stored representation should move to the final shape immediately:
+
+- `TransformParamsSpec` should store only `fields`
+- each field should carry its own `required` flag
+- any temporary `required_fields` compatibility should be a derived property during migration rather than a second stored shape
+
 Unknown top-level param fields should always be invalid. We do not need an `allow_unknown_fields` option in the public spec model.
 
 ## Validator Placement
@@ -134,6 +140,8 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Keep the design lightweight and descriptor-driven.
    - Use the spec for runtime validation, not just documentation metadata.
    - Do not store runtime default values in the spec during this iteration.
+   - Make `fields` the only stored representation in `TransformParamsSpec`.
+   - If compatibility with older parser code is temporarily needed, expose `required_fields` only as a derived property from `fields`.
 
 2. Introduce a field model.
    - Add something like `TransformParamFieldSpec`.
@@ -141,6 +149,7 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Use a `TransformParamType` enum rather than raw strings for supported parameter types.
    - Keep the first supported parameter types small and explicit: `number`, `integer`, `string`, `boolean`, `enum`, and `object`.
    - Keep the model shallow rather than recursively describing nested object internals.
+   - Do not support two constructor shapes for `TransformParamsSpec`; avoid a split between stored `required_fields` and stored `fields`.
 
 3. Support transform-level rules.
    - Add an optional validator hook for cross-field rules, conditional requirements, and nested object validation.
@@ -148,7 +157,7 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
 
 4. Upgrade parser validation to be spec-driven.
    - Replace the current validation that only checks for an object and required field presence.
-   - Validate missing required fields.
+   - Validate missing required fields by reading the per-field `required` metadata.
    - Reject unknown top-level fields by default.
    - Validate basic parameter types where the metadata is clear enough.
    - Do not add coercion. Keep input validation explicit and strict.
@@ -160,8 +169,8 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Limit this work to truthful descriptor metadata plus parser validation.
 
 6. Migrate descriptors incrementally, starting with the simplest flat transforms.
-   - Start with `transpose`, `delay`, and `repeat`.
-   - These provide the smallest surface area for validating the new field model and parser behavior.
+   - Start with `reverse`, `transpose`, `delay`, and `repeat`.
+   - These provide the smallest surface area for validating the new field model and parser behavior across both no-param and required-param transforms.
    - Add descriptor-driven tests for these transforms before moving to more complex cases.
 
 7. Migrate the common multi-field flat transforms.
@@ -188,11 +197,15 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Verify custom conditional validator rules fail correctly.
    - Avoid brittle error-text assertions.
 
-11. Reassess after the first full migration slice.
+11. Remove transitional compatibility once the descriptor migration is complete.
+   - Remove any temporary compatibility property or bridging code kept only to support the old `required_fields` access pattern.
+   - Leave `fields` as the only long-term source of truth inside `TransformParamsSpec`.
+
+12. Reassess after the first full migration slice.
    - After migrating simple flat transforms, one conditional transform, and `geological`, evaluate whether the custom spec still feels clean and proportionate.
    - Only revisit a schema library such as Pydantic if the transform params or composition document become substantially more nested or model-heavy.
 
-12. Use renaming as a fallback only.
+13. Use renaming as a fallback only.
    - If this work is not completed, rename `params_spec` so it no longer implies a full schema.
    - This is the fallback path, not the recommended direction.
 
