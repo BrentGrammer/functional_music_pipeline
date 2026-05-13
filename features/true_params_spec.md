@@ -56,6 +56,7 @@ Suggested direction:
 - record field name
 - record whether the field is required or optional
 - record the expected parameter type
+- allow the expected parameter type to be a simple union when a public param accepts more than one shape
 - record allowed values for enum-like fields
 - add an optional transform-level validator hook for conditional rules
 
@@ -79,7 +80,7 @@ class TransformParamType(Enum):
 
 @dataclass(frozen=True)
 class TransformParamFieldSpec:
-    param_type: TransformParamType
+    param_type: TransformParamType | tuple[TransformParamType, ...]
     required: bool = False
     allowed_values: tuple[object, ...] = ()
 
@@ -92,11 +93,30 @@ class TransformParamsSpec:
 
 This sketch is intentionally concrete enough to clarify the direction, but it should not be treated as a locked final API until implementation work confirms that it fits the parser and descriptor usage cleanly.
 
+The `tuple[TransformParamType, ...]` form is the recommended way to represent simple union params. Some public params intentionally accept either a named preset string or a continuous numeric value. The spec should describe that directly rather than adding transform-specific bypass flags or a second nested variant model.
+
+Examples:
+
+```python
+TransformParamFieldSpec(
+    param_type=TransformParamType.FLOAT,
+    required=True,
+)
+
+TransformParamFieldSpec(
+    param_type=(TransformParamType.ENUM, TransformParamType.FLOAT),
+    required=True,
+    allowed_values=("none", "low", "medium", "high", "extreme"),
+)
+```
+
+Keep `TransformParamType.FLOAT` as the descriptor for continuous numeric parameters. Do not rename it to a generic `NUMBER` type in this iteration. `FLOAT` communicates that these params may vary continuously, while `INTEGER` remains distinct for discrete count-like values. Parser validation may still accept JSON integer literals for `FLOAT` fields when that is semantically valid for a continuous parameter, but the spec should continue to express the intended domain as `FLOAT`.
+
 This keeps the contract focused on:
 
 - which top-level fields exist
 - which ones are required
-- what parameter type each field accepts
+- what parameter type or simple union of types each field accepts
 - what enum-like values are allowed
 - what custom validation rules still apply
 
@@ -146,8 +166,10 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
 2. Introduce a field model.
    - Add something like `TransformParamFieldSpec`.
    - Record field name, required flag, and expected parameter type.
+   - Allow `param_type` to be either a single `TransformParamType` or a tuple of `TransformParamType` values for simple union params.
    - Use a `TransformParamType` enum rather than raw strings for supported parameter types.
    - Keep the first supported parameter types small and explicit: `float`, `integer`, `string`, `boolean`, `enum`, and `object`.
+   - Keep `float` as the continuous numeric type and `integer` as the discrete numeric type. Do not replace `float` with a broad `number` label.
    - Keep the model shallow rather than recursively describing nested object internals.
    - Do not support two constructor shapes for `TransformParamsSpec`; avoid a split between stored `required_fields` and stored `fields`.
 
@@ -159,7 +181,8 @@ If a validator needs deeper domain-specific checks, it can delegate to a helper 
    - Replace the current validation that only checks for an object and required field presence.
    - Validate missing required fields by reading the per-field `required` metadata.
    - Reject unknown top-level fields by default.
-   - Validate basic parameter types where the metadata is clear enough.
+   - Validate basic parameter types, including tuple-based union types such as `(enum, float)`.
+   - Treat `enum` plus `allowed_values` as an allowed-value check for the enum branch of a union.
    - Do not add coercion. Keep input validation explicit and strict.
 
 5. Preserve the current transform execution model.
