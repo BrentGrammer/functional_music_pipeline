@@ -12,7 +12,7 @@ from composition.parser import (
     parse_transform_spec,
     resolve_profile_in_params,
 )
-from composition.schema import TransformConfig
+from composition.schema import CompositionDocument, PhraseConfig, TransformConfig
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
@@ -164,7 +164,7 @@ def test_parse_phrase_single_motif_from_motifs_list():
         "seed_a": [Tone(440, 0.5), Tone(880, 0.5)]
     }
 
-    phrase_dict = {
+    phrase_dict: PhraseConfig = {
         "motifs": ["seed_a"],
         "transforms": [{"name": "reverse"}]
     }
@@ -181,7 +181,7 @@ def test_parse_phrase_multiple_motifs():
         "seed_b": [Tone(880, 0.25), Tone(523.25, 0.75)]
     }
 
-    phrase_dict = {
+    phrase_dict: PhraseConfig = {
         "motifs": ["seed_a", "seed_b"]
     }
 
@@ -201,7 +201,7 @@ def test_parse_phrase_reverse_applies_after_grouping_motifs():
         "seed_b": [Tone(880, 0.75)]
     }
 
-    phrase_dict = {
+    phrase_dict: PhraseConfig = {
         "motifs": ["seed_a", "seed_b"],
         "transforms": [{"name": "reverse"}]
     }
@@ -218,7 +218,7 @@ def test_parse_phrase_scale_applies_to_all_grouped_motifs():
         "seed_b": [Tone(880, 0.25), Tone(523.25, 0.75)]
     }
 
-    phrase_dict = {
+    phrase_dict: PhraseConfig = {
         "motifs": ["seed_a", "seed_b"],
         "transforms": [{"name": "scale", "params": {"dimension": "duration", "factor": 2.0}}]
     }
@@ -239,7 +239,7 @@ def test_parse_phrase_delay_applies_to_all_grouped_motifs():
     DELAY_SECONDS = 1.8
 
     parsed_motifs = {"seed_a": [Tone(ORIGINAL_FREQUENCY, ORIGINAL_DURATION)]}
-    phrase_dict = {
+    phrase_dict: PhraseConfig = {
         "motifs": ["seed_a"],
         "transforms": [{"name": "delay", "params": {"seconds": DELAY_SECONDS}}],
     }
@@ -259,7 +259,7 @@ class TestScaleTransformParsing:
         parsed_motifs = {"seed_a": [Tone(440, original_duration)]}
 
         factor = 0.5
-        phrase_dict = {
+        phrase_dict: PhraseConfig = {
             "motifs": ["seed_a"],
             "transforms": [{"name": "scale", "params": {"dimension": "duration", "factor": factor}}],
         }
@@ -770,7 +770,7 @@ def test_parse_phrase_with_reference_transform():
     }
     reference_tones = [Tone(110, 1.0)]
 
-    phrase_dict = {
+    phrase_dict: PhraseConfig = {
         "motifs": ["seed_a"],
         "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
@@ -787,7 +787,7 @@ def test_parse_phrase_reference_transform_uses_total_grouped_phrase_duration():
     }
     reference_tones = [Tone(110, 2.0)]
 
-    phrase_dict = {
+    phrase_dict: PhraseConfig = {
         "motifs": ["seed_a", "seed_b"],
         "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
@@ -836,35 +836,35 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
 
 def test_parse_phrase_missing_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"transforms": [{"name": "reverse"}]}
+    phrase_dict: PhraseConfig = {"transforms": [{"name": "reverse"}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_empty_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": []}
+    phrase_dict: PhraseConfig = {"motifs": []}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_non_list_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": "seed_a"}
+    phrase_dict: PhraseConfig = {"motifs": "seed_a"}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_motifs_entries_must_be_non_empty_strings():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": ["seed_a", ""]}
+    phrase_dict: PhraseConfig = {"motifs": ["seed_a", ""]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_unknown_motif():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": ["missing"]}
+    phrase_dict: PhraseConfig = {"motifs": ["missing"]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -877,21 +877,21 @@ def test_parse_phrase_requires_phrase_object():
 
 def test_parse_phrase_transforms_must_be_a_list():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": ["seed_a"], "transforms": "reverse"}
+    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": "reverse"}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_object_requires_name():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": ["seed_a"], "transforms": [{"params": 2.0}]}
+    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": [{"params": 2.0}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_must_be_string_or_object():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": ["seed_a"], "transforms": [123]}
+    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": [123]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -905,7 +905,7 @@ def test_parse_transform_spec_rejects_scalar_params():
 
 def test_parse_phrase_unknown_transform():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict = {"motifs": ["seed_a"], "transforms": [{"name": "unknown_transform"}]}
+    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": [{"name": "unknown_transform"}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -913,7 +913,7 @@ def test_parse_phrase_unknown_transform():
 
 def test_parse_phrase_requires_params_object_when_transform_params_are_missing():
     parsed_motifs = {"seed": [Tone(440)]}
-    phrase_dict = {"motifs": ["seed"], "transforms": [{"name": "scale"}]}
+    phrase_dict: PhraseConfig = {"motifs": ["seed"], "transforms": [{"name": "scale"}]}
 
     with pytest.raises(ValueError):
         parse_phrase(phrase_dict, parsed_motifs)
@@ -1418,4 +1418,6 @@ def test_stretto_with_missing_required_fields_raises_error():
         }
 
         with pytest.raises(ValueError):
+            parse_composition(composition_doc)
+     with pytest.raises(ValueError):
             parse_composition(composition_doc)
