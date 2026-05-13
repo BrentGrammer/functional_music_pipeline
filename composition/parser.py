@@ -95,7 +95,7 @@ def _parse_tone_string(tone_string: str) -> Tone:
 
     return Tone(float(normalized_tone_string))
 
-def _apply_transform_with_optional_params(
+def _apply_phrase_transform(
     transform_func: Callable[..., ToneSequence],
     tones: ToneSequence,
     transform_params: dict[str, object],
@@ -709,14 +709,15 @@ def _apply_phrase_transform_spec(
     transform_params: dict[str, object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
-    if descriptor.scope == TransformScope.PHRASE:
-        _validate_transform_params(descriptor, transform_params)
-        return _apply_transform_with_optional_params(descriptor.transform, phrase_tones, transform_params)
+    _validate_transform_params(descriptor, transform_params)
 
-    if descriptor.scope == TransformScope.PHRASE_RELATIVE:
-        _validate_transform_params(descriptor, transform_params)
+    if isinstance(descriptor, PhraseTransform):
+        return _apply_phrase_transform(descriptor.transform, phrase_tones, transform_params)
+
+    if isinstance(descriptor, PhraseRelativeTransform):
         phrase_reference_tones = reference_tones if reference_tones else []
-        return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
+        resolved_transform_params = resolve_profile_in_params(transform_params)
+        return descriptor.transform(phrase_tones, phrase_reference_tones, **resolved_transform_params)
 
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
