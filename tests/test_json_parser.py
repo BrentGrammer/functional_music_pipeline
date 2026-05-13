@@ -12,7 +12,7 @@ from composition.parser import (
     parse_transform_spec,
     resolve_profile_in_params,
 )
-from composition.schema import GeologicalTransformParams, TransformConfig
+from composition.schema import TransformConfig
 from score_model.tone import Tone
 from score_model.score import Score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
@@ -1072,7 +1072,7 @@ def test_parse_composition_with_value_score_transform():
 def test_schema_allows_geological_transform_params():
     # Verifies that schema types accommodate the unified geological transform.
     # This is a static type check; it passes if mypy/pyright don't complain.
-    params: GeologicalTransformParams = {
+    params: dict[str, object] = {
         "profile": {"type": "weierstrass", "params": {"seed": 42}},
         "dimension": "FREQUENCY",
         "max_deviation": 0.1,
@@ -1121,7 +1121,7 @@ class TestResolveProfileInParams:
         assert resolve_profile_in_params(None) is None
 
     def test_resolves_profile_dict_to_instance(self):
-        params: GeologicalTransformParams = {
+        params: dict[str, object] = {
             "profile": {"type": "weierstrass", "params": {"seed": 123}},
             "dimension": "FREQUENCY",
             "max_deviation": 0.1,

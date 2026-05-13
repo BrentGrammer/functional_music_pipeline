@@ -8,7 +8,6 @@ from composition.transform_params_validation import (
 from composition.schema import (
     CompositionDocument,
     PhraseConfig,
-    TransformParams,
     TransformSpec,
     VoiceConfig,
 )
@@ -57,8 +56,8 @@ from transforms.transpose import transpose_tones
 
 
 def resolve_profile_in_params(
-    transform_params: TransformParams | None,
-) -> TransformParams | None:
+    transform_params: dict[str, object] | None,
+) -> dict[str, object] | None:
     """
     If transform_params contains a 'profile' key with a dict value,
     it resolves it into a StochasticProfile instance using the factory.
@@ -79,9 +78,9 @@ def resolve_profile_in_params(
     # Return a new dictionary with the 'profile' value replaced by the instance.
     new_params = transform_params.copy()
     # Mypy cannot follow the type transformation here. The function's guards
-    # ensure `transform_params` is a `GeologicalTransformParams` dict, but `copy()`
-    # loses this specific type info. Mypy falls back to the broader `dict[str, primitive]`
-    # type from the `TransformParams` union, causing a false positive error.
+    # ensure `transform_params` is a dict, but `copy()`
+    # loses specific type info. Mypy falls back to a broader
+    # type, causing a false positive error.
     new_params["profile"] = resolved_profile  # type: ignore
     return new_params
 
@@ -99,7 +98,7 @@ def _parse_tone_string(tone_string: str) -> Tone:
 def _apply_transform_with_optional_params(
     transform_func: Callable[..., ToneSequence],
     tones: ToneSequence,
-    transform_params: TransformParams | None,
+    transform_params: dict[str, object] | None,
 ) -> ToneSequence:
     if transform_params is None:
         return transform_func(tones)
@@ -114,7 +113,7 @@ def _apply_transform_with_optional_params(
 def _apply_score_transform(
     score: Score,
     descriptor: TransformDescriptor,
-    transform_params: TransformParams | None,
+    transform_params: dict[str, object] | None,
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
 
@@ -131,7 +130,7 @@ def _apply_score_transform(
 def _apply_all_voices_transform_with_optional_params(
     transform_func: Callable[..., ToneSequence],
     score: Score,
-    transform_params: TransformParams | None,
+    transform_params: dict[str, object] | None,
 ) -> Score:
     if transform_params is None:
         return apply_to_all_voices(transform_func)(score)
@@ -173,7 +172,7 @@ def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[s
 
 def _validate_transform_params(
     descriptor: TransformDescriptor,
-    transform_params: TransformParams | None,
+    transform_params: dict[str, object] | None,
 ) -> None:
     field_specs = descriptor.params_spec.fields
     required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
@@ -702,7 +701,7 @@ def parse_motifs(motif_definitions: dict[str, list[str]]) -> dict[str, list[Tone
 def parse_transform_spec(
     transform_spec: TransformSpec,
     transform_scope: str,
-) -> tuple[str, TransformParams | None]:
+) -> tuple[str, dict[str, object] | None]:
     if isinstance(transform_spec, str):
         if not transform_spec:
             raise ValueError(f"{transform_scope} transform names must be non-empty strings.")
@@ -725,7 +724,7 @@ def parse_transform_spec(
 def _apply_phrase_transform_spec(
     descriptor: TransformDescriptor,
     phrase_tones: list[Tone],
-    transform_params: TransformParams | None,
+    transform_params: dict[str, object] | None,
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     if descriptor.scope == TransformScope.PHRASE:
@@ -873,7 +872,7 @@ def _validate_composition_structure(composition_document: CompositionDocument) -
 def _apply_all_voices_transform(
     score: Score,
     descriptor: TransformDescriptor,
-    transform_params: TransformParams | None
+    transform_params: dict[str, object] | None
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
     return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
@@ -882,7 +881,7 @@ def _apply_all_voices_transform(
 def _apply_score_target_motifs_transform(
     score: Score,
     descriptor: TransformDescriptor,
-    transform_params: TransformParams | None,
+    transform_params: dict[str, object] | None,
     parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
     _validate_transform_params(descriptor, transform_params)
