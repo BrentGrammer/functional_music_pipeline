@@ -39,9 +39,15 @@ def _resolve_intensity(value: object) -> dict[str, int | float]:
     return _RIDGED_DROP_INTENSITY_PRESETS[value.lower()]
 
 
-def _resolve_drop_depth(value: object) -> float:
+def _parse_drop_depth(value: object) -> float:
+    """Parse a drop_depth value from a named preset or numeric value.
+    
+    Accepts:
+      - Named presets: "none", "low", "medium", "high", "extreme"
+      - Numeric values: 0.0 to 1.0 (int or float)
+    """
     if isinstance(value, bool):
-        raise ValueError("drop_depth must be a string or float, not boolean.")
+        raise ValueError("drop_depth must be a string or number, not boolean.")
     if isinstance(value, str):
         if value.lower() not in _RIDGED_DROP_DEPTH_LEVELS:
             allowed = ", ".join(_RIDGED_DROP_DEPTH_LEVELS.keys())
@@ -51,7 +57,7 @@ def _resolve_drop_depth(value: object) -> float:
         if value < 0.0 or value > 1.0:
             raise ValueError(f"drop_depth must be between 0.0 and 1.0, got {value}.")
         return float(value)
-    raise ValueError(f"drop_depth must be a string or float, not {type(value).__name__}.")
+    raise ValueError(f"drop_depth must be a string or number, not {type(value).__name__}.")
 
 
 RIDGED_DROP_DEPTH_ENUM = EnumParam(allowed_values=tuple(_RIDGED_DROP_DEPTH_LEVELS.keys()))
@@ -140,7 +146,7 @@ def apply_ridged_drop_transform(
     intensity: str = "medium",
     new_pattern_each_use: bool = False,
 ) -> ToneSequence:
-    max_deviation = _resolve_drop_depth(drop_depth)
+    max_deviation = _parse_drop_depth(drop_depth)
     intensity_settings = _resolve_intensity(intensity)
     _DEFAULT_SEED = 42
     _RANDOM_SEED_UPPER_BOUND = 2 ** 31

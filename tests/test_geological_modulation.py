@@ -5,7 +5,7 @@ from transforms.base import ToneDimension
 from transforms.geological.ridged_drop import (
     _RIDGED_DROP_DEPTH_LEVELS,
     _RIDGED_DROP_INTENSITY_PRESETS,
-    _resolve_drop_depth,
+    _parse_drop_depth,
     _resolve_intensity,
     apply_ridged_drop_transform,
 )
@@ -231,47 +231,75 @@ def test_ridged_drop_string_and_numeric_drop_depth_produce_equivalent_results():
     assert amplitudes_named == amplitudes_numeric
 
 
-def test_resolve_drop_depth_accepts_named_levels():
+def test_ridged_drop_none_depth_produces_no_modulation():
+    unique_tones = [Tone(frequency=440.0 + i * 100, duration=1.0, amplitude=0.8) for i in range(10)]
+
+    result = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth="none",
+    )
+
+    original_amplitudes = [t.amplitude for t in unique_tones]
+    result_amplitudes = [t.amplitude for t in result]
+
+    assert result_amplitudes == original_amplitudes
+
+
+def test_parse_drop_depth_accepts_named_levels():
     for name, expected_value in _RIDGED_DROP_DEPTH_LEVELS.items():
-        assert _resolve_drop_depth(name) == expected_value
+        assert _parse_drop_depth(name) == expected_value
 
 
-def test_resolve_drop_depth_accepts_named_levels_case_insensitive():
-    assert _resolve_drop_depth("MEDIUM") == _RIDGED_DROP_DEPTH_LEVELS["medium"]
-    assert _resolve_drop_depth("High") == _RIDGED_DROP_DEPTH_LEVELS["high"]
+def test_parse_drop_depth_accepts_named_levels_case_insensitive():
+    assert _parse_drop_depth("MEDIUM") == _RIDGED_DROP_DEPTH_LEVELS["medium"]
+    assert _parse_drop_depth("High") == _RIDGED_DROP_DEPTH_LEVELS["high"]
 
 
-def test_resolve_drop_depth_accepts_numeric_values():
-    assert _resolve_drop_depth(0.0) == 0.0
-    assert _resolve_drop_depth(0.37) == 0.37
-    assert _resolve_drop_depth(1.0) == 1.0
+def test_parse_drop_depth_accepts_float_values():
+    assert _parse_drop_depth(0.0) == 0.0
+    assert _parse_drop_depth(0.37) == 0.37
+    assert _parse_drop_depth(1.0) == 1.0
 
 
-def test_resolve_drop_depth_rejects_boolean():
+def test_parse_drop_depth_rejects_boolean():
     with pytest.raises(ValueError):
-        _resolve_drop_depth(True)
+        _parse_drop_depth(True)
     with pytest.raises(ValueError):
-        _resolve_drop_depth(False)
+        _parse_drop_depth(False)
 
 
-def test_resolve_drop_depth_rejects_unknown_string():
+def test_parse_drop_depth_rejects_unknown_string():
     with pytest.raises(ValueError):
-        _resolve_drop_depth("invalid")
+        _parse_drop_depth("invalid")
 
 
-def test_resolve_drop_depth_rejects_value_below_zero():
+def test_parse_drop_depth_rejects_numeric_string():
+    # Numeric strings like "0.5" should not be auto-converted.
+    # Users must pass actual numbers or named presets.
     with pytest.raises(ValueError):
-        _resolve_drop_depth(-0.1)
+        _parse_drop_depth("0.5")
 
 
-def test_resolve_drop_depth_rejects_value_above_one():
+def test_parse_drop_depth_accepts_integer():
+    # Integers are treated as their float equivalent.
+    assert _parse_drop_depth(0) == 0.0
+    assert _parse_drop_depth(1) == 1.0
+
+
+def test_parse_drop_depth_rejects_value_below_zero():
     with pytest.raises(ValueError):
-        _resolve_drop_depth(1.5)
+        _parse_drop_depth(-0.1)
 
 
-def test_resolve_drop_depth_rejects_none():
+def test_parse_drop_depth_rejects_value_above_one():
     with pytest.raises(ValueError):
-        _resolve_drop_depth(None)
+        _parse_drop_depth(1.5)
+
+
+def test_parse_drop_depth_rejects_none():
+    with pytest.raises(ValueError):
+        _parse_drop_depth(None)
 
 
 def test_resolve_intensity_accepts_named_presets():
