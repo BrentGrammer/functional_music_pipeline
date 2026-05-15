@@ -2,9 +2,6 @@ import pytest
 
 from score_model.tone import Tone
 from transforms.base import ToneDimension
-from transforms.complexity.cellular_automata import apply_cellular_automata_transform
-from transforms.complexity.random_drop import apply_random_drop_transform
-from transforms.complexity.weierstrass import apply_weierstrass_transform
 from transforms.geological.ridged_drop import apply_ridged_drop_transform
 from transforms.geological.terraced_drift import apply_terraced_drift_transform
 
@@ -27,18 +24,6 @@ def _build_reference_tones() -> list[Tone]:
     ("transform", "kwargs"),
     [
         pytest.param(
-            apply_weierstrass_transform,
-            {
-                "dimension": ToneDimension.FREQUENCY,
-                "max_deviation": 0.1,
-                "seed": 42,
-                "amplitude_scaling": 0.5,
-                "ripples_per_wave": 3.0,
-                "iterations": 10,
-            },
-            id="weierstrass",
-        ),
-        pytest.param(
             apply_terraced_drift_transform,
             {
                 "dimension": ToneDimension.FREQUENCY,
@@ -48,17 +33,6 @@ def _build_reference_tones() -> list[Tone]:
                 "quantize_resolution": 0.2,
             },
             id="terraced_drift",
-        ),
-        pytest.param(
-            apply_cellular_automata_transform,
-            {
-                "dimension": ToneDimension.FREQUENCY,
-                "max_deviation": 0.1,
-                "rule": 30,
-                "seed": 42,
-                "width": 31,
-            },
-            id="cellular_automata",
         ),
         pytest.param(
             apply_ridged_drop_transform,
@@ -72,19 +46,9 @@ def _build_reference_tones() -> list[Tone]:
             },
             id="ridged_drop",
         ),
-        pytest.param(
-            apply_random_drop_transform,
-            {
-                "dimension": ToneDimension.FREQUENCY,
-                "max_deviation": 0.1,
-                "seed": 42,
-                "drop_rate": 0.2,
-            },
-            id="random_drop",
-        ),
     ],
 )
-def test_seeded_public_transforms_are_repeatable(transform, kwargs):
+def test_seeded_geological_modulation_transforms_are_repeatable(transform, kwargs):
     tones = _build_reference_tones()
 
     result_a = transform(tones, **kwargs)
@@ -98,16 +62,6 @@ def test_seeded_public_transforms_are_repeatable(transform, kwargs):
     ("transform", "kwargs"),
     [
         pytest.param(
-            apply_weierstrass_transform,
-            {
-                "dimension": ToneDimension.FREQUENCY,
-                "max_deviation": 0.1,
-                "seed": 7,
-                "iterations": 0,
-            },
-            id="weierstrass-zero-iterations",
-        ),
-        pytest.param(
             apply_terraced_drift_transform,
             {
                 "dimension": ToneDimension.FREQUENCY,
@@ -116,7 +70,7 @@ def test_seeded_public_transforms_are_repeatable(transform, kwargs):
                 "step_size": 0.0,
                 "quantize_resolution": 0.2,
             },
-            id="terraced-drift-zero-step",
+            id="terraced_drift-zero-step",
         ),
         pytest.param(
             apply_ridged_drop_transform,
@@ -128,21 +82,11 @@ def test_seeded_public_transforms_are_repeatable(transform, kwargs):
                 "ridge_density": 0.3,
                 "drop_when_noise_above": 0.5,
             },
-            id="ridged-drop-zero-octaves",
-        ),
-        pytest.param(
-            apply_random_drop_transform,
-            {
-                "dimension": ToneDimension.FREQUENCY,
-                "max_deviation": 0.1,
-                "seed": 7,
-                "drop_rate": 0.0,
-            },
-            id="random-drop-zero-rate",
+            id="ridged_drop-zero-octaves",
         ),
     ],
 )
-def test_edge_case_parameters_produce_no_modulation(transform, kwargs):
+def test_edge_case_parameters_can_produce_no_modulation(transform, kwargs):
     tones = _build_reference_tones()
 
     result = transform(tones, **kwargs)
@@ -154,91 +98,62 @@ def test_edge_case_parameters_produce_no_modulation(transform, kwargs):
     ("transform", "kwargs"),
     [
         pytest.param(
-            apply_weierstrass_transform,
-            {"dimension": ToneDimension.FREQUENCY, "max_deviation": 0.1, "seed": 42},
-            id="weierstrass",
-        ),
-        pytest.param(
             apply_terraced_drift_transform,
             {"dimension": ToneDimension.FREQUENCY, "max_deviation": 0.1, "seed": 42},
             id="terraced_drift",
-        ),
-        pytest.param(
-            apply_cellular_automata_transform,
-            {"dimension": ToneDimension.FREQUENCY, "max_deviation": 0.1, "seed": 42},
-            id="cellular_automata",
         ),
         pytest.param(
             apply_ridged_drop_transform,
             {"dimension": ToneDimension.FREQUENCY, "max_deviation": 0.1, "seed": 42},
             id="ridged_drop",
         ),
-        pytest.param(
-            apply_random_drop_transform,
-            {"dimension": ToneDimension.FREQUENCY, "max_deviation": 0.1, "seed": 42},
-            id="random_drop",
-        ),
     ],
 )
-def test_public_profile_backed_transforms_return_empty_output_for_empty_input(transform, kwargs):
+def test_geological_modulation_transforms_return_empty_output_for_empty_input(transform, kwargs):
     assert transform([], **kwargs) == []
 
 
-def test_cellular_automata_frequency_modulates_without_touching_other_dimensions():
+def test_terraced_drift_duration_modulates_without_touching_other_dimensions():
     tones = [
         Tone(frequency=440.0, duration=1.0, amplitude=0.5),
         Tone(frequency=880.0, duration=2.0, amplitude=0.8),
     ]
 
-    result = apply_cellular_automata_transform(
-        tones,
-        dimension=ToneDimension.FREQUENCY,
-        max_deviation=0.5,
-        rule=0,
-        seed=1,
-        width=5,
-    )
-
-    assert result[1].frequency == pytest.approx(440.0)
-    assert result[1].duration == pytest.approx(tones[1].duration)
-    assert result[1].amplitude == pytest.approx(tones[1].amplitude)
-
-
-def test_cellular_automata_duration_modulates_without_touching_other_dimensions():
-    tones = [
-        Tone(frequency=440.0, duration=1.0, amplitude=0.5),
-        Tone(frequency=880.0, duration=2.0, amplitude=0.8),
-    ]
-
-    result = apply_cellular_automata_transform(
+    result = apply_terraced_drift_transform(
         tones,
         dimension=ToneDimension.DURATION,
         max_deviation=0.5,
-        rule=0,
-        seed=1,
-        width=5,
+        seed=42,
+        step_size=1.0,
+        quantize_resolution=0.5,
     )
 
-    assert result[1].duration == pytest.approx(1.0)
+    assert any(transformed.duration != original.duration for transformed, original in zip(result, tones))
+    assert result[0].frequency == pytest.approx(tones[0].frequency)
     assert result[1].frequency == pytest.approx(tones[1].frequency)
+    assert result[0].amplitude == pytest.approx(tones[0].amplitude)
     assert result[1].amplitude == pytest.approx(tones[1].amplitude)
 
 
-def test_cellular_automata_amplitude_modulation_clamps_at_valid_bounds():
+def test_ridged_drop_amplitude_modulates_without_touching_other_dimensions():
     tones = [
         Tone(frequency=440.0, duration=1.0, amplitude=0.8),
         Tone(frequency=880.0, duration=2.0, amplitude=0.8),
     ]
 
-    result = apply_cellular_automata_transform(
+    result = apply_ridged_drop_transform(
         tones,
         dimension=ToneDimension.AMPLITUDE,
-        max_deviation=0.5,
-        rule=255,
-        seed=1,
-        width=5,
+        max_deviation=1.0,
+        seed=42,
+        octaves=1,
+        ridge_density=0.3,
+        drop_when_noise_above=0.0,
     )
 
-    assert result[1].amplitude == pytest.approx(1.0)
+    assert any(transformed.amplitude < original.amplitude for transformed, original in zip(result, tones))
+    assert all(0.0 <= tone.amplitude <= 1.0 for tone in result)
+    assert result[0].frequency == pytest.approx(tones[0].frequency)
     assert result[1].frequency == pytest.approx(tones[1].frequency)
+    assert result[0].duration == pytest.approx(tones[0].duration)
     assert result[1].duration == pytest.approx(tones[1].duration)

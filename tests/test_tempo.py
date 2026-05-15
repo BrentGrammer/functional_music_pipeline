@@ -4,6 +4,7 @@ from score_model.tone import Tone
 from transforms.tempo._common import (
     INTENSITY_LEVELS,
     apply_duration_multipliers,
+    compute_jaggedness_weights,
     compute_tempo_change_factors,
     resolve_jaggedness,
     resolve_strength,
@@ -269,18 +270,15 @@ class TestRitardandoTransform:
 
 class TestComputeJaggednessWeights:
     def test_empty_returns_empty(self):
-        from transforms.tempo._common import compute_jaggedness_weights
         assert compute_jaggedness_weights(0, 0.5) == []
 
     def test_jaggedness_none_all_weights_are_neutral(self):
-        from transforms.tempo._common import compute_jaggedness_weights
         weights = compute_jaggedness_weights(5, 0.0)
         assert all(w == 1.0 for w in weights)
 
     def test_high_jaggedness_produces_variation_with_seed(self):
         import random
 
-        from transforms.tempo._common import compute_jaggedness_weights
         seed = 42
         weights = compute_jaggedness_weights(5, 1.0, random.Random(seed))
         assert len(weights) == 5
@@ -289,7 +287,6 @@ class TestComputeJaggednessWeights:
     def test_jaggedness_output_is_deterministic_with_same_seed(self):
         import random
 
-        from transforms.tempo._common import compute_jaggedness_weights
         seed = 123
         weights_1 = compute_jaggedness_weights(10, 0.5, random.Random(seed))
         weights_2 = compute_jaggedness_weights(10, 0.5, random.Random(seed))
@@ -337,3 +334,158 @@ class TestJaggedTempoTransforms:
         result_rit = ritardando_transform(tones, strength="medium", jaggedness="none")
         for i in range(1, len(result_rit)):
             assert result_rit[i].duration > result_rit[i-1].duration
+
+
+class TestMinimumDurationProtection:
+    def test_accelerando_extreme_strength_preserves_positive_durations(self):
+        tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
+
+        result = accelerando_transform(tones, strength="extreme", jaggedness="none")
+
+        assert all(tone.duration > 0 for tone in result)
+
+    def test_accelerando_extreme_strength_with_jaggedness_preserves_positive_durations(self):
+        tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0), Tone(660.0, 1.0)]
+
+        result = accelerando_transform(tones, strength="extreme", jaggedness="extreme")
+
+        assert all(tone.duration > 0 for tone in result)
+
+    def test_accelerando_clamps_to_minimum_duration(self):
+        tones = [Tone(440.0, 0.0001), Tone(880.0, 0.0001)]
+
+        result = accelerando_transform(tones, strength="extreme", jaggedness="none")
+
+        assert result[0].duration >= 0.001
+        assert result[1].duration >= 0.001
+
+    def test_single_tone_protected_from_collapse(self):
+        result = accelerando_transform([Tone(440.0, 0.0001)], strength="extreme", jaggedness="extreme")
+
+        assert len(result) == 1
+        assert result[0].duration >= 0.001
+
+    def test_ritardando_preserves_positive_durations(self):
+        tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
+
+        result = ritardando_transform(tones, strength="extreme", jaggedness="none")
+
+        assert all(tone.duration > 0 for tone in result)
+
+
+class TestJaggednessPresetEquivalence:
+    def test_jaggedness_none_preset_matches_none_numeric(self):
+        tones = [Tone(440.0, 1.0), Tone(880.0, 1.0)]
+
+        result_preset = accelerando_transform(tones, strength="medium", jaggedness="none")
+        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=INTENSITY_LEVELS["none"])
+
+        assert result_preset[0].duration == pytest.approx(result_numeric[0].duration)
+        assert result_preset[1].duration == pytest.approx(result_numeric[1].duration)
+
+    def test_jaggedness_low_preset_is_accepted(self):
+        tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
+
+        result_preset = accelerando_transform(tones, strength="low", jaggedness="low")
+        result_numeric = accelerando_transform(tones, strength="low", jaggedness=INTENSITY_LEVELS["low"])
+
+        assert len(result_preset) == len(tones)
+        assert len(result_numeric) == len(tones)
+        assert all(tone.duration > 0 for tone in result_preset)
+        assert all(tone.duration > 0 for tone in result_numeric)
+
+    def test_jaggedness_extreme_preset_is_accepted(self):
+        tones = [Tone(440.0, 1.0), Tone(880.0, 1.0)]
+
+        result_preset = accelerando_transform(tones, strength="medium", jaggedness="extreme")
+        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=INTENSITY_LEVELS["extreme"])
+
+        assert len(result_preset) == len(result_numeric)
+
+
+class TestJaggednessPreservesToneProperties:
+    def test_jaggedness_preserves_frequencies(self):
+        tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
+
+        result = accelerando_transform(tones, strength="medium", jaggedness="extreme")
+
+        assert [tone.frequency for tone in result] == [tone.frequency for tone in tones]
+
+    def test_jaggedness_preserves_amplitudes(self):
+        tones = [Tone(440.0, 1.0, amplitude=0.8), Tone(880.0, 1.0, amplitude=0.6)]
+
+        result = accelerando_transform(tones, strength="high", jaggedness="extreme")
+
+        assert [tone.amplitude for tone in result] == [tone.amplitude for tone in tones]
+
+    def test_jaggedness_preserves_sample_rates(self):
+        tones = [Tone(440.0, 1.0, sample_rate=48000), Tone(880.0, 1.0, sample_rate=48000)]
+
+        result = accelerando_transform(tones, strength="medium", jaggedness="high")
+
+        assert [tone.sample_rate for tone in result] == [tone.sample_rate for tone in tones]
+
+
+class TestUnevenDurationScaling:
+    def test_accelerando_decreases_durations_except_first(self):
+        tones = [
+            Tone(440.0, 1.0),
+            Tone(494.0, 0.25),
+            Tone(523.0, 0.5),
+        ]
+
+        result = accelerando_transform(tones, strength="medium", jaggedness="none")
+
+        assert result[0].duration == tones[0].duration
+        assert result[1].duration < tones[1].duration
+        assert result[2].duration < tones[2].duration
+
+    def test_ritardando_increases_durations_except_first(self):
+        tones = [
+            Tone(440.0, 0.25),
+            Tone(494.0, 1.0),
+            Tone(523.0, 0.5),
+        ]
+
+        result = ritardando_transform(tones, strength="medium", jaggedness="none")
+
+        assert result[0].duration == tones[0].duration
+        assert result[1].duration > tones[1].duration
+        assert result[2].duration > tones[2].duration
+
+    def test_accelerando_does_not_collapse_short_notes(self):
+        tones = [
+            Tone(440.0, 2.0),
+            Tone(494.0, 0.1),
+            Tone(523.0, 0.1),
+        ]
+
+        result = accelerando_transform(tones, strength="high", jaggedness="none")
+
+        assert result[1].duration >= 0.001
+        assert result[2].duration >= 0.001
+
+    def test_uneven_durations_preserve_overall_ordering_at_low_strength(self):
+        tones = [
+            Tone(440.0, 0.5),
+            Tone(494.0, 1.0),
+            Tone(523.0, 0.25),
+        ]
+
+        result = accelerando_transform(tones, strength="low", jaggedness="none")
+
+        assert result[1].duration > result[0].duration
+        assert result[1].duration > result[2].duration
+
+    def test_equal_duration_tones_scale_proportionally_to_position(self):
+        tones = [
+            Tone(440.0, 1.0),
+            Tone(494.0, 1.0),
+            Tone(523.0, 1.0),
+        ]
+
+        result = accelerando_transform(tones, strength="medium", jaggedness="none")
+
+        assert result[0].duration == 1.0
+        assert result[1].duration < result[0].duration
+        assert result[2].duration < result[1].duration
