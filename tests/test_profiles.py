@@ -10,14 +10,8 @@ from transforms.profiles import (
     StochasticProfile,
     TerracedBrownianProfile,
     WeierstrassProfile,
-    _build_random_phases,
-    _cellular_cell_value,
-    _cellular_initial_state,
-    _cellular_next_state,
-    _emit_ridged_value,
-    _normalize_ridged_noise,
+    _get_next_cellular_state,
     _sample_ridged_noise,
-    _sample_ridged_octave,
 )
 
 
@@ -45,54 +39,18 @@ def test_non_conforming_class_does_not_match_protocol_structure():
     assert not isinstance(instance, StochasticProfile)
 
 
-def test_build_random_phases_is_deterministic_and_bounded():
-    random_seed = 11
-    phase_count = 4
-    phases_a = _build_random_phases(seed=random_seed, count=phase_count)
-    phases_b = _build_random_phases(seed=random_seed, count=phase_count)
-
-    assert phases_a == phases_b
-    assert len(phases_a) == phase_count
-    assert all(0.0 <= phase <= 2 * math.pi for phase in phases_a)
-
-
-def test_cellular_initial_state_is_deterministic_binary_sequence():
-    random_seed = 7
-    width = 6
-    state_a = _cellular_initial_state(seed=random_seed, width=width)
-    state_b = _cellular_initial_state(seed=random_seed, width=width)
-
-    assert state_a == state_b
-    assert len(state_a) == width
-    assert set(state_a).issubset({0, 1})
-
-
-def test_cellular_cell_value_wraps_indices():
-    state = [1, 0, 1]
-
-    assert _cellular_cell_value(state, -1) == 1
-    assert _cellular_cell_value(state, 3) == 1
-    assert _cellular_cell_value(state, 4) == 0
-
-
 def test_cellular_next_state_rule_zero_clears_all_cells():
     state = [1, 0, 1, 1]
     all_cells_off_rule = 0
 
-    assert _cellular_next_state(state, rule=all_cells_off_rule) == [0, 0, 0, 0]
+    assert _get_next_cellular_state(state, rule=all_cells_off_rule) == [0, 0, 0, 0]
 
 
 def test_cellular_next_state_rule_255_fills_all_cells():
     state = [1, 0, 1, 1]
     all_cells_on_rule = 255
 
-    assert _cellular_next_state(state, rule=all_cells_on_rule) == [1, 1, 1, 1]
-
-
-def test_sample_ridged_octave_reaches_zero_at_peak_sine():
-    quarter_turn_rate = math.pi / 2
-
-    assert _sample_ridged_octave(index=1, phase=0.0, rate=quarter_turn_rate) == pytest.approx(0.0)
+    assert _get_next_cellular_state(state, rule=all_cells_on_rule) == [1, 1, 1, 1]
 
 
 def test_sample_ridged_noise_single_octave_matches_octave_value_times_amplitude():
@@ -107,59 +65,8 @@ def test_sample_ridged_noise_single_octave_matches_octave_value_times_amplitude(
         amplitudes=[amplitude],
     )
 
-    expected_octave_value = _sample_ridged_octave(index=sample_index, phase=phase, rate=rate)
+    expected_octave_value = 1.0 - abs(math.sin(sample_index * rate + phase))
     assert sample == pytest.approx(expected_octave_value * amplitude)
-
-
-def test_normalize_ridged_noise_handles_zero_max_possible():
-    raw_noise = 3.0
-    zero_max_possible = 0.0
-
-    assert _normalize_ridged_noise(noise=raw_noise, max_possible=zero_max_possible) == 0.0
-
-
-def test_normalize_ridged_noise_scales_by_max_possible():
-    raw_noise = 0.75
-    max_possible_noise = 1.5
-    expected_normalized_noise = 0.5
-
-    assert _normalize_ridged_noise(
-        noise=raw_noise,
-        max_possible=max_possible_noise,
-    ) == pytest.approx(expected_normalized_noise)
-
-
-def test_emit_ridged_value_returns_zero_below_threshold():
-    normalized_noise_below_threshold = 0.4
-    drop_threshold = 0.5
-
-    assert _emit_ridged_value(
-        normalized_noise=normalized_noise_below_threshold,
-        threshold=drop_threshold,
-    ) == 0.0
-
-
-def test_emit_ridged_value_scales_drop_above_threshold():
-    normalized_noise_above_threshold = 0.75
-    drop_threshold = 0.5
-    expected_drop_intensity = -0.5
-    emitted_value = _emit_ridged_value(
-        normalized_noise=normalized_noise_above_threshold,
-        threshold=drop_threshold,
-    )
-
-    assert emitted_value == pytest.approx(expected_drop_intensity)
-
-
-def test_emit_ridged_value_threshold_one_returns_full_drop():
-    overflowing_normalized_noise = 1.1
-    full_drop_threshold = 1.0
-    emitted_value = _emit_ridged_value(
-        normalized_noise=overflowing_normalized_noise,
-        threshold=full_drop_threshold,
-    )
-
-    assert emitted_value == -1.0
 
 
 def test_weierstrass_profile_empty_length_returns_empty_list():

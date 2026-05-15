@@ -9,35 +9,17 @@ class StochasticProfile(Protocol):
     def generate(self, length: int) -> list[float]: ...
 
 
-def _build_random_phases(seed: int, count: int) -> list[float]:
-    random.seed(seed)
-    return [random.uniform(0, 2 * math.pi) for _ in range(count)]
-
-
-def _cellular_initial_state(seed: int, width: int) -> list[int]:
-    random.seed(seed)
-    return [random.choice([0, 1]) for _ in range(width)]
-
-
-def _cellular_cell_value(state: list[int], index: int) -> int:
-    return state[index % len(state)]
-
-
-def _cellular_next_state(state: list[int], rule: int) -> list[int]:
+def _get_next_cellular_state(state: list[int], rule: int) -> list[int]:
     next_state = [0] * len(state)
 
     for index in range(len(state)):
-        left = _cellular_cell_value(state, index - 1)
-        center = _cellular_cell_value(state, index)
-        right = _cellular_cell_value(state, index + 1)
+        left = state[(index - 1) % len(state)]
+        center = state[index]
+        right = state[(index + 1) % len(state)]
         neighborhood = (left << 2) | (center << 1) | right
         next_state[index] = (rule >> neighborhood) & 1
 
     return next_state
-
-
-def _sample_ridged_octave(index: int, phase: float, rate: float) -> float:
-    return 1.0 - abs(math.sin(index * rate + phase))
 
 
 def _sample_ridged_noise(index: int, phases: list[float], rates: list[float], amplitudes: list[float]) -> float:
@@ -45,30 +27,12 @@ def _sample_ridged_noise(index: int, phases: list[float], rates: list[float], am
     weight = 1.0
 
     for octave_index in range(len(phases)):
-        octave_value = _sample_ridged_octave(index, phases[octave_index], rates[octave_index])
+        octave_value = 1.0 - abs(math.sin(index * rates[octave_index] + phases[octave_index]))
         octave_value *= weight
         weight = max(0.0, min(1.0, octave_value * 2.0))
         noise += octave_value * amplitudes[octave_index]
 
     return noise
-
-
-def _normalize_ridged_noise(noise: float, max_possible: float) -> float:
-    if max_possible == 0:
-        return 0.0
-
-    return noise / max_possible
-
-
-def _emit_ridged_value(normalized_noise: float, threshold: float) -> float:
-    if normalized_noise > threshold:
-        if threshold < 1.0:
-            drop_intensity = -1.0 * ((normalized_noise - threshold) / (1.0 - threshold))
-        else:
-            drop_intensity = -1.0
-        return max(-1.0, drop_intensity)
-
-    return 0.0
 
 
 @dataclass(frozen=True)
@@ -194,25 +158,14 @@ class CellularAutomataProfile:
         center cell's state (0 or 1) is emitted as -1.0 or +1.0. The result is
         an extreme, bistable modulation signal.
         """
-        random.seed(self.seed)
-
-        state = [random.choice([0, 1]) for _ in range(self.width)]
+        rng = random.Random(self.seed)
+        state = [rng.choice([0, 1]) for _ in range(self.width)]
         profile = []
         center_idx = self.width // 2
 
         for _ in range(length):
             profile.append(-1.0 if state[center_idx] == 0 else 1.0)
-
-            next_state = [0] * self.width
-            for i in range(self.width):
-                left = state[i - 1] if i > 0 else state[-1]
-                center = state[i]
-                right = state[i + 1] if i < self.width - 1 else state[0]
-
-                neighborhood = (left << 2) | (center << 1) | right
-                next_state[i] = (self.rule >> neighborhood) & 1
-
-            state = next_state
+            state = _get_next_cellular_state(state, self.rule)
 
         return profile
 
@@ -267,8 +220,8 @@ class RidgedMultifractalProfile:
         it, the value scales linearly toward -1.0, producing sparse but
         intense downward events.
         """
-        random.seed(self.seed)
-        phases = [random.uniform(0, 2 * math.pi) for _ in range(self.octaves)]
+        rng = random.Random(self.seed)
+        phases = [rng.uniform(0, 2 * math.pi) for _ in range(self.octaves)]
 
         rates = [self.ridge_density * (2 ** i) for i in range(self.octaves)]
         amplitudes = [1.0 / (2 ** i) for i in range(self.octaves)]
@@ -281,14 +234,7 @@ class RidgedMultifractalProfile:
 
         profile = []
         for i in range(length):
-            noise = 0.0
-            weight = 1.0
-            for o in range(self.octaves):
-                v = 1.0 - abs(math.sin(i * rates[o] + phases[o]))
-                v *= weight
-                weight = max(0.0, min(1.0, v * 2.0))
-                noise += v * amplitudes[o]
-
+            noise = _sample_ridged_noise(i, phases, rates, amplitudes)
             normalized_noise = noise / max_possible
 
             if normalized_noise > threshold:
