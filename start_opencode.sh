@@ -12,7 +12,7 @@ set -euo pipefail
 # Could not get Deepseek R1 to work with OPENCODE
 
 # Good complex coding models to try from Bedrock:
-# 1. Claude Opus 4.5
+# 1. Claude Opus 4.5 or Claude Opus 4.6 (US) works from Bedrock
 # 2. Claude Sonnet 4.5
 # 3. Claude Opus 4.1
 # 4. Qwen3 Coder Next  # This one seemed really good for planning refactors!
