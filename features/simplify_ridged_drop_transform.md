@@ -31,8 +31,8 @@ Expose only the essential musical controls:
 ```python
 def apply_ridged_drop_transform(
     tones: ToneSequence,
-    dimension: ToneDimension | str = ToneDimension.AMPLITUDE,
-    max_deviation: float = 0.5,
+    dimension: ToneDimension | str,
+    drop_depth: float | str,
     intensity: str = "medium",
     new_pattern_each_use: bool = False,
 ) -> ToneSequence:
@@ -47,7 +47,7 @@ Example JSON:
   "name": "ridged_drop",
   "params": {
     "dimension": "amplitude",
-    "max_deviation": 0.8,
+    "drop_depth": 0.8,
     "intensity": "medium",
     "new_pattern_each_use": true
   }
@@ -61,7 +61,15 @@ Example JSON:
 
 ## Preset Mapping
 
-Replace the low-level public parameters with private intensity presets, for example:
+Replace the low-level public parameters with private intensity presets. `intensity` controls the shape, density, and threshold behavior of the ridged drop pattern.
+
+It should replace:
+
+1. `octaves`
+2. `ridge_density`
+3. `drop_when_noise_above`
+
+Example preset map:
 
 ```python
 _RIDGED_DROP_INTENSITY_PRESETS = {
@@ -73,18 +81,81 @@ _RIDGED_DROP_INTENSITY_PRESETS = {
 
 Exact values should be adjusted by listening tests or snapshot tests.
 
+## Drop Depth Policy
+
+Rename public `max_deviation` to `drop_depth` for this transform.
+
+Reason: `max_deviation` is technically accurate, but it is generic and does not describe what `ridged_drop` actually does. `drop_height` is more evocative, but `height` can imply upward movement or pitch height. `drop_depth` better communicates that the selected dimension is reduced.
+
+Keep `drop_depth` separate from `intensity`.
+
+Reason: `intensity` and `drop_depth` control different musical ideas.
+
+1. `intensity`: how active, dense, or aggressive the generated ridged drop pattern is.
+2. `drop_depth`: how far the selected tone dimension can fall once the pattern applies a drop.
+
+`drop_depth` should accept both named presets and numeric values, matching the pattern used by tempo transforms.
+
+Preset values:
+
+```python
+_RIDGED_DROP_DEPTH_LEVELS = {
+    "none": 0.0,
+    "low": 0.25,
+    "medium": 0.5,
+    "high": 0.75,
+    "extreme": 1.0,
+}
+```
+
+Numeric values should be accepted from `0.0` to `1.0` for precise control.
+
+Examples:
+
+```json
+"drop_depth": "medium"
+```
+
+```json
+"drop_depth": 0.37
+```
+
+Keeping them separate lets users combine them musically. For example, a user can choose a dense pattern with shallow drops or a sparse pattern with deep drops.
+
+Example:
+
+```json
+{
+  "name": "ridged_drop",
+  "params": {
+    "dimension": "amplitude",
+    "drop_depth": 0.3,
+    "intensity": "severe",
+    "new_pattern_each_use": true
+  }
+}
+```
+
+This means: use an active/severe drop pattern, but keep each individual drop relatively shallow.
+
+If `drop_depth` were folded into `intensity`, users would lose that control.
+
+Implementation detail: `drop_depth` can still be passed into the shared modulation helper as `max_deviation` internally. The rename is only for the public ridged-drop API.
+
 ## Implementation Steps
 
 1. Add a private preset mapping in `transforms/geological/ridged_drop.py`.
 2. Update `apply_ridged_drop_transform` to accept `intensity` and `new_pattern_each_use` instead of public `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above`.
-3. Update `RIDGED_DROP_PARAMS_SPEC` to expose only `dimension`, `max_deviation`, `intensity`, and `new_pattern_each_use`.
-4. Validate that `intensity` is one of the supported preset names.
-5. Add boolean parameter validation for `new_pattern_each_use` if the params system does not already have a boolean schema.
-6. Keep deterministic behavior when `new_pattern_each_use` is `false`.
-7. Have the composition orchestration layer derive or inject an internal unique seed per transform occurrence when `new_pattern_each_use` is `true`.
-8. Update geological modulation tests to use the simplified API.
-9. Update JSON demos that currently pass `seed`.
-10. Run the relevant test suite for geological transforms and JSON parser validation.
+3. Update `RIDGED_DROP_PARAMS_SPEC` to expose only `dimension`, `drop_depth`, `intensity`, and `new_pattern_each_use`.
+4. Make `dimension` and `drop_depth` required JSON params.
+5. Validate that `drop_depth` is either one of the supported depth names or a number from `0.0` to `1.0`.
+6. Validate that `intensity` is one of the supported preset names.
+7. Add boolean parameter validation for `new_pattern_each_use` if the params system does not already have a boolean schema.
+8. Keep deterministic behavior when `new_pattern_each_use` is `false`.
+9. Have the composition orchestration layer derive or inject an internal unique seed per transform occurrence when `new_pattern_each_use` is `true`.
+10. Update geological modulation tests to use the simplified API.
+11. Update JSON demos that currently pass `seed`.
+12. Run the relevant test suite for geological transforms and JSON parser validation.
 
 ## Seed Policy
 
