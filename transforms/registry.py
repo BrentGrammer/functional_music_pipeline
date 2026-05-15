@@ -14,7 +14,7 @@ from transforms.base import (
     TransformParamsSpec,
     TransformWithCallable,
 )
-from transforms.delay import delay_tones
+from transforms.delay import DELAY_PARAMS_SPEC, delay_tones
 from transforms.drift import drift_transform
 from transforms.duration import (
     INTENSITY_LEVELS,
@@ -46,11 +46,11 @@ from transforms.golden_ratio import (
     phrase_golden_ratio_shrink,
 )
 from transforms.inversion import invert_tones
-from transforms.pad_silence import pad_silence_tones
-from transforms.repeat import repeat_tones
+from transforms.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
+from transforms.repeat import REPEAT_PARAMS_SPEC, repeat_tones
 from transforms.reversal import reverse_tones
 from transforms.scale import scale_transform
-from transforms.transpose import transpose_tones
+from transforms.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
 
 TRANSFORMS: dict[str, TransformWithCallable] = {
     "reverse": PhraseTransform(
@@ -94,14 +94,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "transpose": PhraseTransform(
         "transpose",
         transpose_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "semitones": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                )
-            }
-        ),
+        params_spec=TRANSPOSE_PARAMS_SPEC,
     ),
     "scale": PhraseTransform(
         "scale",
@@ -122,42 +115,17 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "pad_silence": PhraseTransform(
         "pad_silence",
         pad_silence_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "seconds": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-                "position": TransformParamFieldSpec(
-                    required=True,
-                    schema=EnumParam(allowed_values=("start", "end")),
-                ),
-            }
-        ),
+        params_spec=PAD_SILENCE_PARAMS_SPEC,
     ),
     "delay": PhraseTransform(
         "delay",
         delay_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "seconds": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                )
-            }
-        ),
+        params_spec=DELAY_PARAMS_SPEC,
     ),
     "repeat": PhraseTransform(
         "repeat",
         repeat_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "count": TransformParamFieldSpec(
-                    schema=IntegerParam(),
-                    required=True,
-                )
-            }
-        ),
+        params_spec=REPEAT_PARAMS_SPEC,
     ),
     "erosion": PhraseTransform(
         "erosion",
@@ -271,14 +239,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_transpose": EachVoiceTransform(
         "score_transpose",
         transpose_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "semitones": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                )
-            }
-        ),
+        params_spec=TRANSPOSE_PARAMS_SPEC,
     ),
     "score_scale": EachVoiceTransform(
         "score_scale",
@@ -299,26 +260,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_delay": EachVoiceTransform(
         "score_delay",
         delay_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "seconds": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                )
-            }
-        ),
+        params_spec=DELAY_PARAMS_SPEC,
     ),
     "score_repeat": EachVoiceTransform(
         "score_repeat",
         repeat_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "count": TransformParamFieldSpec(
-                    schema=IntegerParam(),
-                    required=True,
-                )
-            }
-        ),
+        params_spec=REPEAT_PARAMS_SPEC,
     ),
     "score_drift": EachVoiceTransform(
         "score_drift",

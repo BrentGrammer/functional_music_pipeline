@@ -1,4 +1,13 @@
-from transforms.base import ToneSequence
+from transforms.base import IntegerParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+
+REPEAT_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "count": TransformParamFieldSpec(
+            schema=IntegerParam(),
+            required=True,
+        )
+    }
+)
 
 
 def repeat_tones(tones: ToneSequence, count: int) -> ToneSequence:

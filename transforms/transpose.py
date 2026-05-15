@@ -1,6 +1,15 @@
 from score_model.pitch_utils import semitones_to_frequency
 from score_model.tone import Tone
-from transforms.base import ToneSequence
+from transforms.base import FloatParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+
+TRANSPOSE_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "semitones": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        )
+    }
+)
 
 
 def transpose_tones(tones: ToneSequence, semitones: float) -> ToneSequence:

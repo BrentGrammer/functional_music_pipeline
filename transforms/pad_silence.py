@@ -1,5 +1,18 @@
 from score_model.tone_utils import make_silence_tone
-from transforms.base import ToneSequence
+from transforms.base import EnumParam, FloatParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+
+PAD_SILENCE_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "seconds": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        ),
+        "position": TransformParamFieldSpec(
+            required=True,
+            schema=EnumParam(allowed_values=("start", "end")),
+        ),
+    }
+)
 
 
 def pad_silence_tones(tones: ToneSequence, seconds: float, position: str) -> ToneSequence:

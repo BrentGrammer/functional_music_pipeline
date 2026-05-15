@@ -1,5 +1,14 @@
 from score_model.tone_utils import make_silence_tone
-from transforms.base import ToneSequence
+from transforms.base import FloatParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+
+DELAY_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "seconds": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        )
+    }
+)
 
 
 def delay_tones(tones: ToneSequence, seconds: float) -> ToneSequence:
