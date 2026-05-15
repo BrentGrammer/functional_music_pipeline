@@ -4,7 +4,16 @@ from score_model.math_constants import FEIGENBAUM_DELTA as FEIGENBAUM_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
-from transforms.base import ToneDimension, ToneSequence, parse_dimension
+from transforms.base import (
+    EnumParam,
+    FloatParam,
+    IntegerParam,
+    ToneDimension,
+    ToneSequence,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    parse_dimension,
+)
 from transforms.scale import scale_transform
 
 INTENSITY_LEVELS: dict[str, float] = {
@@ -14,6 +23,28 @@ INTENSITY_LEVELS: dict[str, float] = {
     "high": 0.75,
     "extreme": 1.0,
 }
+
+
+def _build_tempo_change_params_spec() -> TransformParamsSpec:
+    intensity_schema = (EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam())
+    return TransformParamsSpec(
+        fields={
+            "strength": TransformParamFieldSpec(
+                required=True,
+                schema=intensity_schema,
+            ),
+            "jaggedness": TransformParamFieldSpec(
+                schema=intensity_schema,
+            ),
+            "seed": TransformParamFieldSpec(
+                schema=IntegerParam(),
+            ),
+        }
+    )
+
+
+ACCELERANDO_PARAMS_SPEC = _build_tempo_change_params_spec()
+RITARDANDO_PARAMS_SPEC = _build_tempo_change_params_spec()
 
 
 def _is_numeric_string(value: str) -> bool:

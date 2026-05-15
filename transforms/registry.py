@@ -1,4 +1,3 @@
-from composition.transform_params_validation import validate_add_pedal_point_params
 from transforms.base import (
     EachVoiceTransform,
     EnumParam,
@@ -8,7 +7,6 @@ from transforms.base import (
     PhraseTransform,
     ScoreTargetMotifsTransform,
     ScoreTransform,
-    StringParam,
     ToneDimension,
     TransformParamFieldSpec,
     TransformParamsSpec,
@@ -17,7 +15,8 @@ from transforms.base import (
 from transforms.delay import DELAY_PARAMS_SPEC, delay_tones
 from transforms.drift import drift_transform
 from transforms.duration import (
-    INTENSITY_LEVELS,
+    ACCELERANDO_PARAMS_SPEC,
+    RITARDANDO_PARAMS_SPEC,
     accelerando_transform,
     feigenbaum_sequence,
     phrase_feigenbaum_grow,
@@ -27,7 +26,7 @@ from transforms.duration import (
 )
 from transforms.erosion import erosion_transform
 from transforms.frost import frost_effect
-from transforms.fugue import NAMED_STRETTO_SPACINGS, add_pedal_point, stretto
+from transforms.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
 from transforms.geological import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
     RANDOM_DROP_PARAMS_SPEC,
@@ -286,48 +285,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "add_pedal_point": ScoreTransform(
         "add_pedal_point",
         add_pedal_point,
-        params_spec=TransformParamsSpec(
-            fields={
-                "frequency": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-                "duration": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-                "amplitude": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                ),
-                "mode": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=("sustain", "repeat")),
-                ),
-                "pulse_duration": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                ),
-            },
-            validator=validate_add_pedal_point_params,
-        ),
+        params_spec=ADD_PEDAL_POINT_PARAMS_SPEC,
     ),
     "stretto": ScoreTargetMotifsTransform(
         "stretto",
         stretto,
-        params_spec=TransformParamsSpec(
-            fields={
-                "motif": TransformParamFieldSpec(
-                    schema=StringParam(),
-                    required=True,
-                ),
-                "num_times": TransformParamFieldSpec(
-                    schema=IntegerParam(),
-                    required=True,
-                ),
-                "spacing": TransformParamFieldSpec(
-                    required=True,
-                    schema=(EnumParam(allowed_values=tuple(NAMED_STRETTO_SPACINGS)), FloatParam()),
-                ),
-            }
-        ),
+        params_spec=STRETTO_PARAMS_SPEC,
     ),
     "frost_effect": ScoreTransform(
         "frost_effect",
@@ -343,38 +306,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "accelerando": PhraseTransform(
         "accelerando",
         accelerando_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "strength": TransformParamFieldSpec(
-                    required=True,
-                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
-                ),
-                "jaggedness": TransformParamFieldSpec(
-                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
-                ),
-                "seed": TransformParamFieldSpec(
-                    schema=IntegerParam(),
-                ),
-            }
-        ),
+        params_spec=ACCELERANDO_PARAMS_SPEC,
     ),
     "ritardando": PhraseTransform(
         "ritardando",
         ritardando_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "strength": TransformParamFieldSpec(
-                    required=True,
-                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
-                ),
-                "jaggedness": TransformParamFieldSpec(
-                    schema=(EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam()),
-                ),
-                "seed": TransformParamFieldSpec(
-                    schema=IntegerParam(),
-                ),
-            }
-        ),
+        params_spec=RITARDANDO_PARAMS_SPEC,
     ),
     "score_weierstrass": EachVoiceTransform(
         "score_weierstrass",

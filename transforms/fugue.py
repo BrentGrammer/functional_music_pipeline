@@ -1,13 +1,61 @@
+from composition.transform_params_validation import validate_add_pedal_point_params
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones, make_silence_tone
 from score_model.voice import Voice
+from transforms.base import (
+    EnumParam,
+    FloatParam,
+    IntegerParam,
+    StringParam,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+)
 
 NAMED_STRETTO_SPACINGS = {
     "golden_ratio": GOLDEN_RATIO,
     "feigenbaum_delta": FEIGENBAUM_DELTA,
 }
+
+ADD_PEDAL_POINT_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "frequency": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        ),
+        "duration": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        ),
+        "amplitude": TransformParamFieldSpec(
+            schema=FloatParam(),
+        ),
+        "mode": TransformParamFieldSpec(
+            schema=EnumParam(allowed_values=("sustain", "repeat")),
+        ),
+        "pulse_duration": TransformParamFieldSpec(
+            schema=FloatParam(),
+        ),
+    },
+    validator=validate_add_pedal_point_params,
+)
+STRETTO_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "motif": TransformParamFieldSpec(
+            schema=StringParam(),
+            required=True,
+        ),
+        "num_times": TransformParamFieldSpec(
+            schema=IntegerParam(),
+            required=True,
+        ),
+        "spacing": TransformParamFieldSpec(
+            required=True,
+            schema=(EnumParam(allowed_values=tuple(NAMED_STRETTO_SPACINGS)), FloatParam()),
+        ),
+    }
+)
 
 
 def stretto(
