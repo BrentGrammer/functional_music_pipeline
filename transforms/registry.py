@@ -14,21 +14,17 @@ from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_tones
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_tones
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
-from transforms.counterpoint.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
-from transforms.erosion import EROSION_PARAMS_SPEC, erosion_transform
-from transforms.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
-from transforms.geological import (
+from transforms.complexity.cellular_automata import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
-    RANDOM_DROP_PARAMS_SPEC,
-    RIDGED_DROP_PARAMS_SPEC,
-    TERRACED_DRIFT_PARAMS_SPEC,
-    WEIERSTRASS_PARAMS_SPEC,
     apply_cellular_automata_transform,
-    apply_random_drop_transform,
-    apply_ridged_drop_transform,
-    apply_terraced_drift_transform,
-    apply_weierstrass_transform,
 )
+from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform
+from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform
+from transforms.counterpoint.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
+from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_transform
+from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
+from transforms.geological.ridged_drop import RIDGED_DROP_PARAMS_SPEC, apply_ridged_drop_transform
+from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform
 from transforms.proportion.feigenbaum import (
     FEIGENBAUM_PARAMS_SPEC,
     feigenbaum_sequence,
