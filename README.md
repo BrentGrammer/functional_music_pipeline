@@ -175,6 +175,12 @@ To perform static type checking, run:
 mypy .
 ```
 
+#### Check for unused functions and variables
+
+```bash
+vulture . --exclude "*test*.py,tests/,.venv/"
+```
+
 #### Testing (Pytest)
 
 To run the full test suite, execute:

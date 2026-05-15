@@ -20,6 +20,10 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_return_any = true
 
+[tool.vulture]
+ignore_decorators = ["@property"]
+min_confidence = 60
+
 [dependency-groups]
 dev = [
     "radon>=6.0.1",
