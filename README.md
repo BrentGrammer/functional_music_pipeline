@@ -50,6 +50,12 @@ python main.py --composition-file compositions/geological_example.json --output-
 
 # To generate a MIDI file
 python main.py --composition-file compositions/microtonal_demo.json --output-name my_demo --output-format midi
+
+# Get output for all files in the compositions folder:
+for file in compositions/*.json; do
+  name="$(basename "$file" .json)"
+  python main.py --composition-file "$file" --output-name "$name"
+done
 ```
 
 Generated files will appear in the `output` directory on your local machine.
