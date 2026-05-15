@@ -1,5 +1,20 @@
 from score_model.tone import Tone
-from transforms.base import ToneDimension, ToneSequence, parse_dimension
+from transforms.base import (
+    EnumParam,
+    ToneDimension,
+    ToneSequence,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    parse_dimension,
+)
+
+INVERT_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "dimension": TransformParamFieldSpec(
+            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+        ),
+    }
+)
 
 
 def _copy_tone(tone: Tone) -> Tone:

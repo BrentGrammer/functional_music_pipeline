@@ -44,10 +44,10 @@ from transforms.golden_ratio import (
     phrase_golden_ratio_grow,
     phrase_golden_ratio_shrink,
 )
-from transforms.inversion import invert_tones
+from transforms.inversion import INVERT_PARAMS_SPEC, invert_tones
 from transforms.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
 from transforms.repeat import REPEAT_PARAMS_SPEC, repeat_tones
-from transforms.reversal import reverse_tones
+from transforms.reversal import REVERSE_PARAMS_SPEC, reverse_tones
 from transforms.scale import scale_transform
 from transforms.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
 
@@ -55,7 +55,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "reverse": PhraseTransform(
         "reverse",
         reverse_tones,
-        params_spec=TransformParamsSpec(),
+        params_spec=REVERSE_PARAMS_SPEC,
     ),
     "golden_ratio": PhraseTransform(
         "golden_ratio",
@@ -71,13 +71,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "invert": PhraseTransform(
         "invert",
         invert_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=INVERT_PARAMS_SPEC,
     ),
     "feigenbaum_sequence": PhraseTransform(
         "feigenbaum_sequence",
@@ -211,7 +205,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_reverse": EachVoiceTransform(
         "score_reverse",
         reverse_tones,
-        params_spec=TransformParamsSpec(),
+        params_spec=REVERSE_PARAMS_SPEC,
     ),
     "score_golden_ratio": EachVoiceTransform(
         "score_golden_ratio",
@@ -227,13 +221,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_invert": EachVoiceTransform(
         "score_invert",
         invert_tones,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=INVERT_PARAMS_SPEC,
     ),
     "score_transpose": EachVoiceTransform(
         "score_transpose",
