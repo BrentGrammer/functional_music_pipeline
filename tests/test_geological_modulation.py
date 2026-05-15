@@ -165,6 +165,26 @@ def test_ridged_drop_intensity_changes_drop_behavior():
     assert drops_severe > drops_subtle
 
 
+def test_ridged_drop_string_and_numeric_drop_depth_produce_equivalent_results():
+    unique_tones = [Tone(frequency=440.0 + i * 100, duration=1.0, amplitude=0.8) for i in range(10)]
+
+    result_named = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth="medium",
+    )
+    result_numeric = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth=0.5,
+    )
+
+    amplitudes_named = [t.amplitude for t in result_named]
+    amplitudes_numeric = [t.amplitude for t in result_numeric]
+
+    assert amplitudes_named == amplitudes_numeric
+
+
 def test_resolve_drop_depth_accepts_named_levels():
     for name, expected_value in _RIDGED_DROP_DEPTH_LEVELS.items():
         assert _resolve_drop_depth(name) == expected_value
