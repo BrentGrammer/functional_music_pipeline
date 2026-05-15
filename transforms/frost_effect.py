@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TypeAlias
 
+from score_model.pitch_utils import CENTS_PER_OCTAVE
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
@@ -162,7 +163,7 @@ def _find_frost_edge_voices(voices: list[Voice]) -> tuple[Voice | None, Voice | 
 
 
 def _cents_to_frequency_ratio(cents: float) -> float:
-    return math.pow(2.0, cents / 1200.0)
+    return math.pow(2.0, cents / CENTS_PER_OCTAVE)
 
 
 def _random_outward_cents() -> float:
