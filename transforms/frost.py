@@ -8,6 +8,7 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
+from transforms.base import IntegerParam, TransformParamFieldSpec, TransformParamsSpec
 from transforms.delay import delay_tones
 
 FrostPendingEdgeExpansion: TypeAlias = tuple[Voice, Callable[[float], float]]
@@ -19,6 +20,14 @@ FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS = 0.18
 FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS = 0.32
 FROST_ROLE_CENTER = "center"
 FROST_ROLE_SIDE = "side"
+
+FROST_EFFECT_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "iterations": TransformParamFieldSpec(
+            schema=IntegerParam(),
+        )
+    }
+)
 
 
 @dataclass(frozen=True)

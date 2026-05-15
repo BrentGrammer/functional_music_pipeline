@@ -1,5 +1,26 @@
 from score_model.tone import Tone
-from transforms.base import ToneDimension, ToneSequence, parse_dimension
+from transforms.base import (
+    EnumParam,
+    FloatParam,
+    ToneDimension,
+    ToneSequence,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    parse_dimension,
+)
+
+SCALE_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "dimension": TransformParamFieldSpec(
+            required=True,
+            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+        ),
+        "factor": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        ),
+    }
+)
 
 
 def scale_transform(tones: ToneSequence, dimension: ToneDimension | str, factor: float) -> ToneSequence:

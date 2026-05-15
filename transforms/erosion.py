@@ -1,5 +1,20 @@
 from score_model.tone import Tone
-from transforms.base import ToneDimension, ToneSequence, parse_dimension
+from transforms.base import (
+    EnumParam,
+    ToneDimension,
+    ToneSequence,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    parse_dimension,
+)
+
+EROSION_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "dimension": TransformParamFieldSpec(
+            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+        ),
+    }
+)
 
 
 def erosion_transform(

@@ -1,5 +1,26 @@
 from score_model.tone import Tone
-from transforms.base import ToneDimension, ToneSequence, parse_dimension
+from transforms.base import (
+    EnumParam,
+    FloatParam,
+    ToneDimension,
+    ToneSequence,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    parse_dimension,
+)
+
+DRIFT_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "dimension": TransformParamFieldSpec(
+            required=True,
+            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+        ),
+        "rate": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        ),
+    }
+)
 
 
 def drift_transform(

@@ -172,28 +172,25 @@ The old nested stochastic-transform path has been removed:
     *   The abstraction cleanup and migration away from the old geological/profile-factory path is done.
 *   **Step 9A:** Complete.
     *   `ObjectParam` has been removed as dead code.
-*   **Step 9B:** Not started.
-    *   Schemas are still centralized in `transforms/registry.py`.
+*   **Step 9B:** Complete.
+    *   Transform schemas have been colocated with their implementation modules.
+    *   `transforms/registry.py` has been reduced to assembly-only imports and registrations.
+*   **Step 9C:** Not started.
+    *   Final verification and doc/example consistency checks remain.
 
 ## What Is Left
 
-The feature is not blocked anymore. What remains is schema colocation and final verification after the successful Step 8 migration and Step 9A cleanup.
+The feature is not blocked anymore. What remains is final verification and doc/example consistency checks after the successful Step 8 migration and Steps 9A-9B cleanup.
 
 ### Remaining Work in Order
 
 #### Step 9B: Colocate Schemas with Implementations
 
-With the `ObjectParam` cleanup complete, perform the DRY refactor originally planned as Step 9:
+This cleanup is complete:
 
-*   Move each `TransformParamsSpec` definition out of `transforms/registry.py`.
-*   Define each schema next to its implementation function in the corresponding transform module.
-*   Reduce `transforms/registry.py` to assembly only: import the transform function and its colocated spec, then register them.
-
-Recommended rollout order:
-
-1. Start with the flat stochastic transforms in `transforms/geological.py`.
-2. Then migrate the small/simple transforms such as `delay`, `transpose`, `repeat`, and `pad_silence`.
-3. Then migrate the more specialized transforms such as `stretto`, `add_pedal_point`, `accelerando`, and `ritardando`.
+*   Each `TransformParamsSpec` definition has been moved out of `transforms/registry.py`.
+*   Each schema now lives next to its implementation function in the corresponding transform module.
+*   `transforms/registry.py` now acts as assembly only: it imports transform functions and their colocated specs, then registers them.
 
 #### Step 9C: Final Verification Pass
 
@@ -208,10 +205,11 @@ After Step 9B:
 
 The next concrete action should be:
 
-1. Perform Step 9B schema colocation.
-2. Then do a final verification and documentation sweep.
+1. Perform Step 9C final verification.
+2. Then do a final documentation/examples sweep.
 
 
 ### Final Cleanup
 
 - Figure out if we need to use _interpolate_multiplier_at_position or can get rid of it (currently not referenced, does it need to be?)
+- rename frost.py to frost_effect.py

@@ -1,19 +1,13 @@
 from transforms.base import (
     EachVoiceTransform,
-    EnumParam,
-    FloatParam,
-    IntegerParam,
     PhraseRelativeTransform,
     PhraseTransform,
     ScoreTargetMotifsTransform,
     ScoreTransform,
-    ToneDimension,
-    TransformParamFieldSpec,
-    TransformParamsSpec,
     TransformWithCallable,
 )
 from transforms.delay import DELAY_PARAMS_SPEC, delay_tones
-from transforms.drift import drift_transform
+from transforms.drift import DRIFT_PARAMS_SPEC, drift_transform
 from transforms.duration import (
     ACCELERANDO_PARAMS_SPEC,
     FEIGENBAUM_PARAMS_SPEC,
@@ -25,8 +19,8 @@ from transforms.duration import (
     ritardando_transform,
     score_feigenbaum_sequence,
 )
-from transforms.erosion import erosion_transform
-from transforms.frost import frost_effect
+from transforms.erosion import EROSION_PARAMS_SPEC, erosion_transform
+from transforms.frost import FROST_EFFECT_PARAMS_SPEC, frost_effect
 from transforms.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
 from transforms.geological import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
@@ -50,7 +44,7 @@ from transforms.inversion import INVERT_PARAMS_SPEC, invert_tones
 from transforms.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
 from transforms.repeat import REPEAT_PARAMS_SPEC, repeat_tones
 from transforms.reversal import REVERSE_PARAMS_SPEC, reverse_tones
-from transforms.scale import scale_transform
+from transforms.scale import SCALE_PARAMS_SPEC, scale_transform
 from transforms.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
 
 TRANSFORMS: dict[str, TransformWithCallable] = {
@@ -82,18 +76,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "scale": PhraseTransform(
         "scale",
         scale_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    required=True,
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-                "factor": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-            }
-        ),
+        params_spec=SCALE_PARAMS_SPEC,
     ),
     "pad_silence": PhraseTransform(
         "pad_silence",
@@ -113,29 +96,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "erosion": PhraseTransform(
         "erosion",
         erosion_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=EROSION_PARAMS_SPEC,
     ),
     "drift": PhraseTransform(
         "drift",
         drift_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    required=True,
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-                "rate": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-            }
-        ),
+        params_spec=DRIFT_PARAMS_SPEC,
     ),
     "phrase_feigenbaum_shrink": PhraseRelativeTransform(
         "phrase_feigenbaum_shrink",
@@ -185,18 +151,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_scale": EachVoiceTransform(
         "score_scale",
         scale_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    required=True,
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-                "factor": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-            }
-        ),
+        params_spec=SCALE_PARAMS_SPEC,
     ),
     "score_delay": EachVoiceTransform(
         "score_delay",
@@ -211,18 +166,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_drift": EachVoiceTransform(
         "score_drift",
         drift_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    required=True,
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-                "rate": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-            }
-        ),
+        params_spec=DRIFT_PARAMS_SPEC,
     ),
     "add_pedal_point": ScoreTransform(
         "add_pedal_point",
@@ -237,13 +181,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "frost_effect": ScoreTransform(
         "frost_effect",
         frost_effect,
-        params_spec=TransformParamsSpec(
-            fields={
-                "iterations": TransformParamFieldSpec(
-                    schema=IntegerParam(),
-                )
-            }
-        ),
+        params_spec=FROST_EFFECT_PARAMS_SPEC,
     ),
     "accelerando": PhraseTransform(
         "accelerando",

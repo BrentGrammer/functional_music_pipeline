@@ -8,11 +8,11 @@ from transforms.base import (
     EachVoiceTransform,
     PhraseRelativeTransform,
     PhraseTransform,
+    ScorePipelineStep,
     ScoreTargetMotifsTransform,
     ScoreTransform,
     ToneSequence,
     TransformWithCallable,
-    ScorePipelineStep
 )
 from transforms.registry import TRANSFORMS
 

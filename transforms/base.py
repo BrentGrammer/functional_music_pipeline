@@ -5,7 +5,6 @@ from typing import Protocol, TypeAlias
 
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.voice import Voice
 
 ToneSequence: TypeAlias = list[Tone]
 ScorePipelineStep: TypeAlias = Callable[[Score], Score]
