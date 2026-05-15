@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# try these models:
+# qwen.qwen3-coder-next
+# minimax.minimax-m2.5
+# minimax.minimax-m2.1
+# mistral.devstral-2-123b
+# deepseek.v3.2
+# zai.glm-4.7
+
 MODEL="openai/gpt-5.5"
 # MODEL="amazon-bedrock/zai.glm-5"
 PROJECT_DIR="${1:-$PWD}"
