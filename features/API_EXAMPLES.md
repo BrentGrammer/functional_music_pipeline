@@ -62,41 +62,50 @@ transform.weierstrass(dimension="frequency", intensity="intense", max_deviation=
 
 ### BEFORE (5 parameters)
 ```python
-# Overly complex - exposing implementation details
+# Conceptually wrong: using RNG for initial state defeats the purpose of CA
 transform.cellular_automata(
     dimension="duration",
     max_deviation=0.3,
-    rule=110,  # Basic CA concept - should be exposed
-    seed=42,  # Implementation detail - remove
-    width=31  # Technical parameter - remove, use sensible default
+    rule=110,
+    seed=42,  # Generates random initial state — wrong! CA is deterministic
+    width=31  # Artificial width unrelated to input
 )
 ```
 
-### AFTER (2-3 parameters)
+### AFTER (3 parameters)
 ```python
-# Simple - users specify dimension, deviation, and optionally rule
+# The rule IS the transform. Initial state derived from the input tones themselves.
 transform.cellular_automata(
     dimension="duration",
-    max_deviation=0.3,
-    rule=110  # Optional: specify cellular automata rule (e.g., 30, 90, 110)
+    rule=30,
+    max_deviation=0.3
 )
 
-# All preset variants:
-transform.cellular_automata(dimension="duration", max_deviation=0.3)
-transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=30)
-transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=90)
-transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=110)
+# Classic Wolfram rules:
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.2)   # Chaotic
+transform.cellular_automata(dimension="frequency", rule=110, max_deviation=0.2)  # Complex/ordered
+transform.cellular_automata(dimension="frequency", rule=90, max_deviation=0.2)   # Fractal/self-similar
 
 # Works for all dimensions:
-transform.cellular_automata(dimension="frequency", max_deviation=0.2)
-transform.cellular_automata(dimension="amplitude", max_deviation=0.4, rule=30)
+transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3)
+transform.cellular_automata(dimension="amplitude", rule=110, max_deviation=0.4)
 
-# Creative combinations with custom rules:
-transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=30)
-transform.cellular_automata(dimension="frequency", max_deviation=0.5, rule=110)
+# max_deviation controls how strongly the CA pattern modulates the tones:
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.1)  # Subtle effect
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.5)  # Dramatic effect
 ```
 
-**Note:** `seed` and `width` are removed from public API. Internally, the seed will also be removed - cellular automata should be fully deterministic with no random initial state. The pattern should be derived from the input tones themselves (the musical content passed in), not generated independently. Users pass in music, the rule acts on that origin pattern deterministically.
+**How it works internally:**
+
+1. Extract target dimension values from input tones (e.g., all frequencies)
+2. Compute median, threshold into binary: `>= median → 1, < median → 0`
+3. This binary row (one cell per tone) is the CA's initial state
+4. Evolve the state using the rule for a fixed number of generations
+5. Read the final evolved state — maps 1:1 back to tones as modulation (scaled by `max_deviation`)
+
+The music's own structure is the initial condition. The rule deterministically reshapes it. This is true to the mathematical concept: cellular automata exhibit sensitivity to initial conditions (SDIC) — the input pattern matters, not a random starting point.
+
+**Note:** `seed` and `width` are removed entirely — both from public API and internal implementation. There is no randomness. The initial state comes from the input tones, and the width is simply the number of tones.
 
 ---
 
@@ -294,7 +303,7 @@ transform.ritardando(strength="dramatic")
 | Transform | Before | After | Reduction |
 |-----------|--------|-------|-----------|
 | `weierstrass` | 6 params | 2 params | 67% reduction |
-| `cellular_automata` | 5 params | 2 params | 60% reduction |
+| `cellular_automata` | 5 params | 3 params | 40% reduction |
 | `terraced_drift` | 5 params | 2 params | 60% reduction |
 | `random_drop` | 4 params | 2 params | 50% reduction |
 | `ridged_drop` | 4 params | 2 params | 50% reduction |
@@ -310,7 +319,7 @@ transform.ritardando(strength="dramatic")
 ```python
 # Users describe what they want musically
 transform.weierstrass(dimension="frequency", intensity="subtle")
-transform.cellular_automata(dimension="duration", pattern="fractal")
+transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3)
 transform.random_drop(dimension="amplitude", intensity="dense")
 ```
 

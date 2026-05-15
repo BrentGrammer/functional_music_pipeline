@@ -41,7 +41,7 @@ If we later need per-call randomness, we can add a global composition-level sett
 | Transform | Action |
 |-----------|--------|
 | `weierstrass` | Remove `seed`, use internal fixed seed |
-| `cellular_automata` | Remove `seed`, use internal fixed seed |
+| `cellular_automata` | Remove `seed` entirely (internal and public) — derive initial state from input tones |
 | `random_drop` | Remove `seed`, use internal fixed seed |
 | `terraced_drift` | Remove `seed`, use internal fixed seed |
 | `accelerando` / `ritardando` | Remove `seed`, use internal fixed seed |
@@ -86,18 +86,33 @@ _WEIERSTRASS_INTENSITY_PRESETS = {
 - `seed` (optional)
 - `width` (optional)
 
-**Proposed API (2 required, 0 optional):**
-- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
-- `pattern` (required): `"chaotic"` | `"structured"` | `"fractal"`
+**Problems with current implementation:**
 
-**Preset mapping:**
-```python
-_CELLULAR_AUTOMATA_PATTERN_PRESETS = {
-    "chaotic": {"rule": 30, "width": 31, "max_deviation": 0.4},
-    "structured": {"rule": 110, "width": 31, "max_deviation": 0.3},
-    "fractal": {"rule": 90, "width": 31, "max_deviation": 0.35},
-}
-```
+The current implementation uses `seed` to randomly generate an initial binary state, then evolves it with the CA rule. This is fundamentally wrong — cellular automata are deterministic systems with sensitivity to initial conditions (SDIC). The initial state should come from the input tones, not from a PRNG. The `width` parameter is also artificial; it should be derived from the number of input tones.
+
+**Design philosophy:**
+
+Cellular automata exhibit sensitivity to initial conditions — small differences in the starting pattern produce dramatically different evolutions. The transform should exploit this by using the *musical input itself* as the initial condition. The CA rule then deterministically reshapes that pattern. This is honest to the mathematical concept: the music IS the automaton's initial state, the rule transforms it, and the evolved state maps back onto the music.
+
+**How it works internally:**
+
+1. **Derive initial state from input tones**: Extract the target dimension's values from all tones, compute the median, threshold into binary (>= median → 1, < median → 0). This gives one cell per tone.
+2. **Evolve for K generations**: Apply the CA rule K times. The spatial state (width = number of tones) evolves deterministically.
+3. **Read final state directly**: The evolved binary state maps 1:1 back to tones as modulation values (-1.0 or 1.0 per cell, scaled by max_deviation).
+
+No RNG. No seed. No arbitrary width. The number of generations (K) controls how far the pattern diverges from the input's original structure — this is the "intensity" knob.
+
+**Proposed API (3 required, 0 optional):**
+- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
+- `rule` (required): Wolfram rule number (0-255), e.g. 30, 90, 110
+- `max_deviation` (required): how strongly the CA pattern modulates the tones (e.g. 0.3 = up to 30% deviation)
+
+Internally, a fixed number of generations is used to evolve the state. This could be exposed later if needed, but for now a sensible default (e.g., 5-8 generations) keeps the API minimal.
+
+**Edge cases:**
+- All tones have the same value in the target dimension → fallback to alternating `[1,0,1,0...]` to give the rule a non-trivial starting pattern
+- Single tone → return unchanged (CA needs spatial structure)
+- Two tones → CA will function but behavior is trivial with wrap-around on 2 cells
 
 ---
 
@@ -210,7 +225,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 | Transform | Before | After |
 |-----------|--------|-------|
 | `weierstrass` | 6 params | 2 params |
-| `cellular_automata` | 5 params | 2 params |
+| `cellular_automata` | 5 params | 3 params |
 | `terraced_drift` | 5 params | 2 params |
 | `random_drop` | 4 params | 2 params |
 | `ridged_drop` | 4 params | 2 params |
@@ -225,7 +240,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 ### Phase 1: Simplify Complexity Transforms
 
 1. Update `weierstrass` to 2-param API
-2. Update `cellular_automata` to 2-param API
+2. Update `cellular_automata` to 3-param API (remove seed/width, derive initial state from input)
 3. Update `random_drop` to 2-param API
 
 ### Phase 2: Simplify Geological Transforms
