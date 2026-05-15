@@ -158,46 +158,32 @@ The old nested stochastic-transform path has been removed:
     *   We no longer have a meaningful "bridge" phase because the legacy enum path has already been removed.
 *   **Step 3:** Complete.
     *   Primitive transforms are using `schema=...` specs.
-*   **Step 4:** Partially completed, then made less central by the later flattening design.
-    *   `ObjectParam` exists, but the current stochastic-transform architecture no longer depends on it.
+*   **Step 4:** Historically completed during the migration, but no longer part of the active design.
+    *   `ObjectParam` was introduced to support nested object validation during the transition period.
+    *   After the stochastic-transform flattening removed the nested profile path, `ObjectParam` became dead code and was deleted during cleanup.
 *   **Step 5:** Functionally complete in the runtime path.
     *   `TransformParamType` and the old fallback-based validation path are gone from active use.
     *   `TransformParamFieldSpec.schema` is now required.
-    *   The remaining question from this area is whether `ObjectParam` should stay as a general-purpose schema type or be removed as dead code.
 *   **Step 6:** Complete.
     *   The stochastic profiles have been flattened into top-level transforms such as `weierstrass`, `terraced_drift`, `cellular_automata`, `ridged_drop`, and `random_drop`.
 *   **Step 7:** Complete.
     *   The generic applicator is now `apply_stochastic_profile`, and the profile-specific wrappers construct concrete profile instances and delegate to it.
 *   **Step 8:** Complete.
     *   The abstraction cleanup and migration away from the old geological/profile-factory path is done.
-*   **Step 9:** Not started.
+*   **Step 9A:** Complete.
+    *   `ObjectParam` has been removed as dead code.
+*   **Step 9B:** Not started.
     *   Schemas are still centralized in `transforms/registry.py`.
 
 ## What Is Left
 
-The feature is not blocked anymore. What remains is cleanup and polish after the successful Step 8 migration.
+The feature is not blocked anymore. What remains is schema colocation and final verification after the successful Step 8 migration and Step 9A cleanup.
 
 ### Remaining Work in Order
 
-#### Step 9A: Decide the Fate of `ObjectParam`
-
-We need to make an explicit decision about the object-schema machinery that remains in `transforms/base.py`.
-
-There are two reasonable options:
-
-1. **Keep `ObjectParam` as a general reusable schema type**
-   *   Do this if we expect future transform params to need nested object validation again.
-   *   If we keep it, we should treat it as deliberate infrastructure and document that the stochastic-transform refactor no longer depends on it.
-
-2. **Delete `ObjectParam` as dead code**
-   *   Do this if the flattened transform design is the intended long-term direction and we do not want unused recursive schema machinery lingering around.
-   *   This is the cleaner option if we want the codebase to reflect only the currently active design.
-
-This is the main unresolved cleanup question left over from Steps 4 and 5.
-
 #### Step 9B: Colocate Schemas with Implementations
 
-Once the `ObjectParam` decision is made, perform the DRY refactor originally planned as Step 9:
+With the `ObjectParam` cleanup complete, perform the DRY refactor originally planned as Step 9:
 
 *   Move each `TransformParamsSpec` definition out of `transforms/registry.py`.
 *   Define each schema next to its implementation function in the corresponding transform module.
@@ -222,6 +208,5 @@ After Step 9B:
 
 The next concrete action should be:
 
-1. Decide whether `ObjectParam` stays or goes.
-2. Then perform Step 9 schema colocation.
-3. Then do a final verification and documentation sweep.
+1. Perform Step 9B schema colocation.
+2. Then do a final verification and documentation sweep.
