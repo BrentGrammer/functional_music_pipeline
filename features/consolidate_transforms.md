@@ -167,6 +167,7 @@ transforms/
 
 23. Cleanup:
   - Delete duration.py
+  - clean up erosion.py and frost_effect.py 
   - Split out tests in and rename test_duration.py
 
 ## Testing Caveat
