@@ -96,9 +96,7 @@ transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=30)
 transform.cellular_automata(dimension="frequency", max_deviation=0.5, rule=110)
 ```
 
-**Note:** `seed` and `width` are removed (use sensible defaults internally). `rule` is exposed as an optional parameter since it's a fundamental CA concept users should understand.
-
-**Note:** `rule` is exposed as an optional parameter since it's a fundamental CA concept users should understand. `width` and `seed` are hidden with sensible defaults.
+**Note:** `seed` and `width` are removed from public API. Internally, the seed will also be removed - cellular automata should be fully deterministic with no random initial state. The pattern should be derived from the input tones themselves (the musical content passed in), not generated independently. Users pass in music, the rule acts on that origin pattern deterministically.
 
 ---
 
