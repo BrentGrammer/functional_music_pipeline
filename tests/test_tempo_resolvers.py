@@ -1,15 +1,19 @@
 import pytest
 
 from score_model.tone import Tone
-from transforms.duration import (
+from transforms.tempo._common import (
     INTENSITY_LEVELS,
     _apply_duration_multipliers,
     _compute_tempo_change_factors,
-    _resolve_accelerando_final_duration_multiplier,
-    _resolve_ritardando_final_duration_multiplier,
-    accelerando_transform,
     resolve_jaggedness,
     resolve_strength,
+)
+from transforms.tempo.accelerando import (
+    _resolve_accelerando_final_duration_multiplier,
+    accelerando_transform,
+)
+from transforms.tempo.ritardando import (
+    _resolve_ritardando_final_duration_multiplier,
     ritardando_transform,
 )
 
@@ -265,18 +269,18 @@ class TestRitardandoTransform:
 
 class TestComputeJaggednessWeights:
     def test_empty_returns_empty(self):
-        from transforms.duration import _compute_jaggedness_weights
+        from transforms.tempo._common import _compute_jaggedness_weights
         assert _compute_jaggedness_weights(0, 0.5) == []
 
     def test_jaggedness_none_all_weights_are_neutral(self):
-        from transforms.duration import _compute_jaggedness_weights
+        from transforms.tempo._common import _compute_jaggedness_weights
         weights = _compute_jaggedness_weights(5, 0.0)
         assert all(w == 1.0 for w in weights)
 
     def test_high_jaggedness_produces_variation_with_seed(self):
         import random
 
-        from transforms.duration import _compute_jaggedness_weights
+        from transforms.tempo._common import _compute_jaggedness_weights
         seed = 42
         weights = _compute_jaggedness_weights(5, 1.0, random.Random(seed))
         assert len(weights) == 5
@@ -285,7 +289,7 @@ class TestComputeJaggednessWeights:
     def test_jaggedness_output_is_deterministic_with_same_seed(self):
         import random
 
-        from transforms.duration import _compute_jaggedness_weights
+        from transforms.tempo._common import _compute_jaggedness_weights
         seed = 123
         weights_1 = _compute_jaggedness_weights(10, 0.5, random.Random(seed))
         weights_2 = _compute_jaggedness_weights(10, 0.5, random.Random(seed))

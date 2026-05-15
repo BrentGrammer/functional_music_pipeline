@@ -2,7 +2,7 @@ import pytest
 
 from score_model.math_constants import GOLDEN_RATIO
 from score_model.tone import Tone
-from transforms.golden_ratio import (
+from transforms.proportion.golden_ratio import (
     golden_ratio_transform,
     phrase_golden_ratio_grow,
     phrase_golden_ratio_shrink,

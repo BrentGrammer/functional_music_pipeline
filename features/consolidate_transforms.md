@@ -169,6 +169,7 @@ transforms/
 
 23. Cleanup:
   - Delete duration.py
+  - Split out tests in and rename test_duration.py
 
 ## Testing Caveat
 

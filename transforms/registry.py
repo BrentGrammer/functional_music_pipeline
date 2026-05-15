@@ -14,17 +14,6 @@ from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_tones
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_tones
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
-from transforms.duration import (
-    ACCELERANDO_PARAMS_SPEC,
-    FEIGENBAUM_PARAMS_SPEC,
-    RITARDANDO_PARAMS_SPEC,
-    accelerando_transform,
-    feigenbaum_sequence,
-    phrase_feigenbaum_grow,
-    phrase_feigenbaum_shrink,
-    ritardando_transform,
-    score_feigenbaum_sequence,
-)
 from transforms.erosion import EROSION_PARAMS_SPEC, erosion_transform
 from transforms.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
 from transforms.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
@@ -40,12 +29,21 @@ from transforms.geological import (
     apply_terraced_drift_transform,
     apply_weierstrass_transform,
 )
-from transforms.golden_ratio import (
+from transforms.proportion.feigenbaum import (
+    FEIGENBAUM_PARAMS_SPEC,
+    feigenbaum_sequence,
+    phrase_feigenbaum_grow,
+    phrase_feigenbaum_shrink,
+    score_feigenbaum_sequence,
+)
+from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
     golden_ratio_transform,
     phrase_golden_ratio_grow,
     phrase_golden_ratio_shrink,
 )
+from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_transform
+from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_transform
 
 TRANSFORMS: dict[str, TransformWithCallable] = {
     "reverse": PhraseTransform(

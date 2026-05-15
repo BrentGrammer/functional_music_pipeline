@@ -11,18 +11,20 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import ToneDimension
-from transforms.duration import (
-    INTENSITY_LEVELS,
-    _compute_tempo_change_factors,
-    accelerando_transform,
+from transforms.proportion.feigenbaum import (
     feigenbaum_sequence,
     phrase_feigenbaum_grow,
     phrase_feigenbaum_shrink,
-    resolve_jaggedness,
-    resolve_strength,
-    ritardando_transform,
     score_feigenbaum_sequence,
 )
+from transforms.tempo._common import (
+    INTENSITY_LEVELS,
+    _compute_tempo_change_factors,
+    resolve_jaggedness,
+    resolve_strength,
+)
+from transforms.tempo.accelerando import accelerando_transform
+from transforms.tempo.ritardando import ritardando_transform
 
 
 class TestFeigenbaumDurationSequence:
