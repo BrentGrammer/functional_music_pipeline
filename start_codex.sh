@@ -23,4 +23,4 @@ code .
 
 sbx policy allow network "chatgpt.com"
 
-sbx run codex -- --sandbox workspace-write --cd .
+sbx run codex -- --sandbox workspace-write --cd . -c analytics.enabled=false
