@@ -5,7 +5,7 @@ import pytest
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
-from transforms.frost_effect import (
+from transforms.geological.frost_effect import (
     FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS,
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS,

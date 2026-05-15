@@ -2,7 +2,7 @@ import pytest
 
 from score_model.tone import Tone
 from transforms.base import ToneDimension
-from transforms.erosion import erosion_transform
+from transforms.geological.erosion import erosion_transform
 
 
 class TestErosionDuration:
