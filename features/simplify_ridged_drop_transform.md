@@ -142,20 +142,169 @@ If `drop_depth` were folded into `intensity`, users would lose that control.
 
 Implementation detail: `drop_depth` can still be passed into the shared modulation helper as `max_deviation` internally. The rename is only for the public ridged-drop API.
 
-## Implementation Steps
+## Implementation Checkpoints
 
-1. Add a private preset mapping in `transforms/geological/ridged_drop.py`.
-2. Update `apply_ridged_drop_transform` to accept `intensity` and `new_pattern_each_use` instead of public `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above`.
-3. Update `RIDGED_DROP_PARAMS_SPEC` to expose only `dimension`, `drop_depth`, `intensity`, and `new_pattern_each_use`.
-4. Make `dimension` and `drop_depth` required JSON params.
-5. Validate that `drop_depth` is either one of the supported depth names or a number from `0.0` to `1.0`.
-6. Validate that `intensity` is one of the supported preset names.
-7. Add boolean parameter validation for `new_pattern_each_use` if the params system does not already have a boolean schema.
-8. Keep deterministic behavior when `new_pattern_each_use` is `false`.
-9. Have the composition orchestration layer derive or inject an internal unique seed per transform occurrence when `new_pattern_each_use` is `true`.
-10. Update geological modulation tests to use the simplified API.
-11. Update JSON demos that currently pass `seed`.
-12. Run the relevant test suite for geological transforms and JSON parser validation.
+The refactor should be implemented in small reviewable checkpoints. Stop after each checkpoint so the changes can be inspected before continuing.
+
+### 1. Add Boolean Param Schema
+
+Scope:
+
+1. Add `BooleanParam` to `transforms/base.py` if one does not already exist.
+2. Add tests proving boolean params accept only `true` and `false`, not integers, strings, or `None`.
+
+Verification:
+
+```shell
+pytest tests/test_transforms_base.py
+```
+
+Stop for review.
+
+### 2. Add Drop Depth Resolver
+
+Scope:
+
+1. Add `_RIDGED_DROP_DEPTH_LEVELS` in `transforms/geological/ridged_drop.py`.
+2. Add `_resolve_drop_depth(value)`.
+3. Support `none`, `low`, `medium`, `high`, `extreme`, and numeric values from `0.0` to `1.0`.
+4. Reject booleans, unknown strings, numeric strings, values below `0.0`, and values above `1.0`.
+5. Add focused geological modulation tests for the resolver.
+
+Verification:
+
+```shell
+pytest tests/test_geological_modulation.py
+```
+
+Stop for review.
+
+### 3. Add Intensity Presets
+
+Scope:
+
+1. Add `_RIDGED_DROP_INTENSITY_PRESETS` in `transforms/geological/ridged_drop.py`.
+2. Add `_resolve_intensity(value)`.
+3. Support `subtle`, `medium`, and `severe`.
+4. Reject booleans, unknown strings, non-string values, and `None`.
+5. Add focused geological modulation tests for the resolver.
+
+Verification:
+
+```shell
+pytest tests/test_geological_modulation.py
+```
+
+Stop for review.
+
+### 4. Refactor Ridged Drop Function Signature
+
+Scope:
+
+1. Change `apply_ridged_drop_transform` to accept `dimension`, `drop_depth`, `intensity="medium"`, and `new_pattern_each_use=False`.
+2. Remove public `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above` from the signature.
+3. Resolve `drop_depth` to the internal `max_deviation` value passed to `apply_profile`.
+4. Resolve `intensity` to internal `_RidgedMultifractalProfile` settings.
+5. For this checkpoint, ignore `new_pattern_each_use` behavior and keep the existing fixed internal seed.
+
+Verification:
+
+```shell
+pytest tests/test_geological_modulation.py
+```
+
+Stop for review.
+
+### 5. Update Ridged Drop Params Spec
+
+Scope:
+
+1. Update `RIDGED_DROP_PARAMS_SPEC` to expose only `dimension`, `drop_depth`, `intensity`, and `new_pattern_each_use`.
+2. Make `dimension` and `drop_depth` required.
+3. Make `intensity` optional with default behavior handled by the function.
+4. Make `new_pattern_each_use` optional with default `False` behavior handled by the function.
+5. Use a union schema for `drop_depth`: supported depth enum or float.
+6. Use an enum schema for `intensity`.
+7. Use `BooleanParam` for `new_pattern_each_use`.
+8. Add or update JSON parser validation tests for accepted new params and rejected old params.
+
+Verification:
+
+```shell
+pytest tests/test_json_parser.py tests/test_transforms_base.py
+```
+
+Stop for review.
+
+### 6. Update Existing Geological Tests
+
+Scope:
+
+1. Replace old test calls using `max_deviation` with `drop_depth`.
+2. Remove old public `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above` from test calls.
+3. Remove or rewrite tests that depend on public `octaves=0` behavior.
+4. Add tests proving string and numeric `drop_depth` values can produce equivalent results.
+5. Add tests proving `intensity` changes the generated drop behavior.
+
+Verification:
+
+```shell
+pytest tests/test_geological_modulation.py
+```
+
+Stop for review.
+
+### 7. Update JSON Demos
+
+Scope:
+
+1. Update `compositions/geological_example.json`.
+2. Replace `max_deviation` with `drop_depth` for `ridged_drop` only.
+3. Remove `seed` from the `ridged_drop` entry.
+4. Add `intensity` only where it improves the demo clarity. It can be omitted when `medium` is acceptable.
+5. Do not update unrelated transforms in this checkpoint unless their tests require it.
+
+Verification:
+
+```shell
+pytest tests/test_json_parser.py
+```
+
+Stop for review.
+
+### 8. Implement New Pattern Each Use
+
+Scope:
+
+1. Identify where phrase and score transform occurrences are applied in the parser or orchestration layer.
+2. Add internal occurrence-based seed derivation outside `apply_ridged_drop_transform` if feasible.
+3. Keep `apply_ridged_drop_transform` stateless. Do not make it remember the previous seed.
+4. When `new_pattern_each_use` is `False`, keep deterministic default behavior.
+5. When `new_pattern_each_use` is `True`, repeated transform occurrences with the same public settings should receive distinct generated drop patterns.
+6. Add tests proving same settings can produce distinct patterns across separate occurrences when `new_pattern_each_use` is `True`.
+
+Verification:
+
+```shell
+pytest tests/test_geological_modulation.py tests/test_json_parser.py
+```
+
+Stop for review.
+
+### 9. Final Focused Test Pass
+
+Scope:
+
+1. Run the focused tests for the refactor.
+2. Fix only issues directly related to this refactor.
+
+Verification:
+
+```shell
+pytest tests/test_geological_modulation.py tests/test_json_parser.py tests/test_transforms_base.py
+```
+
+Stop for final review.
 
 ## Seed Policy
 
