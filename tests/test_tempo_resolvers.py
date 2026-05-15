@@ -4,7 +4,6 @@ from score_model.tone import Tone
 from transforms.duration import (
     INTENSITY_LEVELS,
     _compute_tempo_change_factors,
-    _interpolate_multiplier_at_position,
     _resolve_accelerando_final_duration_multiplier,
     _resolve_ritardando_final_duration_multiplier,
     accelerando_transform,
@@ -187,10 +186,8 @@ class TestAccelerandoTransform:
         assert result[0].duration == 2.0
 
         final_multiplier = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["high"])
-        multiplier_at_position_1 = _interpolate_multiplier_at_position(
-            position_index=1, total_tones=len(tones), start_multiplier=1.0, end_multiplier=final_multiplier
-        )
-        expected_second_duration = tones[1].duration * multiplier_at_position_1
+        first_multiplier = _compute_tempo_change_factors(len(tones), 1.0, final_multiplier)[1]
+        expected_second_duration = tones[1].duration * first_multiplier
         assert result[1].duration == pytest.approx(expected_second_duration)
 
     def test_preserves_frequency_sample_rate_and_amplitude(self):
@@ -232,10 +229,10 @@ class TestRitardandoTransform:
         result = ritardando_transform(tones, strength="high", jaggedness="none")
         assert result[0].duration == 1.0
 
+        start_factor = 1.0
+
         final_multiplier = _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["high"])
-        multiplier_for_second_tone = _interpolate_multiplier_at_position(
-            position_index=1, total_tones=len(tones), start_multiplier=1.0, end_multiplier=final_multiplier
-        )
+        multiplier_for_second_tone = _compute_tempo_change_factors(len(tones), start_factor, final_multiplier)[1]
         expected_second_duration = tones[1].duration * multiplier_for_second_tone
         assert result[1].duration == pytest.approx(expected_second_duration)
 

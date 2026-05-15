@@ -13,7 +13,7 @@ from score_model.voice import Voice
 from transforms.base import ToneDimension
 from transforms.duration import (
     INTENSITY_LEVELS,
-    _interpolate_multiplier_at_position,
+    _compute_tempo_change_factors,
     accelerando_transform,
     feigenbaum_sequence,
     phrase_feigenbaum_grow,
@@ -248,16 +248,14 @@ class TestScoreFeigenbaumDuration:
 
 class TestFeigenbaumTempoHelpers:
     def test_interpolate_multiplier_for_single_tone_returns_neutral(self):
-        first_tone_position = 0
         single_tone_count = 1
         neutral_start_multiplier = 1.0
         ending_accelerando_multiplier = 0.1
-        neutral_multiplier = _interpolate_multiplier_at_position(
-            position_index=first_tone_position,
-            total_tones=single_tone_count,
-            start_multiplier=neutral_start_multiplier,
-            end_multiplier=ending_accelerando_multiplier,
-        )
+        neutral_multiplier = _compute_tempo_change_factors(
+            tone_count=single_tone_count,
+            start_factor=neutral_start_multiplier,
+            end_factor=ending_accelerando_multiplier,
+        )[0]
 
         assert neutral_multiplier == neutral_start_multiplier
 

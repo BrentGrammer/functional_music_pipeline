@@ -138,23 +138,6 @@ def _compute_tempo_change_factors(tone_count: int, start_factor: float, end_fact
     return factors
 
 
-def _interpolate_multiplier_at_position(
-    position_index: int, total_tones: int, start_multiplier: float, end_multiplier: float
-) -> float:
-    """
-    Compute the duration multiplier for a specific tone position in the phrase.
-
-    For a phrase with 3 tones where start_multiplier=1.0 and end_multiplier=0.5:
-        - Position 0 returns 1.0 (first tone, no change)
-        - Position 1 returns 0.75 (middle tone, halfway between)
-        - Position 2 returns 0.5 (last tone, full change applied)
-    """
-    if total_tones == 1:
-        return 1.0
-    progress = position_index / (total_tones - 1)
-    return start_multiplier + (end_multiplier - start_multiplier) * progress
-
-
 def _resolve_accelerando_final_duration_multiplier(strength: float) -> float:
     """
     Map public strength (0.0 to 1.0) to the duration multiplier for the final tone.

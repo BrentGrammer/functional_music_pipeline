@@ -211,5 +211,4 @@ The next concrete action should be:
 
 ### Final Cleanup
 
-- Figure out if we need to use _interpolate_multiplier_at_position or can get rid of it (currently not referenced, does it need to be?)
 - rename frost.py to frost_effect.py
