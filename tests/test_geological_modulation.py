@@ -3,7 +3,10 @@ import pytest
 from score_model.tone import Tone
 from transforms.base import ToneDimension
 from transforms.geological.ridged_drop import (
+    _RIDGED_DROP_DEPTH_LEVELS,
+    _RIDGED_DROP_INTENSITY_PRESETS,
     _resolve_drop_depth,
+    _resolve_intensity,
     apply_ridged_drop_transform,
 )
 from transforms.geological.terraced_drift import apply_terraced_drift_transform
@@ -163,16 +166,13 @@ def test_ridged_drop_amplitude_modulates_without_touching_other_dimensions():
 
 
 def test_resolve_drop_depth_accepts_named_levels():
-    assert _resolve_drop_depth("none") == 0.0
-    assert _resolve_drop_depth("low") == 0.25
-    assert _resolve_drop_depth("medium") == 0.5
-    assert _resolve_drop_depth("high") == 0.75
-    assert _resolve_drop_depth("extreme") == 1.0
+    for name, expected_value in _RIDGED_DROP_DEPTH_LEVELS.items():
+        assert _resolve_drop_depth(name) == expected_value
 
 
 def test_resolve_drop_depth_accepts_named_levels_case_insensitive():
-    assert _resolve_drop_depth("MEDIUM") == 0.5
-    assert _resolve_drop_depth("High") == 0.75
+    assert _resolve_drop_depth("MEDIUM") == _RIDGED_DROP_DEPTH_LEVELS["medium"]
+    assert _resolve_drop_depth("High") == _RIDGED_DROP_DEPTH_LEVELS["high"]
 
 
 def test_resolve_drop_depth_accepts_numeric_values():
@@ -206,3 +206,35 @@ def test_resolve_drop_depth_rejects_value_above_one():
 def test_resolve_drop_depth_rejects_none():
     with pytest.raises(ValueError):
         _resolve_drop_depth(None)
+
+
+def test_resolve_intensity_accepts_named_presets():
+    for name, expected_preset in _RIDGED_DROP_INTENSITY_PRESETS.items():
+        assert _resolve_intensity(name) == expected_preset
+
+
+def test_resolve_intensity_accepts_named_presets_case_insensitive():
+    assert _resolve_intensity("SUBTLE") == _RIDGED_DROP_INTENSITY_PRESETS["subtle"]
+    assert _resolve_intensity("Severe") == _RIDGED_DROP_INTENSITY_PRESETS["severe"]
+
+
+def test_resolve_intensity_rejects_boolean():
+    with pytest.raises(ValueError):
+        _resolve_intensity(True)
+    with pytest.raises(ValueError):
+        _resolve_intensity(False)
+
+
+def test_resolve_intensity_rejects_unknown_string():
+    with pytest.raises(ValueError):
+        _resolve_intensity("invalid")
+
+
+def test_resolve_intensity_rejects_none():
+    with pytest.raises(ValueError):
+        _resolve_intensity(None)
+
+
+def test_resolve_intensity_rejects_numeric():
+    with pytest.raises(ValueError):
+        _resolve_intensity(123)

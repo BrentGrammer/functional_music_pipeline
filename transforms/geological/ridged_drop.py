@@ -21,6 +21,23 @@ _RIDGED_DROP_DEPTH_LEVELS = {
     "extreme": 1.0,
 }
 
+_RIDGED_DROP_INTENSITY_PRESETS = {
+    "subtle": {"octaves": 2, "ridge_density": 0.2, "drop_when_noise_above": 0.7},
+    "medium": {"octaves": 3, "ridge_density": 0.3, "drop_when_noise_above": 0.5},
+    "severe": {"octaves": 4, "ridge_density": 0.45, "drop_when_noise_above": 0.3},
+}
+
+
+def _resolve_intensity(value: str) -> dict[str, float]:
+    if isinstance(value, bool):
+        raise ValueError(f"intensity must be a string, not boolean.")
+    if not isinstance(value, str):
+        raise ValueError(f"intensity must be a string, not {type(value).__name__}.")
+    if value.lower() not in _RIDGED_DROP_INTENSITY_PRESETS:
+        allowed = ", ".join(_RIDGED_DROP_INTENSITY_PRESETS.keys())
+        raise ValueError(f"intensity must be one of: {allowed}.")
+    return _RIDGED_DROP_INTENSITY_PRESETS[value.lower()]
+
 
 def _resolve_drop_depth(value: str | float) -> float:
     if isinstance(value, bool):
