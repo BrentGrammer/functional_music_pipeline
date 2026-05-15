@@ -223,7 +223,6 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         apply_random_drop_transform,
         params_spec=RANDOM_DROP_PARAMS_SPEC,
     ),
-
     "score_terraced_drift": EachVoiceTransform(
         "score_terraced_drift",
         apply_terraced_drift_transform,
