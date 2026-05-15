@@ -2,6 +2,7 @@
 set -euo pipefail
 
 MODEL="openai/gpt-5.5"
+# MODEL="amazon-bedrock/zai.glm-5"
 PROJECT_DIR="${1:-$PWD}"
 
 PROJECT_BASENAME="$(basename "$PROJECT_DIR")"
@@ -15,6 +16,10 @@ SANDBOX_NAME="opencode-${PROJECT_BASENAME//_/-}"
 #
 # Example sandbox name:
 #   my_project -> opencode-my-project
+
+# Required for using bedrock
+sbx policy allow network "bedrock-runtime.us-west-2.amazonaws.com"
+sbx policy allow network "bedrock-runtime.us-east-1.amazonaws.com"
 
 configure_privacy_flags() {
   echo "Configuring privacy/telemetry environment inside sandbox..."
