@@ -138,26 +138,24 @@ These transforms introduce structured randomness, inspired by geological pattern
   ```json
   "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
   ```
-- **`geological`**: The main stochastic transform. It requires `profile`, `dimension`, and `max_deviation`.
+- **`weierstrass` / `score_weierstrass`**: A smooth, self-similar fractal wobble. Accepts `dimension`, `max_deviation`, and optional `seed`, `amplitude_scaling`, `ripples_per_wave`, and `iterations`.
+- **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension`, `max_deviation`, and optional `seed`, `step_size`, and `quantize_resolution`.
+- **`cellular_automata` / `score_cellular_automata`**: A binary modulation derived from an elementary cellular automaton. Accepts `dimension`, `max_deviation`, and optional `rule`, `seed`, and `width`.
+- **`ridged_drop` / `score_ridged_drop`**: A mostly stable signal interrupted by occasional sharp drops. Accepts `dimension`, `max_deviation`, and optional `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above`.
+- **`random_drop` / `score_random_drop`**: Random downward deviations at a controlled rate. Accepts `dimension`, `max_deviation`, and optional `seed` and `drop_rate`.
 
   ```json
   "transforms": [
     {
-      "name": "geological",
+      "name": "weierstrass",
       "params": {
-        "profile": { "type": "weierstrass" },
         "dimension": "frequency",
-        "max_deviation": 0.1
+        "max_deviation": 0.1,
+        "seed": 42
       }
     }
   ]
   ```
-
-  - **`weierstrass`**: A smooth, "wobbly" fractal curve.
-  - **`terraced`**: Snaps values to discrete "plateaus" with sharp jumps.
-  - **`cellular_automata`**: Creates complex, aperiodic patterns from simple rules.
-  - **`ridged_multifractal`**: Creates a mostly stable signal with rare, sharp drops.
-  - **`random_drop`**: Injects random downward shifts at a controlled rate.
 
 ### Development
 
