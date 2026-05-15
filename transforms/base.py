@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
-from typing import Protocol, TypeAlias
+from typing import TypeAlias
 
 from score_model.score import Score
 from score_model.tone import Tone
@@ -51,13 +51,6 @@ class StringParam(ParamSchema):
     def validate(self, value: object, field_name: str) -> None:
         if not isinstance(value, str):
             raise ValueError(f"Param '{field_name}' must be a string.")
-
-
-@dataclass(frozen=True)
-class BooleanParam(ParamSchema):
-    def validate(self, value: object, field_name: str) -> None:
-        if not isinstance(value, bool):
-            raise ValueError(f"Param '{field_name}' must be a boolean.")
 
 
 @dataclass(frozen=True)
@@ -156,11 +149,3 @@ class EachVoiceTransform(TransformDescriptor):
 TransformWithCallable: TypeAlias = (
     PhraseTransform | PhraseRelativeTransform | ScoreTransform | ScoreTargetMotifsTransform | EachVoiceTransform
 )
-
-
-class Transform(Protocol):
-    def __call__(self, tones: ToneSequence) -> ToneSequence: ...
-
-
-class ScoreTransformProtocol(Protocol):
-    def __call__(self, score: Score) -> Score: ...

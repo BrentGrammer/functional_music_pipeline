@@ -81,14 +81,6 @@ def _build_frost_voice(spec: FrostVoiceBuildSpec) -> Voice:
     setattr(child_voice, "frost_role", spec.role)
     return child_voice
 
-
-def _voice_start_time(voice: Voice) -> float:
-    if voice.tones and voice.tones[0].frequency == 0:
-        return voice.tones[0].duration
-
-    return 0.0
-
-
 def _score_end_time(score: Score) -> float:
     return max((sum(tone.duration for tone in voice.tones) for voice in score.voices), default=0.0)
 

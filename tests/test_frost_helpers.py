@@ -29,9 +29,15 @@ from transforms.frost_effect import (
     _random_edge_stagger_seconds,
     _random_single_seed_edge_separation_seconds,
     _score_end_time,
-    _voice_start_time,
     frost_effect,
 )
+
+
+def _voice_start_time(voice: Voice) -> float:
+    if voice.tones and voice.tones[0].frequency == 0:
+        return voice.tones[0].duration
+
+    return 0.0
 
 
 def test_copy_voice_retaining_frost_history_preserves_metadata_and_copies_tones():

@@ -24,9 +24,6 @@ from transforms.frost_effect import (
     _jitter_frequency_up_within_bounds,
     frost_effect,
 )
-from transforms.frost_effect import (
-    _voice_start_time as frost_voice_start_time,
-)
 
 CENTS_PER_OCTAVE = 1200.0
 
@@ -380,7 +377,7 @@ def test_voice_start_time_uses_leading_silence_duration():
     leading_silence_duration = 0.5
     voice = Voice([Tone(0.0, duration=leading_silence_duration), Tone(440.0, duration=1.0)])
 
-    assert frost_voice_start_time(voice) == pytest.approx(leading_silence_duration)
+    assert _voice_start_time(voice) == pytest.approx(leading_silence_duration)
 
 
 def test_first_audible_onset_field_collects_simultaneous_cluster_voices():
@@ -659,7 +656,7 @@ def test_build_replayed_event_voices_generates_entry_delays_when_not_provided():
 
     assert len(replayed_voices) == 1
     assert replayed_voices[0].tones[1].frequency == pytest.approx(source_frequency)
-    assert frost_voice_start_time(replayed_voices[0]) >= event_start + FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
+    assert _voice_start_time(replayed_voices[0]) >= event_start + FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
 
 
 def test_multi_voice_input_keeps_growing_linearly_across_multiple_events():
