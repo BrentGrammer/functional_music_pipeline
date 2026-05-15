@@ -130,19 +130,19 @@ class _RidgedMultifractalProfile:
 def apply_ridged_drop_transform(
     tones: ToneSequence,
     dimension: ToneDimension | str,
-    max_deviation: float,
-    seed: int = 42,
-    octaves: int = 3,
-    ridge_density: float = 0.3,
-    drop_when_noise_above: float = 0.5,
+    drop_depth: str | float,
+    intensity: str = "medium",
+    new_pattern_each_use: bool = False,
 ) -> ToneSequence:
+    max_deviation = _resolve_drop_depth(drop_depth)
+    intensity_settings = _resolve_intensity(intensity)
     return apply_profile(
         tones,
         _RidgedMultifractalProfile(
-            seed=seed,
-            octaves=octaves,
-            ridge_density=ridge_density,
-            drop_when_noise_above=drop_when_noise_above,
+            seed=42,
+            octaves=intensity_settings["octaves"],
+            ridge_density=intensity_settings["ridge_density"],
+            drop_when_noise_above=intensity_settings["drop_when_noise_above"],
         ),
         dimension,
         max_deviation,

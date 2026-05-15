@@ -44,11 +44,8 @@ def _build_reference_tones() -> list[Tone]:
             apply_ridged_drop_transform,
             {
                 "dimension": ToneDimension.FREQUENCY,
-                "max_deviation": 0.1,
-                "seed": 42,
-                "octaves": 3,
-                "ridge_density": 0.3,
-                "drop_when_noise_above": 0.5,
+                "drop_depth": 0.1,
+                "intensity": "medium",
             },
             id="ridged_drop",
         ),
@@ -78,18 +75,6 @@ def test_seeded_geological_modulation_transforms_are_repeatable(transform, kwarg
             },
             id="terraced_drift-zero-step",
         ),
-        pytest.param(
-            apply_ridged_drop_transform,
-            {
-                "dimension": ToneDimension.FREQUENCY,
-                "max_deviation": 0.1,
-                "seed": 7,
-                "octaves": 0,
-                "ridge_density": 0.3,
-                "drop_when_noise_above": 0.5,
-            },
-            id="ridged_drop-zero-octaves",
-        ),
     ],
 )
 def test_edge_case_parameters_can_produce_no_modulation(transform, kwargs):
@@ -110,7 +95,7 @@ def test_edge_case_parameters_can_produce_no_modulation(transform, kwargs):
         ),
         pytest.param(
             apply_ridged_drop_transform,
-            {"dimension": ToneDimension.FREQUENCY, "max_deviation": 0.1, "seed": 42},
+            {"dimension": ToneDimension.FREQUENCY, "drop_depth": 0.1},
             id="ridged_drop",
         ),
     ],
@@ -142,27 +127,42 @@ def test_terraced_drift_duration_modulates_without_touching_other_dimensions():
 
 
 def test_ridged_drop_amplitude_modulates_without_touching_other_dimensions():
-    tones = [
-        Tone(frequency=440.0, duration=1.0, amplitude=0.8),
-        Tone(frequency=880.0, duration=2.0, amplitude=0.8),
-    ]
+    unique_tones = [Tone(frequency=440.0 + i * 100, duration=1.0, amplitude=0.8) for i in range(20)]
 
     result = apply_ridged_drop_transform(
-        tones,
+        unique_tones,
         dimension=ToneDimension.AMPLITUDE,
-        max_deviation=1.0,
-        seed=42,
-        octaves=1,
-        ridge_density=0.3,
-        drop_when_noise_above=0.0,
+        drop_depth=1.0,
+        intensity="severe",
     )
 
-    assert any(transformed.amplitude < original.amplitude for transformed, original in zip(result, tones))
+    assert any(transformed.amplitude < original.amplitude for transformed, original in zip(result, unique_tones))
     assert all(0.0 <= tone.amplitude <= 1.0 for tone in result)
-    assert result[0].frequency == pytest.approx(tones[0].frequency)
-    assert result[1].frequency == pytest.approx(tones[1].frequency)
-    assert result[0].duration == pytest.approx(tones[0].duration)
-    assert result[1].duration == pytest.approx(tones[1].duration)
+    assert all(transformed.frequency == pytest.approx(original.frequency) for transformed, original in zip(result, unique_tones))
+    assert all(transformed.duration == pytest.approx(original.duration) for transformed, original in zip(result, unique_tones))
+
+
+def test_ridged_drop_intensity_changes_drop_behavior():
+    amplitude = 0.8
+    unique_tones = [Tone(frequency=440.0 + i * 100, duration=1.0, amplitude=amplitude) for i in range(10)]
+
+    result_subtle = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth=1.0,
+        intensity="subtle",
+    )
+    result_severe = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth=1.0,
+        intensity="severe",
+    )
+
+    drops_subtle = sum(1 for t in result_subtle if t.amplitude < amplitude)
+    drops_severe = sum(1 for t in result_severe if t.amplitude < amplitude)
+
+    assert drops_severe > drops_subtle
 
 
 def test_resolve_drop_depth_accepts_named_levels():
