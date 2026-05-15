@@ -114,22 +114,6 @@ def _apply_phrase_transform_specs(
 
     return phrase_tones
 
-
-def _build_voice_tones(
-    phrase_configs: list[object],
-    parsed_motifs: dict[str, list[Tone]],
-    previous_voice_tones: list[Tone],
-) -> list[Tone]:
-    combined_tones: list[Tone] = []
-
-    for phrase_config in phrase_configs:
-        reference_tones = combined_tones if combined_tones else previous_voice_tones
-        phrase_tones = parse_phrase(phrase_config, parsed_motifs, reference_tones)
-        combined_tones.extend(phrase_tones)
-
-    return combined_tones
-
-
 def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
     """
     Validates the phrase config structure and extracts the motif names.
@@ -154,23 +138,6 @@ def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
     return motif_names
 
 
-def _build_base_phrase_tones(
-    phrase_config: object,
-    parsed_motifs: dict[str, list[Tone]],
-) -> list[Tone]:
-    motif_names = _validate_and_extract_motifs(phrase_config)
-
-    phrase_tones: list[Tone] = []
-
-    for motif_name in motif_names:
-        if motif_name not in parsed_motifs:
-            raise ValueError(f"Motif '{motif_name}' not found in parsed motifs.")
-
-        phrase_tones.extend(copy_tones(parsed_motifs[motif_name]))
-
-    return phrase_tones
-
-
 def parse_phrase(
     phrase_config: object,
     parsed_motifs: dict[str, list[Tone]],
@@ -178,8 +145,14 @@ def parse_phrase(
 ) -> list[Tone]:
     if not isinstance(phrase_config, dict):
         raise ValueError("Each phrase must be an object.")
+    
+    motif_names = _validate_and_extract_motifs(phrase_config)
+    phrase_tones: list[Tone] = []
 
-    phrase_tones = _build_base_phrase_tones(phrase_config, parsed_motifs)
+    for motif_name in motif_names:
+        if motif_name not in parsed_motifs:
+            raise ValueError(f"Motif '{motif_name}' not found in parsed motifs.")
+        phrase_tones.extend(copy_tones(parsed_motifs[motif_name]))
 
     transform_specs = phrase_config.get("transforms", [])
     if not isinstance(transform_specs, list):
@@ -199,8 +172,12 @@ def parse_voice(
     phrase_configs = voice_config.get("phrases", [])
     if not isinstance(phrase_configs, list):
         raise ValueError("Voice 'phrases' must be a list.")
-
-    combined_tones = _build_voice_tones(phrase_configs, parsed_motifs, previous_voice_tones)
+    
+    combined_tones: list[Tone] = []
+    for phrase_config in phrase_configs:
+        reference_tones = combined_tones if combined_tones else previous_voice_tones
+        phrase_tones = parse_phrase(phrase_config, parsed_motifs, reference_tones)
+        combined_tones.extend(phrase_tones)
 
     return Voice(combined_tones), combined_tones
 
