@@ -53,15 +53,6 @@ FEIGENBAUM_PARAMS_SPEC = TransformParamsSpec(
     }
 )
 
-
-def _is_numeric_string(value: str) -> bool:
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
-
-
 def resolve_strength(value: object = "medium") -> float:
     if isinstance(value, bool):
         raise ValueError(
@@ -70,10 +61,6 @@ def resolve_strength(value: object = "medium") -> float:
     if isinstance(value, str):
         lower_value = value.lower()
         if lower_value not in INTENSITY_LEVELS:
-            raise ValueError(
-                f"Invalid strength: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-            )
-        if _is_numeric_string(value):
             raise ValueError(
                 f"Invalid strength: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
             )
@@ -97,10 +84,6 @@ def resolve_jaggedness(value: object = "none") -> float:
     if isinstance(value, str):
         lower_value = value.lower()
         if lower_value not in INTENSITY_LEVELS:
-            raise ValueError(
-                f"Invalid jaggedness: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-            )
-        if _is_numeric_string(value):
             raise ValueError(
                 f"Invalid jaggedness: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
             )

@@ -4,7 +4,14 @@ from composition.parser import TRANSFORMS, parse_composition
 from composition.schema import CompositionDocument
 from score_model.tone import Tone
 from transforms.base import EachVoiceTransform, ToneDimension
-from transforms.drift import drift_transform
+from transforms.drift import drift_transform  
+
+
+class TestDriftExceptions:
+    def test_unknown_dimension_raises(self):
+        tones = [Tone(440.0, 1.0)]
+        with pytest.raises(ValueError):
+            drift_transform(tones, dimension='InvalidDimension', rate=0.1)
 
 
 class TestDriftFrequency:

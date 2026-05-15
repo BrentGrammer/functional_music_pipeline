@@ -3,6 +3,7 @@ import pytest
 from score_model.tone import Tone
 from transforms.duration import (
     INTENSITY_LEVELS,
+    _apply_duration_multipliers,
     _compute_tempo_change_factors,
     _resolve_accelerando_final_duration_multiplier,
     _resolve_ritardando_final_duration_multiplier,
@@ -96,6 +97,10 @@ class TestResolveJaggedness:
         with pytest.raises(ValueError):
             resolve_jaggedness("0.5")
 
+    def test_invalid_type_raises_valueerror(self):
+        with pytest.raises(ValueError):
+            resolve_jaggedness(None)
+
 
 class TestResolveAccelerandoFinalDurationMultiplier:
     def test_strength_none_returns_neutral(self):
@@ -157,6 +162,15 @@ class TestComputeTempoChangeFactors:
         assert factors[0] == 1.0
         assert factors[1] == pytest.approx(0.85)
         assert factors[2] == 0.7
+
+
+class TestApplyDurationMultipliers:
+    def test_mismatched_tone_and_multiplier_counts_raise_valueerror(self):
+        tones = [Tone(frequency=440.0, duration=1.0), Tone(frequency=660.0, duration=0.5)]
+        multipliers = [1.0]
+
+        with pytest.raises(ValueError, match="Tone count \\(2\\) must match multiplier count \\(1\\)"):
+            _apply_duration_multipliers(tones, multipliers)
 
 
 class TestAccelerandoTransform:
