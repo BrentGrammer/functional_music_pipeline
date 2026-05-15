@@ -103,7 +103,7 @@ transforms/
 8. Update tempo and proportion imports in the registry, tests, and any
    cross-module references.
 
-9. Run targeted tempo and proportion tests if available: `test_duration`,
+9. Manual step for me (not you): Run targeted tempo and proportion tests if available: `test_duration`,
    `test_tempo_resolvers`, `test_feigenbaum_simple`, `test_golden_ratio`, and
    parser tests that reference `accelerando`, `ritardando`, `feigenbaum`, or
    `golden_ratio`.
