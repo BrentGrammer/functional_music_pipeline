@@ -1,17 +1,13 @@
-from typing import NotRequired, TypeAlias, TypedDict
+from typing import NotRequired, TypedDict
 
 
 class TransformConfig(TypedDict):
     name: str
     params: NotRequired[dict[str, object]]
 
-
-TransformSpec: TypeAlias = TransformConfig
-
-
 class PhraseConfig(TypedDict):
     motifs: list[str]
-    transforms: NotRequired[list[TransformSpec]]
+    transforms: NotRequired[list[TransformConfig]]
 
 
 class VoiceConfig(TypedDict):
@@ -20,7 +16,7 @@ class VoiceConfig(TypedDict):
 
 class CompositionConfig(TypedDict, total=False):
     voices: list[VoiceConfig]
-    score_transforms: list[TransformSpec]
+    score_transforms: list[TransformConfig]
 
 
 class CompositionDocument(TypedDict, total=False):
