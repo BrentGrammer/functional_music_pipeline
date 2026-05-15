@@ -125,18 +125,14 @@ Internally, a fixed number of generations is used to evolve the state. This coul
 - `step_size` (optional)
 - `quantize_resolution` (optional)
 
-**Proposed API (2 required, 0 optional):**
+**Proposed API (3 required, 0 optional):**
 - `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
-- `intensity` (required): `"subtle"` | `"moderate"` | `"dramatic"`
+- `max_deviation` (required): how far the drift can wander from the original value (e.g., 0.25 = up to 25% deviation)
+- `step_size` (required): how big each terrace jump is — controls the coarseness of the staircase pattern (e.g., 0.1 = fine steps, 0.5 = chunky steps)
 
-**Preset mapping:**
-```python
-_TERRACED_DRIFT_INTENSITY_PRESETS = {
-    "subtle": {"max_deviation": 0.1, "step_size": 0.1, "quantize_resolution": 0.1},
-    "moderate": {"max_deviation": 0.25, "step_size": 0.25, "quantize_resolution": 0.2},
-    "dramatic": {"max_deviation": 0.5, "step_size": 0.5, "quantize_resolution": 0.3},
-}
-```
+**Removed:**
+- `seed` — removed entirely, use fixed internal seed for deterministic behavior
+- `quantize_resolution` — derived internally from `step_size` (they're closely related; quantize grid set to match step size)
 
 ---
 
@@ -226,7 +222,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 |-----------|--------|-------|
 | `weierstrass` | 6 params | 2 params |
 | `cellular_automata` | 5 params | 3 params |
-| `terraced_drift` | 5 params | 2 params |
+| `terraced_drift` | 5 params | 3 params |
 | `random_drop` | 4 params | 2 params |
 | `ridged_drop` | 4 params | 2 params |
 | `add_pedal_point` | 5 params | 3 params |
@@ -245,7 +241,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 
 ### Phase 2: Simplify Geological Transforms
 
-4. Update `terraced_drift` to 2-param API
+4. Update `terraced_drift` to 3-param API (remove seed and quantize_resolution)
 5. Update `ridged_drop` to 2-param API (revert some of our recent changes)
 
 ### Phase 3: Simplify Other Transforms
