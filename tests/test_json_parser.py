@@ -1146,3 +1146,150 @@ def test_stretto_with_missing_required_fields_raises_error():
 
         with pytest.raises(ValueError):
             parse_composition(composition_doc)
+
+
+class TestRidgedDropParams:
+    def test_ridged_drop_named_drop_depth_limits_amplitude_drop(self):
+        parsed_motifs = {"seed": [Tone(440, 0.5, amplitude=1.0) for _ in range(50)]}
+        phrase_config_high_drop_depth = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "ridged_drop",
+                    "params": {"dimension": "amplitude", "drop_depth": "high"},
+                }
+            ],
+        }
+        phrase_config_low_drop_depth = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "ridged_drop",
+                    "params": {"dimension": "amplitude", "drop_depth": "low"},
+                }
+            ],
+        }
+
+        result_high = parse_phrase(phrase_config_high_drop_depth, parsed_motifs)
+        result_low = parse_phrase(phrase_config_low_drop_depth, parsed_motifs)
+
+        min_amplitude_high = min(t.amplitude for t in result_high)
+        min_amplitude_low = min(t.amplitude for t in result_low)
+
+        # "high" drop_depth (0.75) allows deeper drops than "low" (0.25),
+        # so the minimum amplitude with "high" should be lower than with "low"
+        assert min_amplitude_high <= min_amplitude_low
+
+    def test_ridged_drop_numeric_drop_depth_matches_named_equivalent(self):
+        '''The API promises that named presets and numeric values are interchangeable.
+        "medium" maps to 0.5, so passing "medium" or 0.5 should produce identical output.
+        This test ensures the mapping is correctly applied and users can rely on this equivalence.'''
+
+        parsed_motifs = {"seed": [Tone(440, 0.5, amplitude=1.0) for _ in range(50)]}
+        phrase_config_named = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "ridged_drop",
+                    "params": {"dimension": "amplitude", "drop_depth": "medium"},
+                }
+            ],
+        }
+        phrase_config_numeric = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "ridged_drop",
+                    "params": {"dimension": "amplitude", "drop_depth": 0.5},
+                }
+            ],
+        }
+
+        result_named = parse_phrase(phrase_config_named, parsed_motifs)
+        result_numeric = parse_phrase(phrase_config_numeric, parsed_motifs)
+
+        amplitudes_named = [t.amplitude for t in result_named]
+        amplitudes_numeric = [t.amplitude for t in result_numeric]
+
+        assert amplitudes_named == amplitudes_numeric
+
+    def test_ridged_drop_intensity_affects_drop_frequency(self):
+        parsed_motifs = {"seed": [Tone(440, 0.5, amplitude=1.0) for _ in range(50)]}
+        phrase_config_severe = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "ridged_drop",
+                    "params": {
+                        "dimension": "amplitude",
+                        "drop_depth": 0.5,
+                        "intensity": "severe",
+                    },
+                }
+            ],
+        }
+        phrase_config_subtle = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "ridged_drop",
+                    "params": {
+                        "dimension": "amplitude",
+                        "drop_depth": 0.5,
+                        "intensity": "subtle",
+                    },
+                }
+            ],
+        }
+
+        result_severe = parse_phrase(phrase_config_severe, parsed_motifs)
+        result_subtle = parse_phrase(phrase_config_subtle, parsed_motifs)
+
+        drops_severe = sum(1 for t in result_severe if t.amplitude < 1.0)
+        drops_subtle = sum(1 for t in result_subtle if t.amplitude < 1.0)
+
+        assert drops_severe > drops_subtle
+
+    def test_ridged_drop_new_pattern_each_use_accepts_boolean(self):
+        parsed_motifs = {"seed": [Tone(440, 0.5, amplitude=1.0) for _ in range(10)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [
+                {
+                    "name": "ridged_drop",
+                    "params": {
+                        "dimension": "amplitude",
+                        "drop_depth": 0.5,
+                        "new_pattern_each_use": True,
+                    },
+                }
+            ],
+        }
+
+        result = parse_phrase(phrase_config, parsed_motifs)
+
+        assert len(result) == 10
+
+    def test_ridged_drop_requires_dimension(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config = {
+            "motifs": ["seed"],
+            "transforms": [
+                {"name": "ridged_drop", "params": {"drop_depth": 0.5}}
+            ],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config, parsed_motifs)
+
+    def test_ridged_drop_requires_drop_depth(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        phrase_config_missing_drop_depth = {
+            "motifs": ["seed"],
+            "transforms": [
+                {"name": "ridged_drop", "params": {"dimension": "amplitude"}}
+            ],
+        }
+
+        with pytest.raises(ValueError):
+            parse_phrase(phrase_config_missing_drop_depth, parsed_motifs)

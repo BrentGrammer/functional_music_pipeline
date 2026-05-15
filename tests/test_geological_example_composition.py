@@ -81,8 +81,8 @@ def _build_geological_example_composition() -> dict:
                                     "name": "ridged_drop",
                                     "params": {
                                         "dimension": "amplitude",
-                                        "max_deviation": 0.9,
-                                        "seed": 42,
+                                        "drop_depth": 0.9,
+                                        "intensity": "medium",
                                     },
                                 }
                             ],

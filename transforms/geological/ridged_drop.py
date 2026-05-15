@@ -3,9 +3,9 @@ import random
 from dataclasses import dataclass
 
 from transforms.base import (
+    BooleanParam,
     EnumParam,
     FloatParam,
-    IntegerParam,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -54,20 +54,26 @@ def _resolve_drop_depth(value: str | float) -> float:
     raise ValueError(f"drop_depth must be a string or float, not {type(value).__name__}.")
 
 
+RIDGED_DROP_DEPTH_ENUM = EnumParam(allowed_values=tuple(_RIDGED_DROP_DEPTH_LEVELS.keys()))
+
 RIDGED_DROP_PARAMS_SPEC = TransformParamsSpec(
     fields={
         "dimension": TransformParamFieldSpec(
             required=True,
             schema=EnumParam(allowed_values=tuple(ToneDimension)),
         ),
-        "max_deviation": TransformParamFieldSpec(
+        "drop_depth": TransformParamFieldSpec(
             required=True,
-            schema=FloatParam(),
+            schema=(RIDGED_DROP_DEPTH_ENUM, FloatParam()),
         ),
-        "seed": TransformParamFieldSpec(schema=IntegerParam()),
-        "octaves": TransformParamFieldSpec(schema=IntegerParam()),
-        "ridge_density": TransformParamFieldSpec(schema=FloatParam()),
-        "drop_when_noise_above": TransformParamFieldSpec(schema=FloatParam()),
+        "intensity": TransformParamFieldSpec(
+            required=False,
+            schema=EnumParam(allowed_values=tuple(_RIDGED_DROP_INTENSITY_PRESETS.keys())),
+        ),
+        "new_pattern_each_use": TransformParamFieldSpec(
+            required=False,
+            schema=BooleanParam(),
+        ),
     }
 )
 
