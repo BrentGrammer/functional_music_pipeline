@@ -142,10 +142,13 @@ def apply_ridged_drop_transform(
 ) -> ToneSequence:
     max_deviation = _resolve_drop_depth(drop_depth)
     intensity_settings = _resolve_intensity(intensity)
+    _DEFAULT_SEED = 42
+    _RANDOM_SEED_UPPER_BOUND = 2 ** 31
+    seed = random.randint(0, _RANDOM_SEED_UPPER_BOUND) if new_pattern_each_use else _DEFAULT_SEED
     return apply_profile(
         tones,
         _RidgedMultifractalProfile(
-            seed=42,
+            seed=seed,
             octaves=intensity_settings["octaves"],
             ridge_density=intensity_settings["ridge_density"],
             drop_when_noise_above=intensity_settings["drop_when_noise_above"],

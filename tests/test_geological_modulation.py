@@ -165,6 +165,52 @@ def test_ridged_drop_intensity_changes_drop_behavior():
     assert drops_severe > drops_subtle
 
 
+def test_ridged_drop_new_pattern_each_use_produces_distinct_patterns():
+    amplitude = 0.8
+    unique_tones = [Tone(frequency=440.0 + i * 100, duration=1.0, amplitude=amplitude) for i in range(50)]
+
+    # Calling the same transform twice with new_pattern_each_use=True should
+    # produce different drop patterns on each call.
+    result_first = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth=0.5,
+        intensity="medium",
+        new_pattern_each_use=True,
+    )
+    result_second = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth=0.5,
+        intensity="medium",
+        new_pattern_each_use=True,
+    )
+
+    assert [t.amplitude for t in result_first] != [t.amplitude for t in result_second]
+
+
+def test_ridged_drop_same_seed_produces_identical_patterns():
+    amplitude = 0.8
+    unique_tones = [Tone(frequency=440.0 + i * 100, duration=1.0, amplitude=amplitude) for i in range(50)]
+
+    # Calling the same transform twice without new_pattern_each_use should
+    # produce identical deterministic results.
+    result_a = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth=0.5,
+        intensity="medium",
+    )
+    result_b = apply_ridged_drop_transform(
+        unique_tones,
+        dimension=ToneDimension.AMPLITUDE,
+        drop_depth=0.5,
+        intensity="medium",
+    )
+
+    assert [t.amplitude for t in result_a] == [t.amplitude for t in result_b]
+
+
 def test_ridged_drop_string_and_numeric_drop_depth_produce_equivalent_results():
     unique_tones = [Tone(frequency=440.0 + i * 100, duration=1.0, amplitude=0.8) for i in range(10)]
 
