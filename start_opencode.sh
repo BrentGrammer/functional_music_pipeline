@@ -9,16 +9,18 @@ set -euo pipefail
 # deepseek.v3.2
 # zai.glm-4.7
 
+# Could not get Deepseek R1 to work with OPENCODE
+
 # Good complex coding models to try from Bedrock:
 # 1. Claude Opus 4.5
 # 2. Claude Sonnet 4.5
 # 3. Claude Opus 4.1
-# 4. Qwen3 Coder Next
+# 4. Qwen3 Coder Next  # This one seemed really good for planning refactors!
 # 5. Devstral 2 123B
 # 6. DeepSeek V3.2
 # 7. MiniMax M2.5
 # 8. GLM5
-# 9. Kimi K2.5
+# 9. Kimi K2.5 # The thinking version is capable, but was really slow and a little glitchy
 
 MODEL="openai/gpt-5.5"
 # MODEL="amazon-bedrock/zai.glm-5"
