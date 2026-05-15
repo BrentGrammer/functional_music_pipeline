@@ -3,8 +3,8 @@ import pytest
 from score_model.tone import Tone
 from transforms.tempo._common import (
     INTENSITY_LEVELS,
-    _apply_duration_multipliers,
-    _compute_tempo_change_factors,
+    apply_duration_multipliers,
+    compute_tempo_change_factors,
     resolve_jaggedness,
     resolve_strength,
 )
@@ -144,25 +144,25 @@ class TestResolveRitardandoFinalDurationMultiplier:
 
 class TestComputeTempoChangeFactors:
     def test_empty_returns_empty(self):
-        assert _compute_tempo_change_factors(0, 1.0, 0.5) == []
+        assert compute_tempo_change_factors(0, 1.0, 0.5) == []
 
     def test_single_tone_returns_neutral_factor(self):
-        assert _compute_tempo_change_factors(1, 1.0, 0.5) == [1.0]
+        assert compute_tempo_change_factors(1, 1.0, 0.5) == [1.0]
 
     def test_first_factor_is_start_factor(self):
-        factors = _compute_tempo_change_factors(5, 1.0, 0.5)
+        factors = compute_tempo_change_factors(5, 1.0, 0.5)
         assert factors[0] == 1.0
 
     def test_last_factor_is_end_factor(self):
-        factors = _compute_tempo_change_factors(5, 1.0, 0.5)
+        factors = compute_tempo_change_factors(5, 1.0, 0.5)
         assert factors[-1] == 0.5
 
     def test_strength_none_all_factors_are_neutral(self):
-        factors = _compute_tempo_change_factors(5, 1.0, 1.0)
+        factors = compute_tempo_change_factors(5, 1.0, 1.0)
         assert all(f == 1.0 for f in factors)
 
     def test_factors_inbetween_are_linearly_interpolated(self):
-        factors = _compute_tempo_change_factors(3, 1.0, 0.7)
+        factors = compute_tempo_change_factors(3, 1.0, 0.7)
         assert factors[0] == 1.0
         assert factors[1] == pytest.approx(0.85)
         assert factors[2] == 0.7
@@ -174,7 +174,7 @@ class TestApplyDurationMultipliers:
         multipliers = [1.0]
 
         with pytest.raises(ValueError, match="Tone count \\(2\\) must match multiplier count \\(1\\)"):
-            _apply_duration_multipliers(tones, multipliers)
+            apply_duration_multipliers(tones, multipliers)
 
 
 class TestAccelerandoTransform:
@@ -204,7 +204,7 @@ class TestAccelerandoTransform:
         assert result[0].duration == 2.0
 
         final_multiplier = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["high"])
-        first_multiplier = _compute_tempo_change_factors(len(tones), 1.0, final_multiplier)[1]
+        first_multiplier = compute_tempo_change_factors(len(tones), 1.0, final_multiplier)[1]
         expected_second_duration = tones[1].duration * first_multiplier
         assert result[1].duration == pytest.approx(expected_second_duration)
 
@@ -250,7 +250,7 @@ class TestRitardandoTransform:
         start_factor = 1.0
 
         final_multiplier = _resolve_ritardando_final_duration_multiplier(INTENSITY_LEVELS["high"])
-        multiplier_for_second_tone = _compute_tempo_change_factors(len(tones), start_factor, final_multiplier)[1]
+        multiplier_for_second_tone = compute_tempo_change_factors(len(tones), start_factor, final_multiplier)[1]
         expected_second_duration = tones[1].duration * multiplier_for_second_tone
         assert result[1].duration == pytest.approx(expected_second_duration)
 
@@ -269,30 +269,30 @@ class TestRitardandoTransform:
 
 class TestComputeJaggednessWeights:
     def test_empty_returns_empty(self):
-        from transforms.tempo._common import _compute_jaggedness_weights
-        assert _compute_jaggedness_weights(0, 0.5) == []
+        from transforms.tempo._common import compute_jaggedness_weights
+        assert compute_jaggedness_weights(0, 0.5) == []
 
     def test_jaggedness_none_all_weights_are_neutral(self):
-        from transforms.tempo._common import _compute_jaggedness_weights
-        weights = _compute_jaggedness_weights(5, 0.0)
+        from transforms.tempo._common import compute_jaggedness_weights
+        weights = compute_jaggedness_weights(5, 0.0)
         assert all(w == 1.0 for w in weights)
 
     def test_high_jaggedness_produces_variation_with_seed(self):
         import random
 
-        from transforms.tempo._common import _compute_jaggedness_weights
+        from transforms.tempo._common import compute_jaggedness_weights
         seed = 42
-        weights = _compute_jaggedness_weights(5, 1.0, random.Random(seed))
+        weights = compute_jaggedness_weights(5, 1.0, random.Random(seed))
         assert len(weights) == 5
         assert any(w != 1.0 for w in weights)
         
     def test_jaggedness_output_is_deterministic_with_same_seed(self):
         import random
 
-        from transforms.tempo._common import _compute_jaggedness_weights
+        from transforms.tempo._common import compute_jaggedness_weights
         seed = 123
-        weights_1 = _compute_jaggedness_weights(10, 0.5, random.Random(seed))
-        weights_2 = _compute_jaggedness_weights(10, 0.5, random.Random(seed))
+        weights_1 = compute_jaggedness_weights(10, 0.5, random.Random(seed))
+        weights_2 = compute_jaggedness_weights(10, 0.5, random.Random(seed))
         assert weights_1 == weights_2
 
 

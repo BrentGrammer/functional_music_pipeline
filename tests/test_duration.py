@@ -19,7 +19,7 @@ from transforms.proportion.feigenbaum import (
 )
 from transforms.tempo._common import (
     INTENSITY_LEVELS,
-    _compute_tempo_change_factors,
+    compute_tempo_change_factors,
     resolve_jaggedness,
     resolve_strength,
 )
@@ -253,7 +253,7 @@ class TestFeigenbaumTempoHelpers:
         single_tone_count = 1
         neutral_start_multiplier = 1.0
         ending_accelerando_multiplier = 0.1
-        neutral_multiplier = _compute_tempo_change_factors(
+        neutral_multiplier = compute_tempo_change_factors(
             tone_count=single_tone_count,
             start_factor=neutral_start_multiplier,
             end_factor=ending_accelerando_multiplier,
