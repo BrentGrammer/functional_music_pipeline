@@ -136,3 +136,92 @@ Here is a step-by-step implementation plan designed to introduce the Polymorphic
 *   **Action:** To remove the duplication between the internal Python arguments and the external validation schema, move the `TransformParamsSpec` definitions out of the monolithic `transforms/registry.py` file.
 *   **Action:** Define each schema directly inside the implementation file next to its corresponding wrapper function (e.g., `WEIERSTRASS_SPEC` in `transforms/geological.py`).
 *   **Action:** Update `transforms/registry.py` to simply import the implementation function and its colocated spec, assembling the final registry without defining the schemas inline.
+
+## Current Status Checkpoint
+
+### Where We Are
+
+We have cleanly completed **Step 8**.
+
+The old nested stochastic-transform path has been removed:
+
+*   `geological` and `score_geological` have been removed from the active transform surface.
+*   `composition/profile_factory.py` has been deleted.
+*   `resolve_profile_in_params` has been deleted from `composition/parser.py`.
+*   The tests and example composition have been migrated to the flat top-level stochastic transform names.
+
+### Step-by-Step Status
+
+*   **Step 1:** Complete.
+    *   The `ParamSchema` hierarchy exists in `transforms/base.py`.
+*   **Step 2:** Effectively superseded by later cleanup.
+    *   We no longer have a meaningful "bridge" phase because the legacy enum path has already been removed.
+*   **Step 3:** Complete.
+    *   Primitive transforms are using `schema=...` specs.
+*   **Step 4:** Partially completed, then made less central by the later flattening design.
+    *   `ObjectParam` exists, but the current stochastic-transform architecture no longer depends on it.
+*   **Step 5:** Functionally complete in the runtime path.
+    *   `TransformParamType` and the old fallback-based validation path are gone from active use.
+    *   `TransformParamFieldSpec.schema` is now required.
+    *   The remaining question from this area is whether `ObjectParam` should stay as a general-purpose schema type or be removed as dead code.
+*   **Step 6:** Complete.
+    *   The stochastic profiles have been flattened into top-level transforms such as `weierstrass`, `terraced_drift`, `cellular_automata`, `ridged_drop`, and `random_drop`.
+*   **Step 7:** Complete.
+    *   The generic applicator is now `apply_stochastic_profile`, and the profile-specific wrappers construct concrete profile instances and delegate to it.
+*   **Step 8:** Complete.
+    *   The abstraction cleanup and migration away from the old geological/profile-factory path is done.
+*   **Step 9:** Not started.
+    *   Schemas are still centralized in `transforms/registry.py`.
+
+## What Is Left
+
+The feature is not blocked anymore. What remains is cleanup and polish after the successful Step 8 migration.
+
+### Remaining Work in Order
+
+#### Step 9A: Decide the Fate of `ObjectParam`
+
+We need to make an explicit decision about the object-schema machinery that remains in `transforms/base.py`.
+
+There are two reasonable options:
+
+1. **Keep `ObjectParam` as a general reusable schema type**
+   *   Do this if we expect future transform params to need nested object validation again.
+   *   If we keep it, we should treat it as deliberate infrastructure and document that the stochastic-transform refactor no longer depends on it.
+
+2. **Delete `ObjectParam` as dead code**
+   *   Do this if the flattened transform design is the intended long-term direction and we do not want unused recursive schema machinery lingering around.
+   *   This is the cleaner option if we want the codebase to reflect only the currently active design.
+
+This is the main unresolved cleanup question left over from Steps 4 and 5.
+
+#### Step 9B: Colocate Schemas with Implementations
+
+Once the `ObjectParam` decision is made, perform the DRY refactor originally planned as Step 9:
+
+*   Move each `TransformParamsSpec` definition out of `transforms/registry.py`.
+*   Define each schema next to its implementation function in the corresponding transform module.
+*   Reduce `transforms/registry.py` to assembly only: import the transform function and its colocated spec, then register them.
+
+Recommended rollout order:
+
+1. Start with the flat stochastic transforms in `transforms/geological.py`.
+2. Then migrate the small/simple transforms such as `delay`, `transpose`, `repeat`, and `pad_silence`.
+3. Then migrate the more specialized transforms such as `stretto`, `add_pedal_point`, `accelerando`, and `ritardando`.
+
+#### Step 9C: Final Verification Pass
+
+After Step 9B:
+
+*   Run the full test suite in the proper project environment.
+*   Run `ruff`.
+*   Run `mypy`.
+*   Do a final pass over docs and examples to make sure they still match the active transform surface.
+
+## Recommended Next Move
+
+The next concrete action should be:
+
+1. Decide whether `ObjectParam` stays or goes.
+2. Then perform Step 9 schema colocation.
+3. Then do a final verification and documentation sweep.
