@@ -1,8 +1,9 @@
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 
 import pytest
 
-from main import build_output_filename, get_cli_parser, main
+from cli.render_command import build_output_filename, get_cli_parser
+from main import main
 
 # The contents are not read in these tests because load_composition_score is mocked.
 VALID_COMPOSITION_FILE = "composition.json"
@@ -16,53 +17,54 @@ def test_cli_parser_accepts_output_name():
     assert args.output_name == "composition"
 
 
-@patch("main.save_score_to_wav")
-@patch("main.Path.mkdir")
-@patch("main.load_composition_score")
-def test_main_loads_composition_and_saves_wav(mock_load_score, mock_mkdir, mock_save_wav):
+@patch("main.render_composition")
+def test_main_loads_composition_and_saves_wav(mock_render_composition):
     """
      Verifies the main function correctly orchestrates loading a composition
     and saving the resulting score when a valid composition file is provided.
     """
+    mock_render_composition.return_value = "output/output.wav"
     args = ["--composition-file", VALID_COMPOSITION_FILE]
     main(args)
 
-    mock_load_score.assert_called_once_with(VALID_COMPOSITION_FILE)
-    mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-    mock_save_wav.assert_called_once_with(ANY, filename="output/output.wav")
+    mock_render_composition.assert_called_once_with(
+        composition_file=VALID_COMPOSITION_FILE,
+        output_name="output",
+        output_format="wav",
+    )
 
 
-@patch("main.save_score_to_wav")
-@patch("main.Path.mkdir")
-@patch("main.load_composition_score")
-def test_main_output_name_overrides_default_filename_base(mock_load_score, mock_mkdir, mock_save_wav):
+@patch("main.render_composition")
+def test_main_output_name_overrides_default_filename_base(mock_render_composition):
     """
      Ensures the --output-name flag controls the filename base while the
     selected output format controls the extension.
     """
+    mock_render_composition.return_value = "output/custom.wav"
     custom_output_name = "custom"
     args = ["--composition-file", VALID_COMPOSITION_FILE, "--output-name", custom_output_name]
     main(args)
 
-    mock_load_score.assert_called_once_with(VALID_COMPOSITION_FILE)
-    mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-    mock_save_wav.assert_called_once_with(ANY, filename="output/custom.wav")
+    mock_render_composition.assert_called_once_with(
+        composition_file=VALID_COMPOSITION_FILE,
+        output_name=custom_output_name,
+        output_format="wav",
+    )
 
 
-@patch("main.save_score_to_midi")
-@patch("main.save_score_to_wav")
-@patch("main.Path.mkdir")
-@patch("main.load_composition_score")
-def test_main_routes_midi_export_to_midi_writer(mock_load_score, mock_mkdir, mock_save_wav, mock_save_midi):
+@patch("main.render_composition")
+def test_main_routes_midi_export_to_midi_writer(mock_render_composition):
     midi_output_name = "composition"
+    mock_render_composition.return_value = "output/composition.mid"
     args = ["--composition-file", VALID_COMPOSITION_FILE, "--output-format", "midi", "--output-name", midi_output_name]
 
     main(args)
 
-    mock_load_score.assert_called_once_with(VALID_COMPOSITION_FILE)
-    mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-    mock_save_midi.assert_called_once_with(ANY, filename="output/composition.mid")
-    mock_save_wav.assert_not_called()
+    mock_render_composition.assert_called_once_with(
+        composition_file=VALID_COMPOSITION_FILE,
+        output_name=midi_output_name,
+        output_format="midi",
+    )
 
 
 def test_build_output_filename_adds_extension_for_output_format():
@@ -96,24 +98,22 @@ def test_build_output_filename_rejects_windows_style_path():
         build_output_filename(r"output\\composition", "midi")
 
 
-@patch("sys.exit")
+@patch("main.print_usage_and_exit")
 @patch("main.logger")
-def test_main_missing_composition_file_arg_exits_with_error(mock_logger, mock_exit):
+def test_main_missing_composition_file_arg_exits_with_error(mock_logger, mock_print_usage_and_exit):
     """
      The program must exit gracefully with a clear error and usage
     instructions if the required --composition-file argument is omitted.
     """
     main([])
     mock_logger.error.assert_called_with("--composition-file is required.")
-    mock_exit.assert_called_once_with(1)
+    mock_print_usage_and_exit.assert_called_once_with(exit_code=1)
 
 
 @patch("sys.exit")
 @patch("main.logger")
-@patch("main.load_composition_score", side_effect=FileNotFoundError("File not found"))
-def test_main_non_existent_composition_file_exits_with_error(
-    mock_load_score, mock_logger, mock_exit
-):
+@patch("main.render_composition", side_effect=FileNotFoundError("File not found"))
+def test_main_non_existent_composition_file_exits_with_error(mock_render_composition, mock_logger, mock_exit):
     """
      If the user provides a path to a file that does not exist, the
     program should report the error clearly and exit, preventing a crash.
@@ -121,6 +121,10 @@ def test_main_non_existent_composition_file_exits_with_error(
     args = ["--composition-file", "non_existent.json"]
     main(args)
 
-    mock_load_score.assert_called_once_with("non_existent.json")
+    mock_render_composition.assert_called_once_with(
+        composition_file="non_existent.json",
+        output_name="output",
+        output_format="wav",
+    )
     mock_logger.error.assert_called_with("File not found")
     mock_exit.assert_called_once_with(1)
