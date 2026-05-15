@@ -12,9 +12,23 @@ from transforms.base import (
     ScoreTransform,
     ToneSequence,
     TransformWithCallable,
-    apply_to_all_voices,
+    ScorePipelineStep
 )
 from transforms.registry import TRANSFORMS
+
+
+def apply_to_each_voice(
+    transform_func: Callable[..., ToneSequence],
+    *args: int | float,
+    **kwargs: object,
+) -> ScorePipelineStep:
+    def wrapper(score: Score) -> Score:
+        for i, voice in enumerate(score.voices):
+            modified_tones = transform_func(voice.tones, *args, **kwargs)
+            score.voices[i] = Voice(modified_tones)
+        return score
+
+    return wrapper
 
 
 def _parse_tone_string(tone_string: str) -> Tone:
@@ -26,30 +40,12 @@ def _parse_tone_string(tone_string: str) -> Tone:
 
     return Tone(float(normalized_tone_string))
 
-def _apply_phrase_transform(
-    transform_func: Callable[..., ToneSequence],
-    tones: ToneSequence,
-    transform_params: Mapping[str, object],
-) -> ToneSequence:
-    return transform_func(tones, **transform_params)
-
-
-
-def _apply_score_transform(
-    score: Score,
-    descriptor: ScoreTransform,
-    transform_params: Mapping[str, object],
-) -> Score:
-    descriptor.validate_params(transform_params)
-    return descriptor.transform(score, **transform_params)
-
-
 def _apply_all_voices_transform_with_optional_params(
     transform_func: Callable[..., ToneSequence],
     score: Score,
     transform_params: Mapping[str, object],
 ) -> Score:
-    return apply_to_all_voices(transform_func, **transform_params)(score)
+    return apply_to_each_voice(transform_func, **transform_params)(score)
 
 
 def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[str, list[Tone]]:
@@ -101,7 +97,7 @@ def _apply_phrase_transform_spec(
     descriptor.validate_params(transform_params)
 
     if isinstance(descriptor, PhraseTransform):
-        return _apply_phrase_transform(descriptor.transform, phrase_tones, transform_params)
+        return descriptor.transform(phrase_tones, **transform_params)
 
     if isinstance(descriptor, PhraseRelativeTransform):
         phrase_reference_tones = reference_tones if reference_tones else []
@@ -247,27 +243,6 @@ def _validate_composition_structure(
 
     return motif_definitions, voice_configs, score_transform_specs
 
-
-def _apply_all_voices_transform(
-    score: Score,
-    descriptor: AllVoicesTransform,
-    transform_params: Mapping[str, object],
-) -> Score:
-    descriptor.validate_params(transform_params)
-    return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
-
-
-def _apply_score_target_motifs_transform(
-    score: Score,
-    descriptor: ScoreTargetMotifsTransform,
-    transform_params: Mapping[str, object],
-    parsed_motifs: dict[str, list[Tone]],
-) -> Score:
-    descriptor.validate_params(transform_params)
-
-    return descriptor.transform(score, parsed_motifs, **transform_params)
-
-
 def _build_score_voices(voice_configs: list[object], parsed_motifs: dict[str, list[Tone]]) -> list[Voice]:
     voices: list[Voice] = []
     previous_voice_tones: list[Tone] = []
@@ -292,13 +267,16 @@ def _apply_score_transform_spec(
     descriptor = TRANSFORMS[transform_name]
 
     if isinstance(descriptor, ScoreTargetMotifsTransform):
-        return _apply_score_target_motifs_transform(score, descriptor, transform_params, parsed_motifs)
+        descriptor.validate_params(transform_params)
+        return descriptor.transform(score, parsed_motifs, **transform_params)
 
     if isinstance(descriptor, ScoreTransform):
-        return _apply_score_transform(score, descriptor, transform_params)
+        descriptor.validate_params(transform_params)
+        return descriptor.transform(score, **transform_params)
 
     if isinstance(descriptor, AllVoicesTransform):
-        return _apply_all_voices_transform(score, descriptor, transform_params)
+        descriptor.validate_params(transform_params)
+        return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
 
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 

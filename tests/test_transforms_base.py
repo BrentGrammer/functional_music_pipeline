@@ -1,3 +1,4 @@
+from composition.parser import apply_to_each_voice
 import pytest
 
 from score_model.score import Score
@@ -11,8 +12,6 @@ from transforms.base import (
     ToneDimension,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    apply_to_all_voices,
-    apply_to_voice,
     parse_dimension,
 )
 
@@ -134,71 +133,11 @@ def test_transform_params_spec_identifies_required_fields_from_metadata():
     required_fields = tuple(f for f, s in params_spec.fields.items() if s.required)
     assert required_fields == ("seconds",)
 
-
-def test_apply_to_voice_updates_only_target_voice_and_preserves_others():
-    target_voice_index = 1
-    duration_multiplier = 2.0
-    score = _build_score_with_two_voices()
-    original_first_voice_tones = score.voices[0].tones
-
-    pipeline_step = apply_to_voice(target_voice_index, _scale_duration, duration_multiplier)
-    result = pipeline_step(score)
-
-    assert result is score
-    assert score.voices[0].tones is original_first_voice_tones
-    assert score.voices[1].tones[0].duration == pytest.approx(1.0)
-
-
-def test_apply_to_voice_ignores_negative_index():
-    negative_voice_index = -1
-    score = _build_score_with_two_voices()
-    original_first_duration = score.voices[0].tones[0].duration
-    original_second_duration = score.voices[1].tones[0].duration
-
-    pipeline_step = apply_to_voice(negative_voice_index, _scale_duration, 3.0)
-    result = pipeline_step(score)
-
-    assert result is score
-    assert score.voices[0].tones[0].duration == pytest.approx(original_first_duration)
-    assert score.voices[1].tones[0].duration == pytest.approx(original_second_duration)
-
-
-def test_apply_to_voice_ignores_out_of_range_index():
-    out_of_range_voice_index = 5
-    score = _build_score_with_two_voices()
-    original_first_duration = score.voices[0].tones[0].duration
-    original_second_duration = score.voices[1].tones[0].duration
-
-    pipeline_step = apply_to_voice(out_of_range_voice_index, _scale_duration, 3.0)
-    result = pipeline_step(score)
-
-    assert result is score
-    assert score.voices[0].tones[0].duration == pytest.approx(original_first_duration)
-    assert score.voices[1].tones[0].duration == pytest.approx(original_second_duration)
-
-
-def test_apply_to_voice_forwards_keyword_arguments():
-    target_voice_index = 0
+def test_apply_to_each_voice_updates_every_voice():
     duration_multiplier = 2.0
     score = _build_score_with_two_voices()
 
-    pipeline_step = apply_to_voice(
-        target_voice_index,
-        _scale_duration,
-        duration_multiplier,
-        preserve_frequency=False,
-    )
-    result = pipeline_step(score)
-
-    assert result.voices[0].tones[0].frequency == pytest.approx(880.0)
-    assert result.voices[0].tones[0].duration == pytest.approx(2.0)
-
-
-def test_apply_to_all_voices_updates_every_voice():
-    duration_multiplier = 2.0
-    score = _build_score_with_two_voices()
-
-    pipeline_step = apply_to_all_voices(_scale_duration, duration_multiplier)
+    pipeline_step = apply_to_each_voice(_scale_duration, duration_multiplier)
     result = pipeline_step(score)
 
     assert result is score
@@ -206,11 +145,11 @@ def test_apply_to_all_voices_updates_every_voice():
     assert result.voices[1].tones[0].duration == pytest.approx(1.0)
 
 
-def test_apply_to_all_voices_forwards_keyword_arguments():
+def test_apply_to_each_voice_forwards_keyword_arguments():
     duration_multiplier = 0.5
     score = _build_score_with_two_voices()
 
-    pipeline_step = apply_to_all_voices(
+    pipeline_step = apply_to_each_voice(
         _scale_duration,
         duration_multiplier,
         preserve_frequency=False,
@@ -221,10 +160,10 @@ def test_apply_to_all_voices_forwards_keyword_arguments():
     assert result.voices[1].tones[0].frequency == pytest.approx(330.0)
 
 
-def test_apply_to_all_voices_handles_empty_score():
+def test_apply_to_each_voice_handles_empty_score():
     empty_score = Score()
 
-    pipeline_step = apply_to_all_voices(_scale_duration, 2.0)
+    pipeline_step = apply_to_each_voice(_scale_duration, 2.0)
     result = pipeline_step(empty_score)
 
     assert result is empty_score

@@ -214,32 +214,3 @@ class Transform(Protocol):
 
 class ScoreTransformProtocol(Protocol):
     def __call__(self, score: Score) -> Score: ...
-
-
-def apply_to_voice(
-    voice_index: int,
-    transform_func: Callable[..., ToneSequence],
-    *args: int | float,
-    **kwargs: object,
-) -> ScorePipelineStep:
-    def wrapper(score: Score) -> Score:
-        if 0 <= voice_index < len(score.voices):
-            modified_tones = transform_func(score.voices[voice_index].tones, *args, **kwargs)
-            score.voices[voice_index] = Voice(modified_tones)
-        return score
-
-    return wrapper
-
-
-def apply_to_all_voices(
-    transform_func: Callable[..., ToneSequence],
-    *args: int | float,
-    **kwargs: object,
-) -> ScorePipelineStep:
-    def wrapper(score: Score) -> Score:
-        for i, voice in enumerate(score.voices):
-            modified_tones = transform_func(voice.tones, *args, **kwargs)
-            score.voices[i] = Voice(modified_tones)
-        return score
-
-    return wrapper
