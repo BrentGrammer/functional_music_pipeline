@@ -1,200 +1,264 @@
-# Remove Seed from Public API
+# Simplify Transform Public API
 
 ## Goal
 
-Remove the `seed` parameter from the public API of all transforms that currently expose it. Users should not need to understand or manage seed values to use stochastic transforms. Instead, transforms should handle randomness internally while providing a user-friendly `new_pattern_each_use` boolean for controlling whether repeated uses produce distinct patterns.
+Reduce the complexity of the public API for transforms. Users should be able to use transforms creatively without needing to understand implementation details. This includes:
 
-## Background
+1. Removing `seed` parameters entirely (deterministic by default, randomness handled internally)
+2. Replacing technical parameters with intuitive presets
+3. Keeping parameters minimal: ideally 2-3 required parameters, at most 1 optional parameter
 
-The `ridged_drop` transform was successfully updated to hide `seed` and expose `new_pattern_each_use` instead. This pattern should be applied to the remaining transforms that still expose `seed`.
+## Guiding Principles
 
-## Affected Transforms
+1. **Musical intent over implementation**: Parameters should describe what the user wants musically, not how the algorithm works internally.
+2. **Presets over numbers**: Named presets (e.g., "subtle", "medium", "severe") are easier to understand than arbitrary numeric values.
+3. **Minimal API surface**: Every parameter must justify its existence. If in doubt, leave it out.
+4. **Sensible defaults baked in**: Rather than exposing optional parameters with defaults, pick the best default and hide the complexity.
+5. **Consistency**: Similar transforms should have similar APIs.
 
-| Transform | File | Current Seed Usage |
-|-----------|------|-------------------|
-| `cellular_automata` / `score_cellular_automata` | `transforms/complexity/cellular_automata.py` | Optional, default 42 |
-| `random_drop` / `score_random_drop` | `transforms/complexity/random_drop.py` | Optional, default 42 |
-| `weierstrass` / `score_weierstrass` | `transforms/complexity/weierstrass.py` | Optional, default 42 |
-| `terraced_drift` / `score_terraced_drift` | `transforms/geological/terraced_drift.py` | Optional, default 42 |
-| `accelerando` / `ritardando` | `transforms/tempo/_common.py` | Optional, used when `jaggedness` is non-zero |
+## Target API Complexity
 
-## Proposed API Change
+| Complexity | Parameters | Example |
+|------------|------------|---------|
+| Ideal | 2 required, 0 optional | `dimension`, `intensity` |
+| Acceptable | 2-3 required, 0-1 optional | `dimension`, `depth`, optional `texture` |
+| Too complex | 4+ parameters | Needs simplification |
 
-For each affected transform, replace:
+---
 
+## Part 1: Remove Seed from Public API
+
+### Background
+
+The `seed` parameter is an implementation detail. Users should not see it. Transforms will use a fixed internal seed (42) for deterministic, reproducible behavior by default.
+
+**Decision**: Remove `new_pattern_each_use` as well. If a user wants variation, they should apply the transform multiple times with different presets, not toggle a randomness flag. This keeps the API simpler.
+
+If we later need per-call randomness, we can add a global composition-level setting rather than per-transform flags.
+
+### Affected Transforms
+
+| Transform | Action |
+|-----------|--------|
+| `weierstrass` | Remove `seed`, use internal fixed seed |
+| `cellular_automata` | Remove `seed`, use internal fixed seed |
+| `random_drop` | Remove `seed`, use internal fixed seed |
+| `terraced_drift` | Remove `seed`, use internal fixed seed |
+| `accelerando` / `ritardando` | Remove `seed`, use internal fixed seed |
+
+---
+
+## Part 2: Simplify Overly Complex Transforms
+
+### `weierstrass` - Currently 6 Parameters
+
+**Current API:**
+- `dimension` (required)
+- `max_deviation` (required)
+- `seed` (optional)
+- `amplitude_scaling` (optional)
+- `ripples_per_wave` (optional)
+- `iterations` (optional)
+
+**Proposed API (2 required, 0 optional):**
+- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
+- `intensity` (required): `"subtle"` | `"medium"` | `"intense"`
+
+The `intensity` preset controls both the deviation amount AND the texture characteristics. Users pick how much weierstrass wobble they want, and the preset handles all the internal tuning.
+
+**Preset mapping:**
 ```python
-seed: int = 42
+_WEIERSTRASS_INTENSITY_PRESETS = {
+    "subtle": {"max_deviation": 0.05, "amplitude_scaling": 0.3, "ripples_per_wave": 2.0, "iterations": 6},
+    "medium": {"max_deviation": 0.15, "amplitude_scaling": 0.5, "ripples_per_wave": 3.0, "iterations": 10},
+    "intense": {"max_deviation": 0.3, "amplitude_scaling": 0.7, "ripples_per_wave": 5.0, "iterations": 15},
+}
 ```
 
-With:
+---
 
+### `cellular_automata` - Currently 5 Parameters
+
+**Current API:**
+- `dimension` (required)
+- `max_deviation` (required)
+- `rule` (optional)
+- `seed` (optional)
+- `width` (optional)
+
+**Proposed API (2 required, 0 optional):**
+- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
+- `pattern` (required): `"chaotic"` | `"structured"` | `"fractal"`
+
+**Preset mapping:**
 ```python
-new_pattern_each_use: bool = False
+_CELLULAR_AUTOMATA_PATTERN_PRESETS = {
+    "chaotic": {"rule": 30, "width": 31, "max_deviation": 0.4},
+    "structured": {"rule": 110, "width": 31, "max_deviation": 0.3},
+    "fractal": {"rule": 90, "width": 31, "max_deviation": 0.35},
+}
 ```
 
-Behavior:
-- `new_pattern_each_use=False` (default): Use a fixed internal seed (42) for deterministic, reproducible results.
-- `new_pattern_each_use=True`: Generate a random seed internally on each call, producing distinct patterns.
+---
+
+### `terraced_drift` - Currently 5 Parameters
+
+**Current API:**
+- `dimension` (required)
+- `max_deviation` (required)
+- `seed` (optional)
+- `step_size` (optional)
+- `quantize_resolution` (optional)
+
+**Proposed API (2 required, 0 optional):**
+- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
+- `intensity` (required): `"subtle"` | `"moderate"` | `"dramatic"`
+
+**Preset mapping:**
+```python
+_TERRACED_DRIFT_INTENSITY_PRESETS = {
+    "subtle": {"max_deviation": 0.1, "step_size": 0.1, "quantize_resolution": 0.1},
+    "moderate": {"max_deviation": 0.25, "step_size": 0.25, "quantize_resolution": 0.2},
+    "dramatic": {"max_deviation": 0.5, "step_size": 0.5, "quantize_resolution": 0.3},
+}
+```
+
+---
+
+### `random_drop` - Currently 4 Parameters
+
+**Current API:**
+- `dimension` (required)
+- `max_deviation` (required)
+- `seed` (optional)
+- `drop_rate` (optional)
+
+**Proposed API (2 required, 0 optional):**
+- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
+- `intensity` (required): `"sparse"` | `"moderate"` | `"dense"`
+
+**Preset mapping:**
+```python
+_RANDOM_DROP_INTENSITY_PRESETS = {
+    "sparse": {"max_deviation": 0.3, "drop_rate": 0.2},
+    "moderate": {"max_deviation": 0.5, "drop_rate": 0.4},
+    "dense": {"max_deviation": 0.7, "drop_rate": 0.6},
+}
+```
+
+---
+
+### `ridged_drop` - Currently 4 Parameters
+
+**Current API:**
+- `dimension` (required)
+- `drop_depth` (required)
+- `intensity` (optional)
+- `new_pattern_each_use` (optional)
+
+**Proposed API (2 required, 0 optional):**
+- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
+- `intensity` (required): `"subtle"` | `"medium"` | `"severe"`
+
+Fold `drop_depth` into the `intensity` preset. Remove `new_pattern_each_use`.
+
+**Preset mapping:**
+```python
+_RIDGED_DROP_INTENSITY_PRESETS = {
+    "subtle": {"drop_depth": 0.25, "octaves": 2, "ridge_density": 0.2, "drop_when_noise_above": 0.7},
+    "medium": {"drop_depth": 0.5, "octaves": 3, "ridge_density": 0.3, "drop_when_noise_above": 0.5},
+    "severe": {"drop_depth": 0.75, "octaves": 4, "ridge_density": 0.45, "drop_when_noise_above": 0.3},
+}
+```
+
+---
+
+### `add_pedal_point` - Currently 5 Parameters
+
+**Current API:**
+- `frequency` (required)
+- `duration` (required)
+- `amplitude` (optional)
+- `mode` (optional)
+- `pulse_duration` (optional)
+
+**Proposed API (2 required, 1 optional):**
+- `frequency` (required): The pedal note frequency in Hz
+- `duration` (required): How long the pedal lasts
+- `mode` (optional): `"sustain"` (default) | `"pulse"`
+
+Remove `amplitude` (use sensible default like 0.6). Remove `pulse_duration` (derive from context or use fixed ratio).
+
+---
+
+### `accelerando` / `ritardando` - Currently 3 Parameters
+
+**Current API:**
+- `strength` (required)
+- `jaggedness` (optional)
+- `seed` (optional)
+
+**Proposed API (1 required, 0 optional):**
+- `strength` (required): `"subtle"` | `"moderate"` | `"dramatic"`
+
+Remove `jaggedness` - if users want jagged tempo changes, they can combine with other transforms. Remove `seed`.
+
+---
+
+## Summary: Before and After
+
+| Transform | Before | After |
+|-----------|--------|-------|
+| `weierstrass` | 6 params | 2 params |
+| `cellular_automata` | 5 params | 2 params |
+| `terraced_drift` | 5 params | 2 params |
+| `random_drop` | 4 params | 2 params |
+| `ridged_drop` | 4 params | 2 params |
+| `add_pedal_point` | 5 params | 3 params |
+| `accelerando` | 3 params | 1 param |
+| `ritardando` | 3 params | 1 param |
+
+---
 
 ## Implementation Checkpoints
 
-### 1. Update `weierstrass` Transform
+### Phase 1: Simplify Complexity Transforms
 
-Scope:
-1. Remove `seed` from `WEIERSTRASS_PARAMS_SPEC`.
-2. Add `new_pattern_each_use` with `BooleanParam` schema.
-3. Update `apply_weierstrass_transform` to generate random seed when `new_pattern_each_use=True`.
-4. Update tests to use new API.
-5. Update any demos that use `seed`.
+1. Update `weierstrass` to 2-param API
+2. Update `cellular_automata` to 2-param API
+3. Update `random_drop` to 2-param API
 
-Verification:
+### Phase 2: Simplify Geological Transforms
 
-```shell
-pytest tests/test_complexity_modulation.py
-```
+4. Update `terraced_drift` to 2-param API
+5. Update `ridged_drop` to 2-param API (revert some of our recent changes)
 
-Stop for review.
+### Phase 3: Simplify Other Transforms
 
-### 2. Update `cellular_automata` Transform
+6. Update `accelerando` / `ritardando` to 1-param API
+7. Update `add_pedal_point` to 3-param API
 
-Scope:
-1. Remove `seed` from `CELLULAR_AUTOMATA_PARAMS_SPEC`.
-2. Add `new_pattern_each_use` with `BooleanParam` schema.
-3. Update `apply_cellular_automata_transform` to generate random seed when `new_pattern_each_use=True`.
-4. Update tests to use new API.
-5. Update any demos that use `seed`.
+### Phase 4: Documentation and Demos
 
-Verification:
+8. Update README with new APIs
+9. Update all demo files
+10. Final test pass
 
-```shell
-pytest tests/test_complexity_modulation.py
-```
-
-Stop for review.
-
-### 3. Update `random_drop` Transform
-
-Scope:
-1. Remove `seed` from `RANDOM_DROP_PARAMS_SPEC`.
-2. Add `new_pattern_each_use` with `BooleanParam` schema.
-3. Update `apply_random_drop_transform` to generate random seed when `new_pattern_each_use=True`.
-4. Update tests to use new API.
-5. Update any demos that use `seed`.
-
-Verification:
-
-```shell
-pytest tests/test_complexity_modulation.py
-```
-
-Stop for review.
-
-### 4. Update `terraced_drift` Transform
-
-Scope:
-1. Remove `seed` from `TERRACED_DRIFT_PARAMS_SPEC`.
-2. Add `new_pattern_each_use` with `BooleanParam` schema.
-3. Update `apply_terraced_drift_transform` to generate random seed when `new_pattern_each_use=True`.
-4. Update tests to use new API.
-5. Update any demos that use `seed`.
-
-Verification:
-
-```shell
-pytest tests/test_geological_modulation.py
-```
-
-Stop for review.
-
-### 5. Update `accelerando` and `ritardando` Transforms
-
-Scope:
-1. Remove `seed` from tempo params spec.
-2. Add `new_pattern_each_use` with `BooleanParam` schema.
-3. Update tempo transforms to generate random seed when `new_pattern_each_use=True` and `jaggedness` is non-zero.
-4. Update tests to use new API.
-5. Update any demos that use `seed`.
-
-Verification:
-
-```shell
-pytest tests/test_tempo_transforms.py
-```
-
-Stop for review.
-
-### 6. Update README Documentation
-
-Scope:
-1. Remove all references to `seed` parameter in transform documentation.
-2. Add `new_pattern_each_use` to each affected transform's documentation.
-3. Update example JSON snippets.
-
-Stop for review.
-
-### 7. Update Demo Files
-
-Scope:
-1. Review all demo files in `compositions/` folder.
-2. Remove `seed` from any transform that no longer supports it.
-3. Add `new_pattern_each_use: true` examples where appropriate to demonstrate the feature.
-
-Verification:
-
-```shell
-for file in compositions/*.json; do python -c "import json; json.load(open('$file'))"; done
-```
-
-Stop for review.
-
-### 8. Final Test Pass
-
-Scope:
-1. Run full test suite.
-2. Run mypy type checking.
-3. Fix any issues.
-
-Verification:
-
-```shell
-pytest tests/
-mypy .
-```
-
-Stop for final review.
-
-## Design Decisions
-
-### Why Remove Seed?
-
-1. **User-unfriendly**: Arbitrary integer values like `42` or `100` have no musical meaning.
-2. **Implementation detail**: Seeds are an internal mechanism for reproducibility, not a creative control.
-3. **Confusing**: Users may not understand why changing the seed changes the output.
-
-### Why Add `new_pattern_each_use`?
-
-1. **Clear intent**: The name describes what the user gets - a new pattern or the same pattern.
-2. **Boolean simplicity**: Two clear choices instead of infinite arbitrary integers.
-3. **Preserves reproducibility**: Default `false` keeps deterministic behavior for testing and sharing compositions.
-
-### Internal Seed Strategy
-
-When `new_pattern_each_use=True`, use:
-
-```python
-_DEFAULT_SEED = 42
-_RANDOM_SEED_UPPER_BOUND = 2 ** 31
-seed = random.randint(0, _RANDOM_SEED_UPPER_BOUND) if new_pattern_each_use else _DEFAULT_SEED
-```
-
-This matches the pattern established in `ridged_drop`.
+---
 
 ## Open Questions
 
-1. Should we add a global composition-level seed for full reproducibility of stochastic compositions?
-2. Should transforms that don't currently use randomness (but could) also get `new_pattern_each_use` for future-proofing?
+1. **Numeric escape hatch**: Should we allow numeric values as alternatives to presets (e.g., `intensity: 0.7`)? This was done for `ridged_drop`'s `drop_depth`. Adds flexibility but also complexity.
+
+2. **Preset vocabulary**: Should all transforms use the same preset names?
+   - Option A: Consistent (`"subtle"` | `"medium"` | `"intense"` everywhere)
+   - Option B: Context-specific (`"sparse"` | `"moderate"` | `"dense"` for drop-based transforms)
+
+3. **Global randomness**: If we remove per-transform `new_pattern_each_use`, should we add a composition-level `randomize: true` setting that makes all stochastic transforms use random seeds?
+
+---
 
 ## References
 
-- `features/simplify_ridged_drop_transform.md` - Completed implementation of this pattern for `ridged_drop`.
-- `transforms/geological/ridged_drop.py` - Reference implementation.
+- `features/simplify_ridged_drop_transform.md` - Recent work on `ridged_drop` (may need partial revert)
+- `transforms/geological/ridged_drop.py` - Current implementation with presets
