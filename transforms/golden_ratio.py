@@ -7,7 +7,7 @@ from transforms.base import (
     TransformParamsSpec,
     parse_dimension,
 )
-from transforms.scale import scale_transform
+from transforms.basic.scale import scale_transform
 
 GOLDEN_RATIO_PARAMS_SPEC = TransformParamsSpec(
     fields={

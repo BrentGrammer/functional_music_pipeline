@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from score_model.tone import Tone
 from transforms.base import ToneDimension
-from transforms.inversion import invert_tones
+from transforms.basic.inversion import invert_tones
 
 
 class TestInvertTones:

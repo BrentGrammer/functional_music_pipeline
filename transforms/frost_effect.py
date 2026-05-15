@@ -10,7 +10,7 @@ from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
 from transforms.base import IntegerParam, TransformParamFieldSpec, TransformParamsSpec
-from transforms.delay import delay_tones
+from transforms.basic.delay import delay_tones
 
 FrostPendingEdgeExpansion: TypeAlias = tuple[Voice, Callable[[float], float]]
 FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS = 25.0

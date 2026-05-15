@@ -7,7 +7,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from score_model.tone import Tone
-from transforms.delay import delay_tones
+from transforms.basic.delay import delay_tones
 
 
 def test_delay_zero():

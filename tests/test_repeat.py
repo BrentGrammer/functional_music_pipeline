@@ -6,7 +6,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from score_model.tone import Tone
-from transforms.repeat import repeat_tones
+from transforms.basic.repeat import repeat_tones
 
 
 class TestRepeatTones:

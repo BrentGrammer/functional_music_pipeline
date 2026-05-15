@@ -4,7 +4,7 @@ from composition.parser import TRANSFORMS, parse_composition, parse_phrase
 from composition.schema import PhraseConfig
 from score_model.tone import Tone
 from transforms.base import PhraseTransform
-from transforms.pad_silence import pad_silence_tones
+from transforms.basic.pad_silence import pad_silence_tones
 
 
 def test_pad_silence_start_prepends_silence():

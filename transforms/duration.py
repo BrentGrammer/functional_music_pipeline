@@ -14,7 +14,7 @@ from transforms.base import (
     TransformParamsSpec,
     parse_dimension,
 )
-from transforms.scale import scale_transform
+from transforms.basic.scale import scale_transform
 
 INTENSITY_LEVELS: dict[str, float] = {
     "none": 0.0,
