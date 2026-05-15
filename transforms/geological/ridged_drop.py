@@ -21,16 +21,16 @@ _RIDGED_DROP_DEPTH_LEVELS = {
     "extreme": 1.0,
 }
 
-_RIDGED_DROP_INTENSITY_PRESETS = {
+_RIDGED_DROP_INTENSITY_PRESETS: dict[str, dict[str, int | float]] = {
     "subtle": {"octaves": 2, "ridge_density": 0.2, "drop_when_noise_above": 0.7},
     "medium": {"octaves": 3, "ridge_density": 0.3, "drop_when_noise_above": 0.5},
     "severe": {"octaves": 4, "ridge_density": 0.45, "drop_when_noise_above": 0.3},
 }
 
 
-def _resolve_intensity(value: str) -> dict[str, float]:
+def _resolve_intensity(value: object) -> dict[str, int | float]:
     if isinstance(value, bool):
-        raise ValueError(f"intensity must be a string, not boolean.")
+        raise ValueError("intensity must be a string, not boolean.")
     if not isinstance(value, str):
         raise ValueError(f"intensity must be a string, not {type(value).__name__}.")
     if value.lower() not in _RIDGED_DROP_INTENSITY_PRESETS:
@@ -39,9 +39,9 @@ def _resolve_intensity(value: str) -> dict[str, float]:
     return _RIDGED_DROP_INTENSITY_PRESETS[value.lower()]
 
 
-def _resolve_drop_depth(value: str | float) -> float:
+def _resolve_drop_depth(value: object) -> float:
     if isinstance(value, bool):
-        raise ValueError(f"drop_depth must be a string or float, not boolean.")
+        raise ValueError("drop_depth must be a string or float, not boolean.")
     if isinstance(value, str):
         if value.lower() not in _RIDGED_DROP_DEPTH_LEVELS:
             allowed = ", ".join(_RIDGED_DROP_DEPTH_LEVELS.keys())
@@ -149,9 +149,9 @@ def apply_ridged_drop_transform(
         tones,
         _RidgedMultifractalProfile(
             seed=seed,
-            octaves=intensity_settings["octaves"],
-            ridge_density=intensity_settings["ridge_density"],
-            drop_when_noise_above=intensity_settings["drop_when_noise_above"],
+            octaves=int(intensity_settings["octaves"]),
+            ridge_density=float(intensity_settings["ridge_density"]),
+            drop_when_noise_above=float(intensity_settings["drop_when_noise_above"]),
         ),
         dimension,
         max_deviation,
