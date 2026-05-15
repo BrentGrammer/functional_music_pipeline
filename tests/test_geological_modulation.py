@@ -2,7 +2,10 @@ import pytest
 
 from score_model.tone import Tone
 from transforms.base import ToneDimension
-from transforms.geological.ridged_drop import apply_ridged_drop_transform
+from transforms.geological.ridged_drop import (
+    _resolve_drop_depth,
+    apply_ridged_drop_transform,
+)
 from transforms.geological.terraced_drift import apply_terraced_drift_transform
 
 
@@ -157,3 +160,49 @@ def test_ridged_drop_amplitude_modulates_without_touching_other_dimensions():
     assert result[1].frequency == pytest.approx(tones[1].frequency)
     assert result[0].duration == pytest.approx(tones[0].duration)
     assert result[1].duration == pytest.approx(tones[1].duration)
+
+
+def test_resolve_drop_depth_accepts_named_levels():
+    assert _resolve_drop_depth("none") == 0.0
+    assert _resolve_drop_depth("low") == 0.25
+    assert _resolve_drop_depth("medium") == 0.5
+    assert _resolve_drop_depth("high") == 0.75
+    assert _resolve_drop_depth("extreme") == 1.0
+
+
+def test_resolve_drop_depth_accepts_named_levels_case_insensitive():
+    assert _resolve_drop_depth("MEDIUM") == 0.5
+    assert _resolve_drop_depth("High") == 0.75
+
+
+def test_resolve_drop_depth_accepts_numeric_values():
+    assert _resolve_drop_depth(0.0) == 0.0
+    assert _resolve_drop_depth(0.37) == 0.37
+    assert _resolve_drop_depth(1.0) == 1.0
+
+
+def test_resolve_drop_depth_rejects_boolean():
+    with pytest.raises(ValueError):
+        _resolve_drop_depth(True)
+    with pytest.raises(ValueError):
+        _resolve_drop_depth(False)
+
+
+def test_resolve_drop_depth_rejects_unknown_string():
+    with pytest.raises(ValueError):
+        _resolve_drop_depth("invalid")
+
+
+def test_resolve_drop_depth_rejects_value_below_zero():
+    with pytest.raises(ValueError):
+        _resolve_drop_depth(-0.1)
+
+
+def test_resolve_drop_depth_rejects_value_above_one():
+    with pytest.raises(ValueError):
+        _resolve_drop_depth(1.5)
+
+
+def test_resolve_drop_depth_rejects_none():
+    with pytest.raises(ValueError):
+        _resolve_drop_depth(None)

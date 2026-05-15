@@ -13,6 +13,30 @@ from transforms.base import (
 )
 from transforms.geological._modulation import apply_profile
 
+_RIDGED_DROP_DEPTH_LEVELS = {
+    "none": 0.0,
+    "low": 0.25,
+    "medium": 0.5,
+    "high": 0.75,
+    "extreme": 1.0,
+}
+
+
+def _resolve_drop_depth(value: str | float) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"drop_depth must be a string or float, not boolean.")
+    if isinstance(value, str):
+        if value.lower() not in _RIDGED_DROP_DEPTH_LEVELS:
+            allowed = ", ".join(_RIDGED_DROP_DEPTH_LEVELS.keys())
+            raise ValueError(f"drop_depth must be one of: {allowed}.")
+        return _RIDGED_DROP_DEPTH_LEVELS[value.lower()]
+    if isinstance(value, (int, float)):
+        if value < 0.0 or value > 1.0:
+            raise ValueError(f"drop_depth must be between 0.0 and 1.0, got {value}.")
+        return float(value)
+    raise ValueError(f"drop_depth must be a string or float, not {type(value).__name__}.")
+
+
 RIDGED_DROP_PARAMS_SPEC = TransformParamsSpec(
     fields={
         "dimension": TransformParamFieldSpec(
