@@ -14,9 +14,9 @@ from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_tones
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_tones
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
+from transforms.counterpoint.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
 from transforms.erosion import EROSION_PARAMS_SPEC, erosion_transform
 from transforms.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
-from transforms.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
 from transforms.geological import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
     RANDOM_DROP_PARAMS_SPEC,

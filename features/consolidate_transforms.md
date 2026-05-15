@@ -114,9 +114,7 @@ transforms/
     `transforms/counterpoint/fugue.py`, keeping `stretto` and
     `add_pedal_point` unchanged.
 
-11. Update counterpoint imports and run `test_fugue` plus parser tests that
-    reference `stretto` or `add_pedal_point`, if the environment supports test
-    execution.
+11. Update counterpoint imports
 
 12. Create the complexity transform modules:
     `transforms/complexity/weierstrass.py`,

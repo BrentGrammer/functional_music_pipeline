@@ -11,7 +11,7 @@ from score_model.voice import Voice
 from transforms.base import (
     ScoreTransform,
 )
-from transforms.fugue import add_pedal_point, stretto
+from transforms.counterpoint.fugue import add_pedal_point, stretto
 
 
 class TestStretto:
