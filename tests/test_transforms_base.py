@@ -5,6 +5,7 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import (
+    BooleanParam,
     EnumParam,
     FloatParam,
     PhraseTransform,
@@ -168,3 +169,31 @@ def test_apply_to_each_voice_handles_empty_score():
 
     assert result is empty_score
     assert len(result.voices) == 0
+
+
+def test_boolean_param_accepts_true():
+    BooleanParam().validate(True, "test_field")
+
+
+def test_boolean_param_accepts_false():
+    BooleanParam().validate(False, "test_field")
+
+
+def test_boolean_param_rejects_integer():
+    with pytest.raises(ValueError):
+        BooleanParam().validate(1, "test_field")
+
+
+def test_boolean_param_rejects_zero():
+    with pytest.raises(ValueError):
+        BooleanParam().validate(0, "test_field")
+
+
+def test_boolean_param_rejects_string():
+    with pytest.raises(ValueError):
+        BooleanParam().validate("true", "test_field")
+
+
+def test_boolean_param_rejects_none():
+    with pytest.raises(ValueError):
+        BooleanParam().validate(None, "test_field")

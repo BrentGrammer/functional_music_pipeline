@@ -54,6 +54,13 @@ class StringParam(ParamSchema):
 
 
 @dataclass(frozen=True)
+class BooleanParam(ParamSchema):
+    def validate(self, value: object, field_name: str) -> None:
+        if not isinstance(value, bool):
+            raise ValueError(f"Param '{field_name}' must be a boolean.")
+
+
+@dataclass(frozen=True)
 class EnumParam(ParamSchema):
     allowed_values: tuple[str, ...]
 
