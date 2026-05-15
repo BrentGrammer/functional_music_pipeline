@@ -220,6 +220,15 @@ pytest --cov=. tests/ > coverage.txt
 - use the installed dev dependency tool `radon`
   - You can pinpoint functions with a high complexity score and ask a coding agent to refactor these to reduce the Cyclomatic Complexity.
 - `radon cc ./ -a -s`
+- Add a minimum score by appending the class: `radon cc ./ -a -s -n C -e "tests/*,*/tests/*,test/*,*/test/*"`
+```shell
+A = 1–5
+B = 6–10
+C = 11–20
+D = 21–30
+E = 31–40
+F = 41+
+```
 
 ### Generating a dependency graph
 
