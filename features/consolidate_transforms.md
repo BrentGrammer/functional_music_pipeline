@@ -27,7 +27,8 @@ transforms/
         drift.py
 
     tempo/
-        curves.py          # accelerando + ritardando
+        accelerando.py
+        ritardando.py
 
     proportion/
         golden_ratio.py
@@ -89,9 +90,10 @@ transforms/
    `test_reversal`, `test_invert`, `test_transpose`, `test_scale`,
    `test_repeat`, `test_delay`, `test_pad_silence`, and `test_drift`.
 
-5. Split `duration.py` into conceptual modules by moving `accelerando`,
-   `ritardando`, and their tempo helper functions into
-   `transforms/tempo/curves.py`.
+5. Split `duration.py` into conceptual modules by moving `accelerando` into
+   `transforms/tempo/accelerando.py` and `ritardando` into
+   `transforms/tempo/ritardando.py`. Shared private tempo helpers may live in
+   a private module under `transforms/tempo/` if needed.
 
 6. Move Feigenbaum proportional transforms into
    `transforms/proportion/feigenbaum.py`, including `feigenbaum_sequence`,
