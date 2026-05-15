@@ -20,12 +20,19 @@ transform.weierstrass(
 )
 ```
 
-### AFTER (2 parameters)
+### AFTER (2-3 parameters)
 ```python
-# Simple - users describe musical intent
+# Simple - users describe musical intent with presets
 transform.weierstrass(
     dimension="frequency",
-    intensity="medium"  # Musically intuitive
+    intensity="medium"  # Musically intuitive preset
+)
+
+# Optional override for fine control:
+transform.weierstrass(
+    dimension="frequency",
+    intensity="medium",  # Preset for internal texture
+    max_deviation=0.25   # Override the deviation amount
 )
 
 # All preset variants:
@@ -36,12 +43,18 @@ transform.weierstrass(dimension="frequency", intensity="intense")
 # Works for all dimensions:
 transform.weierstrass(dimension="duration", intensity="medium")
 transform.weierstrass(dimension="amplitude", intensity="subtle")
+
+# Creative combinations with custom deviation:
+transform.weierstrass(dimension="frequency", intensity="subtle", max_deviation=0.1)
+transform.weierstrass(dimension="frequency", intensity="intense", max_deviation=0.5)
 ```
 
 **Internal mapping:**
-- `"subtle"` → `max_deviation=0.05, amplitude_scaling=0.3, ripples_per_wave=2.0, iterations=6`
-- `"medium"` → `max_deviation=0.15, amplitude_scaling=0.5, ripples_per_wave=3.0, iterations=10`
-- `"intense"` → `max_deviation=0.3, amplitude_scaling=0.7, ripples_per_wave=5.0, iterations=15`
+- `"subtle"` → `amplitude_scaling=0.3, ripples_per_wave=2.0, iterations=6`
+- `"medium"` → `amplitude_scaling=0.5, ripples_per_wave=3.0, iterations=10`
+- `"intense"` → `amplitude_scaling=0.7, ripples_per_wave=5.0, iterations=15`
+
+**Note:** `max_deviation` is optional and can be specified to override the preset's deviation amount, giving users fine control without exposing internal algorithm parameters.
 
 ---
 
