@@ -86,8 +86,8 @@ class WeierstrassProfile:
     Applied to amplitude: a complex, quasi-tremolo that never quite repeats.
     """
     seed: int = 42
-    a: float = 0.5
-    b: float = 3.0
+    amplitude_scaling: float = 0.5
+    ripples_per_wave: float = 3.0
     iterations: int = 10
 
     def generate(self, length: int) -> list[float]:
@@ -102,7 +102,7 @@ class WeierstrassProfile:
         start_x = random.uniform(0.0, 100.0)
         step = 0.15
 
-        max_val = sum(self.a**n for n in range(self.iterations))
+        max_val = sum(self.amplitude_scaling**n for n in range(self.iterations))
         if max_val == 0:
             max_val = 1.0
 
@@ -111,7 +111,7 @@ class WeierstrassProfile:
             x = start_x + (i * step)
             val = 0.0
             for n in range(self.iterations):
-                val += (self.a**n) * math.cos((self.b**n) * math.pi * x)
+                val += (self.amplitude_scaling**n) * math.cos((self.ripples_per_wave**n) * math.pi * x)
             profile.append(val / max_val)
 
         return profile

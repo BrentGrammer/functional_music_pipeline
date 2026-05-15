@@ -1,6 +1,6 @@
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from enum import Enum, StrEnum, auto
+from enum import StrEnum, auto
 from typing import Protocol, TypeAlias
 
 from score_model.score import Score

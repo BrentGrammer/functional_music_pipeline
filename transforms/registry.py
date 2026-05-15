@@ -1,23 +1,18 @@
-from composition.transform_params_validation import (
-    validate_add_pedal_point_params,
-    validate_geological_params,
-)
+from composition.transform_params_validation import validate_add_pedal_point_params
 from transforms.base import (
     AllVoicesTransform,
+    EnumParam,
+    FloatParam,
+    IntegerParam,
     PhraseRelativeTransform,
     PhraseTransform,
     ScoreTargetMotifsTransform,
     ScoreTransform,
+    StringParam,
     ToneDimension,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    TransformParamType,
     TransformWithCallable,
-    FloatParam,
-    IntegerParam,
-    StringParam,
-    EnumParam,
-    ObjectParam,
 )
 from transforms.delay import delay_tones
 from transforms.drift import drift_transform
@@ -34,7 +29,11 @@ from transforms.erosion import erosion_transform
 from transforms.frost import frost_effect
 from transforms.fugue import NAMED_STRETTO_SPACINGS, add_pedal_point, stretto
 from transforms.geological import (
-    apply_geological_transform,
+    apply_cellular_automata_transform,
+    apply_random_drop_transform,
+    apply_ridged_drop_transform,
+    apply_terraced_drift_transform,
+    apply_weierstrass_transform,
 )
 from transforms.golden_ratio import (
     golden_ratio_transform,
@@ -378,33 +377,6 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "geological": PhraseTransform(
-        "geological",
-        apply_geological_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "profile": TransformParamFieldSpec(
-                    required=True,
-                    schema=ObjectParam(
-                        fields={
-                            "type": TransformParamFieldSpec(required=True, schema=StringParam()),
-                            "params": TransformParamFieldSpec(
-                                schema=ObjectParam(fields={}, allow_unknown_fields=True)
-                            ),
-                        }
-                    )
-                ),
-                "dimension": TransformParamFieldSpec(
-                    required=True,
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-                "max_deviation": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-            }
-        ),
-    ),
     "frost_effect": ScoreTransform(
         "frost_effect",
         frost_effect,
@@ -414,27 +386,6 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
                     schema=IntegerParam(),
                 )
             }
-        ),
-    ),
-    "score_geological": AllVoicesTransform(
-        "score_geological",
-        apply_geological_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "profile": TransformParamFieldSpec(
-                    param_type=TransformParamType.OBJECT,
-                    required=True,
-                ),
-                "dimension": TransformParamFieldSpec(
-                    required=True,
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-                "max_deviation": TransformParamFieldSpec(
-                    schema=FloatParam(),
-                    required=True,
-                ),
-            },
-            validator=validate_geological_params,
         ),
     ),
     "accelerando": PhraseTransform(
@@ -473,6 +424,197 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
+    "score_weierstrass": AllVoicesTransform(
+        "score_weierstrass",
+        apply_weierstrass_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "amplitude_scaling": TransformParamFieldSpec(schema=FloatParam()),
+                "ripples_per_wave": TransformParamFieldSpec(schema=FloatParam()),
+                "iterations": TransformParamFieldSpec(schema=IntegerParam()),
+            }
+        ),
+    ),
+    "weierstrass": PhraseTransform(
+        "weierstrass",
+        apply_weierstrass_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "amplitude_scaling": TransformParamFieldSpec(schema=FloatParam()),
+                "ripples_per_wave": TransformParamFieldSpec(schema=FloatParam()),
+                "iterations": TransformParamFieldSpec(schema=IntegerParam()),
+            }
+        ),
+    ),
+    "terraced_drift": PhraseTransform(
+        "terraced_drift",
+        apply_terraced_drift_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "step_size": TransformParamFieldSpec(schema=FloatParam()),
+                "quantize_resolution": TransformParamFieldSpec(schema=FloatParam()),
+            }
+        ),
+    ),
+    "cellular_automata": PhraseTransform(
+        "cellular_automata",
+        apply_cellular_automata_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "rule": TransformParamFieldSpec(schema=IntegerParam()),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "width": TransformParamFieldSpec(schema=IntegerParam()),
+            }
+        ),
+    ),
+    "ridged_drop": PhraseTransform(
+        "ridged_drop",
+        apply_ridged_drop_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "octaves": TransformParamFieldSpec(schema=IntegerParam()),
+                "ridge_density": TransformParamFieldSpec(schema=FloatParam()),
+                "drop_when_noise_above": TransformParamFieldSpec(schema=FloatParam()),
+            }
+        ),
+    ),
+    "random_drop": PhraseTransform(
+        "random_drop",
+        apply_random_drop_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "drop_rate": TransformParamFieldSpec(schema=FloatParam()),
+            }
+        ),
+    ),
+
+    "score_terraced_drift": AllVoicesTransform(
+        "score_terraced_drift",
+        apply_terraced_drift_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "step_size": TransformParamFieldSpec(schema=FloatParam()),
+                "quantize_resolution": TransformParamFieldSpec(schema=FloatParam()),
+            }
+        ),
+    ),
+    "score_cellular_automata": AllVoicesTransform(
+        "score_cellular_automata",
+        apply_cellular_automata_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "rule": TransformParamFieldSpec(schema=IntegerParam()),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "width": TransformParamFieldSpec(schema=IntegerParam()),
+            }
+        ),
+    ),
+    "score_ridged_drop": AllVoicesTransform(
+        "score_ridged_drop",
+        apply_ridged_drop_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "octaves": TransformParamFieldSpec(schema=IntegerParam()),
+                "ridge_density": TransformParamFieldSpec(schema=FloatParam()),
+                "drop_when_noise_above": TransformParamFieldSpec(schema=FloatParam()),
+            }
+        ),
+    ),
+    "score_random_drop": AllVoicesTransform(
+        "score_random_drop",
+        apply_random_drop_transform,
+        params_spec=TransformParamsSpec(
+            fields={
+                "dimension": TransformParamFieldSpec(
+                    required=True,
+                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+                ),
+                "max_deviation": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                ),
+                "seed": TransformParamFieldSpec(schema=IntegerParam()),
+                "drop_rate": TransformParamFieldSpec(schema=FloatParam()),
+            }
+        ),
+    ),
 }
-
-

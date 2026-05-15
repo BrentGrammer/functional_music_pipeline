@@ -6,21 +6,18 @@ from composition.parser import (
     parse_motifs,
     parse_phrase,
     parse_transform_spec,
-    resolve_profile_in_params,
 )
-from composition.schema import PhraseConfig, TransformConfig
+from composition.schema import PhraseConfig
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
 from transforms.base import (
+    EnumParam,
     ScoreTargetMotifsTransform,
+    StringParam,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    EnumParam,
-    FloatParam,
-    StringParam,
 )
-from transforms.profiles import WeierstrassProfile
 
 
 def test_stretto_spacing_descriptor_accepts_named_or_float_spacing():
@@ -28,6 +25,7 @@ def test_stretto_spacing_descriptor_accepts_named_or_float_spacing():
 
     assert isinstance(spacing_spec.schema, tuple)
     assert spacing_spec.required is True
+    assert isinstance(spacing_spec.schema[0], EnumParam)
     assert spacing_spec.schema[0].allowed_values == ("golden_ratio", "feigenbaum_delta")
 
 
@@ -37,9 +35,11 @@ def test_tempo_curve_descriptor_accepts_preset_or_float_controls(transform_name)
 
     assert isinstance(fields["strength"].schema, tuple)
     assert fields["strength"].required is True
+    assert isinstance(fields["strength"].schema[0], EnumParam)
     assert fields["strength"].schema[0].allowed_values == ("none", "low", "medium", "high", "extreme")
     assert isinstance(fields["jaggedness"].schema, tuple)
     assert fields["jaggedness"].required is False
+    assert isinstance(fields["jaggedness"].schema[0], EnumParam)
     assert fields["jaggedness"].schema[0].allowed_values == ("none", "low", "medium", "high", "extreme")
 
 
@@ -567,11 +567,10 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
-    def test_geological_with_missing_required_fields_raises_error(self):
+    def test_weierstrass_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["geological"]
+        descriptor = TRANSFORMS["weierstrass"]
         valid_params = {
-            "profile": {"type": "weierstrass", "params": {"seed": 42}},
             "dimension": "frequency",
             "max_deviation": 0.1,
         }
@@ -581,16 +580,15 @@ class TestScaleTransformParsing:
             incomplete_params.pop(required_field)
             phrase_config = {
                 "motifs": ["seed"],
-                "transforms": [{"name": "geological", "params": incomplete_params}],
+                "transforms": [{"name": "weierstrass", "params": incomplete_params}],
             }
 
             with pytest.raises(ValueError):
                 parse_phrase(phrase_config, parsed_motifs)
 
-    def test_score_geological_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_geological"]
+    def test_score_weierstrass_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_weierstrass"]
         valid_params = {
-            "profile": {"type": "weierstrass", "params": {"seed": 42}},
             "dimension": "frequency",
             "max_deviation": 0.1,
         }
@@ -602,7 +600,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_geological", "params": incomplete_params}],
+                    "score_transforms": [{"name": "score_weierstrass", "params": incomplete_params}],
                 },
             }
 
@@ -671,63 +669,6 @@ class TestScaleTransformParsing:
 
         assert len(score.voices) == 1
         assert score.voices[0].tones[0].frequency == pytest.approx(freq)
-
-    def test_geological_profile_must_be_object(self):
-        parsed_motifs = {"seed": [Tone(440)]}
-        phrase_config = {
-            "motifs": ["seed"],
-            "transforms": [
-                {
-                    "name": "geological",
-                    "params": {
-                        "profile": 123,
-                        "dimension": "frequency",
-                        "max_deviation": 0.1,
-                    },
-                }
-            ],
-        }
-
-        with pytest.raises(ValueError):
-            parse_phrase(phrase_config, parsed_motifs)
-
-    def test_geological_profile_requires_type_field(self):
-        parsed_motifs = {"seed": [Tone(440)]}
-        phrase_config = {
-            "motifs": ["seed"],
-            "transforms": [
-                {
-                    "name": "geological",
-                    "params": {
-                        "profile": {"seed": 42},
-                        "dimension": "frequency",
-                        "max_deviation": 0.1,
-                    },
-                }
-            ],
-        }
-
-        with pytest.raises(ValueError):
-            parse_phrase(phrase_config, parsed_motifs)
-
-    def test_geological_profile_type_field_must_be_string(self):
-        parsed_motifs = {"seed": [Tone(440)]}
-        phrase_config = {
-            "motifs": ["seed"],
-            "transforms": [
-                {
-                    "name": "geological",
-                    "params": {
-                        "profile": {"type": 123},
-                        "dimension": "frequency",
-                        "max_deviation": 0.1,
-                    },
-                }
-            ],
-        }
-
-        with pytest.raises(ValueError):
-            parse_phrase(phrase_config, parsed_motifs)
 
     def test_erosion_accepts_optional_dimension(self):
         parsed_motifs = {"seed": [Tone(440, 0.5), Tone(880, 0.5)]}
@@ -1072,211 +1013,6 @@ def test_parse_composition_with_value_score_transform():
 
     assert len(score.voices) == 1
     assert score.voices[0][0].duration == original_duration * factor
-
-def test_schema_allows_geological_transform_params():
-    # Verifies that schema types accommodate the unified geological transform.
-    # This is a static type check; it passes if mypy/pyright don't complain.
-    params: dict[str, object] = {
-        "profile": {"type": "weierstrass", "params": {"seed": 42}},
-        "dimension": "FREQUENCY",
-        "max_deviation": 0.1,
-    }
-    transform: TransformConfig = {
-        "name": "geological",
-        "params": params,
-    }
-
-    # This test primarily serves to validate the type hinting schema.
-    # A simple runtime assertion confirms the object was created.
-    assert transform["name"] == "geological"
-    assert isinstance(transform["params"], dict)
-
-
-def test_parse_transform_spec_allows_pre_resolved_profile_instance():
-    # Verifies that a params dict containing a non-primitive object (a profile
-    # instance) can pass through validation, which is necessary after pre-processing.
-    profile_instance = WeierstrassProfile(seed=42)
-    transform_spec = {
-        "name": "geological",
-        "params": {
-            "profile": profile_instance,
-            "dimension": "FREQUENCY",
-            "max_deviation": 0.1,
-        },
-    }
-
-    # parse_transform_spec does not validate the inner contents of the params dict,
-    # so this should pass without raising an error.
-    name, params = parse_transform_spec(transform_spec, "Phrase")
-
-    assert name == "geological"
-    assert isinstance(params, dict)
-    assert params["profile"] is profile_instance
-
-
-class TestResolveProfileInParams:
-    def test_pass_through_if_no_profile_key(self):
-        params = {"dimension": "FREQUENCY", "max_deviation": 0.1}
-        result = resolve_profile_in_params(params)
-        assert result == params  # Should be the same object
-
-    def test_resolves_profile_dict_to_instance(self):
-        params: dict[str, object] = {
-            "profile": {"type": "weierstrass", "params": {"seed": 123}},
-            "dimension": "FREQUENCY",
-            "max_deviation": 0.1,
-        }
-        result = resolve_profile_in_params(params)
-        assert isinstance(result, dict)
-        assert isinstance(result["profile"], WeierstrassProfile)
-        assert result["profile"].seed == 123
-        assert result["dimension"] == "FREQUENCY"
-
-    def test_propagates_error_from_build_profile(self):
-        params = {"profile": {"type": "nonexistent"}}
-        with pytest.raises(ValueError):
-            resolve_profile_in_params(params)
-
-
-def test_parse_phrase_with_geological_transform_prebuilt_profile():
-    # Verifies the 'geological' transform is correctly registered and callable,
-    # bypassing the JSON factory to test dispatch logic in isolation.
-    parsed_motifs = {"seed": [Tone(440.0)]}
-    phrase_config = {
-        "motifs": ["seed"],
-        "transforms": [
-            {
-                "name": "geological",
-                "params": {
-                    "profile": WeierstrassProfile(seed=42),
-                    "dimension": "FREQUENCY",
-                    "max_deviation": 0.1,
-                },
-            }
-        ],
-    }
-
-    # The `resolve_profile_in_params` helper will eventually be idempotent, so passing an
-    # already-resolved profile instance will work correctly. For now, this tests dispatch.
-    result = parse_phrase(phrase_config, parsed_motifs)
-    assert len(result) == 1
-    assert result[0].frequency != 440.0
-    assert 440.0 * 0.9 <= result[0].frequency <= 440.0 * 1.1
-
-
-@pytest.mark.parametrize(
-    "profile_config",
-    [
-        {"type": "weierstrass", "params": {"seed": 42}},
-        {"type": "terraced", "params": {"seed": 42}},
-        {"type": "cellular_automata", "params": {"seed": 42, "rule": 30}},
-        # The default drop_when_noise_above threshold for ridged_multifractal is
-        # high enough that a short sequence may produce all zeros. We lower it here
-        # to guarantee a transformation occurs for this test.
-        {"type": "ridged_multifractal", "params": {"seed": 42, "drop_when_noise_above": 0.1}},
-    ],
-    ids=["weierstrass", "terraced", "cellular_automata", "ridged_multifractal"],
-)
-def test_parse_phrase_with_unified_geological_transform_from_json(profile_config):
-    # End-to-end test verifying the parser correctly handles the full JSON ->
-    # profile factory -> transform application pipeline for all profile types.
-    json_data = {
-        "motifs": {"seed": ["440:1.0" for _ in range(5)]},
-        "composition": {
-            "voices": [
-                {
-                    "phrases": [
-                        {
-                            "motifs": ["seed"],
-                            "transforms": [
-                                {
-                                    "name": "geological",
-                                    "params": {
-                                        "profile": profile_config,
-                                        "dimension": "FREQUENCY",
-                                        "max_deviation": 0.1,
-                                    },
-                                }
-                            ],
-                        }
-                    ]
-                }
-            ]
-        },
-    }
-
-    score = parse_composition(json_data)
-    assert len(score.voices) == 1
-    voice_tones = score.voices[0].tones
-    assert len(voice_tones) == 5
-    # Check that frequencies were transformed, not left at 440.0
-    assert any(t.frequency != 440.0 for t in voice_tones)
-
-
-def test_parse_composition_with_score_geological_transform():
-    # Verifies the score-level 'score_geological' transform is wired correctly.
-    json_data = {
-        "motifs": {"seed": ["440:0.5", "880:0.5"]},
-        "composition": {
-            "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-            "score_transforms": [
-                {
-                    "name": "score_geological",
-                    "params": {
-                        "profile": {"type": "weierstrass", "seed": 42},
-                        "dimension": "AMPLITUDE",
-                        "max_deviation": 0.5,
-                    },
-                }
-            ],
-        },
-    }
-
-    score = parse_composition(json_data)
-    assert len(score.voices[0]) == 2
-    # Default amplitude is 0.5. After transform, it should be different.
-    assert score.voices[0][0].amplitude != 0.5
-    assert score.voices[0][1].amplitude != 0.5
-
-
-@pytest.mark.parametrize(
-    "bad_profile_config",
-    [
-        {"type": "nonexistent"},
-        {"type": "weierstrass", "params": {"bad_param": 1}},
-        {"params": {}},
-    ],
-)
-def test_parse_composition_with_bad_geological_config_raises_error(bad_profile_config):
-    # Ensures user-facing errors from the profile factory are propagated
-    # up through the composition parser.
-    json_data = {
-        "motifs": {"seed": ["440"]},
-        "composition": {
-            "voices": [
-                {
-                    "phrases": [
-                        {
-                            "motifs": ["seed"],
-                            "transforms": [
-                                {
-                                    "name": "geological",
-                                    "params": {
-                                        "profile": bad_profile_config,
-                                        "dimension": "FREQUENCY",
-                                        "max_deviation": 0.1,
-                                    },
-                                }
-                            ],
-                        }
-                    ]
-                }
-            ]
-        },
-    }
-    with pytest.raises(ValueError):
-        parse_composition(json_data)
-
 
 def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
     captured = {}

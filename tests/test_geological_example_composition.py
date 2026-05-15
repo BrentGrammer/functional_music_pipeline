@@ -7,7 +7,7 @@ from score_model.score import Score
 def _build_geological_example_composition() -> dict:
     return {
         "description": (
-            "A showcase of the four geological profiles. Each voice plays the same C major arpeggio, "
+            "A showcase of the stochastic profile transforms. Each voice plays the same C major arpeggio, "
             "but has a different stochastic transform applied to a different musical dimension "
             "(frequency, duration, or amplitude). A score-level transform is also applied to all voices."
         ),
@@ -27,11 +27,11 @@ def _build_geological_example_composition() -> dict:
                             "motifs": ["c_major_arpeggio"],
                             "transforms": [
                                 {
-                                    "name": "geological",
+                                    "name": "weierstrass",
                                     "params": {
-                                        "profile": {"type": "weierstrass", "params": {"seed": 42}},
                                         "dimension": "frequency",
                                         "max_deviation": 0.05,
+                                        "seed": 42,
                                     },
                                 }
                             ],
@@ -44,11 +44,11 @@ def _build_geological_example_composition() -> dict:
                             "motifs": ["c_major_arpeggio"],
                             "transforms": [
                                 {
-                                    "name": "geological",
+                                    "name": "terraced_drift",
                                     "params": {
-                                        "profile": {"type": "terraced", "params": {"seed": 42}},
                                         "dimension": "duration",
                                         "max_deviation": 0.5,
+                                        "seed": 42,
                                     },
                                 }
                             ],
@@ -61,11 +61,11 @@ def _build_geological_example_composition() -> dict:
                             "motifs": ["c_major_arpeggio"],
                             "transforms": [
                                 {
-                                    "name": "geological",
+                                    "name": "cellular_automata",
                                     "params": {
-                                        "profile": {"type": "cellular_automata", "params": {"seed": 42}},
                                         "dimension": "amplitude",
                                         "max_deviation": 0.4,
+                                        "seed": 42,
                                     },
                                 }
                             ],
@@ -78,11 +78,11 @@ def _build_geological_example_composition() -> dict:
                             "motifs": ["c_major_arpeggio"],
                             "transforms": [
                                 {
-                                    "name": "geological",
+                                    "name": "ridged_drop",
                                     "params": {
-                                        "profile": {"type": "ridged_multifractal", "params": {"seed": 42}},
                                         "dimension": "amplitude",
                                         "max_deviation": 0.9,
+                                        "seed": 42,
                                     },
                                 }
                             ],
@@ -92,11 +92,11 @@ def _build_geological_example_composition() -> dict:
             ],
             "score_transforms": [
                 {
-                    "name": "score_geological",
+                    "name": "score_weierstrass",
                     "params": {
-                        "profile": {"type": "weierstrass", "params": {"seed": 100}},
                         "dimension": "amplitude",
                         "max_deviation": 0.1,
+                        "seed": 100,
                     },
                 }
             ],
@@ -108,7 +108,7 @@ class TestGeologicalExampleComposition:
     def test_loads_and_parses_without_error(self):
         # This test ensures the example composition file is valid JSON and
         # can be successfully parsed by the composition engine, serving as a
-        # basic integration test for the unified geological transform API.
+        # basic integration test for the flat stochastic transform API.
         composition_data = _build_geological_example_composition()
 
         score = parse_composition(composition_data)
@@ -121,7 +121,7 @@ class TestGeologicalExampleComposition:
             assert len(voice.tones) == 4
 
     def test_parsing_is_deterministic(self):
-        # Geological transforms are seeded, so repeated parsing of the same
+        # Stochastic transforms are seeded, so repeated parsing of the same
         # composition must yield identical musical output. This test locks in
         # that invariant.
         composition_data = _build_geological_example_composition()
@@ -139,7 +139,7 @@ class TestGeologicalExampleComposition:
                 assert tone1.amplitude == pytest.approx(tone2.amplitude)
 
     def test_structural_invariants(self):
-        # Verifies the user-visible guarantees of the geological transform API
+        # Verifies the user-visible guarantees of the stochastic transform API
         # at the composition boundary.
         composition_data = _build_geological_example_composition()
 

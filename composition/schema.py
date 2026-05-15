@@ -1,11 +1,6 @@
 from typing import NotRequired, TypeAlias, TypedDict
 
 
-class ProfileConfig(TypedDict):
-    type: str
-    params: NotRequired[dict[str, str | int | float | bool]]
-
-
 class TransformConfig(TypedDict):
     name: str
     params: NotRequired[dict[str, object]]

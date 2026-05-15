@@ -1,6 +1,5 @@
 from collections.abc import Callable, Mapping
 
-from composition.profile_factory import build_profile
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
@@ -18,31 +17,6 @@ from transforms.base import (
 from transforms.registry import TRANSFORMS
 
 
-def resolve_profile_in_params(
-    transform_params: Mapping[str, object],
-) -> dict[str, object]:
-    """
-    If transform_params contains a 'profile' key with a dict value,
-    it resolves it into a StochasticProfile instance using the factory.
-    Otherwise, it returns the params unchanged.
-    """
-    if "profile" not in transform_params:
-        return dict(transform_params)
-
-    profile_config = transform_params.get("profile")
-    if not isinstance(profile_config, dict):
-        # Allow pre-resolved profiles to pass through without modification.
-        return dict(transform_params)
-
-    # build_profile validates its structure at runtime.
-    resolved_profile = build_profile(profile_config)
-
-    # Return a new dictionary with the 'profile' value replaced by the instance.
-    new_params = dict(transform_params)
-    new_params["profile"] = resolved_profile
-    return new_params
-
-
 def _parse_tone_string(tone_string: str) -> Tone:
     normalized_tone_string = str(tone_string)
 
@@ -57,8 +31,7 @@ def _apply_phrase_transform(
     tones: ToneSequence,
     transform_params: Mapping[str, object],
 ) -> ToneSequence:
-    resolved_transform_params = resolve_profile_in_params(transform_params)
-    return transform_func(tones, **resolved_transform_params)
+    return transform_func(tones, **transform_params)
 
 
 
@@ -68,8 +41,7 @@ def _apply_score_transform(
     transform_params: Mapping[str, object],
 ) -> Score:
     descriptor.validate_params(transform_params)
-    resolved_transform_params = resolve_profile_in_params(transform_params)
-    return descriptor.transform(score, **resolved_transform_params)
+    return descriptor.transform(score, **transform_params)
 
 
 def _apply_all_voices_transform_with_optional_params(
@@ -77,8 +49,7 @@ def _apply_all_voices_transform_with_optional_params(
     score: Score,
     transform_params: Mapping[str, object],
 ) -> Score:
-    resolved_transform_params = resolve_profile_in_params(transform_params)
-    return apply_to_all_voices(transform_func, **resolved_transform_params)(score)
+    return apply_to_all_voices(transform_func, **transform_params)(score)
 
 
 def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[str, list[Tone]]:
@@ -134,8 +105,7 @@ def _apply_phrase_transform_spec(
 
     if isinstance(descriptor, PhraseRelativeTransform):
         phrase_reference_tones = reference_tones if reference_tones else []
-        resolved_transform_params = resolve_profile_in_params(transform_params)
-        return descriptor.transform(phrase_tones, phrase_reference_tones, **resolved_transform_params)
+        return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
 
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
@@ -295,8 +265,7 @@ def _apply_score_target_motifs_transform(
 ) -> Score:
     descriptor.validate_params(transform_params)
 
-    resolved_transform_params = resolve_profile_in_params(transform_params)
-    return descriptor.transform(score, parsed_motifs, **resolved_transform_params)
+    return descriptor.transform(score, parsed_motifs, **transform_params)
 
 
 def _build_score_voices(voice_configs: list[object], parsed_motifs: dict[str, list[Tone]]) -> list[Voice]:

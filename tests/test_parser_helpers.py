@@ -9,11 +9,8 @@ from composition.parser import (
 from composition.schema import VoiceConfig
 from score_model.tone import Tone
 from transforms.base import (
-    PhraseRelativeTransform,
     ScoreTransform,
-    TransformParamFieldSpec,
     TransformParamsSpec,
-    StringParam,
 )
 
 
@@ -99,39 +96,3 @@ def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():
             transform_params={},
             reference_tones=None,
         )
-
-
-def test_apply_phrase_transform_spec_relative_scope_forwards_named_params():
-    phrase_tones = [Tone(440.0, amplitude=0.5), Tone(660.0, amplitude=0.5)]
-    reference_tones = [Tone(330.0, amplitude=0.6)]
-    relative_descriptor = PhraseRelativeTransform(
-        name="phrase_golden_ratio_shrink",
-        transform=lambda tones, previous_tones, dimension="DURATION": [
-            Tone(
-                frequency=tone.frequency,
-                duration=tone.duration,
-                sample_rate=tone.sample_rate,
-                amplitude=tone.amplitude / 2 if dimension == "AMPLITUDE" else tone.amplitude,
-            )
-            for tone in tones
-        ],
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    param_type=TransformParamType.STRING,
-                ),
-            }
-        ),
-    )
-    transform_params = {"dimension": "AMPLITUDE"}
-
-    result = _apply_phrase_transform_spec(
-        descriptor=relative_descriptor,
-        phrase_tones=phrase_tones,
-        transform_params=transform_params,
-        reference_tones=reference_tones,
-    )
-
-    assert len(result) == len(phrase_tones)
-    assert result[0].amplitude == pytest.approx(0.25)
-    assert result[1].amplitude == pytest.approx(0.25)
