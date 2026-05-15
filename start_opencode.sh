@@ -31,13 +31,14 @@ cat >> /etc/sandbox-persistent.sh <<'"'"'EOF'"'"'
 # BEGIN opencode privacy flags
 export OPENCODE_DISABLE_SHARE=1
 export OPENCODE_DISABLE_AUTOUPDATE=1
-export OPENCODE_DISABLE_MODELS_FETCH=1
 export DO_NOT_TRACK=1
 export SBX_NO_TELEMETRY=1
 # END opencode privacy flags
 EOF
 ' || true
 }
+
+# OPENCODE_DISABLE_MODELS_FETCH # this can slow things down, so revisit whether really need this
 
 echo "Starting opencode agent for project $PROJECT_BASENAME with model: $MODEL..."
 echo "Sandbox name: $SANDBOX_NAME"
