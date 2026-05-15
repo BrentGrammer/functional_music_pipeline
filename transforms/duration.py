@@ -45,6 +45,13 @@ def _build_tempo_change_params_spec() -> TransformParamsSpec:
 
 ACCELERANDO_PARAMS_SPEC = _build_tempo_change_params_spec()
 RITARDANDO_PARAMS_SPEC = _build_tempo_change_params_spec()
+FEIGENBAUM_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "dimension": TransformParamFieldSpec(
+            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+        ),
+    }
+)
 
 
 def _is_numeric_string(value: str) -> bool:

@@ -16,6 +16,7 @@ from transforms.delay import DELAY_PARAMS_SPEC, delay_tones
 from transforms.drift import drift_transform
 from transforms.duration import (
     ACCELERANDO_PARAMS_SPEC,
+    FEIGENBAUM_PARAMS_SPEC,
     RITARDANDO_PARAMS_SPEC,
     accelerando_transform,
     feigenbaum_sequence,
@@ -71,13 +72,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "feigenbaum_sequence": PhraseTransform(
         "feigenbaum_sequence",
         feigenbaum_sequence,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=FEIGENBAUM_PARAMS_SPEC,
     ),
     "transpose": PhraseTransform(
         "transpose",
@@ -145,24 +140,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "phrase_feigenbaum_shrink": PhraseRelativeTransform(
         "phrase_feigenbaum_shrink",
         phrase_feigenbaum_shrink,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=FEIGENBAUM_PARAMS_SPEC,
     ),
     "phrase_feigenbaum_grow": PhraseRelativeTransform(
         "phrase_feigenbaum_grow",
         phrase_feigenbaum_grow,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=FEIGENBAUM_PARAMS_SPEC,
     ),
     "phrase_golden_ratio_shrink": PhraseRelativeTransform(
         "phrase_golden_ratio_shrink",
@@ -177,13 +160,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_feigenbaum_sequence": ScoreTransform(
         "score_feigenbaum_sequence",
         score_feigenbaum_sequence,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=FEIGENBAUM_PARAMS_SPEC,
     ),
     "score_reverse": EachVoiceTransform(
         "score_reverse",
