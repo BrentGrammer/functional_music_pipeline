@@ -70,6 +70,7 @@ docker-compose down
 
 ### Core Concepts
 
+- **Motif**: A reusable musical idea defined as a sequence of tones. Motifs are the building blocks of a composition and can be referenced by name in phrases.
 - **Tone**: A single sound defined by its `frequency` (Hz) and `duration` (seconds). e.g., `"440:0.5"`.
 - **Phrase**: A sequence of Tones played one after the other. Monophonic in nature.
 - **Voice**: Contains one or more phrases. Voices are polyphonic in nature and can played at the same time.
@@ -169,7 +170,25 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
   ```
 - **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension`, `max_deviation`, and optional `seed`, `step_size`, and `quantize_resolution`.
-- **`ridged_drop` / `score_ridged_drop`**: A mostly stable signal interrupted by occasional sharp drops. Accepts `dimension`, `max_deviation`, and optional `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above`.
+- **`ridged_drop` / `score_ridged_drop`**: A mostly stable signal interrupted by occasional sharp drops, like a geological ridgeline. Accepts:
+  - `dimension` (required): The musical dimension to modulate (`frequency`, `duration`, or `amplitude`).
+  - `drop_depth` (required): How far the dimension can fall. Either a named preset (`none`, `low`, `medium`, `high`, `extreme`) or a numeric value from `0.0` to `1.0`.
+  - `intensity` (optional): Controls the density and aggressiveness of the drop pattern. One of `subtle`, `medium` (default), or `severe`.
+  - `new_pattern_each_use` (optional): When `true`, each use of this transform generates a new random drop pattern. When `false` (default), the same pattern is used for reproducibility.
+
+  ```json
+  "transforms": [
+    {
+      "name": "ridged_drop",
+      "params": {
+        "dimension": "amplitude",
+        "drop_depth": "high",
+        "intensity": "severe",
+        "new_pattern_each_use": true
+      }
+    }
+  ]
+  ```
 
 ### Development
 

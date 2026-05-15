@@ -80,6 +80,23 @@
                   "dimension": "amplitude",
                   "drop_depth": 0.9
                 }
+              },
+              {
+                "name": "ridged_drop",
+                "params": {
+                  "dimension": "amplitude",
+                  "drop_depth": "high",
+                  "intensity": "severe"
+                }
+              },
+              {
+                "name": "ridged_drop",
+                "params": {
+                  "dimension": "amplitude",
+                  "drop_depth": "low",
+                  "intensity": "subtle",
+                  "new_pattern_each_use": true
+                }
               }
             ]
           }
