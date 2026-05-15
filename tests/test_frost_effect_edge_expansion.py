@@ -6,7 +6,7 @@ import pytest
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
-from transforms.frost import (
+from transforms.frost_effect import (
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
     FROST_EFFECT_MAXIMUM_OUTWARD_MOVEMENT_CENTS,
     FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS,
@@ -24,7 +24,7 @@ from transforms.frost import (
     _jitter_frequency_up_within_bounds,
     frost_effect,
 )
-from transforms.frost import (
+from transforms.frost_effect import (
     _voice_start_time as frost_voice_start_time,
 )
 

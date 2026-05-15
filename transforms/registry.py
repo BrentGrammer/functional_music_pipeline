@@ -20,7 +20,7 @@ from transforms.duration import (
     score_feigenbaum_sequence,
 )
 from transforms.erosion import EROSION_PARAMS_SPEC, erosion_transform
-from transforms.frost import FROST_EFFECT_PARAMS_SPEC, frost_effect
+from transforms.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
 from transforms.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
 from transforms.geological import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
