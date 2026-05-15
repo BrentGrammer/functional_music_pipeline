@@ -62,37 +62,43 @@ transform.weierstrass(dimension="frequency", intensity="intense", max_deviation=
 
 ### BEFORE (5 parameters)
 ```python
-# Users need to know cellular automata rules
+# Overly complex - exposing implementation details
 transform.cellular_automata(
     dimension="duration",
     max_deviation=0.3,
-    rule=110,  # Technical implementation detail
-    seed=42,  # Implementation detail  
-    width=31  # Technical parameter
+    rule=110,  # Basic CA concept - should be exposed
+    seed=42,  # Implementation detail - remove
+    width=31  # Technical parameter - remove, use sensible default
 )
 ```
 
-### AFTER (2 parameters)
+### AFTER (2-3 parameters)
 ```python
-# Describe the pattern you want, not the algorithm
+# Simple - users specify dimension, deviation, and optionally rule
 transform.cellular_automata(
     dimension="duration",
-    pattern="structured"  # Describes musical behavior
+    max_deviation=0.3,
+    rule=110  # Optional: specify cellular automata rule (e.g., 30, 90, 110)
 )
 
 # All preset variants:
-transform.cellular_automata(dimension="duration", pattern="chaotic")
-transform.cellular_automata(dimension="duration", pattern="structured")
-transform.cellular_automata(dimension="duration", pattern="fractal")
+transform.cellular_automata(dimension="duration", max_deviation=0.3)
+transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=30)
+transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=90)
+transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=110)
 
-transform.cellular_automata(dimension="frequency", pattern="fractal")
-transform.cellular_automata(dimension="amplitude", pattern="chaotic")
+# Works for all dimensions:
+transform.cellular_automata(dimension="frequency", max_deviation=0.2)
+transform.cellular_automata(dimension="amplitude", max_deviation=0.4, rule=30)
+
+# Creative combinations with custom rules:
+transform.cellular_automata(dimension="duration", max_deviation=0.3, rule=30)
+transform.cellular_automata(dimension="frequency", max_deviation=0.5, rule=110)
 ```
 
-**Internal mapping:**
-- `"chaotic"` → `rule=30, width=31, max_deviation=0.4`
-- `"structured"` → `rule=110, width=31, max_deviation=0.3`
-- `"fractal"` → `rule=90, width=31, max_deviation=0.35`
+**Note:** `seed` and `width` are removed (use sensible defaults internally). `rule` is exposed as an optional parameter since it's a fundamental CA concept users should understand.
+
+**Note:** `rule` is exposed as an optional parameter since it's a fundamental CA concept users should understand. `width` and `seed` are hidden with sensible defaults.
 
 ---
 
