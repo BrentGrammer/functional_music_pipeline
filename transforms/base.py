@@ -199,12 +199,12 @@ class ScoreTargetMotifsTransform(TransformDescriptor):
 
 
 @dataclass(frozen=True)
-class AllVoicesTransform(TransformDescriptor):
+class EachVoiceTransform(TransformDescriptor):
     transform: Callable[..., ToneSequence]
 
 
 TransformWithCallable: TypeAlias = (
-    PhraseTransform | PhraseRelativeTransform | ScoreTransform | ScoreTargetMotifsTransform | AllVoicesTransform
+    PhraseTransform | PhraseRelativeTransform | ScoreTransform | ScoreTargetMotifsTransform | EachVoiceTransform
 )
 
 

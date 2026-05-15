@@ -3,7 +3,7 @@ import pytest
 from composition.parser import TRANSFORMS, parse_composition
 from composition.schema import CompositionDocument
 from score_model.tone import Tone
-from transforms.base import AllVoicesTransform, ToneDimension
+from transforms.base import EachVoiceTransform, ToneDimension
 from transforms.drift import drift_transform
 
 
@@ -234,7 +234,7 @@ class TestScoreDriftRegistration:
         # `score_drift` must apply across all voices of a score, matching
         # the pattern of other `score_*` transforms (e.g. score_reverse, score_scale).
         descriptor = TRANSFORMS["score_drift"]
-        assert isinstance(descriptor, AllVoicesTransform)
+        assert isinstance(descriptor, EachVoiceTransform)
 
     def test_score_drift_wraps_drift_transform(self):
         descriptor = TRANSFORMS["score_drift"]

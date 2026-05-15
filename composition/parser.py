@@ -5,7 +5,7 @@ from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
 from transforms.base import (
-    AllVoicesTransform,
+    EachVoiceTransform,
     PhraseRelativeTransform,
     PhraseTransform,
     ScoreTargetMotifsTransform,
@@ -39,14 +39,6 @@ def _parse_tone_string(tone_string: str) -> Tone:
         return Tone(float(frequency_value), duration=float(duration_value))
 
     return Tone(float(normalized_tone_string))
-
-def _apply_all_voices_transform_with_optional_params(
-    transform_func: Callable[..., ToneSequence],
-    score: Score,
-    transform_params: Mapping[str, object],
-) -> Score:
-    return apply_to_each_voice(transform_func, **transform_params)(score)
-
 
 def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[str, list[Tone]]:
     if not isinstance(motif_name, str):
@@ -266,17 +258,16 @@ def _apply_score_transform_spec(
 
     descriptor = TRANSFORMS[transform_name]
 
+    descriptor.validate_params(transform_params)
+
     if isinstance(descriptor, ScoreTargetMotifsTransform):
-        descriptor.validate_params(transform_params)
         return descriptor.transform(score, parsed_motifs, **transform_params)
 
     if isinstance(descriptor, ScoreTransform):
-        descriptor.validate_params(transform_params)
         return descriptor.transform(score, **transform_params)
 
-    if isinstance(descriptor, AllVoicesTransform):
-        descriptor.validate_params(transform_params)
-        return _apply_all_voices_transform_with_optional_params(descriptor.transform, score, transform_params)
+    if isinstance(descriptor, EachVoiceTransform):
+        return apply_to_each_voice(descriptor.transform, **transform_params)(score)
 
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 

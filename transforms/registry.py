@@ -1,6 +1,6 @@
 from composition.transform_params_validation import validate_add_pedal_point_params
 from transforms.base import (
-    AllVoicesTransform,
+    EachVoiceTransform,
     EnumParam,
     FloatParam,
     IntegerParam,
@@ -236,12 +236,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_reverse": AllVoicesTransform(
+    "score_reverse": EachVoiceTransform(
         "score_reverse",
         reverse_tones,
         params_spec=TransformParamsSpec(),
     ),
-    "score_golden_ratio": AllVoicesTransform(
+    "score_golden_ratio": EachVoiceTransform(
         "score_golden_ratio",
         golden_ratio_transform,
         params_spec=TransformParamsSpec(
@@ -252,7 +252,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_invert": AllVoicesTransform(
+    "score_invert": EachVoiceTransform(
         "score_invert",
         invert_tones,
         params_spec=TransformParamsSpec(
@@ -263,7 +263,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_transpose": AllVoicesTransform(
+    "score_transpose": EachVoiceTransform(
         "score_transpose",
         transpose_tones,
         params_spec=TransformParamsSpec(
@@ -275,7 +275,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_scale": AllVoicesTransform(
+    "score_scale": EachVoiceTransform(
         "score_scale",
         scale_transform,
         params_spec=TransformParamsSpec(
@@ -291,7 +291,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_delay": AllVoicesTransform(
+    "score_delay": EachVoiceTransform(
         "score_delay",
         delay_tones,
         params_spec=TransformParamsSpec(
@@ -303,7 +303,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_repeat": AllVoicesTransform(
+    "score_repeat": EachVoiceTransform(
         "score_repeat",
         repeat_tones,
         params_spec=TransformParamsSpec(
@@ -315,7 +315,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_drift": AllVoicesTransform(
+    "score_drift": EachVoiceTransform(
         "score_drift",
         drift_transform,
         params_spec=TransformParamsSpec(
@@ -424,7 +424,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_weierstrass": AllVoicesTransform(
+    "score_weierstrass": EachVoiceTransform(
         "score_weierstrass",
         apply_weierstrass_transform,
         params_spec=TransformParamsSpec(
@@ -541,7 +541,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         ),
     ),
 
-    "score_terraced_drift": AllVoicesTransform(
+    "score_terraced_drift": EachVoiceTransform(
         "score_terraced_drift",
         apply_terraced_drift_transform,
         params_spec=TransformParamsSpec(
@@ -560,7 +560,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_cellular_automata": AllVoicesTransform(
+    "score_cellular_automata": EachVoiceTransform(
         "score_cellular_automata",
         apply_cellular_automata_transform,
         params_spec=TransformParamsSpec(
@@ -579,7 +579,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_ridged_drop": AllVoicesTransform(
+    "score_ridged_drop": EachVoiceTransform(
         "score_ridged_drop",
         apply_ridged_drop_transform,
         params_spec=TransformParamsSpec(
@@ -599,7 +599,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
             }
         ),
     ),
-    "score_random_drop": AllVoicesTransform(
+    "score_random_drop": EachVoiceTransform(
         "score_random_drop",
         apply_random_drop_transform,
         params_spec=TransformParamsSpec(
