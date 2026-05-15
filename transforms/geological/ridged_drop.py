@@ -13,7 +13,6 @@ from transforms.base import (
 )
 from transforms.geological._modulation import apply_profile
 
-
 RIDGED_DROP_PARAMS_SPEC = TransformParamsSpec(
     fields={
         "dimension": TransformParamFieldSpec(

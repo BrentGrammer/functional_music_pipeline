@@ -4,7 +4,7 @@ from composition.parser import TRANSFORMS, parse_composition
 from composition.schema import CompositionDocument
 from score_model.tone import Tone
 from transforms.base import EachVoiceTransform, ToneDimension
-from transforms.basic.drift import drift_transform  
+from transforms.basic.drift import drift_transform
 
 
 class TestDriftExceptions:

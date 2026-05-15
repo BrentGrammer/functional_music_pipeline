@@ -13,7 +13,6 @@ from transforms.base import (
 )
 from transforms.complexity._modulation import apply_profile
 
-
 WEIERSTRASS_PARAMS_SPEC = TransformParamsSpec(
     fields={
         "dimension": TransformParamFieldSpec(

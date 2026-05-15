@@ -12,7 +12,6 @@ from transforms.base import (
 )
 from transforms.complexity._modulation import apply_profile
 
-
 CELLULAR_AUTOMATA_PARAMS_SPEC = TransformParamsSpec(
     fields={
         "dimension": TransformParamFieldSpec(
