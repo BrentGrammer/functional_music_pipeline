@@ -1,0 +1,28 @@
+{
+  "description": "Demonstrates the invert transform which flips melodic contour around a central pitch.",
+  "motifs": {
+    "ascending_line": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "392.00:0.4", "440.00:0.4"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Original ascending line.",
+            "motifs": ["ascending_line"]
+          },
+          {
+            "comment": "Inverted: the ascending line becomes descending.",
+            "motifs": ["ascending_line"],
+            "transforms": [
+              {
+                "name": "invert",
+                "params": { "dimension": "frequency" }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

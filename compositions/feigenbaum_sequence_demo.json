@@ -1,0 +1,29 @@
+{
+  "description": "Demonstrates feigenbaum_sequence which divides each successive tone's dimension by 4.669. The first tone stays unchanged, second is 1/4.669x, third is 1/21.8x, etc.",
+  "motifs": {
+    "long_notes": [
+      "261.63:6.0",
+      "293.66:6.0",
+      "329.63:6.0",
+      "349.23:6.0"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Feigenbaum on duration: accelerating rhythm.",
+            "motifs": ["long_notes"],
+            "transforms": [
+              {
+                "name": "feigenbaum_sequence",
+                "params": { "dimension": "duration" }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

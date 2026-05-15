@@ -1,0 +1,37 @@
+{
+  "description": "Demonstrates score_terraced_drift which applies quantized random walk modulation across all voices.",
+  "motifs": {
+    "voice_a": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "349.23:0.4", "392.00:0.4"],
+    "voice_b": ["523.25:0.4", "493.88:0.4", "440.00:0.4", "392.00:0.4", "349.23:0.4"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "motifs": ["voice_a"]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": ["voice_b"]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "name": "score_terraced_drift",
+        "params": {
+          "dimension": "frequency",
+          "max_deviation": 0.1,
+          "seed": 42,
+          "step_size": 0.5,
+          "quantize_resolution": 0.25
+        }
+      }
+    ]
+  }
+}

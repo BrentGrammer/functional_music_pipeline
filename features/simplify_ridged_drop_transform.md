@@ -346,3 +346,17 @@ Do not add backwards-compatibility support for:
 4. `drop_when_noise_above`
 
 Any existing demos or tests that use those fields should be updated to the new public API instead.
+
+## Demo Files
+
+Run the following command inside the Docker container to generate WAV output for all demo files:
+
+```shell
+for file in compositions/*_demo.json; do name="$(basename "$file" .json)"; python main.py --composition-file "$file" --output-name "$name"; done
+```
+
+Or to generate only the new demo files added for this feature:
+
+```shell
+for file in compositions/invert_demo.json compositions/repeat_demo.json compositions/ritardando_demo.json compositions/feigenbaum_sequence_demo.json compositions/phrase_feigenbaum_shrink_demo.json compositions/phrase_feigenbaum_grow_demo.json compositions/score_feigenbaum_sequence_demo.json compositions/pedal_point_demo.json compositions/stretto_demo.json compositions/random_drop_demo.json compositions/score_cellular_automata_demo.json compositions/score_terraced_drift_demo.json compositions/score_ridged_drop_demo.json; do name="$(basename "$file" .json)"; python main.py --composition-file "$file" --output-name "$name"; done
+```

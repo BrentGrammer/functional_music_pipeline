@@ -1,0 +1,70 @@
+{
+  "description": "Demonstrates cellular_automata transform which generates binary modulation patterns from elementary cellular automata (like Wolfram's Rule 30 or Rule 110). The pattern is deterministic but appears chaotic, creating structured randomness.",
+  "motifs": {
+    "steady_tone": [
+      "329.63:0.3",
+      "329.63:0.3",
+      "329.63:0.3",
+      "329.63:0.3",
+      "329.63:0.3",
+      "329.63:0.3"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Original: 6 steady tones at the same pitch.",
+            "motifs": ["steady_tone"]
+          },
+          {
+            "comment": "Rule 30 on amplitude: creates a chaotic loud/quiet pattern. Some notes drop to near-silence while others stay loud.",
+            "motifs": ["steady_tone"],
+            "transforms": [
+              {
+                "name": "cellular_automata",
+                "params": {
+                  "dimension": "amplitude",
+                  "max_deviation": 0.9,
+                  "rule": 30,
+                  "seed": 42
+                }
+              }
+            ]
+          },
+          {
+            "comment": "Rule 110 on amplitude: different rule produces different binary pattern.",
+            "motifs": ["steady_tone"],
+            "transforms": [
+              {
+                "name": "cellular_automata",
+                "params": {
+                  "dimension": "amplitude",
+                  "max_deviation": 0.9,
+                  "rule": 110,
+                  "seed": 42
+                }
+              }
+            ]
+          },
+          {
+            "comment": "Rule 30 on frequency: pitches jump up or down creating a melodic contour from chaos.",
+            "motifs": ["steady_tone"],
+            "transforms": [
+              {
+                "name": "cellular_automata",
+                "params": {
+                  "dimension": "frequency",
+                  "max_deviation": 0.3,
+                  "rule": 30,
+                  "seed": 42
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

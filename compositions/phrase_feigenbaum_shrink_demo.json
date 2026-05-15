@@ -1,0 +1,41 @@
+{
+  "description": "Demonstrates phrase_feigenbaum_shrink which scales each phrase to be 1/4.669 the duration of the previous phrase, creating accelerating repetitions.",
+  "motifs": {
+    "theme": [
+      "261.63:1.0",
+      "293.66:1.0",
+      "329.63:1.0",
+      "392.00:1.0"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "First phrase: 4 notes at 1 second each = 4 seconds total.",
+            "motifs": ["theme"]
+          },
+          {
+            "comment": "Second phrase: shrunk to 4/4.669 = ~0.86 seconds total.",
+            "motifs": ["theme"],
+            "transforms": [
+              {
+                "name": "phrase_feigenbaum_shrink"
+              }
+            ]
+          },
+          {
+            "comment": "Third phrase: shrunk again to ~0.18 seconds total. Rapid burst.",
+            "motifs": ["theme"],
+            "transforms": [
+              {
+                "name": "phrase_feigenbaum_shrink"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
