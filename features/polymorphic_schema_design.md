@@ -210,3 +210,8 @@ The next concrete action should be:
 
 1. Perform Step 9B schema colocation.
 2. Then do a final verification and documentation sweep.
+
+
+### Final Cleanup
+
+- Figure out if we need to use _interpolate_multiplier_at_position or can get rid of it (currently not referenced, does it need to be?)

@@ -40,6 +40,7 @@ from transforms.geological import (
     apply_weierstrass_transform,
 )
 from transforms.golden_ratio import (
+    GOLDEN_RATIO_PARAMS_SPEC,
     golden_ratio_transform,
     phrase_golden_ratio_grow,
     phrase_golden_ratio_shrink,
@@ -60,13 +61,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "golden_ratio": PhraseTransform(
         "golden_ratio",
         golden_ratio_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
     "invert": PhraseTransform(
         "invert",
@@ -172,24 +167,12 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "phrase_golden_ratio_shrink": PhraseRelativeTransform(
         "phrase_golden_ratio_shrink",
         phrase_golden_ratio_shrink,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
     "phrase_golden_ratio_grow": PhraseRelativeTransform(
         "phrase_golden_ratio_grow",
         phrase_golden_ratio_grow,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
     "score_feigenbaum_sequence": ScoreTransform(
         "score_feigenbaum_sequence",
@@ -210,13 +193,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
     "score_golden_ratio": EachVoiceTransform(
         "score_golden_ratio",
         golden_ratio_transform,
-        params_spec=TransformParamsSpec(
-            fields={
-                "dimension": TransformParamFieldSpec(
-                    schema=EnumParam(allowed_values=tuple(ToneDimension)),
-                ),
-            }
-        ),
+        params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
     "score_invert": EachVoiceTransform(
         "score_invert",

@@ -298,9 +298,9 @@ def ritardando_transform(
     return _apply_duration_multipliers(tones, combined_multipliers)
 
 
-def _get_total(tones: ToneSequence, dim: ToneDimension) -> float:
-    attr = dim.value
-    return float(sum(getattr(t, attr) for t in tones))
+def _cumulative_dimension(tones: ToneSequence, dim: ToneDimension) -> float:
+    dimension = dim.value
+    return float(sum(getattr(t, dimension) for t in tones))
 
 
 def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION) -> ToneSequence:
@@ -312,8 +312,8 @@ def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension | str = To
     new_tones = [tones[0]]
 
     for tone in tones[1:]:
-        prev_val = getattr(new_tones[-1], dim_attr)
-        new_val = prev_val / FEIGENBAUM_RATIO
+        previous = getattr(new_tones[-1], dim_attr)
+        new_val = previous / FEIGENBAUM_RATIO
 
         freq = tone.frequency
         dur = tone.duration
@@ -341,13 +341,13 @@ def phrase_feigenbaum_shrink(
         raise ValueError("Cannot apply phrase-feigenbaum-shrink: no preceding phrases exist to relate to.")
 
     dim = parse_dimension(dimension)
-    prev_val = _get_total(previous_tones, dim)
-    curr_val = _get_total(tones, dim)
+    previous = _cumulative_dimension(previous_tones, dim)
+    current = _cumulative_dimension(tones, dim)
 
-    if curr_val == 0 or prev_val == 0:
+    if current == 0 or previous == 0:
         return tones
 
-    scale_factor = (prev_val / FEIGENBAUM_RATIO) / curr_val
+    scale_factor = (previous / FEIGENBAUM_RATIO) / current
     return scale_transform(tones, dim, scale_factor)
 
 
@@ -361,13 +361,13 @@ def phrase_feigenbaum_grow(
         raise ValueError("Cannot apply phrase-feigenbaum-grow: no preceding phrases exist to relate to.")
 
     dim = parse_dimension(dimension)
-    prev_val = _get_total(previous_tones, dim)
-    curr_val = _get_total(tones, dim)
+    previous = _cumulative_dimension(previous_tones, dim)
+    current = _cumulative_dimension(tones, dim)
 
-    if curr_val == 0 or prev_val == 0:
+    if current == 0 or previous == 0:
         return tones
 
-    scale_factor = (prev_val * FEIGENBAUM_RATIO) / curr_val
+    scale_factor = (previous * FEIGENBAUM_RATIO) / current
     return scale_transform(tones, dim, scale_factor)
 
 

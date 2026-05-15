@@ -1,11 +1,26 @@
 from score_model.math_constants import GOLDEN_RATIO
-from transforms.base import ToneDimension, ToneSequence, parse_dimension
+from transforms.base import (
+    EnumParam,
+    ToneDimension,
+    ToneSequence,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    parse_dimension,
+)
 from transforms.scale import scale_transform
 
+GOLDEN_RATIO_PARAMS_SPEC = TransformParamsSpec(
+    fields={
+        "dimension": TransformParamFieldSpec(
+            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+        ),
+    }
+)
 
-def _get_total(tones: ToneSequence, dim: ToneDimension) -> float:
-    attr = dim.value
-    return float(sum(getattr(t, attr) for t in tones))
+
+def _cumulative_dimension(tones: ToneSequence, dim: ToneDimension) -> float:
+    dimension = dim.value
+    return float(sum(getattr(t, dimension) for t in tones))
 
 
 def golden_ratio_transform(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION) -> ToneSequence:
@@ -22,8 +37,8 @@ def phrase_golden_ratio_shrink(
         raise ValueError("Cannot apply phrase-golden-ratio-shrink: no preceding phrases exist to relate to.")
 
     dim = parse_dimension(dimension)
-    prev_val = _get_total(previous_tones, dim)
-    curr_val = _get_total(tones, dim)
+    prev_val = _cumulative_dimension(previous_tones, dim)
+    curr_val = _cumulative_dimension(tones, dim)
 
     if curr_val == 0 or prev_val == 0:
         return tones
@@ -42,8 +57,8 @@ def phrase_golden_ratio_grow(
         raise ValueError("Cannot apply phrase-golden-ratio-grow: no preceding phrases exist to relate to.")
 
     dim = parse_dimension(dimension)
-    prev_val = _get_total(previous_tones, dim)
-    curr_val = _get_total(tones, dim)
+    prev_val = _cumulative_dimension(previous_tones, dim)
+    curr_val = _cumulative_dimension(tones, dim)
 
     if curr_val == 0 or prev_val == 0:
         return tones
