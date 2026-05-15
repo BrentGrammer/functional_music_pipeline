@@ -1,10 +1,84 @@
 from typing import TypeAlias
 
 from score_model.tone import Tone
-from transforms.base import ToneDimension, parse_dimension
-from transforms.profiles import CellularAutomataProfile, RandomDropProfile, RidgedMultifractalProfile, StochasticProfile, TerracedBrownianProfile, WeierstrassProfile
+from transforms.base import (
+    EnumParam,
+    FloatParam,
+    IntegerParam,
+    ToneDimension,
+    TransformParamFieldSpec,
+    TransformParamsSpec,
+    parse_dimension,
+)
+from transforms.profiles import (
+    CellularAutomataProfile,
+    RandomDropProfile,
+    RidgedMultifractalProfile,
+    StochasticProfile,
+    TerracedBrownianProfile,
+    WeierstrassProfile,
+)
 
 ToneSequence: TypeAlias = list[Tone]
+
+_DIMENSION_FIELD = TransformParamFieldSpec(
+    required=True,
+    schema=EnumParam(allowed_values=tuple(ToneDimension)),
+)
+_MAX_DEVIATION_FIELD = TransformParamFieldSpec(
+    required=True,
+    schema=FloatParam(),
+)
+
+
+def _build_stochastic_params_spec(
+    extra_fields: dict[str, TransformParamFieldSpec],
+) -> TransformParamsSpec:
+    return TransformParamsSpec(
+        fields={
+            "dimension": _DIMENSION_FIELD,
+            "max_deviation": _MAX_DEVIATION_FIELD,
+            **extra_fields,
+        }
+    )
+
+
+WEIERSTRASS_PARAMS_SPEC = _build_stochastic_params_spec(
+    {
+        "seed": TransformParamFieldSpec(schema=IntegerParam()),
+        "amplitude_scaling": TransformParamFieldSpec(schema=FloatParam()),
+        "ripples_per_wave": TransformParamFieldSpec(schema=FloatParam()),
+        "iterations": TransformParamFieldSpec(schema=IntegerParam()),
+    }
+)
+TERRACED_DRIFT_PARAMS_SPEC = _build_stochastic_params_spec(
+    {
+        "seed": TransformParamFieldSpec(schema=IntegerParam()),
+        "step_size": TransformParamFieldSpec(schema=FloatParam()),
+        "quantize_resolution": TransformParamFieldSpec(schema=FloatParam()),
+    }
+)
+CELLULAR_AUTOMATA_PARAMS_SPEC = _build_stochastic_params_spec(
+    {
+        "rule": TransformParamFieldSpec(schema=IntegerParam()),
+        "seed": TransformParamFieldSpec(schema=IntegerParam()),
+        "width": TransformParamFieldSpec(schema=IntegerParam()),
+    }
+)
+RIDGED_DROP_PARAMS_SPEC = _build_stochastic_params_spec(
+    {
+        "seed": TransformParamFieldSpec(schema=IntegerParam()),
+        "octaves": TransformParamFieldSpec(schema=IntegerParam()),
+        "ridge_density": TransformParamFieldSpec(schema=FloatParam()),
+        "drop_when_noise_above": TransformParamFieldSpec(schema=FloatParam()),
+    }
+)
+RANDOM_DROP_PARAMS_SPEC = _build_stochastic_params_spec(
+    {
+        "seed": TransformParamFieldSpec(schema=IntegerParam()),
+        "drop_rate": TransformParamFieldSpec(schema=FloatParam()),
+    }
+)
 
 
 def _modulate_tone_dimension(
