@@ -116,38 +116,31 @@ When a transform uses `params`, `params` must be an object with named fields.
 - **`invert`**: Flips the melodic contour of a phrase around a central pitch. Optionally accepts `dimension`.
 - **`scale`**: Multiplies the `frequency`, `duration`, or `amplitude` of each tone by `factor` for a chosen `dimension`.
 
-#### Time & Sequence
+#### Basic Phrase Shaping
 
 - **`reverse`**: Reverses the order of tones in a phrase.
 - **`delay`**: Adds a period of silence before each tone. Use `seconds` to describe the silent duration.
 - **`repeat`**: Repeats the tones in a phrase `count` times.
 - **`pad_silence`**: Adds a block of silence to the beginning or end of a phrase using `seconds` and `position`.
-- **`accelerando`**: Speeds up the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
-- **`ritardando`**: Slows down the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
 - **`drift`**: Creates a linear change (e.g., accelerando, crescendo) in a chosen `dimension` using `rate`.
 
-#### Structural & Algorithmic
+#### Tempo
+
+- **`accelerando`**: Speeds up the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
+- **`ritardando`**: Slows down the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
+
+#### Proportion & Counterpoint
 
 - **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to a phrase. Both optionally accept `dimension`.
 - **`add_pedal_point`**: A fugal technique that adds a sustained or repeated anchor note to the score. It requires `frequency` and `duration`, and may also use `amplitude`, `mode`, and `pulse_duration`.
 - **`stretto`**: A fugal technique that creates overlapping, imitative entries of a motif using `motif`, `num_times`, and `spacing`.
 
-#### Geological & Stochastic Transforms
+#### Complexity
 
-These transforms introduce structured randomness, inspired by geological patterns, to a musical dimension (`frequency`, `duration`, or `amplitude`).
+These transforms derive modulation from fractals, cellular automata, or other complex-systems processes. They modulate a musical dimension (`frequency`, `duration`, or `amplitude`) using `dimension` and `max_deviation`.
 
-- **`erosion`**: Mimics geological erosion by progressively "wearing away" a phrase. It takes a `dimension` parameter to specify what to erode.
-  ```json
-  "transforms": [{"name": "erosion", "params": {"dimension": "duration"}}]
-  ```
-- **`frost_effect`**: Simulates the frost effect which slowly creates cracks in rock as precipitation gets into micro-crevices and oscillates between freezing and thawing to gradually widen the cracks (e.g., in hoodoos in Southeast Utah). It optionally accepts `iterations`.
-  ```json
-  "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
-  ```
 - **`weierstrass` / `score_weierstrass`**: A smooth, self-similar fractal wobble. Accepts `dimension`, `max_deviation`, and optional `seed`, `amplitude_scaling`, `ripples_per_wave`, and `iterations`.
-- **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension`, `max_deviation`, and optional `seed`, `step_size`, and `quantize_resolution`.
 - **`cellular_automata` / `score_cellular_automata`**: A binary modulation derived from an elementary cellular automaton. Accepts `dimension`, `max_deviation`, and optional `rule`, `seed`, and `width`.
-- **`ridged_drop` / `score_ridged_drop`**: A mostly stable signal interrupted by occasional sharp drops. Accepts `dimension`, `max_deviation`, and optional `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above`.
 - **`random_drop` / `score_random_drop`**: Random downward deviations at a controlled rate. Accepts `dimension`, `max_deviation`, and optional `seed` and `drop_rate`.
 
   ```json
@@ -162,6 +155,21 @@ These transforms introduce structured randomness, inspired by geological pattern
     }
   ]
   ```
+
+#### Geological
+
+These transforms use geological metaphors or landform-inspired motion. Some reshape phrase structure directly, while others modulate a musical dimension (`frequency`, `duration`, or `amplitude`).
+
+- **`erosion`**: Mimics geological erosion by progressively "wearing away" a phrase. It takes a `dimension` parameter to specify what to erode.
+  ```json
+  "transforms": [{"name": "erosion", "params": {"dimension": "duration"}}]
+  ```
+- **`frost_effect`**: Simulates the frost effect which slowly creates cracks in rock as precipitation gets into micro-crevices and oscillates between freezing and thawing to gradually widen the cracks (e.g., in hoodoos in Southeast Utah). It optionally accepts `iterations`.
+  ```json
+  "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
+  ```
+- **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension`, `max_deviation`, and optional `seed`, `step_size`, and `quantize_resolution`.
+- **`ridged_drop` / `score_ridged_drop`**: A mostly stable signal interrupted by occasional sharp drops. Accepts `dimension`, `max_deviation`, and optional `seed`, `octaves`, `ridge_density`, and `drop_when_noise_above`.
 
 ### Development
 
