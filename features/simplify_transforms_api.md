@@ -171,7 +171,7 @@ Keeping them separate lets users combine them (e.g., frequent shallow drops, or 
 
 ---
 
-### `add_pedal_point` - Currently 5 Parameters
+### `add_pedal_point` → Rename to `add_pedal_tone` - Currently 5 Parameters
 
 **Current API:**
 - `frequency` (required)
@@ -180,12 +180,16 @@ Keeping them separate lets users combine them (e.g., frequent shallow drops, or 
 - `mode` (optional)
 - `pulse_duration` (optional)
 
-**Proposed API (2 required, 1 optional):**
-- `frequency` (required): The pedal note frequency in Hz
-- `duration` (required): How long the pedal lasts
-- `mode` (optional): `"sustain"` (default) | `"pulse"`
+**Proposed API (1 required, 0 optional):**
+- `frequency` (required): The pedal tone frequency in Hz
 
-Remove `amplitude` (use sensible default like 0.6). Remove `pulse_duration` (derive from context or use fixed ratio).
+**Removed:**
+- `duration` — derived automatically from the length of the musical context it's being applied to (phrase or score)
+- `amplitude` — use sensible internal default
+- `mode` — removed (sustain by default; if repeat/pulse is needed, revisit later)
+- `pulse_duration` — removed along with mode
+
+**Rename:** `add_pedal_point` → `add_pedal_tone` (more literal and clear)
 
 ---
 
@@ -212,7 +216,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 | `terraced_drift` | 5 params | 2 params |
 | `random_drop` | 4 params | 3 params |
 | `ridged_drop` | 4 params | REMOVE |
-| `add_pedal_point` | 5 params | 3 params |
+| `add_pedal_point` | 5 params | 1 param (rename to `add_pedal_tone`) |
 | `accelerando` | 3 params | 1 param |
 | `ritardando` | 3 params | 1 param |
 
@@ -234,7 +238,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 ### Phase 3: Simplify Other Transforms
 
 6. Update `accelerando` / `ritardando` to 1-param API
-7. Update `add_pedal_point` to 3-param API
+7. Rename `add_pedal_point` to `add_pedal_tone`, reduce to 1-param API (frequency only, duration derived from context)
 
 ### Phase 4: Documentation and Demos
 

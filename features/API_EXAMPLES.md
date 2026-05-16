@@ -199,45 +199,38 @@ transform.random_drop(dimension="amplitude", max_drop_pct=50, drop_frequency_pct
 
 ---
 
-## 6. add_pedal_point Transform
+## 6. add_pedal_tone Transform (renamed from add_pedal_point)
 
 ### BEFORE (5 parameters)
 ```python
-# Requires tuning every aspect
+# Requires tuning every aspect, duration is redundant
 transform.add_pedal_point(
     frequency=110.0,  # Hz
-    duration=8.0,  # beats
+    duration=8.0,  # beats — should just match the phrase length
     amplitude=0.6,  # Often just uses default
     mode="sustain",  # Two modes with different params
     pulse_duration=0.5  # Only used in "pulse" mode
 )
 ```
 
-### AFTER (2-3 parameters)
+### AFTER (1 parameter)
 ```python
-# Core parameters only - sensible defaults for the rest
-transform.add_pedal_point(
-    frequency=110.0,  # Hz - the pedal note
-    duration=8.0  # beats - how long it lasts
-)
+# Just specify the pedal tone frequency — duration matches the phrase automatically
+transform.add_pedal_tone(frequency=110.0)
 
-# Optional mode parameter for different behaviors:
-transform.add_pedal_point(
-    frequency=110.0,
-    duration=8.0,
-    mode="sustain"  # Default behavior - no pulse_duration needed
-)
-
-transform.add_pedal_point(
-    frequency=110.0,
-    duration=8.0,
-    mode="pulse"  # Will derive pulse_duration from context or use fixed ratio
-)
+# Different pedal tones:
+transform.add_pedal_tone(frequency=55.0)    # Low A
+transform.add_pedal_tone(frequency=130.81)  # Low C
+transform.add_pedal_tone(frequency=220.0)   # A below middle C
 ```
 
-**Internal defaults:**
-- `amplitude` → defaults to `0.6` (sensible level that balances with other notes)
-- `pulse_duration` in "pulse" mode → derived from beat structure or uses fixed ratio like 0.125 beats
+**Removed:**
+- `duration` — derived automatically from the length of the musical context (phrase or score)
+- `amplitude` — sensible internal default
+- `mode` — removed (sustain by default)
+- `pulse_duration` — removed along with mode
+
+**Renamed:** `add_pedal_point` → `add_pedal_tone`
 
 ---
 
@@ -285,7 +278,7 @@ transform.ritardando(strength="dramatic")
 | `terraced_drift` | 5 params | 2 params | 60% reduction |
 | `random_drop` | 4 params | 3 params | 25% reduction |
 | `ridged_drop` | 4 params | REMOVE | — |
-| `add_pedal_point` | 5 params | 2-3 params | 40-60% reduction |
+| `add_pedal_point` | 5 params | 1 param (rename to `add_pedal_tone`) | 80% reduction |
 | `accelerando` | 3 params | 1 param | 67% reduction |
 | `ritardando` | 3 params | 1 param | 67% reduction |
 
