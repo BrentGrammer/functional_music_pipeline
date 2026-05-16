@@ -88,7 +88,7 @@ def test_mix_with_normalization(self):
 
 - Functions should not have more than 4 parameters. A long list of parameters is a code smell and indicates the function is trying to do too much.
 - Functions should have a low cyclomatic complexity. Do not write code that is more than 3 levels deep in nesting conditionals or similar constructs.
-- Function names should be descriptive and clearly indicate what the function is doing. Prefer following the convention - "<verb>\_<subject>", ex: use `find_edge_nodes()` instead of `edge_nodes()`
+- Function names should be descriptive and clearly indicate what the function is doing. Prefer following the convention - verb_noun, ex: use `find_edge_nodes()` instead of `edge_nodes()`
 - Helper functions are fine, but do not create helper functions if they are not able to be reused throughout the program.
 
 ## 7. Architecture and Design Principles
