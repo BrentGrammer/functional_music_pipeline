@@ -75,20 +75,6 @@ code .
 chmod +x ./scripts/allow_sbx_policies.sh
 ./scripts/allow_sbx_policies.sh
 
-# sync_gemini_settings() {
-#   if [[ -f ".gemini/settings.json" ]]; then
-#     echo "Syncing project .gemini/settings.json to sandbox home..."
-
-#     sbx exec -d "$SANDBOX_NAME" bash -lc '
-#       set -euo pipefail
-#       mkdir -p "$HOME/.gemini"
-#       cp .gemini/settings.json "$HOME/.gemini/settings.json"
-#     ' || true
-#   else
-#     echo "No project .gemini/settings.json found; skipping settings sync."
-#   fi
-# }
-
 # Reuse existing sandbox if it already exists
 if sbx ls | grep "$SANDBOX_NAME"; then
   echo "✅ Existing sandbox found: $SANDBOX_NAME"
