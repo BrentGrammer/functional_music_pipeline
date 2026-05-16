@@ -156,8 +156,7 @@ class TestGeologicalExampleComposition:
 
         # Voice 2: Terraced Brownian on Duration
         voice2_tones = score.voices[1].tones
-        for i, transformed_tone in enumerate(voice2_tones):
-            original_dur = original_motif_tones[i].duration
+        for transformed_tone in voice2_tones:
             assert transformed_tone.duration > 0
 
         # All Voices: Verify score-level amplitude transform and general amplitude invariants

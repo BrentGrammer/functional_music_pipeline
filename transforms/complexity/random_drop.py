@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from transforms.base import (
     EnumParam,
-    FloatParam,
     IntegerParam,
     ToneDimension,
     ToneSequence,
