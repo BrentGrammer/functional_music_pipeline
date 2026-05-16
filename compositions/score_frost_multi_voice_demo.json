@@ -1,0 +1,28 @@
+{
+  "description": "Demonstrates how score_frost_effect works with multiple input voices.",
+  "motifs": {
+    "high": ["880:0.5"],
+    "low": ["520:0.5"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "HighSeed",
+        "phrases": [{ "motifs": ["high"] }]
+      },
+      {
+        "name": "LowSeed",
+        "phrases": [{ "motifs": ["low"] }]
+      }
+    ],
+    "score_transforms": [
+      {
+        "comment": "With two voices at different pitches, frost_effect identifies the 'outer edges' of the harmonic field and grows new voices from there. You will hear the original chord, followed by staggered 'crystals' that expand both higher and lower than the original seeds.",
+        "name": "frost_effect",
+        "params": {
+          "iterations": 2
+        }
+      }
+    ]
+  }
+}

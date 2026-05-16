@@ -1,7 +1,7 @@
 {
   "description": "A score-scope frost demo that starts from a single tone and renders four staggered frost iterations.",
   "motifs": {
-    "seed": ["440:1.0"]
+    "seed": ["520:0.5"]
   },
   "composition": {
     "voices": [
