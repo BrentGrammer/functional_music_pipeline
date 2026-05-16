@@ -232,16 +232,16 @@ Both parameters are musically meaningful and well-named. `strength` controls how
 
 1. Update `weierstrass` to 2-param API
 2. Update `cellular_automata` to 3-param API (remove seed/width, derive initial state from input)
-3. Update `random_drop` to 2-param API
+3. Update `random_drop` to 3-param API (dimension, max_drop_pct, drop_frequency_pct)
 
 ### Phase 2: Simplify Geological Transforms
 
-4. Update `terraced_drift` to 2-param API (remove seed, max_deviation, quantize_resolution; derive internally from step_size)
+4. Update `terraced_drift` to 2-param API (dimension, max_step_change_pct)
 5. Remove `ridged_drop` entirely (revisit later as a `terraced_drop` designed from scratch)
 
 ### Phase 3: Simplify Other Transforms
 
-6. Update `accelerando` / `ritardando` to 1-param API
+6. Update `accelerando` / `ritardando` to 2-param API (remove seed only)
 7. Rename `add_pedal_point` to `add_pedal_tone`, reduce to 1-param API (frequency only, duration derived from context)
 
 ### Phase 4: Documentation and Demos
@@ -254,17 +254,13 @@ Both parameters are musically meaningful and well-named. `strength` controls how
 
 ## Open Questions
 
-1. **Numeric escape hatch**: Should we allow numeric values as alternatives to presets (e.g., `intensity: 0.7`)? This was done for `ridged_drop`'s `drop_depth`. Adds flexibility but also complexity.
+1. **Weierstrass intensity presets**: Should we revisit the `intensity` preset approach for weierstrass (same vagueness issue we identified in other transforms), or is it acceptable there?
 
-2. **Preset vocabulary**: Should all transforms use the same preset names?
-   - Option A: Consistent (`"subtle"` | `"medium"` | `"intense"` everywhere)
-   - Option B: Context-specific (`"sparse"` | `"moderate"` | `"dense"` for drop-based transforms)
-
-3. **Global randomness**: If we remove per-transform `new_pattern_each_use`, should we add a composition-level `randomize: true` setting that makes all stochastic transforms use random seeds?
+2. **Global randomness**: Should we add a composition-level setting for transforms that use stochastic processes internally (e.g., terraced_drift, random_drop)?
 
 ---
 
 ## References
 
-- `features/simplify_ridged_drop_transform.md` - Recent work on `ridged_drop` (may need partial revert)
-- `transforms/geological/ridged_drop.py` - Current implementation with presets
+- `features/done/simplify_ridged_drop_transform.md` - Previous work on `ridged_drop` (transform being removed)
+- `transforms/geological/ridged_drop.py` - Current implementation (to be removed)

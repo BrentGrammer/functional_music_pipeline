@@ -299,7 +299,7 @@ transform.accelerando(strength=0.7, jaggedness=0.2)
 # Users describe what they want musically
 transform.weierstrass(dimension="frequency", intensity="subtle")
 transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3)
-transform.random_drop(dimension="amplitude", intensity="dense")
+transform.random_drop(dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40)
 ```
 
 ### Bad: Implementation-detail Parameters
