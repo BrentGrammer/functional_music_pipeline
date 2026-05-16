@@ -1,6 +1,6 @@
 # Functional Music Pipeline
 
-Inspired by Stephen Wolfram's concept of computational irreducibility and the iterative cyclic processes found in nature (e.g., geological formation, crystal growth), this application provides a framework for musical exploration. The core idea is to build complex, unpredictable, and often surprising musical structures by piping simple melodic motifs through a functional-style pipeline of algorithmic transformations.
+Inspired by Stephen Wolfram's concept of computational irreducibility and the iterative cyclic processes found in nature (e.g., geological processes), this application provides a framework for musical exploration. The core idea is to build complex, unpredictable, and often surprising musical structures by piping simple melodic motifs through a functional-style pipeline of algorithmic transformations.
 
 The application generates music based on a structured JSON composition file, outputting the result as either a WAV audio file or a Standard MIDI File you could import into a DAW such as Cubase.
 
@@ -132,7 +132,7 @@ When a transform uses `params`, `params` must be an object with named fields.
 
 #### Proportion & Counterpoint
 
-- **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to a phrase. Both optionally accept `dimension`.
+- **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to a phrase or group of phrases so that they are related proportionally using these ratios. Both optionally accept `dimension`.
 - **`add_pedal_tone`**: A fugal technique that adds a sustained anchor note to the score. Requires only `frequency` (Hz). Duration is derived automatically from the longest voice in the score.
 - **`stretto`**: A fugal technique that creates overlapping, imitative entries of a motif using `motif`, `num_times`, and `spacing`.
 
