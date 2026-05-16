@@ -154,36 +154,40 @@ transform.terraced_drift(dimension="amplitude", max_step_change_pct=30)
 
 ### BEFORE (4 parameters)
 ```python
-# Users manually tune both deviation and drop rate
+# Users manually tune both deviation and drop rate with unclear scales
 transform.random_drop(
     dimension="frequency",
-    max_deviation=0.5,
+    max_deviation=0.5,  # Unclear what 0.5 means
     seed=42,  # Implementation detail
-    drop_rate=0.4  # Technical parameter
+    drop_rate=0.4  # Unclear scale
 )
 ```
 
-### AFTER (2 parameters)
+### AFTER (3 parameters)
 ```python
-# Describe the drop density you want
+# max_drop_pct: how severe each drop is (1-100)
+# drop_frequency_pct: how often drops occur (1-100)
 transform.random_drop(
     dimension="frequency",
-    intensity="moderate"  # Describes drop density
+    max_drop_pct=50,           # Each drop reduces the value by up to 50%
+    drop_frequency_pct=40      # About 40% of tones get dropped
 )
 
-# All preset variants:
-transform.random_drop(dimension="frequency", intensity="sparse")
-transform.random_drop(dimension="frequency", intensity="moderate")
-transform.random_drop(dimension="frequency", intensity="dense")
+# Frequent shallow drops:
+transform.random_drop(dimension="frequency", max_drop_pct=10, drop_frequency_pct=60)
 
-transform.random_drop(dimension="duration", intensity="sparse")
-transform.random_drop(dimension="amplitude", intensity="dense")
+# Rare deep drops:
+transform.random_drop(dimension="frequency", max_drop_pct=75, drop_frequency_pct=15)
+
+# Works for all dimensions:
+transform.random_drop(dimension="duration", max_drop_pct=30, drop_frequency_pct=20)
+transform.random_drop(dimension="amplitude", max_drop_pct=50, drop_frequency_pct=50)
 ```
 
-**Internal mapping:**
-- `"sparse"` → `max_deviation=0.3, drop_rate=0.2`
-- `"moderate"` → `max_deviation=0.5, drop_rate=0.4`
-- `"dense"` → `max_deviation=0.7, drop_rate=0.6`
+**Removed:**
+- `seed` — removed, fixed internal seed for deterministic behavior
+- `max_deviation` — renamed to `max_drop_pct` (1-100 scale)
+- `drop_rate` — renamed to `drop_frequency_pct` (1-100 scale)
 
 ---
 
@@ -191,36 +195,41 @@ transform.random_drop(dimension="amplitude", intensity="dense")
 
 ### BEFORE (4 parameters)
 ```python
-# Complex paramters that overlap in purpose
+# drop_depth is unclear about scale, new_pattern_each_use is an implementation detail
 transform.ridged_drop(
     dimension="frequency",
-    drop_depth=0.5,  # Related to intensity
-    intensity=0.7,  # Overlaps with drop_depth
+    drop_depth=0.5,  # Unclear what 0.5 means
+    intensity="medium",  # Controls pattern density
     new_pattern_each_use=True  # Implementation detail - randomness flag
 )
 ```
 
-### AFTER (2 parameters)
+### AFTER (2-3 parameters)
 ```python
-# Single intensity parameter handles everything
+# max_drop_depth_pct: how far tones can drop, as a percentage (1-100)
+# intensity: how active/dense the drop pattern is (optional, defaults to "medium")
 transform.ridged_drop(
     dimension="frequency",
-    intensity="medium"  # Combines drop_depth and ridge characteristics
+    max_drop_depth_pct=50  # Tones can drop by up to 50%
 )
 
-# All preset variants:
-transform.ridged_drop(dimension="frequency", intensity="subtle")
-transform.ridged_drop(dimension="frequency", intensity="medium")
-transform.ridged_drop(dimension="frequency", intensity="severe")
+# With explicit intensity:
+transform.ridged_drop(dimension="frequency", max_drop_depth_pct=50, intensity="subtle")
+transform.ridged_drop(dimension="frequency", max_drop_depth_pct=50, intensity="medium")
+transform.ridged_drop(dimension="frequency", max_drop_depth_pct=50, intensity="severe")
 
-transform.ridged_drop(dimension="duration", intensity="subtle")
-transform.ridged_drop(dimension="amplitude", intensity="severe")
+# Works for all dimensions:
+transform.ridged_drop(dimension="duration", max_drop_depth_pct=25)
+transform.ridged_drop(dimension="amplitude", max_drop_depth_pct=75, intensity="severe")
+
+# Independent controls allow creative combinations:
+transform.ridged_drop(dimension="frequency", max_drop_depth_pct=10, intensity="severe")  # Dense but shallow
+transform.ridged_drop(dimension="frequency", max_drop_depth_pct=75, intensity="subtle")  # Sparse but deep
 ```
 
-**Internal mapping:**
-- `"subtle"` → `drop_depth=0.25, octaves=2, ridge_density=0.2, drop_when_noise_above=0.7`
-- `"medium"` → `drop_depth=0.5, octaves=3, ridge_density=0.3, drop_when_noise_above=0.5`
-- `"severe"` → `drop_depth=0.75, octaves=4, ridge_density=0.45, drop_when_noise_above=0.3`
+**Removed:**
+- `new_pattern_each_use` — removed, per-transform randomness toggles eliminated
+- `drop_depth` — renamed to `max_drop_depth_pct` (1-100 scale, "max" indicates it's a ceiling)
 
 ---
 
@@ -308,8 +317,8 @@ transform.ritardando(strength="dramatic")
 | `weierstrass` | 6 params | 2 params | 67% reduction |
 | `cellular_automata` | 5 params | 3 params | 40% reduction |
 | `terraced_drift` | 5 params | 2 params | 60% reduction |
-| `random_drop` | 4 params | 2 params | 50% reduction |
-| `ridged_drop` | 4 params | 2 params | 50% reduction |
+| `random_drop` | 4 params | 3 params | 25% reduction |
+| `ridged_drop` | 4 params | 2-3 params | 25-50% reduction |
 | `add_pedal_point` | 5 params | 2-3 params | 40-60% reduction |
 | `accelerando` | 3 params | 1 param | 67% reduction |
 | `ritardando` | 3 params | 1 param | 67% reduction |

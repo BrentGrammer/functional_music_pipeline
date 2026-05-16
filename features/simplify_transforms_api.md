@@ -145,18 +145,21 @@ Internally, a fixed number of generations is used to evolve the state. This coul
 - `seed` (optional)
 - `drop_rate` (optional)
 
-**Proposed API (2 required, 0 optional):**
+**Proposed API (3 required, 0 optional):**
 - `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
-- `intensity` (required): `"sparse"` | `"moderate"` | `"dense"`
+- `max_drop_pct` (required): the maximum percentage each drop can reduce a tone by (1-100). E.g., 50 = up to 50% reduction.
+- `drop_frequency_pct` (required): what percentage of tones get dropped (1-100). E.g., 40 = about 40% of tones are affected.
 
-**Preset mapping:**
-```python
-_RANDOM_DROP_INTENSITY_PRESETS = {
-    "sparse": {"max_deviation": 0.3, "drop_rate": 0.2},
-    "moderate": {"max_deviation": 0.5, "drop_rate": 0.4},
-    "dense": {"max_deviation": 0.7, "drop_rate": 0.6},
-}
-```
+`max_drop_pct` and `drop_frequency_pct` control different musical ideas:
+1. `max_drop_pct`: how severe each drop is
+2. `drop_frequency_pct`: how often drops occur
+
+Keeping them separate lets users combine them (e.g., frequent shallow drops, or rare deep drops).
+
+**Removed:**
+- `seed` — removed entirely, use fixed internal seed for deterministic behavior
+- `max_deviation` — renamed to `max_drop_pct` (1-100 scale)
+- `drop_rate` — renamed to `drop_frequency_pct` (1-100 scale)
 
 ---
 
@@ -168,20 +171,20 @@ _RANDOM_DROP_INTENSITY_PRESETS = {
 - `intensity` (optional)
 - `new_pattern_each_use` (optional)
 
-**Proposed API (2 required, 0 optional):**
+**Proposed API (2 required, 1 optional):**
 - `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
-- `intensity` (required): `"subtle"` | `"medium"` | `"severe"`
+- `max_drop_depth_pct` (required): the maximum percentage a tone can drop (1-100). E.g., 50 = tones can be reduced by up to 50%.
+- `intensity` (optional): `"subtle"` | `"medium"` | `"severe"` — controls how active/dense the drop pattern is (defaults to `"medium"`)
 
-Fold `drop_depth` into the `intensity` preset. Remove `new_pattern_each_use`.
+`max_drop_depth_pct` and `intensity` control different musical ideas:
+1. `max_drop_depth_pct`: how far the drop goes when it happens
+2. `intensity`: how often/densely drops occur in the pattern
 
-**Preset mapping:**
-```python
-_RIDGED_DROP_INTENSITY_PRESETS = {
-    "subtle": {"drop_depth": 0.25, "octaves": 2, "ridge_density": 0.2, "drop_when_noise_above": 0.7},
-    "medium": {"drop_depth": 0.5, "octaves": 3, "ridge_density": 0.3, "drop_when_noise_above": 0.5},
-    "severe": {"drop_depth": 0.75, "octaves": 4, "ridge_density": 0.45, "drop_when_noise_above": 0.3},
-}
-```
+Keeping them separate lets users combine them (e.g., dense pattern with shallow drops, or sparse pattern with deep drops).
+
+**Removed:**
+- `new_pattern_each_use` — removed per the broader simplification decision to remove per-transform randomness toggles
+- `drop_depth` — renamed to `max_drop_depth_pct` for clarity (1-100 scale, "max" indicates it's a ceiling)
 
 ---
 
@@ -224,8 +227,8 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 | `weierstrass` | 6 params | 2 params |
 | `cellular_automata` | 5 params | 3 params |
 | `terraced_drift` | 5 params | 2 params |
-| `random_drop` | 4 params | 2 params |
-| `ridged_drop` | 4 params | 2 params |
+| `random_drop` | 4 params | 3 params |
+| `ridged_drop` | 4 params | 2-3 params |
 | `add_pedal_point` | 5 params | 3 params |
 | `accelerando` | 3 params | 1 param |
 | `ritardando` | 3 params | 1 param |
