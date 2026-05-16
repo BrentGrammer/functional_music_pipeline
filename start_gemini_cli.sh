@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#######
+# Quick Starts Gemini CLI in API key mode using template
+######
+
 chmod +x ./scripts/start_docker.sh
 ./scripts/start_docker.sh
 
