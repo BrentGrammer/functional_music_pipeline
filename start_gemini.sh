@@ -79,11 +79,9 @@ chmod +x ./scripts/allow_sbx_policies.sh
 if sbx ls | grep "$SANDBOX_NAME"; then
   echo "✅ Existing sandbox found: $SANDBOX_NAME"
   echo "Reconnecting..."
-  # sync_gemini_settings
   echo "REMINDER: Once inside the sandbox, run the command 'gemini' to start the cli."
   sbx run "$SANDBOX_NAME"
 else
   echo "🆕 Creating new sandbox: $SANDBOX_NAME"
   sbx create shell . --name "$SANDBOX_NAME"
-  # sync_gemini_settings
 fi
