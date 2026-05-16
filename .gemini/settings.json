@@ -17,6 +17,9 @@
         "--project",
         "."
       ],
+      "env": {
+        "SERENA_USAGE_REPORTING": "false"
+      },
       "trust": true,
       "timeout": 120000
     }
