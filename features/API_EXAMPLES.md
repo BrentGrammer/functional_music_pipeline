@@ -191,45 +191,11 @@ transform.random_drop(dimension="amplitude", max_drop_pct=50, drop_frequency_pct
 
 ---
 
-## 5. ridged_drop Transform
+## 5. ridged_drop Transform — REMOVE
 
-### BEFORE (4 parameters)
-```python
-# drop_depth is unclear about scale, new_pattern_each_use is an implementation detail
-transform.ridged_drop(
-    dimension="frequency",
-    drop_depth=0.5,  # Unclear what 0.5 means
-    intensity="medium",  # Controls pattern density
-    new_pattern_each_use=True  # Implementation detail - randomness flag
-)
-```
+**Decision:** Remove `ridged_drop` entirely. It doesn't clearly justify its existence alongside `random_drop` and `terraced_drift`. Its unique contribution (smooth periodic dips) is not well thought out and the API is hard to make intuitive.
 
-### AFTER (2-3 parameters)
-```python
-# max_drop_depth_pct: how far tones can drop, as a percentage (1-100)
-# intensity: how active/dense the drop pattern is (optional, defaults to "medium")
-transform.ridged_drop(
-    dimension="frequency",
-    max_drop_depth_pct=50  # Tones can drop by up to 50%
-)
-
-# With explicit intensity:
-transform.ridged_drop(dimension="frequency", max_drop_depth_pct=50, intensity="subtle")
-transform.ridged_drop(dimension="frequency", max_drop_depth_pct=50, intensity="medium")
-transform.ridged_drop(dimension="frequency", max_drop_depth_pct=50, intensity="severe")
-
-# Works for all dimensions:
-transform.ridged_drop(dimension="duration", max_drop_depth_pct=25)
-transform.ridged_drop(dimension="amplitude", max_drop_depth_pct=75, intensity="severe")
-
-# Independent controls allow creative combinations:
-transform.ridged_drop(dimension="frequency", max_drop_depth_pct=10, intensity="severe")  # Dense but shallow
-transform.ridged_drop(dimension="frequency", max_drop_depth_pct=75, intensity="subtle")  # Sparse but deep
-```
-
-**Removed:**
-- `new_pattern_each_use` — removed, per-transform randomness toggles eliminated
-- `drop_depth` — renamed to `max_drop_depth_pct` (1-100 scale, "max" indicates it's a ceiling)
+**Future:** Revisit the concept later as a `terraced_drop` transform — designed from scratch with a clear purpose: structured, staircase-shaped drops across phrases and tone dimensions.
 
 ---
 
@@ -318,7 +284,7 @@ transform.ritardando(strength="dramatic")
 | `cellular_automata` | 5 params | 3 params | 40% reduction |
 | `terraced_drift` | 5 params | 2 params | 60% reduction |
 | `random_drop` | 4 params | 3 params | 25% reduction |
-| `ridged_drop` | 4 params | 2-3 params | 25-50% reduction |
+| `ridged_drop` | 4 params | REMOVE | — |
 | `add_pedal_point` | 5 params | 2-3 params | 40-60% reduction |
 | `accelerando` | 3 params | 1 param | 67% reduction |
 | `ritardando` | 3 params | 1 param | 67% reduction |

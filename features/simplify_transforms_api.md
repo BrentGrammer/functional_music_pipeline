@@ -163,28 +163,11 @@ Keeping them separate lets users combine them (e.g., frequent shallow drops, or 
 
 ---
 
-### `ridged_drop` - Currently 4 Parameters
+### `ridged_drop` - REMOVE
 
-**Current API:**
-- `dimension` (required)
-- `drop_depth` (required)
-- `intensity` (optional)
-- `new_pattern_each_use` (optional)
+**Decision:** Remove `ridged_drop` entirely. It doesn't clearly justify its existence alongside `random_drop` and `terraced_drift`. Its unique contribution (smooth periodic dips) is not well thought out and the API is hard to make intuitive.
 
-**Proposed API (2 required, 1 optional):**
-- `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
-- `max_drop_depth_pct` (required): the maximum percentage a tone can drop (1-100). E.g., 50 = tones can be reduced by up to 50%.
-- `intensity` (optional): `"subtle"` | `"medium"` | `"severe"` — controls how active/dense the drop pattern is (defaults to `"medium"`)
-
-`max_drop_depth_pct` and `intensity` control different musical ideas:
-1. `max_drop_depth_pct`: how far the drop goes when it happens
-2. `intensity`: how often/densely drops occur in the pattern
-
-Keeping them separate lets users combine them (e.g., dense pattern with shallow drops, or sparse pattern with deep drops).
-
-**Removed:**
-- `new_pattern_each_use` — removed per the broader simplification decision to remove per-transform randomness toggles
-- `drop_depth` — renamed to `max_drop_depth_pct` for clarity (1-100 scale, "max" indicates it's a ceiling)
+**Future:** Revisit the concept later as a `terraced_drop` transform — designed from scratch with a clear purpose: structured, staircase-shaped drops across phrases and tone dimensions. This should be a separate feature designed intentionally rather than retrofitting the current ridged_drop.
 
 ---
 
@@ -228,7 +211,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 | `cellular_automata` | 5 params | 3 params |
 | `terraced_drift` | 5 params | 2 params |
 | `random_drop` | 4 params | 3 params |
-| `ridged_drop` | 4 params | 2-3 params |
+| `ridged_drop` | 4 params | REMOVE |
 | `add_pedal_point` | 5 params | 3 params |
 | `accelerando` | 3 params | 1 param |
 | `ritardando` | 3 params | 1 param |
@@ -246,7 +229,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 ### Phase 2: Simplify Geological Transforms
 
 4. Update `terraced_drift` to 2-param API (remove seed, max_deviation, quantize_resolution; derive internally from step_size)
-5. Update `ridged_drop` to 2-param API (revert some of our recent changes)
+5. Remove `ridged_drop` entirely (revisit later as a `terraced_drop` designed from scratch)
 
 ### Phase 3: Simplify Other Transforms
 
