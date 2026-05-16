@@ -273,7 +273,7 @@ Verification: `pytest tests/test_complexity_transforms.py`
 #### 1.3 Update weierstrass params spec
 
 Scope:
-1. Update `WEIERSTRASS_PARAMS_SPEC` to expose only `dimension` (required) and `intensity` (required, enum: `"very_low"`, `"low"`, `"medium"`, `"high"`, `"extreme"`).
+1. Update `WEIERSTRASS_PARAMS_SPEC` to expose only `dimension` (required) and `intensity` (required, enum: `"low"`, `"medium"`, `"high"`, `"extreme"`).
 2. Remove all other fields from the spec.
 
 Verification: `pytest tests/test_complexity_transforms.py tests/test_json_parser.py`
