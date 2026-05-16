@@ -295,34 +295,24 @@ class TestComputeJaggednessWeights:
 
 class TestJaggedTempoTransforms:
     def test_accelerando_with_jaggedness_can_produce_local_reversals(self):
-        # We use a specific seed that is known to produce a local reversal 
-        # (a later note being longer than a previous one) at high jaggedness.
-        tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
-        seed = 42 # Chosen via experimentation to trigger reversal
-        
-        result = accelerando_transform(tones, strength="low", jaggedness="extreme", seed=seed)
-        
+        tones = [Tone(frequency=440.0, duration=1.0) for _ in range(10)]
+
+        result = accelerando_transform(tones, strength="low", jaggedness="extreme")
+
         # Check if any later tone is longer than the previous one
-        reversals = []
-        for i in range(1, len(result)):
-            if result[i].duration > result[i-1].duration:
-                reversals.append(i)
-        
-        assert len(reversals) > 0, "Extreme jaggedness should produce at least one local reversal with this seed."
+        reversals = [i for i in range(1, len(result)) if result[i].duration > result[i-1].duration]
+
+        assert len(reversals) > 0, "Extreme jaggedness should produce at least one local reversal."
 
     def test_ritardando_with_jaggedness_can_produce_local_reversals(self):
-        tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
-        seed = 7 # Chosen to trigger reversal in ritardando
-        
-        result = ritardando_transform(tones, strength="low", jaggedness="extreme", seed=seed)
-        
+        tones = [Tone(frequency=440.0, duration=1.0) for _ in range(10)]
+
+        result = ritardando_transform(tones, strength="low", jaggedness="extreme")
+
         # In ritardando, a reversal means a later tone is shorter than the previous one
-        reversals = []
-        for i in range(1, len(result)):
-            if result[i].duration < result[i-1].duration:
-                reversals.append(i)
-                
-        assert len(reversals) > 0, "Extreme jaggedness should produce at least one local reversal with this seed."
+        reversals = [i for i in range(1, len(result)) if result[i].duration < result[i-1].duration]
+
+        assert len(reversals) > 0, "Extreme jaggedness should produce at least one local reversal."
 
     def test_jaggedness_none_is_smooth(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
