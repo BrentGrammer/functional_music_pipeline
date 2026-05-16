@@ -125,14 +125,15 @@ Internally, a fixed number of generations is used to evolve the state. This coul
 - `step_size` (optional)
 - `quantize_resolution` (optional)
 
-**Proposed API (3 required, 0 optional):**
+**Proposed API (2 required, 0 optional):**
 - `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
-- `max_deviation` (required): how far the drift can wander from the original value (e.g., 0.25 = up to 25% deviation)
-- `step_size` (required): how big each terrace jump is — controls the coarseness of the staircase pattern (e.g., 0.1 = fine steps, 0.5 = chunky steps)
+- `max_step_change_pct` (required): the maximum percentage each tone can change from the previous tone (1-100). E.g., 10 = up to 10% change per step.
 
 **Removed:**
 - `seed` — removed entirely, use fixed internal seed for deterministic behavior
-- `quantize_resolution` — derived internally from `step_size` (they're closely related; quantize grid set to match step size)
+- `max_deviation` — derived internally from `max_step_change_pct` (they're highly correlated in practice; the original presets always set them to nearly the same value)
+- `step_size` — replaced by `max_step_change_pct` (same concept, clearer name and scale)
+- `quantize_resolution` — derived internally from `max_step_change_pct`
 
 ---
 
@@ -222,7 +223,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 |-----------|--------|-------|
 | `weierstrass` | 6 params | 2 params |
 | `cellular_automata` | 5 params | 3 params |
-| `terraced_drift` | 5 params | 3 params |
+| `terraced_drift` | 5 params | 2 params |
 | `random_drop` | 4 params | 2 params |
 | `ridged_drop` | 4 params | 2 params |
 | `add_pedal_point` | 5 params | 3 params |
@@ -241,7 +242,7 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 
 ### Phase 2: Simplify Geological Transforms
 
-4. Update `terraced_drift` to 3-param API (remove seed and quantize_resolution)
+4. Update `terraced_drift` to 2-param API (remove seed, max_deviation, quantize_resolution; derive internally from step_size)
 5. Update `ridged_drop` to 2-param API (revert some of our recent changes)
 
 ### Phase 3: Simplify Other Transforms

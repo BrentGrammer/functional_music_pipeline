@@ -118,40 +118,35 @@ transform.terraced_drift(
     dimension="frequency",
     max_deviation=0.25,
     seed=42,  # Implementation detail
-    step_size=0.25,  # Useful but was optional
+    step_size=0.25,  # Useful but unclear scale
     quantize_resolution=0.2  # Confusing, closely related to step_size
 )
 ```
 
-### AFTER (3 parameters)
+### AFTER (2 parameters)
 ```python
-# Two meaningful knobs: how far does it drift, and how chunky are the steps
+# max_step_change_pct: how much each tone can change from the previous (1-100)
 transform.terraced_drift(
     dimension="frequency",
-    max_deviation=0.25,  # How far from original (range of the effect)
-    step_size=0.25       # How big each terrace jump is (coarseness)
+    max_step_change_pct=25  # Each tone can change by up to 25% from the previous
 )
 
 # Fine, subtle terracing:
-transform.terraced_drift(dimension="frequency", max_deviation=0.1, step_size=0.1)
+transform.terraced_drift(dimension="frequency", max_step_change_pct=10)
 
 # Wide, dramatic staircase:
-transform.terraced_drift(dimension="frequency", max_deviation=0.5, step_size=0.5)
+transform.terraced_drift(dimension="frequency", max_step_change_pct=50)
 
 # Works for all dimensions:
-transform.terraced_drift(dimension="duration", max_deviation=0.2, step_size=0.15)
-transform.terraced_drift(dimension="amplitude", max_deviation=0.3, step_size=0.3)
-
-# Small steps but wide range — many fine terraces over a large drift:
-transform.terraced_drift(dimension="frequency", max_deviation=0.5, step_size=0.1)
-
-# Large steps but narrow range — few chunky terraces, constrained drift:
-transform.terraced_drift(dimension="frequency", max_deviation=0.15, step_size=0.4)
+transform.terraced_drift(dimension="duration", max_step_change_pct=15)
+transform.terraced_drift(dimension="amplitude", max_step_change_pct=30)
 ```
 
 **Removed:**
 - `seed` — removed, fixed internal seed for deterministic behavior
-- `quantize_resolution` — derived internally from `step_size` (the quantization grid matches the step size)
+- `max_deviation` — derived internally from `max_step_change_pct`
+- `step_size` — replaced by `max_step_change_pct` (same concept, clearer name and 1-100 scale)
+- `quantize_resolution` — derived internally from `max_step_change_pct`
 
 ---
 
@@ -312,7 +307,7 @@ transform.ritardando(strength="dramatic")
 |-----------|--------|-------|-----------|
 | `weierstrass` | 6 params | 2 params | 67% reduction |
 | `cellular_automata` | 5 params | 3 params | 40% reduction |
-| `terraced_drift` | 5 params | 3 params | 40% reduction |
+| `terraced_drift` | 5 params | 2 params | 60% reduction |
 | `random_drop` | 4 params | 2 params | 50% reduction |
 | `ridged_drop` | 4 params | 2 params | 50% reduction |
 | `add_pedal_point` | 5 params | 2-3 params | 40-60% reduction |
