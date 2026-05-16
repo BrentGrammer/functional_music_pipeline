@@ -34,7 +34,7 @@
 #    sudo apt upgrade -y
 #
 # 4. Inside the sandbox, install Gemini CLI:
-#    npm install -g @google/gemini-cli --no-scripts allow-git=none
+#    npm install -g @google/gemini-cli --no-scripts --allow-git=none
 #
 # 5. Start Gemini CLI:
 #    gemini
@@ -90,7 +90,7 @@ chmod +x ./scripts/allow_sbx_policies.sh
 # }
 
 # Reuse existing sandbox if it already exists
-if sbx ls | grep -q "$SANDBOX_NAME"; then
+if sbx ls | grep "$SANDBOX_NAME"; then
   echo "✅ Existing sandbox found: $SANDBOX_NAME"
   echo "Reconnecting..."
   # sync_gemini_settings
@@ -98,6 +98,6 @@ if sbx ls | grep -q "$SANDBOX_NAME"; then
   sbx run "$SANDBOX_NAME"
 else
   echo "🆕 Creating new sandbox: $SANDBOX_NAME"
-  sbx run shell . --name "$SANDBOX_NAME"
+  sbx create shell . --name "$SANDBOX_NAME"
   # sync_gemini_settings
 fi

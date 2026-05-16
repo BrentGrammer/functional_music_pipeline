@@ -2,6 +2,23 @@
   "mcpServers": {
     "exa": {
       "httpUrl": "https://mcp.exa.ai/mcp"
+    },
+    "serena": {
+      "command": "uv",
+      "args": [
+        "tool",
+        "run",
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide",
+        "--project",
+        "."
+      ],
+      "trust": true,
+      "timeout": 600000
     }
   }
 }
