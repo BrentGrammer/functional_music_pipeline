@@ -20,7 +20,7 @@ transform.weierstrass(
 )
 ```
 
-### AFTER (2-3 parameters)
+### AFTER (2 parameters)
 ```python
 # Simple - users describe musical intent with presets
 transform.weierstrass(
@@ -28,33 +28,22 @@ transform.weierstrass(
     intensity="medium"  # Musically intuitive preset
 )
 
-# Optional override for fine control:
-transform.weierstrass(
-    dimension="frequency",
-    intensity="medium",  # Preset for internal texture
-    max_deviation=0.25   # Override the deviation amount
-)
-
 # All preset variants:
-transform.weierstrass(dimension="frequency", intensity="subtle")
+transform.weierstrass(dimension="frequency", intensity="low")
 transform.weierstrass(dimension="frequency", intensity="medium")
-transform.weierstrass(dimension="frequency", intensity="intense")
+transform.weierstrass(dimension="frequency", intensity="high")
+transform.weierstrass(dimension="frequency", intensity="extreme")
 
 # Works for all dimensions:
 transform.weierstrass(dimension="duration", intensity="medium")
-transform.weierstrass(dimension="amplitude", intensity="subtle")
-
-# Creative combinations with custom deviation:
-transform.weierstrass(dimension="frequency", intensity="subtle", max_deviation=0.1)
-transform.weierstrass(dimension="frequency", intensity="intense", max_deviation=0.5)
+transform.weierstrass(dimension="amplitude", intensity="low")
 ```
 
 **Internal mapping:**
-- `"subtle"` → `amplitude_scaling=0.3, ripples_per_wave=2.0, iterations=6`
-- `"medium"` → `amplitude_scaling=0.5, ripples_per_wave=3.0, iterations=10`
-- `"intense"` → `amplitude_scaling=0.7, ripples_per_wave=5.0, iterations=15`
-
-**Note:** `max_deviation` is optional and can be specified to override the preset's deviation amount, giving users fine control without exposing internal algorithm parameters.
+- `"low"` → `max_deviation=0.05, amplitude_scaling=0.3, ripples_per_wave=2.0, iterations=6`
+- `"medium"` → `max_deviation=0.15, amplitude_scaling=0.5, ripples_per_wave=3.0, iterations=10`
+- `"high"` → `max_deviation=0.25, amplitude_scaling=0.6, ripples_per_wave=4.0, iterations=12`
+- `"extreme"` → `max_deviation=0.4, amplitude_scaling=0.8, ripples_per_wave=6.0, iterations=18`
 
 ---
 
@@ -297,7 +286,7 @@ transform.accelerando(strength=0.7, jaggedness=0.2)
 ### Good: Intent-based Parameters
 ```python
 # Users describe what they want musically
-transform.weierstrass(dimension="frequency", intensity="subtle")
+transform.weierstrass(dimension="frequency", intensity="low")
 transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3)
 transform.random_drop(dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40)
 ```

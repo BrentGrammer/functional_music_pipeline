@@ -62,18 +62,23 @@ If we later need per-call randomness, we can add a global composition-level sett
 
 **Proposed API (2 required, 0 optional):**
 - `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
-- `intensity` (required): `"subtle"` | `"medium"` | `"intense"`
+- `intensity` (required): `"low"` | `"medium"` | `"high"` | `"extreme"`
 
 The `intensity` preset controls both the deviation amount AND the texture characteristics. Users pick how much weierstrass wobble they want, and the preset handles all the internal tuning.
 
 **Preset mapping:**
 ```python
 _WEIERSTRASS_INTENSITY_PRESETS = {
-    "subtle": {"max_deviation": 0.05, "amplitude_scaling": 0.3, "ripples_per_wave": 2.0, "iterations": 6},
+    "low": {"max_deviation": 0.05, "amplitude_scaling": 0.3, "ripples_per_wave": 2.0, "iterations": 6},
     "medium": {"max_deviation": 0.15, "amplitude_scaling": 0.5, "ripples_per_wave": 3.0, "iterations": 10},
-    "intense": {"max_deviation": 0.3, "amplitude_scaling": 0.7, "ripples_per_wave": 5.0, "iterations": 15},
+    "high": {"max_deviation": 0.25, "amplitude_scaling": 0.6, "ripples_per_wave": 4.0, "iterations": 12},
+    "extreme": {"max_deviation": 0.4, "amplitude_scaling": 0.8, "ripples_per_wave": 6.0, "iterations": 18},
 }
 ```
+
+**Why max_deviation caps at 0.4 and never reaches 1.0:**
+
+The modulation formula is `scale = 1.0 + (profile_value * max_deviation)`. The profile produces values between -1.0 and 1.0. At `max_deviation=1.0`, the scale could reach 0.0 — completely zeroing out a tone's frequency, amplitude, or duration. That's destructive, not textural. At 0.4, even the most extreme wobble only modifies tones by ±40%, keeping everything musically coherent and tones recognizable.
 
 ---
 
@@ -240,12 +245,13 @@ Scope:
 1. In `transforms/complexity/weierstrass.py`, add the preset mapping dict:
    ```python
    _WEIERSTRASS_INTENSITY_PRESETS = {
-       "subtle": {"max_deviation": 0.05, "amplitude_scaling": 0.3, "ripples_per_wave": 2.0, "iterations": 6},
+       "low": {"max_deviation": 0.05, "amplitude_scaling": 0.3, "ripples_per_wave": 2.0, "iterations": 6},
        "medium": {"max_deviation": 0.15, "amplitude_scaling": 0.5, "ripples_per_wave": 3.0, "iterations": 10},
-       "intense": {"max_deviation": 0.3, "amplitude_scaling": 0.7, "ripples_per_wave": 5.0, "iterations": 15},
+       "high": {"max_deviation": 0.25, "amplitude_scaling": 0.6, "ripples_per_wave": 4.0, "iterations": 12},
+       "extreme": {"max_deviation": 0.4, "amplitude_scaling": 0.8, "ripples_per_wave": 6.0, "iterations": 18},
    }
    ```
-2. Add a `_resolve_intensity(value)` function that accepts `"subtle"`, `"medium"`, or `"intense"` and returns the preset dict. Reject non-string values and unknown strings.
+2. Add a `_resolve_intensity(value)` function that accepts `"low"`, `"medium"`, `"high"`, or `"extreme"` and returns the preset dict. Reject non-string values and unknown strings.
 3. Add tests for the resolver.
 
 Verification: `pytest tests/test_complexity_transforms.py`
@@ -267,7 +273,7 @@ Verification: `pytest tests/test_complexity_transforms.py`
 #### 1.3 Update weierstrass params spec
 
 Scope:
-1. Update `WEIERSTRASS_PARAMS_SPEC` to expose only `dimension` (required) and `intensity` (required, enum: `"subtle"`, `"medium"`, `"intense"`).
+1. Update `WEIERSTRASS_PARAMS_SPEC` to expose only `dimension` (required) and `intensity` (required, enum: `"very_low"`, `"low"`, `"medium"`, `"high"`, `"extreme"`).
 2. Remove all other fields from the spec.
 
 Verification: `pytest tests/test_complexity_transforms.py tests/test_json_parser.py`
