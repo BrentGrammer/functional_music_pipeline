@@ -58,19 +58,36 @@ Update `composition/parser.py` to:
 
 ## Implementation Plan
 
-1.  **Preparation:**
-    *   Verify all existing transforms and their intended scopes.
-2.  **Refactor `transforms/registry.py`:**
-    *   Split the dictionary.
-    *   Rename score-level keys.
-3.  **Update `composition/parser.py`:**
-    *   Modify lookup logic for phrase and score levels.
-4.  **Update Compositions:**
-    *   Surgically update all `.json` files in `compositions/`.
-5.  **Verification:**
-    *   Run existing tests.
-    *   Render all updated compositions to ensure no regressions.
-    *   Add a new test case verifying that "reverse" works correctly in both scopes.
+### Phase 1: Foundation (Non-Breaking)
+- Add `PhraseScope` and `ScoreScope` Enums to `transforms/base.py`.
+- Add the generic `TransformDefinition` class to `transforms/base.py`.
+- *Goal:* Establish the new type system without touching existing logic.
+
+### Phase 2: Registry Scaffolding (Non-Breaking)
+- Initialize empty `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS` in `transforms/registry.py`.
+- Migrate exactly one transform (e.g., `reverse`) into both new registries as a "proof of concept" (keeping the `score_reverse` name for now).
+- *Goal:* Verify the new data structures can coexist with the old registry.
+
+### Phase 3: Parser Adaptation (Hybrid Support)
+- Modify `_apply_phrase_transform_spec` to look in `PHRASE_TRANSFORMS` first, falling back to `TRANSFORMS`.
+- Modify `_apply_score_transform_spec` to look in `SCORE_TRANSFORMS` first, falling back to `TRANSFORMS`.
+- *Goal:* Enable the new execution path while maintaining full backward compatibility.
+
+### Phase 4: Full Migration of Registry Definitions
+- Migrate all remaining phrase transforms to `PHRASE_TRANSFORMS`.
+- Migrate all remaining score transforms to `SCORE_TRANSFORMS` (keep `score_` prefixes for now).
+- *Goal:* Empty the old `TRANSFORMS` registry logically, though it may still exist as a fallback.
+
+### Phase 5: The "Big Switch" (Breaking)
+- Remove `score_` prefixes from all keys in `SCORE_TRANSFORMS`.
+- Update parser to *only* use the new registries (remove fallback logic).
+- Update all `.json` files in `compositions/` to remove `score_` prefixes.
+- *Goal:* Achieve the final intended user-facing API.
+
+### Phase 6: Cleanup
+- Remove the legacy `TRANSFORMS` dictionary.
+- Remove legacy classes (`PhraseTransform`, `ScoreTransform`, etc.) from `transforms/base.py`.
+- *Goal:* Finalize the refactor and remove all technical debt.
 
 ## Benefits
 - **Improved UX:** Cleaner JSON schema for users.
