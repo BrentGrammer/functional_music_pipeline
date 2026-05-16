@@ -11,7 +11,7 @@ from score_model.voice import Voice
 from transforms.base import (
     ScoreTransform,
 )
-from transforms.counterpoint.fugue import add_pedal_point, stretto
+from transforms.counterpoint.fugue import add_pedal_tone, stretto
 
 
 class TestStretto:
@@ -158,106 +158,66 @@ class TestStretto:
         assert expected_overlap_offset < subject_duration
 
 
-class TestPedalPoint:
-    def test_add_sustained_pedal_point_appends_voice(self):
-        score = Score([Voice([Tone(440.0, duration=0.5)])])
+class TestPedalTone:
+    def test_add_pedal_tone_appends_voice(self):
+        tones = [Tone(440.0, duration=2.0)]
+        score = Score([Voice(tones)])
+        pedal_tone_freq = 339.81
 
-        result = add_pedal_point(score, frequency=130.81, duration=2.0, amplitude=0.25)
+        result = add_pedal_tone(score, frequency=pedal_tone_freq)
 
-        assert len(result.voices) == 2
-        assert len(result.voices[0].tones) == 1
+        assert len(result.voices) == len(tones) + 1
         assert len(result.voices[1].tones) == 1
-        assert result.voices[1].tones[0].frequency == pytest.approx(130.81)
-        assert result.voices[1].tones[0].duration == pytest.approx(2.0)
-        assert result.voices[1].tones[0].amplitude == pytest.approx(0.25)
+        assert result.voices[1].tones[0].frequency == pytest.approx(pedal_tone_freq)
 
-    def test_add_repeated_pedal_point_uses_pulse_duration(self):
-        score = Score()
+    def test_pedal_tone_duration_matches_longest_voice(self):
+        score = Score([
+            Voice([Tone(440.0, duration=1.0), Tone(550.0, duration=1.0)]),
+            Voice([Tone(330.0, duration=0.5)]),
+        ])
 
-        result = add_pedal_point(
-            score,
-            frequency=130.81,
-            duration=1.25,
-            amplitude=0.4,
-            mode="repeat",
-            pulse_duration=0.5,
+        longest_duration = max(
+            sum(tone.duration for tone in voice.tones)
+            for voice in score.voices
         )
 
-        pedal_tones = result.voices[0].tones
-        assert len(pedal_tones) == 3
-        assert [tone.duration for tone in pedal_tones] == pytest.approx([0.5, 0.5, 0.25])
-        assert all(tone.frequency == pytest.approx(130.81) for tone in pedal_tones)
-        assert all(tone.amplitude == pytest.approx(0.4) for tone in pedal_tones)
+        result = add_pedal_tone(score, frequency=130.81)
 
-    def test_repeat_mode_requires_pulse_duration(self):
-        with pytest.raises(ValueError, match="pulse_duration"):
-            add_pedal_point(Score(), frequency=130.81, duration=1.0, mode="repeat")
+        # The pedal tone is always appended as the last voice.
+        pedal_voice = result.voices[-1]
+        assert pedal_voice.tones[0].duration == pytest.approx(longest_duration)
 
-    def test_repeat_mode_rejects_non_positive_pulse_duration(self):
-        zero_pulse_duration = 0.0
+    def test_pedal_tone_uses_sensible_default_amplitude(self):
+        score = Score([Voice([Tone(440.0, duration=1.0)])])
 
-        with pytest.raises(ValueError, match="pulse_duration"):
-            add_pedal_point(
-                Score(),
-                frequency=130.81,
-                duration=1.0,
-                mode="repeat",
-                pulse_duration=zero_pulse_duration,
-            )
+        result = add_pedal_tone(score, frequency=130.81)
 
-    def test_rejects_invalid_duration(self):
-        with pytest.raises(ValueError, match="duration"):
-            add_pedal_point(Score(), frequency=130.81, duration=0)
+        assert 0.0 < result.voices[-1].tones[0].amplitude <= 1.0
 
-    def test_rejects_invalid_frequency(self):
+    def test_pedal_tone_rejects_non_positive_frequency(self):
         with pytest.raises(ValueError, match="frequency"):
-            add_pedal_point(Score(), frequency=0, duration=1.0)
+            add_pedal_tone(Score(), frequency=0)
 
-    def test_rejects_invalid_amplitude(self):
-        with pytest.raises(ValueError, match="amplitude"):
-            add_pedal_point(Score(), frequency=130.81, duration=1.0, amplitude=1.5)
+    def test_pedal_tone_empty_score_uses_fallback_duration(self):
+        result = add_pedal_tone(Score(), frequency=130.81)
 
-    def test_rejects_unknown_mode(self):
-        unsupported_mode = "pulse"
-
-        with pytest.raises(ValueError, match="mode"):
-            add_pedal_point(
-                Score(),
-                frequency=130.81,
-                duration=1.0,
-                mode=unsupported_mode,
-            )
-
-    def test_repeat_mode_is_case_insensitive(self):
-        repeated_mode_name = "REPEAT"
-        pulse_duration_seconds = 0.5
-        total_duration_seconds = 1.0
-
-        result = add_pedal_point(
-            Score(),
-            frequency=130.81,
-            duration=total_duration_seconds,
-            mode=repeated_mode_name,
-            pulse_duration=pulse_duration_seconds,
-        )
-
-        assert len(result.voices[0].tones) == 2
+        assert result.voices[0].tones[0].duration > 0
 
 
-class TestPedalPointRegistration:
-    def test_add_pedal_point_registered(self):
-        assert "add_pedal_point" in TRANSFORMS
+class TestPedalToneRegistration:
+    def test_add_pedal_tone_registered(self):
+        assert "add_pedal_tone" in TRANSFORMS
 
-    def test_add_pedal_point_has_score_scope(self):
-        descriptor = TRANSFORMS["add_pedal_point"]
+    def test_add_pedal_tone_has_score_scope(self):
+        descriptor = TRANSFORMS["add_pedal_tone"]
         assert isinstance(descriptor, ScoreTransform)
 
-    def test_add_pedal_point_wraps_transform(self):
-        assert TRANSFORMS["add_pedal_point"].transform is add_pedal_point
+    def test_add_pedal_tone_wraps_transform(self):
+        assert TRANSFORMS["add_pedal_tone"].transform is add_pedal_tone
 
 
-class TestPedalPointComposition:
-    def test_add_pedal_point_applies_from_composition_json(self):
+class TestPedalToneComposition:
+    def test_add_pedal_tone_applies_from_composition_json(self):
         composition_document: CompositionDocument = {
             "motifs": {
                 "subject": ["261.63:0.5", "293.66:0.5"],
@@ -268,11 +228,9 @@ class TestPedalPointComposition:
                 ],
                 "score_transforms": [
                     {
-                        "name": "add_pedal_point",
+                        "name": "add_pedal_tone",
                         "params": {
                             "frequency": 130.81,
-                            "duration": 1.0,
-                            "amplitude": 0.3,
                         },
                     },
                 ],
@@ -284,7 +242,6 @@ class TestPedalPointComposition:
         assert len(score.voices) == 2
         assert score.voices[1].tones[0].frequency == pytest.approx(130.81)
         assert score.voices[1].tones[0].duration == pytest.approx(1.0)
-        assert score.voices[1].tones[0].amplitude == pytest.approx(0.3)
 
 
 class TestStrettoComposition:

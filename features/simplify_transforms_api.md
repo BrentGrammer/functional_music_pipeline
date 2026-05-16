@@ -645,12 +645,6 @@ Verification: All tests pass, all demos produce output.
 
 ---
 
-## Open Questions
-
-1. **Global randomness**: Should we add a composition-level setting for transforms that use stochastic processes internally (e.g., terraced_drift, random_drop)?
-
----
-
 ## References
 
 - `features/done/simplify_ridged_drop_transform.md` - Previous work on `ridged_drop` (transform being removed)

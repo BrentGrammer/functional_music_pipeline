@@ -20,7 +20,7 @@ from transforms.complexity.cellular_automata import (
 )
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform
 from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform
-from transforms.counterpoint.fugue import ADD_PEDAL_POINT_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_point, stretto
+from transforms.counterpoint.fugue import ADD_PEDAL_TONE_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_tone, stretto
 from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_transform
 from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
 from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform
@@ -161,10 +161,10 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         drift_transform,
         params_spec=DRIFT_PARAMS_SPEC,
     ),
-    "add_pedal_point": ScoreTransform(
-        "add_pedal_point",
-        add_pedal_point,
-        params_spec=ADD_PEDAL_POINT_PARAMS_SPEC,
+    "add_pedal_tone": ScoreTransform(
+        "add_pedal_tone",
+        add_pedal_tone,
+        params_spec=ADD_PEDAL_TONE_PARAMS_SPEC,
     ),
     "stretto": ScoreTargetMotifsTransform(
         "stretto",

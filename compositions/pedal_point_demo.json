@@ -1,5 +1,5 @@
 {
-  "description": "Demonstrates the add_pedal_point transform which adds a sustained or pulsing anchor note.",
+  "description": "Demonstrates the add_pedal_tone transform which adds a sustained anchor note matching the length of the score.",
   "motifs": {
     "melody": ["329.63:0.5", "392.00:0.5", "440.00:0.5", "392.00:0.5", "329.63:0.5"]
   },
@@ -8,7 +8,7 @@
       {
         "phrases": [
           {
-            "comment": "Melody with a sustained pedal point on C3.",
+            "comment": "Melody with a sustained pedal tone on C3.",
             "motifs": ["melody"]
           }
         ]
@@ -16,12 +16,9 @@
     ],
     "score_transforms": [
       {
-        "name": "add_pedal_point",
+        "name": "add_pedal_tone",
         "params": {
-          "frequency": 130.81,
-          "duration": 2.5,
-          "amplitude": 0.6,
-          "mode": "sustain"
+          "frequency": 130.81
         }
       }
     ]

@@ -1,4 +1,3 @@
-from composition.transform_params_validation import validate_add_pedal_point_params
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
@@ -18,27 +17,13 @@ NAMED_STRETTO_SPACINGS = {
     "feigenbaum_delta": FEIGENBAUM_DELTA,
 }
 
-ADD_PEDAL_POINT_PARAMS_SPEC = TransformParamsSpec(
+ADD_PEDAL_TONE_PARAMS_SPEC = TransformParamsSpec(
     fields={
         "frequency": TransformParamFieldSpec(
             schema=FloatParam(),
             required=True,
         ),
-        "duration": TransformParamFieldSpec(
-            schema=FloatParam(),
-            required=True,
-        ),
-        "amplitude": TransformParamFieldSpec(
-            schema=FloatParam(),
-        ),
-        "mode": TransformParamFieldSpec(
-            schema=EnumParam(allowed_values=("sustain", "repeat")),
-        ),
-        "pulse_duration": TransformParamFieldSpec(
-            schema=FloatParam(),
-        ),
-    },
-    validator=validate_add_pedal_point_params,
+    }
 )
 STRETTO_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -83,29 +68,23 @@ def stretto(
     return Score(score.voices + generated_voices)
 
 
-def add_pedal_point(
+def add_pedal_tone(
     score: Score,
     frequency: float,
-    duration: float,
-    amplitude: float = 0.5,
-    mode: str = "sustain",
-    pulse_duration: float | None = None,
 ) -> Score:
     if frequency <= 0:
-        raise ValueError("Pedal point frequency must be greater than 0.")
+        raise ValueError("Pedal tone frequency must be greater than 0.")
+
+    duration = 0.0
+    for voice in score.voices:
+        voice_duration = sum(tone.duration for tone in voice.tones)
+        duration = max(duration, voice_duration)
+
     if duration <= 0:
-        raise ValueError("Pedal point duration must be greater than 0.")
-    if not 0.0 <= amplitude <= 1.0:
-        raise ValueError("Pedal point amplitude must be between 0.0 and 1.0.")
+        duration = 1.0  # Fallback if score is empty
 
-    normalized_mode = mode.lower()
-    if normalized_mode == "sustain":
-        pedal_tones = [Tone(frequency=frequency, duration=duration, amplitude=amplitude)]
-    elif normalized_mode == "repeat":
-        pedal_tones = _build_repeated_pedal_tones(frequency, duration, amplitude, pulse_duration)
-    else:
-        raise ValueError("Pedal point mode must be 'sustain' or 'repeat'.")
-
+    amplitude = 0.5  # Fixed sensible default
+    pedal_tones = [Tone(frequency=frequency, duration=duration, amplitude=amplitude)]
     return Score(score.voices + [Voice(pedal_tones)])
 
 
@@ -130,25 +109,3 @@ def _resolve_stretto_spacing(spacing: object, motif_duration: float) -> float:
 
 def _get_motif_duration(tones: list[Tone]) -> float:
     return sum(tone.duration for tone in tones)
-
-
-def _build_repeated_pedal_tones(
-    frequency: float,
-    duration: float,
-    amplitude: float,
-    pulse_duration: float | None,
-) -> list[Tone]:
-    if pulse_duration is None:
-        raise ValueError("Repeated pedal points require pulse_duration.")
-    if pulse_duration <= 0:
-        raise ValueError("Pedal point pulse_duration must be greater than 0.")
-
-    pedal_tones: list[Tone] = []
-    remaining_duration = duration
-
-    while remaining_duration > 1e-9:
-        tone_duration = min(pulse_duration, remaining_duration)
-        pedal_tones.append(Tone(frequency=frequency, duration=tone_duration, amplitude=amplitude))
-        remaining_duration -= tone_duration
-
-    return pedal_tones

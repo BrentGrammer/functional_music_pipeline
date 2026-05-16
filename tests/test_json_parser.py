@@ -45,12 +45,9 @@ def test_tempo_curve_descriptor_accepts_preset_or_float_controls(transform_name)
 
 def test_fixed_string_descriptors_use_enum_metadata():
     position_spec = TRANSFORMS["pad_silence"].params_spec.fields["position"]
-    mode_spec = TRANSFORMS["add_pedal_point"].params_spec.fields["mode"]
 
     assert isinstance(position_spec.schema, EnumParam)
     assert position_spec.schema.allowed_values == ("start", "end")
-    assert isinstance(mode_spec.schema, EnumParam)
-    assert mode_spec.schema.allowed_values == ("sustain", "repeat")
 
 
 @pytest.mark.parametrize(
@@ -607,9 +604,9 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
-    def test_add_pedal_point_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["add_pedal_point"]
-        valid_params = {"frequency": 130.81, "duration": 2.0, "amplitude": 0.25}
+    def test_add_pedal_tone_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["add_pedal_tone"]
+        valid_params = {"frequency": 130.81}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
@@ -618,48 +615,24 @@ class TestScaleTransformParsing:
                 "motifs": {},
                 "composition": {
                     "voices": [],
-                    "score_transforms": [{"name": "add_pedal_point", "params": incomplete_params}],
+                    "score_transforms": [{"name": "add_pedal_tone", "params": incomplete_params}],
                 },
             }
 
             with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
-    def test_add_pedal_point_repeat_mode_requires_pulse_duration(self):
+    def test_add_pedal_tone_applies_from_composition_json(self):
+        pedal_tone = 330.1
+        
         composition_doc = {
             "motifs": {},
             "composition": {
                 "voices": [],
                 "score_transforms": [
                     {
-                        "name": "add_pedal_point",
-                        "params": {
-                            "frequency": 130.81,
-                            "duration": 2.0,
-                            "mode": "repeat",
-                        },
-                    }
-                ],
-            },
-        }
-
-        with pytest.raises(ValueError):
-            parse_composition(composition_doc)
-
-    def test_add_pedal_point_sustain_mode_allows_omitting_pulse_duration(self):
-        freq = 130.81
-        composition_doc = {
-            "motifs": {},
-            "composition": {
-                "voices": [],
-                "score_transforms": [
-                    {
-                        "name": "add_pedal_point",
-                        "params": {
-                            "frequency": freq,
-                            "duration": 2.0,
-                            "mode": "sustain",
-                        },
+                        "name": "add_pedal_tone",
+                        "params": {"frequency": pedal_tone},
                     }
                 ],
             },
@@ -668,7 +641,7 @@ class TestScaleTransformParsing:
         score = parse_composition(composition_doc)
 
         assert len(score.voices) == 1
-        assert score.voices[0].tones[0].frequency == pytest.approx(freq)
+        assert score.voices[0].tones[0].frequency == pytest.approx(pedal_tone)
 
     def test_erosion_accepts_optional_dimension(self):
         parsed_motifs = {"seed": [Tone(440, 0.5), Tone(880, 0.5)]}
