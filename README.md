@@ -127,22 +127,22 @@ When a transform uses `params`, `params` must be an object with named fields.
 
 #### Tempo
 
-- **`accelerando`**: Speeds up the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
-- **`ritardando`**: Slows down the phrase using `strength`. An optional `jaggedness` parameter adds stochastic variation.
+- **`accelerando`**: Speeds up the phrase using `strength` (`"subtle"`, `"moderate"`, `"dramatic"`, or a numeric `0.0`–`1.0`). An optional `jaggedness` parameter (`"none"`, `"light"`, `"moderate"`, `"heavy"`, or numeric) adds stochastic variation.
+- **`ritardando`**: Slows down the phrase using `strength` (`"subtle"`, `"moderate"`, `"dramatic"`, or a numeric `0.0`–`1.0`). An optional `jaggedness` parameter (`"none"`, `"light"`, `"moderate"`, `"heavy"`, or numeric) adds stochastic variation.
 
 #### Proportion & Counterpoint
 
 - **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to a phrase. Both optionally accept `dimension`.
-- **`add_pedal_point`**: A fugal technique that adds a sustained or repeated anchor note to the score. It requires `frequency` and `duration`, and may also use `amplitude`, `mode`, and `pulse_duration`.
+- **`add_pedal_tone`**: A fugal technique that adds a sustained anchor note to the score. Requires only `frequency` (Hz). Duration is derived automatically from the longest voice in the score.
 - **`stretto`**: A fugal technique that creates overlapping, imitative entries of a motif using `motif`, `num_times`, and `spacing`.
 
 #### Complexity
 
-These transforms derive modulation from fractals, cellular automata, or other complex-systems processes. They modulate a musical dimension (`frequency`, `duration`, or `amplitude`) using `dimension` and `max_deviation`.
+These transforms derive modulation from fractals, cellular automata, or other complex-systems processes. They modulate a musical dimension (`frequency`, `duration`, or `amplitude`) using `dimension`.
 
-- **`weierstrass` / `score_weierstrass`**: A smooth, self-similar fractal wobble. Accepts `dimension`, `max_deviation`, and optional `seed`, `amplitude_scaling`, `ripples_per_wave`, and `iterations`.
-- **`cellular_automata` / `score_cellular_automata`**: A binary modulation derived from an elementary cellular automaton. Accepts `dimension`, `max_deviation`, and optional `rule`, `seed`, and `width`.
-- **`random_drop` / `score_random_drop`**: Random downward deviations at a controlled rate. Accepts `dimension`, `max_deviation`, and optional `seed` and `drop_rate`.
+- **`weierstrass` / `score_weierstrass`**: A smooth, self-similar fractal wobble. Accepts `dimension` and `intensity` (`"low"`, `"medium"`, `"high"`, or `"extreme"`). The intensity preset controls both the deviation amount and texture characteristics.
+- **`cellular_automata` / `score_cellular_automata`**: A binary modulation derived from an elementary cellular automaton. Accepts `dimension`, `rule` (Wolfram rule number 0–255, e.g. `30`, `90`, `110`), and `max_deviation`. The initial automaton state is derived from the input tones themselves — no randomness involved.
+- **`random_drop` / `score_random_drop`**: Random downward deviations at a controlled rate. Accepts `dimension`, `max_drop_pct` (how severe each drop is, 1–100), and `drop_frequency_pct` (what percentage of tones are affected, 1–100).
 
   ```json
   "transforms": [
@@ -150,8 +150,7 @@ These transforms derive modulation from fractals, cellular automata, or other co
       "name": "weierstrass",
       "params": {
         "dimension": "frequency",
-        "max_deviation": 0.1,
-        "seed": 42
+        "intensity": "medium"
       }
     }
   ]
@@ -169,26 +168,7 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   ```json
   "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
   ```
-- **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension`, `max_deviation`, and optional `seed`, `step_size`, and `quantize_resolution`.
-- **`ridged_drop` / `score_ridged_drop`**: A mostly stable signal interrupted by occasional sharp drops, like a geological ridgeline. Accepts:
-  - `dimension` (required): The musical dimension to modulate (`frequency`, `duration`, or `amplitude`).
-  - `drop_depth` (required): How far the dimension can fall. Either a named preset (`none`, `low`, `medium`, `high`, `extreme`) or a numeric value from `0.0` to `1.0`.
-  - `intensity` (optional): Controls the density and aggressiveness of the drop pattern. One of `subtle`, `medium` (default), or `severe`.
-  - `new_pattern_each_use` (optional): When `true`, each use of this transform generates a new random drop pattern. When `false` (default), the same pattern is used for reproducibility.
-
-  ```json
-  "transforms": [
-    {
-      "name": "ridged_drop",
-      "params": {
-        "dimension": "amplitude",
-        "drop_depth": "high",
-        "intensity": "severe",
-        "new_pattern_each_use": true
-      }
-    }
-  ]
-  ```
+- **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension` and `max_step_change_pct` (maximum percentage each tone can change from the previous, 1–100).
 
 ### Development
 
