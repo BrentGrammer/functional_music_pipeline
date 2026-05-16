@@ -87,17 +87,6 @@
           }
         ]
       }
-    ],
-    "transforms": [
-      {
-        "comment": "6. Score-wide Random Drop: Apply a subtle pitch drop to all voices simultaneously.",
-        "name": "score_random_drop",
-        "params": {
-          "dimension": "frequency",
-          "max_drop_pct": 10,
-          "drop_frequency_pct": 20
-        }
-      }
     ]
   }
 }

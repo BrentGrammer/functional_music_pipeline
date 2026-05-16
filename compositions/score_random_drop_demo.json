@@ -1,0 +1,37 @@
+{
+  "description": "Demonstrates the score_random_drop transform applied globally across all voices.",
+  "motifs": {
+    "melody": [
+      "261.63:0.5",
+      "293.66:0.5",
+      "329.63:0.5",
+      "349.23:0.5"
+    ],
+    "bass": [
+      "130.81:2.0"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "Lead",
+        "phrases": [{ "motifs": ["melody"] }]
+      },
+      {
+        "name": "Bass",
+        "phrases": [{ "motifs": ["bass"] }]
+      }
+    ],
+    "score_transforms": [
+      {
+        "comment": "Applies random pitch drops to all voices simultaneously, preserving their relative timing but introducing global instability.",
+        "name": "score_random_drop",
+        "params": {
+          "dimension": "frequency",
+          "max_drop_pct": 40,
+          "drop_frequency_pct": 30
+        }
+      }
+    ]
+  }
+}

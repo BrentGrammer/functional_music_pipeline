@@ -1,0 +1,80 @@
+{
+  "description": "Demonstrates basic transformations: reverse, transpose, scale, delay, and pad_silence.",
+  "motifs": {
+    "melody": [
+      "261.63:0.5",
+      "293.66:0.5",
+      "329.63:0.5",
+      "349.23:0.5",
+      "392.00:0.5"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "DemoVoice",
+        "phrases": [
+          {
+            "comment": "1. Original Melody",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "2. Reverse (Retrograde): Plays the notes in reverse order.",
+            "motifs": ["melody"],
+            "transforms": [{ "name": "reverse" }]
+          },
+          {
+            "comment": "3. Transpose: Shifts the pitch up by 7 semitones (a perfect fifth).",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "transpose",
+                "params": { "semitones": 7 }
+              }
+            ]
+          },
+          {
+            "comment": "4. Scale Duration: Doubles the length of each note (slower).",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "scale",
+                "params": { "dimension": "duration", "factor": 2.0 }
+              }
+            ]
+          },
+          {
+            "comment": "5. Scale Amplitude: Reduces volume to 30%.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "scale",
+                "params": { "dimension": "amplitude", "factor": 0.3 }
+              }
+            ]
+          },
+          {
+            "comment": "6. Delay: Prepends 1.5 seconds of silence before the melody starts.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "delay",
+                "params": { "seconds": 1.5 }
+              }
+            ]
+          },
+          {
+            "comment": "7. Pad Silence: Adds 1.0 second of silence after the melody.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "pad_silence",
+                "params": { "seconds": 1.0, "position": "end" }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "description": "Demonstrates complex and stochastic transformations: Weierstrass, Cellular Automata, Terraced Drift, and Erosion.",
+  "motifs": {
+    "melody": [
+      "261.63:0.4", "293.66:0.4", "329.63:0.4", "349.23:0.4",
+      "392.00:0.4", "440.00:0.4", "493.88:0.4", "523.25:0.4"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "1. Reference: Ascending Scale",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "2. Weierstrass (Frequency, Medium): Adds fractal-like 'ripples' to the pitch.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "weierstrass",
+                "params": { "dimension": "frequency", "intensity": "medium" }
+              }
+            ]
+          },
+          {
+            "comment": "3. Cellular Automata (Rule 30): Uses Rule 30 to modulate pitch with complex patterns.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "cellular_automata",
+                "params": {
+                  "dimension": "frequency",
+                  "rule": 30,
+                  "generations": 5,
+                  "max_deviation": 0.2
+                }
+              }
+            ]
+          },
+          {
+            "comment": "4. Terraced Drift: A brownian walk with sharp, quantized pitch steps.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "terraced_drift",
+                "params": { "dimension": "frequency", "max_step_change_pct": 30 }
+              }
+            ]
+          },
+          {
+            "comment": "5. Erosion (Duration): Gradually wears down the phrase by truncating notes (returns a shortened sequence).",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "erosion",
+                "params": { "dimension": "duration" }
+              }
+            ]
+          },
+          {
+            "comment": "6. Erosion (Amplitude): Dissolves the phrase into silence using a fade-out.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "erosion",
+                "params": { "dimension": "amplitude" }
+              }
+            ]
+          },
+          {
+            "comment": "7. Erosion (Frequency): Melodic collapse towards the first note's pitch.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "erosion",
+                "params": { "dimension": "frequency" }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

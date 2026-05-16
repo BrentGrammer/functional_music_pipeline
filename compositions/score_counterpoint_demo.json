@@ -1,0 +1,40 @@
+{
+  "description": "Demonstrates counterpoint and polyphonic score-level transforms: Pedal Tone and Stretto.",
+  "motifs": {
+    "subject": [
+      "261.63:0.5",
+      "293.66:0.5",
+      "329.63:0.5",
+      "261.63:0.5"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "SubjectVoice",
+        "phrases": [
+          {
+            "comment": "A simple 4-note subject.",
+            "motifs": ["subject"]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "comment": "1. Add Pedal Tone: Adds a deep C (130.81 Hz) that sustains for the full duration of the score.",
+        "name": "add_pedal_tone",
+        "params": { "frequency": 130.81 }
+      },
+      {
+        "comment": "2. Stretto: Overlaps the 'subject' motif with itself 3 times using the Golden Ratio for entry spacing.",
+        "name": "stretto",
+        "params": {
+          "motif": "subject",
+          "num_times": 3,
+          "spacing": "golden_ratio"
+        }
+      }
+    ]
+  }
+}

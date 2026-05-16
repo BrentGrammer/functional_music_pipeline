@@ -1,0 +1,74 @@
+{
+  "description": "Demonstrates mathematical proportion transforms: Golden Ratio and Feigenbaum sequences.",
+  "motifs": {
+    "melody": [
+      "440.00:0.5",
+      "440.00:0.5",
+      "440.00:0.5",
+      "440.00:0.5"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "MathVoice",
+        "phrases": [
+          {
+            "comment": "1. Reference: Simple rhythm of four quarter notes.",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "2. Golden Ratio (Duration): Scales each note duration by 1/1.618.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "golden_ratio",
+                "params": { "dimension": "duration" }
+              }
+            ]
+          },
+          {
+            "comment": "3. Feigenbaum Sequence (Frequency): Iteratively reduces pitch based on the Feigenbaum ratio (4.669).",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "feigenbaum_sequence",
+                "params": { "dimension": "frequency" }
+              }
+            ]
+          },
+          {
+            "comment": "4. Phrase Golden Ratio Grow: Scales this phrase's duration to be 1.618x the previous phrase's duration.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "phrase_golden_ratio_grow",
+                "params": { "dimension": "duration" }
+              }
+            ]
+          },
+          {
+            "comment": "5. Phrase Golden Ratio Shrink: Scales this phrase's duration to be 1/1.618 of the previous phrase.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "phrase_golden_ratio_shrink",
+                "params": { "dimension": "duration" }
+              }
+            ]
+          },
+          {
+            "comment": "6. Phrase Feigenbaum Grow: Scales this phrase's duration to be 4.669x the previous phrase.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "phrase_feigenbaum_grow",
+                "params": { "dimension": "duration" }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
