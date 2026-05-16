@@ -10,19 +10,51 @@ To separate transforms into two distinct registries: `PHRASE_TRANSFORMS` and `SC
 
 ## Proposed Changes
 
-### 1. `transforms/registry.py`
-- Replace the single `TRANSFORMS` dictionary with two dictionaries:
-  - `PHRASE_TRANSFORMS`: Contains all transforms that operate on a single sequence of tones.
-  - `SCORE_TRANSFORMS`: Contains transforms that operate on a `Score` object (including `EachVoiceTransform` wrappers, `ScoreTransform`, and `ScoreTargetMotifsTransform`).
-- Remove the `score_` prefix from names in the `SCORE_TRANSFORMS` registry.
+### 1. Strict Scope Taxonomy
+Introduce a formal taxonomy for transform scopes using Enums to define exactly how a transform callable is executed.
 
-### 2. `composition/parser.py`
-- Update `_apply_phrase_transform_specs` to look up names in `PHRASE_TRANSFORMS`.
-- Update `_apply_score_transform_spec` to look up names in `SCORE_TRANSFORMS`.
-- Ensure helpful error messages if a transform is used in the wrong scope.
+```python
+class PhraseScope(Enum):
+    STANDARD = "standard"         # f(tones: list[Tone])
+    RELATIVE = "relative"         # f(tones: list[Tone], ref_tones: list[Tone])
 
-### 3. Composition Demos
-- Update all JSON files in `compositions/` to remove the `score_` prefix from transforms inside `score_transforms` blocks.
+class ScoreScope(Enum):
+    GLOBAL = "global"             # f(score: Score)
+    EACH_VOICE = "each_voice"     # f(tones: list[Tone]) applied per voice
+    TARGET_MOTIFS = "target_motifs" # f(score: Score, parsed_motifs: dict)
+```
+
+### 2. Unified `TransformDefinition`
+Replace existing descriptor subclasses (`PhraseTransform`, `ScoreTransform`, etc.) with a single `TransformDefinition` that specifies exactly one scope.
+
+```python
+@dataclass(frozen=True)
+class TransformDefinition(Generic[ScopeType]):
+    name: str
+    transform_func: Callable[..., Any]
+    scope: ScopeType
+    params_spec: TransformParamsSpec
+```
+
+### 3. Separate Registries
+Replace the flat `TRANSFORMS` dictionary with two explicit registries in `transforms/registry.py`:
+- `PHRASE_TRANSFORMS`: `dict[str, TransformDefinition[PhraseScope]]`
+- `SCORE_TRANSFORMS`: `dict[str, TransformDefinition[ScoreScope]]`
+
+This allows the same logical name (e.g., `reverse`) to be registered in both places with different execution scopes, while maintaining strict separation.
+
+### 4. Parser Update
+Update `composition/parser.py` to:
+- Use `PHRASE_TRANSFORMS` in `_apply_phrase_transform_spec`.
+- Use `SCORE_TRANSFORMS` in `_apply_score_transform_spec`.
+- Dispatch the `transform_func` based on the specific `scope` value using a clean conditional block for each context.
+
+## Discussion Outcomes & Trade-offs
+- **Outcome:** We chose the two-registry approach over a unified facade to ensure maximum explicitness.
+- **Pro:** Eliminates "implicit magic." Developers must intentionally register a transform for each context where it is valid.
+- **Pro:** Perfectly solves the `score_` prefix naming collision by providing context-isolated lookups.
+- **Con:** Slight increase in boilerplate when a transform is applicable to both phrase and score levels (it must be registered in both dictionaries).
+- **Conclusion:** The trade-off is worth it for a more robust and predictable domain model.
 
 ## Implementation Plan
 
