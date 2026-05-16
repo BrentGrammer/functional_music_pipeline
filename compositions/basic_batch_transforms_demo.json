@@ -1,0 +1,39 @@
+{
+  "description": "Demonstrates the behavior of batch-capable transforms (Reverse and Transpose) with before/after comparisons.",
+  "motifs": {
+    "melody": [
+      "261.63:0.5",
+      "293.66:0.5",
+      "329.63:0.5",
+      "349.23:0.5"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "ComparisonVoice",
+        "phrases": [
+          {
+            "comment": "1. Original",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "2. Reversed (Retrograde)",
+            "motifs": ["melody"],
+            "transforms": [{ "name": "reverse" }]
+          },
+          {
+            "comment": "3. Transposed (+12 semitones)",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "transpose",
+                "params": { "semitones": 12 }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

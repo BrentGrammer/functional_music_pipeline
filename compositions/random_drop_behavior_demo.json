@@ -1,43 +1,44 @@
 {
-  "description": "Comprehensive demonstration of the random_drop transform behaviors.",
+  "description": "Comprehensive demonstration of the random_drop transform behaviors with per-dimension comparisons.",
   "motifs": {
-    "scale": [
+    "melody": [
       "261.63:0.5",
       "293.66:0.5",
       "329.63:0.5",
       "349.23:0.5",
-      "392.00:0.5",
-      "440.00:0.5",
-      "493.88:0.5",
-      "523.25:0.5"
+      "392.00:0.5"
     ]
   },
   "composition": {
     "voices": [
       {
-        "name": "Lead",
+        "name": "RandomDropDemo",
         "phrases": [
           {
-            "comment": "1. Reference: Clean scale",
-            "motifs": ["scale"]
+            "comment": "1. Reference: Clean melody",
+            "motifs": ["melody"]
           },
           {
-            "comment": "2. Pitch Dips: Randomly drop frequency by up to 50%, occurring 40% of the time.",
-            "motifs": ["scale"],
+            "comment": "2. Pitch Dips: 50% max drop, 60% frequency.",
+            "motifs": ["melody"],
             "transforms": [
               {
                 "name": "random_drop",
                 "params": {
                   "dimension": "frequency",
                   "max_drop_pct": 50,
-                  "drop_frequency_pct": 40
+                  "drop_frequency_pct": 60
                 }
               }
             ]
           },
           {
-            "comment": "3. Rhythmic Fragmentation: Randomly shorten duration by up to 90%, occurring 70% of the time.",
-            "motifs": ["scale"],
+            "comment": "3. Reference: Clean melody",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "4. Rhythmic Fragmentation: 90% max drop (shortening), 70% frequency.",
+            "motifs": ["melody"],
             "transforms": [
               {
                 "name": "random_drop",
@@ -50,8 +51,12 @@
             ]
           },
           {
-            "comment": "4. Volume Gaps: Randomly drop amplitude by up to 100% (total silence), occurring 50% of the time.",
-            "motifs": ["scale"],
+            "comment": "5. Reference: Clean melody",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "6. Volume Gaps: 100% max drop (silence), 50% frequency.",
+            "motifs": ["melody"],
             "transforms": [
               {
                 "name": "random_drop",
@@ -64,8 +69,12 @@
             ]
           },
           {
-            "comment": "5. Multi-Dimension Chaos: Combining drops in frequency and amplitude.",
-            "motifs": ["scale"],
+            "comment": "7. Reference: Clean melody",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "8. Combined Chaos: Frequency + Amplitude drops.",
+            "motifs": ["melody"],
             "transforms": [
               {
                 "name": "random_drop",
