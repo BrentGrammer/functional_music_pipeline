@@ -1,0 +1,60 @@
+{
+  "description": "Comparison of a multi-voice harmonic block before and after global batch transformations.",
+  "motifs": {
+    "ascending": ["261.63:0.5", "293.66:0.5", "329.63:0.5"],
+    "silence": ["0:1.5"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "High",
+        "phrases": [
+          {
+            "comment": "1. Reference: High voice (block 1)",
+            "motifs": ["ascending"],
+            "transforms": [{"name": "transpose", "params": {"semitones": 12}}]
+          },
+          {
+            "comment": "Separator silence",
+            "motifs": ["silence"]
+          },
+          {
+            "comment": "2. Transformed: High voice (block 2)",
+            "motifs": ["ascending"],
+            "transforms": [
+              {"name": "transpose", "params": {"semitones": 12}},
+              {"name": "reverse"}
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Low",
+        "phrases": [
+          {
+            "comment": "1. Reference: Low voice (block 1)",
+            "motifs": ["ascending"]
+          },
+          {
+            "comment": "Separator silence",
+            "motifs": ["silence"]
+          },
+          {
+            "comment": "2. Transformed: Low voice (block 2)",
+            "motifs": ["ascending"],
+            "transforms": [
+              {"name": "reverse"}
+            ]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "comment": "Shifts the entire harmonic sequence (both blocks) down by 5 semitones.",
+        "name": "score_transpose",
+        "params": { "semitones": -5 }
+      }
+    ]
+  }
+}
