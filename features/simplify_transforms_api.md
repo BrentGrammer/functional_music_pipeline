@@ -200,10 +200,14 @@ Keeping them separate lets users combine them (e.g., frequent shallow drops, or 
 - `jaggedness` (optional)
 - `seed` (optional)
 
-**Proposed API (1 required, 0 optional):**
-- `strength` (required): `"subtle"` | `"moderate"` | `"dramatic"`
+**Proposed API (1 required, 1 optional):**
+- `strength` (required): `"subtle"` | `"moderate"` | `"dramatic"` (or numeric 0.0-1.0)
+- `jaggedness` (optional): `"none"` | `"light"` | `"moderate"` | `"heavy"` (or numeric 0.0-1.0)
 
-Remove `jaggedness` - if users want jagged tempo changes, they can combine with other transforms. Remove `seed`.
+Both parameters are musically meaningful and well-named. `strength` controls how much the tempo changes. `jaggedness` adds stochastic roughness to the curve. Keep both.
+
+**Removed:**
+- `seed` — removed from public API, fixed internal seed used for deterministic behavior
 
 ---
 
@@ -217,8 +221,8 @@ Remove `jaggedness` - if users want jagged tempo changes, they can combine with 
 | `random_drop` | 4 params | 3 params |
 | `ridged_drop` | 4 params | REMOVE |
 | `add_pedal_point` | 5 params | 1 param (rename to `add_pedal_tone`) |
-| `accelerando` | 3 params | 1 param |
-| `ritardando` | 3 params | 1 param |
+| `accelerando` | 3 params | 2 params |
+| `ritardando` | 3 params | 2 params |
 
 ---
 

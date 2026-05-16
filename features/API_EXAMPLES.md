@@ -238,7 +238,7 @@ transform.add_pedal_tone(frequency=220.0)   # A below middle C
 
 ### BEFORE (3 parameters)
 ```python
-# Multiple ways to control the same thing
+# seed is an implementation detail that shouldn't be exposed as a raw number
 transform.accelerando(
     strength=0.5,  # How much to accelerate
     jaggedness=0.3,  # Optional texture parameter
@@ -246,26 +246,34 @@ transform.accelerando(
 )
 ```
 
-### AFTER (1 parameter)
+### AFTER (2 parameters)
 ```python
-# Single parameter describes the effect strength
+# strength and jaggedness are musically meaningful — keep them
 transform.accelerando(
-    strength="moderate"  # Describes how dramatic the accel is
+    strength="moderate",   # How much the tempo accelerates
+    jaggedness="light"     # How rough/stochastic the curve is
 )
 
-# All preset variants (same for ritardando):
+# Strength variants:
 transform.accelerando(strength="subtle")
 transform.accelerando(strength="moderate")
 transform.accelerando(strength="dramatic")
 
-transform.ritardando(strength="subtle")
-transform.ritardando(strength="moderate") 
-transform.ritardando(strength="dramatic")
+# Jaggedness variants:
+transform.accelerando(strength="moderate", jaggedness="none")    # Smooth curve
+transform.accelerando(strength="moderate", jaggedness="light")   # Slight roughness
+transform.accelerando(strength="moderate", jaggedness="heavy")   # Very rough
+
+# Same for ritardando:
+transform.ritardando(strength="moderate", jaggedness="light")
+transform.ritardando(strength="dramatic", jaggedness="none")
+
+# Numeric values also accepted:
+transform.accelerando(strength=0.7, jaggedness=0.2)
 ```
 
-**Rationale:**
-- `jaggedness` removed - if users want jagged tempo changes, they can layer with other transforms like `weierstrass` or `cellular_automata`
-- Single `strength` parameter with presets keeps the API clean and focused on musical intent
+**Removed:**
+- `seed` — removed from public API, fixed internal seed used for deterministic behavior
 
 ---
 
@@ -279,8 +287,8 @@ transform.ritardando(strength="dramatic")
 | `random_drop` | 4 params | 3 params | 25% reduction |
 | `ridged_drop` | 4 params | REMOVE | — |
 | `add_pedal_point` | 5 params | 1 param (rename to `add_pedal_tone`) | 80% reduction |
-| `accelerando` | 3 params | 1 param | 67% reduction |
-| `ritardando` | 3 params | 1 param | 67% reduction |
+| `accelerando` | 3 params | 2 params | 33% reduction |
+| `ritardando` | 3 params | 2 params | 33% reduction |
 
 ---
 
