@@ -2,6 +2,7 @@ import pytest
 
 from score_model.tone import Tone
 from transforms.complexity.cellular_automata import apply_cellular_automata_transform
+from transforms.complexity.random_drop import apply_random_drop_transform
 from transforms.complexity.weierstrass import apply_weierstrass_transform
 
 
@@ -103,5 +104,58 @@ def test_cellular_automata_uniform_input_uses_alternating_fallback():
     assert all(tone.frequency > 0 for tone in result)
 
 
+def test_random_drop_is_deterministic():
+    tones = _build_reference_tones()
+
+    result_a = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40)
+    result_b = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40)
+
+    assert _snapshot(result_a) == _snapshot(result_b)
+
+
+def test_random_drop_only_reduces_target_dimension():
+    tones = _build_reference_tones()
+
+    result = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=100)
+
+    for original, transformed in zip(tones, result):
+        assert transformed.amplitude <= original.amplitude
+        assert transformed.frequency == pytest.approx(original.frequency)
+        assert transformed.duration == pytest.approx(original.duration)
+
+
+def test_random_drop_higher_frequency_affects_more_tones():
+    # A large number of tones makes the probability difference statistically reliable.
+    tones = [Tone(frequency=440.0, duration=1.0, amplitude=0.8) for _ in range(100)]
+
+    result_rare = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=10)
+    result_frequent = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=90)
+
+    drops_rare = sum(1 for original, transformed in zip(tones, result_rare) if transformed.amplitude < original.amplitude)
+    drops_frequent = sum(1 for original, transformed in zip(tones, result_frequent) if transformed.amplitude < original.amplitude)
+
+    assert drops_frequent > drops_rare
+
+
+def test_random_drop_returns_empty_for_empty_input():
+    assert apply_random_drop_transform([], dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40) == []
+
+
+def test_random_drop_rejects_out_of_range_max_drop_pct():
+    tones = _build_reference_tones()
+
+    with pytest.raises(ValueError):
+        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=0, drop_frequency_pct=40)
+    with pytest.raises(ValueError):
+        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=101, drop_frequency_pct=40)
+
+
+def test_random_drop_rejects_out_of_range_drop_frequency_pct():
+    tones = _build_reference_tones()
+
+    with pytest.raises(ValueError):
+        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=0)
+    with pytest.raises(ValueError):
+        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=101)
 
 
