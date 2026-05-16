@@ -29,6 +29,9 @@ PROJECT_DIR="${1:-$PWD}"
 PROJECT_BASENAME="$(basename "$PROJECT_DIR")"
 SANDBOX_NAME="opencode-${PROJECT_BASENAME//_/-}"
 
+chmod +x ./scripts/start_docker.sh
+./scripts/start_docker.sh
+
 # One-time setup per sandbox name - enter your API key for BYOK usage:
 #   Ex: sbx secret set <sandbox_name> openai
 #
