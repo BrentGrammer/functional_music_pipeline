@@ -1,0 +1,103 @@
+{
+  "description": "Comprehensive demonstration of the random_drop transform behaviors.",
+  "motifs": {
+    "scale": [
+      "261.63:0.5",
+      "293.66:0.5",
+      "329.63:0.5",
+      "349.23:0.5",
+      "392.00:0.5",
+      "440.00:0.5",
+      "493.88:0.5",
+      "523.25:0.5"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "Lead",
+        "phrases": [
+          {
+            "comment": "1. Reference: Clean scale",
+            "motifs": ["scale"]
+          },
+          {
+            "comment": "2. Pitch Dips: Randomly drop frequency by up to 50%, occurring 40% of the time.",
+            "motifs": ["scale"],
+            "transforms": [
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "frequency",
+                  "max_drop_pct": 50,
+                  "drop_frequency_pct": 40
+                }
+              }
+            ]
+          },
+          {
+            "comment": "3. Rhythmic Fragmentation: Randomly shorten duration by up to 90%, occurring 70% of the time.",
+            "motifs": ["scale"],
+            "transforms": [
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "duration",
+                  "max_drop_pct": 90,
+                  "drop_frequency_pct": 70
+                }
+              }
+            ]
+          },
+          {
+            "comment": "4. Volume Gaps: Randomly drop amplitude by up to 100% (total silence), occurring 50% of the time.",
+            "motifs": ["scale"],
+            "transforms": [
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "amplitude",
+                  "max_drop_pct": 100,
+                  "drop_frequency_pct": 50
+                }
+              }
+            ]
+          },
+          {
+            "comment": "5. Multi-Dimension Chaos: Combining drops in frequency and amplitude.",
+            "motifs": ["scale"],
+            "transforms": [
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "frequency",
+                  "max_drop_pct": 30,
+                  "drop_frequency_pct": 30
+                }
+              },
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "amplitude",
+                  "max_drop_pct": 80,
+                  "drop_frequency_pct": 40
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "transforms": [
+      {
+        "comment": "6. Score-wide Random Drop: Apply a subtle pitch drop to all voices simultaneously.",
+        "name": "score_random_drop",
+        "params": {
+          "dimension": "frequency",
+          "max_drop_pct": 10,
+          "drop_frequency_pct": 20
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "description": "Demonstrates the stretto transform which creates overlapping imitative entries of a motif.",
+  "motifs": {
+    "subject": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "392.00:0.6"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "comment": "Initial subject statement.",
+            "motifs": ["subject"]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "name": "stretto",
+        "params": {
+          "motif": "subject",
+          "num_times": 3,
+          "spacing": 0.8
+        }
+      }
+    ]
+  }
+}
