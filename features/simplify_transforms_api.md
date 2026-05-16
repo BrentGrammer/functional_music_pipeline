@@ -293,60 +293,109 @@ Verification: `pytest tests/test_complexity_transforms.py tests/test_json_parser
 
 ### Phase 2: Simplify `cellular_automata`
 
-#### 2.1 Rewrite cellular automata to derive initial state from input tones
+#### 2.1 Rewrite cellular automata implementation
+
+This is the most complex change. The entire internal logic changes — the CA no longer uses random initial state. Instead, the initial state is derived from the input tones.
 
 Scope:
+
 1. In `transforms/complexity/cellular_automata.py`, remove `import random`.
-2. Rewrite `_CellularAutomataProfile` to accept `tones` (the input tone sequence), `dimension`, and `rule`.
-3. The `generate` method should:
-   - Extract the target dimension values from each tone.
-   - Compute the median.
-   - Threshold into binary: `>= median → 1, < median → 0`.
-   - If all values are the same (uniform), use alternating `[1, 0, 1, 0...]` as fallback.
-   - Evolve the binary state for a fixed number of generations (use 5).
-   - Return the final state mapped to -1.0 / 1.0 values.
-4. For single tone input, return `[0.0]` (no modulation).
 
-Verification: `pytest tests/test_complexity_transforms.py`
+2. Remove the existing `_CellularAutomataProfile` class entirely.
+
+3. Add a new function `_derive_initial_state(tones, dimension)` in the same file (`transforms/complexity/cellular_automata.py`) that:
+   - Takes the tone sequence and a resolved `ToneDimension`.
+   - Extracts the target dimension value from each tone:
+     - If `dimension == ToneDimension.FREQUENCY`: use `tone.frequency`
+     - If `dimension == ToneDimension.DURATION`: use `tone.duration`
+     - If `dimension == ToneDimension.AMPLITUDE`: use `tone.amplitude`
+   - Computes the median of those values (use `sorted(values)[len(values) // 2]` — no need to import statistics).
+   - Returns a binary list: `[1 if v >= median else 0 for v in values]`.
+   - Edge case: if all values are identical (min == max), return alternating `[1, 0, 1, 0, ...]` of the same length.
+
+4. Add a new function `_evolve_state(state, rule, generations)` that:
+   - Takes the binary state, a rule number, and number of generations.
+   - Calls `_get_next_cellular_state(state, rule)` in a loop `generations` times.
+   - Returns the final evolved state.
+
+5. Keep the existing `_get_next_cellular_state` function unchanged — it already works correctly.
+
+6. Rewrite `apply_cellular_automata_transform` to:
+   ```python
+   def apply_cellular_automata_transform(
+       tones: ToneSequence,
+       dimension: ToneDimension | str,
+       rule: int,
+       max_deviation: float,
+   ) -> ToneSequence:
+       if not tones:
+           return []
+       if len(tones) == 1:
+           return list(tones)
+
+       from transforms.base import parse_dimension
+       resolved_dimension = parse_dimension(dimension)
+
+       initial_state = _derive_initial_state(tones, resolved_dimension)
+       final_state = _evolve_state(initial_state, rule, generations=5)
+
+       profile = [-1.0 if cell == 0 else 1.0 for cell in final_state]
+
+       from transforms.complexity._modulation import _modulate_tone_dimension
+       return _modulate_tone_dimension(tones, profile, resolved_dimension, max_deviation)
+   ```
+
+   Note: This bypasses the `apply_profile` helper and calls `_modulate_tone_dimension` directly. This is intentional — the old profile-based pattern doesn't fit because the CA now needs the tones themselves to derive its state, not just the length.
+
+7. Remove the import of `apply_profile` from the file since it's no longer used.
+
+Verification: `pytest tests/test_complexity_transforms.py` (tests will fail at this point because the function signature changed — that's expected, we'll fix tests in step 2.3).
 
 ---
 
-#### 2.2 Refactor cellular automata function signature
+#### 2.2 Update cellular automata params spec
 
 Scope:
-1. Change `apply_cellular_automata_transform` to accept `tones`, `dimension`, `rule`, and `max_deviation`.
-2. Remove `seed` and `width` from the signature.
-3. Pass tones and dimension into the profile so it can derive the initial state.
-4. Make `rule` required (no default), `max_deviation` required (no default).
-
-Note: The `_modulation.py` helper interface may need updating since the profile now needs access to tones and dimension to derive initial state. The profile's `generate` method currently only takes `length`. Refactor as needed — the profile can receive the tones at construction time and `generate` can still take `length` for interface compatibility.
-
-Verification: `pytest tests/test_complexity_transforms.py`
-
----
-
-#### 2.3 Update cellular automata params spec
-
-Scope:
-1. Update `CELLULAR_AUTOMATA_PARAMS_SPEC` to expose only `dimension` (required), `rule` (required, integer), and `max_deviation` (required, float).
+1. In the same file (`transforms/complexity/cellular_automata.py`), update `CELLULAR_AUTOMATA_PARAMS_SPEC`:
+   ```python
+   CELLULAR_AUTOMATA_PARAMS_SPEC = TransformParamsSpec(
+       fields={
+           "dimension": TransformParamFieldSpec(
+               required=True,
+               schema=EnumParam(allowed_values=tuple(ToneDimension)),
+           ),
+           "rule": TransformParamFieldSpec(
+               required=True,
+               schema=IntegerParam(),
+           ),
+           "max_deviation": TransformParamFieldSpec(
+               required=True,
+               schema=FloatParam(),
+           ),
+       }
+   )
+   ```
 2. Remove `seed` and `width` fields.
+3. Make `rule` required (it was previously optional).
 
-Verification: `pytest tests/test_complexity_transforms.py tests/test_json_parser.py`
+Verification: `pytest tests/test_json_parser.py` (may still fail due to test updates needed).
 
 ---
 
-#### 2.4 Update cellular automata tests and demos
+#### 2.3 Update cellular automata tests and demos
 
 Scope:
-1. Rewrite tests to use the new 3-param API.
-2. Tests should verify:
-   - Different input tones produce different modulation patterns (SDIC).
-   - Same input tones + same rule produce identical results (deterministic).
-   - Different rules produce different results.
-   - Empty input returns empty list.
-   - Single tone returns unchanged.
-   - Uniform dimension values (all same frequency) use alternating fallback.
-3. Update composition JSON files that use `cellular_automata`.
+1. In `tests/test_complexity_transforms.py`, rewrite all cellular automata test calls to use the new 3-param signature: `dimension`, `rule`, `max_deviation`. Remove `seed` and `width` from all calls.
+2. Remove or rewrite the "repeatability" test (it previously tested that same seed = same output; now same tones + same rule = same output).
+3. Add new tests:
+   - Same input tones + same rule → identical output (deterministic).
+   - Different input tones + same rule → different output (SDIC).
+   - Different rules + same tones → different output.
+   - Empty input → returns empty list.
+   - Single tone → returns the tone unchanged.
+   - All tones with same frequency (uniform) → uses alternating fallback, still produces a valid result.
+4. Update `compositions/score_cellular_automata_demo.json` to remove `seed` and ensure `rule` is present in all cellular automata transform entries.
+5. Update `compositions/geological_example.json` if it uses cellular automata — remove `seed`, ensure `rule` is present.
 
 Verification: `pytest tests/test_complexity_transforms.py tests/test_json_parser.py`
 
@@ -491,34 +540,77 @@ Verification: `pytest tests/test_tempo.py tests/test_json_parser.py`
 #### 7.1 Refactor add_pedal_point function signature
 
 Scope:
-1. In `transforms/counterpoint/fugue.py`, rename `add_pedal_point` to `add_pedal_tone`.
-2. Change the signature to accept only `score` and `frequency`.
-3. Internally, compute duration from the score: sum the durations of the longest voice.
-4. Use a fixed amplitude default (e.g., 0.5).
-5. Always use "sustain" mode.
-6. Remove `duration`, `amplitude`, `mode`, and `pulse_duration` from the signature.
+1. In `transforms/counterpoint/fugue.py`, rename the function `add_pedal_point` to `add_pedal_tone`.
+2. Change the signature to accept only `score: Score` and `frequency: float`.
+3. Remove `duration`, `amplitude`, `mode`, and `pulse_duration` from the signature.
+4. Internally, compute the duration from the score by finding the longest voice:
+   ```python
+   def add_pedal_tone(score: Score, frequency: float) -> Score:
+       if frequency <= 0:
+           raise ValueError("Pedal tone frequency must be greater than 0.")
 
-Verification: `pytest tests/test_counterpoint_fugue.py`
+       # Compute duration from the longest voice in the score
+       duration = 0.0
+       for voice in score.voices:
+           voice_duration = sum(tone.duration for tone in voice.tones)
+           duration = max(duration, voice_duration)
+
+       if duration <= 0:
+           duration = 1.0  # Fallback if score is empty
+
+       amplitude = 0.5  # Fixed sensible default
+       pedal_tones = [Tone(frequency=frequency, duration=duration, amplitude=amplitude)]
+       return Score(score.voices + [Voice(pedal_tones)])
+   ```
+5. Remove the `_build_repeated_pedal_tones` helper function (no longer needed since "repeat" mode is removed).
+6. Remove the import of `validate_add_pedal_point_params` at the top of the file.
+
+Verification: `pytest tests/test_counterpoint_fugue.py` (tests will fail — expected, we'll fix them in 7.3).
 
 ---
 
 #### 7.2 Update params spec and registry
 
 Scope:
-1. Update `ADD_PEDAL_POINT_PARAMS_SPEC` to expose only `frequency` (required).
-2. Rename it to `ADD_PEDAL_TONE_PARAMS_SPEC`.
-3. In `transforms/registry.py`, update the registration to use the new name `add_pedal_tone` and the renamed function/spec.
-4. Remove the cross-parameter validation in `composition/transform_params_validation.py` (pulse_duration requirement is gone).
+1. In `transforms/counterpoint/fugue.py`, replace `ADD_PEDAL_POINT_PARAMS_SPEC` with:
+   ```python
+   ADD_PEDAL_TONE_PARAMS_SPEC = TransformParamsSpec(
+       fields={
+           "frequency": TransformParamFieldSpec(
+               schema=FloatParam(),
+               required=True,
+           ),
+       }
+   )
+   ```
+   Remove the `validator=validate_add_pedal_point_params` argument (no cross-parameter validation needed).
+2. In `transforms/registry.py`:
+   - Update the import to use `ADD_PEDAL_TONE_PARAMS_SPEC` and `add_pedal_tone` (instead of the old names).
+   - Change the registration key from `"add_pedal_point"` to `"add_pedal_tone"`.
+   - Update the `ScoreTransform` to reference the renamed function and spec.
+3. In `composition/transform_params_validation.py`, delete the `validate_add_pedal_point_params` function entirely (it validated pulse_duration which no longer exists).
 
-Verification: `pytest tests/test_counterpoint_fugue.py tests/test_json_parser.py`
+Verification: `pytest tests/test_counterpoint_fugue.py tests/test_json_parser.py` (tests will fail — expected).
 
 ---
 
 #### 7.3 Update add_pedal_tone tests and demos
 
 Scope:
-1. Update all tests to use the new 1-param API and the new name `add_pedal_tone`.
-2. Update composition JSON files that use `add_pedal_point` to use `add_pedal_tone` with only `frequency`.
+1. In `tests/test_counterpoint_fugue.py`:
+   - Rename all references from `add_pedal_point` to `add_pedal_tone`.
+   - Update all test calls to use only `frequency` (remove `duration`, `amplitude`, `mode`, `pulse_duration`).
+   - Remove tests for "repeat" mode and pulse_duration.
+   - Remove tests for the `duration <= 0` validation (duration is now derived internally).
+   - Add a test verifying that the pedal tone duration matches the longest voice in the score.
+2. In `tests/test_json_parser.py`:
+   - Update all references from `"add_pedal_point"` to `"add_pedal_tone"`.
+   - Update test JSON payloads to only include `frequency` in params.
+   - Remove tests for pulse_duration validation.
+3. Update any composition JSON files that use `"add_pedal_point"`:
+   - Change `"name": "add_pedal_point"` to `"name": "add_pedal_tone"`.
+   - Remove `duration`, `amplitude`, `mode`, and `pulse_duration` from the params object.
+   - Keep only `"frequency"` in params.
 
 Verification: `pytest tests/test_counterpoint_fugue.py tests/test_json_parser.py`
 
@@ -553,9 +645,7 @@ Verification: All tests pass, all demos produce output.
 
 ## Open Questions
 
-1. **Weierstrass intensity presets**: Should we revisit the `intensity` preset approach for weierstrass (same vagueness issue we identified in other transforms), or is it acceptable there?
-
-2. **Global randomness**: Should we add a composition-level setting for transforms that use stochastic processes internally (e.g., terraced_drift, random_drop)?
+1. **Global randomness**: Should we add a composition-level setting for transforms that use stochastic processes internally (e.g., terraced_drift, random_drop)?
 
 ---
 
