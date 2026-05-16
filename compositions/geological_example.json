@@ -17,14 +17,13 @@
               "c_major_arpeggio"
             ],
             "transforms": [
-              {
-                "name": "weierstrass",
-                "params": {
-                  "dimension": "frequency",
-                  "max_deviation": 0.05,
-                  "seed": 42
-                }
-              }
+               {
+                 "name": "weierstrass",
+                 "params": {
+                   "dimension": "frequency",
+                   "intensity": "low"
+                 }
+               }
             ]
           }
         ]
@@ -48,70 +47,68 @@
           }
         ]
       },
-      {
-        "phrases": [
-          {
-            "motifs": [
-              "c_major_arpeggio"
-            ],
-            "transforms": [
-              {
-                "name": "cellular_automata",
-                "params": {
-                  "dimension": "amplitude",
-                  "max_deviation": 0.4,
-                  "seed": 42
-                }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "phrases": [
-          {
-            "motifs": [
-              "c_major_arpeggio"
-            ],
-            "transforms": [
-              {
-                "name": "ridged_drop",
-                "params": {
-                  "dimension": "amplitude",
-                  "drop_depth": 0.9
-                }
-              },
-              {
-                "name": "ridged_drop",
-                "params": {
-                  "dimension": "amplitude",
-                  "drop_depth": "high",
-                  "intensity": "severe"
-                }
-              },
-              {
-                "name": "ridged_drop",
-                "params": {
-                  "dimension": "amplitude",
-                  "drop_depth": "low",
-                  "intensity": "subtle",
-                  "new_pattern_each_use": true
-                }
-              }
-            ]
-          }
-        ]
-      }
+       {
+         "phrases": [
+           {
+             "motifs": [
+               "c_major_arpeggio"
+             ],
+             "transforms": [
+               {
+                 "name": "cellular_automata",
+                 "params": {
+                   "dimension": "amplitude",
+                   "rule": 30,
+                   "max_deviation": 0.4
+                 }
+               }
+             ]
+           }
+         ]
+       },
+       {
+         "phrases": [
+           {
+             "motifs": [
+               "c_major_arpeggio"
+             ],
+             "transforms": [
+               {
+                 "name": "random_drop",
+                 "params": {
+                   "dimension": "amplitude",
+                   "max_drop_pct": 90
+                 }
+               },
+               {
+                 "name": "random_drop",
+                 "params": {
+                   "dimension": "amplitude",
+                   "max_drop_pct": 75,
+                   "drop_frequency_pct": 50
+                 }
+               },
+               {
+                 "name": "random_drop",
+                 "params": {
+                   "dimension": "amplitude",
+                   "max_drop_pct": 25,
+                   "drop_frequency_pct": 20
+                 }
+               }
+             ]
+           }
+         ]
+       }
     ],
-    "score_transforms": [
-      {
-        "name": "score_weierstrass",
-        "params": {
-          "dimension": "amplitude",
-          "max_deviation": 0.1,
-          "seed": 100
-        }
-      }
-    ]
+     "score_transforms": [
+       {
+         "name": "score_weierstrass",
+         "params": {
+           "dimension": "amplitude",
+           "intensity": "medium"
+         }
+       }
+     ]
   }
 }

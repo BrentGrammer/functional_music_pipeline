@@ -572,7 +572,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["weierstrass"]
         valid_params = {
             "dimension": "frequency",
-            "max_deviation": 0.1,
+            "intensity": "medium",
         }
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -590,7 +590,7 @@ class TestScaleTransformParsing:
         descriptor = TRANSFORMS["score_weierstrass"]
         valid_params = {
             "dimension": "frequency",
-            "max_deviation": 0.1,
+            "intensity": "medium",
         }
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):

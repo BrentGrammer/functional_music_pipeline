@@ -18,13 +18,10 @@ TERRACED_DRIFT_PARAMS_SPEC = TransformParamsSpec(
             required=True,
             schema=EnumParam(allowed_values=tuple(ToneDimension)),
         ),
-        "max_deviation": TransformParamFieldSpec(
+        "max_step_change_pct": TransformParamFieldSpec(
             required=True,
-            schema=FloatParam(),
+            schema=IntegerParam(),
         ),
-        "seed": TransformParamFieldSpec(schema=IntegerParam()),
-        "step_size": TransformParamFieldSpec(schema=FloatParam()),
-        "quantize_resolution": TransformParamFieldSpec(schema=FloatParam()),
     }
 )
 
@@ -58,18 +55,22 @@ class _TerracedBrownianProfile:
 def apply_terraced_drift_transform(
     tones: ToneSequence,
     dimension: ToneDimension | str,
-    max_deviation: float,
-    seed: int = 42,
-    step_size: float = 0.25,
-    quantize_resolution: float = 0.2,
+    max_step_change_pct: int,
 ) -> ToneSequence:
+    if not isinstance(max_step_change_pct, int):
+        raise ValueError(f"max_step_change_pct must be an integer, got {type(max_step_change_pct).__name__}")
+    if max_step_change_pct < 1 or max_step_change_pct > 100:
+        raise ValueError(f"max_step_change_pct must be between 1 and 100, got {max_step_change_pct}")
+
+    step_size = max_step_change_pct / 100.0
+
     return apply_profile(
         tones,
         _TerracedBrownianProfile(
-            seed=seed,
+            seed=42,
             step_size=step_size,
-            quantize_resolution=quantize_resolution,
+            quantize_resolution=step_size,
         ),
         dimension,
-        max_deviation,
+        step_size,
     )

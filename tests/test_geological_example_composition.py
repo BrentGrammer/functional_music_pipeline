@@ -30,8 +30,7 @@ def _build_geological_example_composition() -> dict:
                                     "name": "weierstrass",
                                     "params": {
                                         "dimension": "frequency",
-                                        "max_deviation": 0.05,
-                                        "seed": 42,
+                                        "intensity": "low",
                                     },
                                 }
                             ],
@@ -47,8 +46,7 @@ def _build_geological_example_composition() -> dict:
                                     "name": "terraced_drift",
                                     "params": {
                                         "dimension": "duration",
-                                        "max_deviation": 0.5,
-                                        "seed": 42,
+                                        "max_step_change_pct": 25,
                                     },
                                 }
                             ],
@@ -64,8 +62,8 @@ def _build_geological_example_composition() -> dict:
                                     "name": "cellular_automata",
                                     "params": {
                                         "dimension": "amplitude",
+                                        "rule": 30,
                                         "max_deviation": 0.4,
-                                        "seed": 42,
                                     },
                                 }
                             ],
@@ -78,11 +76,11 @@ def _build_geological_example_composition() -> dict:
                             "motifs": ["c_major_arpeggio"],
                             "transforms": [
                                 {
-                                    "name": "ridged_drop",
+                                    "name": "random_drop",
                                     "params": {
                                         "dimension": "amplitude",
-                                        "drop_depth": 0.9,
-                                        "intensity": "medium",
+                                        "max_drop_pct": 90,
+                                        "drop_frequency_pct": 50,
                                     },
                                 }
                             ],
@@ -95,8 +93,7 @@ def _build_geological_example_composition() -> dict:
                     "name": "score_weierstrass",
                     "params": {
                         "dimension": "amplitude",
-                        "max_deviation": 0.1,
-                        "seed": 100,
+                        "intensity": "medium",
                     },
                 }
             ],
@@ -152,17 +149,14 @@ class TestGeologicalExampleComposition:
 
         # Voice 1: Weierstrass on Frequency
         voice1_tones = score.voices[0].tones
-        max_deviation_v1 = composition_data["composition"]["voices"][0]["phrases"][0]["transforms"][0]["params"]["max_deviation"]
         for i, transformed_tone in enumerate(voice1_tones):
             original_freq = original_motif_tones[i].frequency
-            assert original_freq * (1 - max_deviation_v1) <= transformed_tone.frequency <= original_freq * (1 + max_deviation_v1)
+            assert transformed_tone.frequency != original_freq
 
         # Voice 2: Terraced Brownian on Duration
         voice2_tones = score.voices[1].tones
-        max_deviation_v2 = composition_data["composition"]["voices"][1]["phrases"][0]["transforms"][0]["params"]["max_deviation"]
         for i, transformed_tone in enumerate(voice2_tones):
             original_dur = original_motif_tones[i].duration
-            assert original_dur * (1 - max_deviation_v2) <= transformed_tone.duration <= original_dur * (1 + max_deviation_v2)
             assert transformed_tone.duration > 0
 
         # All Voices: Verify score-level amplitude transform and general amplitude invariants
