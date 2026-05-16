@@ -29,7 +29,7 @@ PROJECT_DIR="${1:-$PWD}"
 PROJECT_BASENAME="$(basename "$PROJECT_DIR")"
 SANDBOX_NAME="opencode-${PROJECT_BASENAME//_/-}"
 
-# One-time setup per sandbox name:
+# One-time setup per sandbox name - enter your API key for BYOK usage:
 #   Ex: sbx secret set <sandbox_name> openai
 #
 # Usage:
