@@ -19,13 +19,13 @@ class PhraseScope(Enum):
     RELATIVE = "relative"         # f(tones: list[Tone], ref_tones: list[Tone])
 
 class ScoreScope(Enum):
-    GLOBAL = "global"             # f(score: Score)
+    SCORE_AWARE = "score_aware"   # f(score: Score)
     EACH_VOICE = "each_voice"     # f(tones: list[Tone]) applied per voice
     TARGET_MOTIFS = "target_motifs" # f(score: Score, parsed_motifs: dict)
 ```
 
 ### 2. Unified `TransformDefinition`
-Replace existing descriptor subclasses (`PhraseTransform`, `ScoreTransform`, etc.) with a single `TransformDefinition` that specifies exactly one scope.
+Replace existing descriptor subclasses (`PhraseTransform`, `ScoreAwareTransform`, etc.) with a single `TransformDefinition` that specifies exactly one scope.
 
 ```python
 @dataclass(frozen=True)
@@ -86,7 +86,7 @@ Update `composition/parser.py` to:
 
 ### Phase 6: Cleanup
 - Remove the legacy `TRANSFORMS` dictionary.
-- Remove legacy classes (`PhraseTransform`, `ScoreTransform`, etc.) from `transforms/base.py`.
+- Remove legacy classes (`PhraseTransform`, `ScoreAwareTransform` (formerly ScoreTransform), etc.) from `transforms/base.py`.
 - *Goal:* Finalize the refactor and remove all technical debt.
 
 ## Benefits
