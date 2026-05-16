@@ -4,8 +4,12 @@
 
 set -euo pipefail
 
+# Allow docker for pulling templates with sbx
+sbx policy allow network download.docker.com:443
+
 # Allow ubuntu security updates for patches and package upgrades
 sbx policy allow network debian.org:443
+sbx policy allow network ports.ubuntu.com:80
 sbx policy allow network ports.ubuntu.com:443
 sbx policy allow network deb.debian.org:443
 sbx policy allow network archive.ubuntu.com:443
@@ -32,3 +36,6 @@ sbx policy allow network play.googleapis.com:443
 # Allow OpenAI for codex Pro subscription
 sbx policy allow network chatgpt.com:443
 sbx policy allow network api.openai.com:443
+
+# For Exa mcp
+sbx policy allow network mcp.exa.ai:443

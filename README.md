@@ -220,6 +220,7 @@ pytest --cov=. tests/ > coverage.txt
   - You can pinpoint functions with a high complexity score and ask a coding agent to refactor these to reduce the Cyclomatic Complexity.
 - `radon cc ./ -a -s`
 - Add a minimum score by appending the class: `radon cc ./ -a -s -n C -e "tests/*,*/tests/*,test/*,*/test/*"`
+
 ```shell
 A = 1–5
 B = 6–10
@@ -233,3 +234,13 @@ F = 41+
 
 - Uses pydeps package
 - `pydeps main.py --show-dot --noshow --max-module-depth 3 -x os re sys numpy | sed 's/ \[.*\]//g' > readonly/dependency_graph.dot`
+
+## MCP Tooling
+
+### Exa (web search MCP)
+
+See [Setup for different CLIs](https://github.com/exa-labs/exa-mcp-server)
+
+- For codex: `codex mcp add exa --url https://mcp.exa.ai/mcp`
+- Gemini, exists in `.gemini/settings.json`
+- Opencode lists it in `opencode.json` config

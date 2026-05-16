@@ -34,7 +34,7 @@
 #    sudo apt upgrade -y
 #
 # 4. Inside the sandbox, install Gemini CLI:
-#    npm install -g @google/gemini-cli
+#    npm install -g @google/gemini-cli --no-scripts allow-git=none
 #
 # 5. Start Gemini CLI:
 #    gemini
@@ -72,22 +72,32 @@ chmod +x ./scripts/start_docker.sh
 code .
 
 # Required policies for Gemini OAuth + Gemini CLI
-sbx policy allow network gemini-api-docs-mcp.dev
-sbx policy allow network ai.google.dev
-sbx policy allow network registry.npmjs.org
-sbx policy allow network generativelanguage.googleapis.com
-sbx policy allow network oauth2.googleapis.com
-sbx policy allow network accounts.google.com
-sbx policy allow network play.googleapis.com
-sbx policy allow network cloudcode-pa.googleapis.com
+chmod +x ./scripts/allow_sbx_policies.sh
+./scripts/allow_sbx_policies.sh
+
+# sync_gemini_settings() {
+#   if [[ -f ".gemini/settings.json" ]]; then
+#     echo "Syncing project .gemini/settings.json to sandbox home..."
+
+#     sbx exec -d "$SANDBOX_NAME" bash -lc '
+#       set -euo pipefail
+#       mkdir -p "$HOME/.gemini"
+#       cp .gemini/settings.json "$HOME/.gemini/settings.json"
+#     ' || true
+#   else
+#     echo "No project .gemini/settings.json found; skipping settings sync."
+#   fi
+# }
 
 # Reuse existing sandbox if it already exists
 if sbx ls | grep -q "$SANDBOX_NAME"; then
   echo "✅ Existing sandbox found: $SANDBOX_NAME"
   echo "Reconnecting..."
+  # sync_gemini_settings
   echo "REMINDER: Once inside the sandbox, run the command 'gemini' to start the cli."
   sbx run "$SANDBOX_NAME"
 else
   echo "🆕 Creating new sandbox: $SANDBOX_NAME"
-  sbx create shell . --name "$SANDBOX_NAME"
+  sbx run shell . --name "$SANDBOX_NAME"
+  # sync_gemini_settings
 fi
