@@ -107,12 +107,11 @@ Cellular automata exhibit sensitivity to initial conditions — small difference
 
 No RNG. No seed. No arbitrary width. The number of generations (K) controls how far the pattern diverges from the input's original structure — this is the "intensity" knob.
 
-**Proposed API (3 required, 0 optional):**
+**Proposed API (4 required, 0 optional):**
 - `dimension` (required): `"frequency"` | `"duration"` | `"amplitude"`
 - `rule` (required): Wolfram rule number (0-255), e.g. 30, 90, 110
 - `max_deviation` (required): how strongly the CA pattern modulates the tones (e.g. 0.3 = up to 30% deviation)
-
-Internally, a fixed number of generations is used to evolve the state. This could be exposed later if needed, but for now a sensible default (e.g., 5-8 generations) keeps the API minimal.
+- `generations` (required): how many generations to evolve the CA state (e.g. 5 = evolve 5 steps from the initial state derived from the input tones)
 
 **Edge cases:**
 - All tones have the same value in the target dimension → fallback to alternating `[1,0,1,0...]` to give the rule a non-trivial starting pattern
@@ -221,7 +220,7 @@ Both parameters are musically meaningful and well-named. `strength` controls how
 | Transform | Before | After |
 |-----------|--------|-------|
 | `weierstrass` | 6 params | 2 params |
-| `cellular_automata` | 5 params | 3 params |
+| `cellular_automata` | 5 params | 4 params |
 | `terraced_drift` | 5 params | 2 params |
 | `random_drop` | 4 params | 3 params |
 | `ridged_drop` | 4 params | REMOVE |
@@ -327,6 +326,7 @@ Scope:
        dimension: ToneDimension | str,
        rule: int,
        max_deviation: float,
+       generations: int,
    ) -> ToneSequence:
        if not tones:
            return []
@@ -337,7 +337,7 @@ Scope:
        resolved_dimension = parse_dimension(dimension)
 
        initial_state = _derive_initial_state(tones, resolved_dimension)
-       final_state = _evolve_state(initial_state, rule, generations=5)
+       final_state = _evolve_state(initial_state, rule, generations=generations)
 
        profile = [-1.0 if cell == 0 else 1.0 for cell in final_state]
 
@@ -372,11 +372,15 @@ Scope:
                required=True,
                schema=FloatParam(),
            ),
+           "generations": TransformParamFieldSpec(
+               required=True,
+               schema=IntegerParam(),
+           ),
        }
    )
    ```
 2. Remove `seed` and `width` fields.
-3. Make `rule` required (it was previously optional).
+3. Make `rule` and `generations` required (both were previously optional).
 
 Verification: `pytest tests/test_json_parser.py` (may still fail due to test updates needed).
 
@@ -385,7 +389,7 @@ Verification: `pytest tests/test_json_parser.py` (may still fail due to test upd
 #### 2.3 Update cellular automata tests and demos
 
 Scope:
-1. In `tests/test_complexity_transforms.py`, rewrite all cellular automata test calls to use the new 3-param signature: `dimension`, `rule`, `max_deviation`. Remove `seed` and `width` from all calls.
+1. In `tests/test_complexity_transforms.py`, rewrite all cellular automata test calls to use the new 4-param signature: `dimension`, `rule`, `max_deviation`, `generations`. Remove `seed` and `width` from all calls.
 2. Remove or rewrite the "repeatability" test (it previously tested that same seed = same output; now same tones + same rule = same output).
 3. Add new tests:
    - Same input tones + same rule → identical output (deterministic).

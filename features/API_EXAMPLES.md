@@ -61,27 +61,32 @@ transform.cellular_automata(
 )
 ```
 
-### AFTER (3 parameters)
+### AFTER (4 parameters)
 ```python
 # The rule IS the transform. Initial state derived from the input tones themselves.
 transform.cellular_automata(
     dimension="duration",
     rule=30,
-    max_deviation=0.3
+    max_deviation=0.3,
+    generations=5
 )
 
 # Classic Wolfram rules:
-transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.2)   # Chaotic
-transform.cellular_automata(dimension="frequency", rule=110, max_deviation=0.2)  # Complex/ordered
-transform.cellular_automata(dimension="frequency", rule=90, max_deviation=0.2)   # Fractal/self-similar
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.2, generations=5)   # Chaotic
+transform.cellular_automata(dimension="frequency", rule=110, max_deviation=0.2, generations=5)  # Complex/ordered
+transform.cellular_automata(dimension="frequency", rule=90, max_deviation=0.2, generations=5)   # Fractal/self-similar
+
+# generations controls how far the pattern diverges from the input's original structure:
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.3, generations=1)   # Minimal evolution
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.3, generations=10)  # Deep evolution
 
 # Works for all dimensions:
-transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3)
-transform.cellular_automata(dimension="amplitude", rule=110, max_deviation=0.4)
+transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3, generations=5)
+transform.cellular_automata(dimension="amplitude", rule=110, max_deviation=0.4, generations=8)
 
 # max_deviation controls how strongly the CA pattern modulates the tones:
-transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.1)  # Subtle effect
-transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.5)  # Dramatic effect
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.1, generations=5)  # Subtle effect
+transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.5, generations=5)  # Dramatic effect
 ```
 
 **How it works internally:**
@@ -94,7 +99,7 @@ transform.cellular_automata(dimension="frequency", rule=30, max_deviation=0.5)  
 
 The music's own structure is the initial condition. The rule deterministically reshapes it. This is true to the mathematical concept: cellular automata exhibit sensitivity to initial conditions (SDIC) — the input pattern matters, not a random starting point.
 
-**Note:** `seed` and `width` are removed entirely — both from public API and internal implementation. There is no randomness. The initial state comes from the input tones, and the width is simply the number of tones.
+**Note:** `seed` and `width` are removed entirely — both from public API and internal implementation. There is no randomness. The initial state comes from the input tones, the width is simply the number of tones, and `generations` controls how far the state evolves.
 
 ---
 
@@ -271,7 +276,7 @@ transform.accelerando(strength=0.7, jaggedness=0.2)
 | Transform | Before | After | Reduction |
 |-----------|--------|-------|-----------|
 | `weierstrass` | 6 params | 2 params | 67% reduction |
-| `cellular_automata` | 5 params | 3 params | 40% reduction |
+| `cellular_automata` | 5 params | 4 params | 20% reduction |
 | `terraced_drift` | 5 params | 2 params | 60% reduction |
 | `random_drop` | 4 params | 3 params | 25% reduction |
 | `ridged_drop` | 4 params | REMOVE | — |
@@ -287,7 +292,7 @@ transform.accelerando(strength=0.7, jaggedness=0.2)
 ```python
 # Users describe what they want musically
 transform.weierstrass(dimension="frequency", intensity="low")
-transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3)
+transform.cellular_automata(dimension="duration", rule=30, max_deviation=0.3, generations=5)
 transform.random_drop(dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40)
 ```
 

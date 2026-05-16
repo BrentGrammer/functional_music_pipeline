@@ -604,6 +604,52 @@ class TestScaleTransformParsing:
             with pytest.raises(ValueError):
                 parse_composition(composition_doc)
 
+    def test_cellular_automata_with_missing_required_fields_raises_error(self):
+        parsed_motifs = {"seed": [Tone(440)]}
+        descriptor = TRANSFORMS["cellular_automata"]
+        valid_params = {
+            "dimension": "frequency",
+            "rule": 30,
+            "generations": 5,
+            "max_deviation": 0.3,
+        }
+
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            phrase_config = {
+                "motifs": ["seed"],
+                "transforms": [{"name": "cellular_automata", "params": incomplete_params}],
+            }
+
+            with pytest.raises(ValueError) as exc_info:
+                parse_phrase(phrase_config, parsed_motifs)
+            assert str(exc_info.value)
+
+    def test_score_cellular_automata_with_missing_required_fields_raises_error(self):
+        descriptor = TRANSFORMS["score_cellular_automata"]
+        valid_params = {
+            "dimension": "frequency",
+            "rule": 30,
+            "generations": 5,
+            "max_deviation": 0.3,
+        }
+
+        for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
+            incomplete_params = valid_params.copy()
+            incomplete_params.pop(required_field)
+            composition_doc = {
+                "motifs": {"seed": ["440"]},
+                "composition": {
+                    "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                    "score_transforms": [{"name": "score_cellular_automata", "params": incomplete_params}],
+                },
+            }
+
+            with pytest.raises(ValueError) as exc_info:
+                parse_composition(composition_doc)
+            assert str(exc_info.value)
+
     def test_add_pedal_tone_with_missing_required_fields_raises_error(self):
         descriptor = TRANSFORMS["add_pedal_tone"]
         valid_params = {"frequency": 130.81}
