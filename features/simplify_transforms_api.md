@@ -634,7 +634,9 @@ Verification: Manual review.
 Scope:
 1. Run the full test suite: `pytest tests/`
 2. Fix any remaining failures.
-3. Run all demo compositions to verify they produce output:
+3. Verify score-level transform variants still work: `score_cellular_automata`, `score_terraced_drift`, `score_random_drop`, and `score_weierstrass` should all accept the new param names and produce valid output.
+4. Check for dead imports or unused code left behind from the refactor (e.g., `apply_profile` import in cellular_automata, any ridged_drop references).
+5. Run all demo compositions to verify they produce output:
    ```shell
    for file in compositions/*_demo.json; do name="$(basename "$file" .json)"; python main.py --composition-file "$file" --output-name "$name"; done
    ```
