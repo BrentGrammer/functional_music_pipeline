@@ -30,9 +30,6 @@ def build_tempo_change_params_spec() -> TransformParamsSpec:
             "jaggedness": TransformParamFieldSpec(
                 schema=intensity_schema,
             ),
-            "seed": TransformParamFieldSpec(
-                schema=IntegerParam(),
-            ),
         }
     )
 

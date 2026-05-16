@@ -12,6 +12,8 @@ from transforms.tempo._common import (
 
 RITARDANDO_PARAMS_SPEC = build_tempo_change_params_spec()
 
+_INTERNAL_RANDOM = random.Random(42)
+
 
 def _resolve_ritardando_final_duration_multiplier(strength: float) -> float:
     """
@@ -31,7 +33,6 @@ def ritardando_transform(
     tones: ToneSequence,
     strength: str | float = "medium",
     jaggedness: str | float = "none",
-    seed: int | None = None,
 ) -> ToneSequence:
     """
     Apply a ritardando effect that gradually lengthens durations across the phrase.
@@ -45,11 +46,9 @@ def ritardando_transform(
     resolved_jaggedness = resolve_jaggedness(jaggedness)
     resolved_strength = resolve_strength(strength)
 
-    random_source = random.Random(seed) if seed is not None else None
-
     final_duration_multiplier = _resolve_ritardando_final_duration_multiplier(resolved_strength)
     trend_multipliers = compute_tempo_change_factors(len(tones), 1.0, final_duration_multiplier)
-    jaggedness_weights = compute_jaggedness_weights(len(tones), resolved_jaggedness, random_source)
+    jaggedness_weights = compute_jaggedness_weights(len(tones), resolved_jaggedness, _INTERNAL_RANDOM)
 
     combined_multipliers = [
         trend * weight for trend, weight in zip(trend_multipliers, jaggedness_weights)
