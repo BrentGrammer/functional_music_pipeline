@@ -4,13 +4,6 @@
 
 set -euo pipefail
 
-# For hosting Ollama models locally:
-sbx policy allow network localhost:11434
-sbx policy allow network host.docker.internal:11434
-
-# Allow Docker Hub access:
-sbx policy allow download.docker.com:443
-
 # Allow ubuntu security updates for patches and package upgrades
 sbx policy allow network debian.org:443
 sbx policy allow network ports.ubuntu.com:443
