@@ -32,9 +32,8 @@
                 "name": "random_drop",
                 "params": {
                   "dimension": "amplitude",
-                  "max_deviation": 0.95,
-                  "drop_rate": 0.8,
-                  "seed": 42
+                  "max_drop_pct": 95,
+                  "drop_frequency_pct": 80
                 }
               }
             ]
@@ -47,9 +46,8 @@
                 "name": "random_drop",
                 "params": {
                   "dimension": "frequency",
-                  "max_deviation": 0.5,
-                  "drop_rate": 0.6,
-                  "seed": 99
+                  "max_drop_pct": 50,
+                  "drop_frequency_pct": 60
                 }
               }
             ]
@@ -62,9 +60,8 @@
                 "name": "random_drop",
                 "params": {
                   "dimension": "duration",
-                  "max_deviation": 0.8,
-                  "drop_rate": 0.7,
-                  "seed": 77
+                  "max_drop_pct": 80,
+                  "drop_frequency_pct": 70
                 }
               }
             ]

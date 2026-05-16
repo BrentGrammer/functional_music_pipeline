@@ -39,8 +39,7 @@
                 "name": "terraced_drift",
                 "params": {
                   "dimension": "duration",
-                  "max_deviation": 0.5,
-                  "seed": 42
+                  "max_step_change_pct": 50
                 }
               }
             ]
@@ -74,13 +73,14 @@
                "c_major_arpeggio"
              ],
              "transforms": [
-               {
-                 "name": "random_drop",
-                 "params": {
-                   "dimension": "amplitude",
-                   "max_drop_pct": 90
-                 }
-               },
+                {
+                  "name": "random_drop",
+                  "params": {
+                    "dimension": "amplitude",
+                    "max_drop_pct": 90,
+                    "drop_frequency_pct": 50
+                  }
+                },
                {
                  "name": "random_drop",
                  "params": {

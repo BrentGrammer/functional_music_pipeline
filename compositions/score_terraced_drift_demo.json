@@ -26,10 +26,7 @@
         "name": "score_terraced_drift",
         "params": {
           "dimension": "frequency",
-          "max_deviation": 0.1,
-          "seed": 42,
-          "step_size": 0.5,
-          "quantize_resolution": 0.25
+          "max_step_change_pct": 25
         }
       }
     ]
