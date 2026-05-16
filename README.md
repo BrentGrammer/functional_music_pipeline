@@ -259,3 +259,25 @@ uv run serena --help
 # Afterwords remove git allow policy from sbx:
 sbx policy rm <gitpolicies>
 ```
+
+- Or to run directly from git without manually installing:
+  ```json
+  // .gemini/settings.json
+  "serena": {
+    "command": "uv",
+    "args": [
+      "tool",
+      "run",
+      "--from",
+      "git+https://github.com/oraios/serena",
+      "serena",
+      "start-mcp-server",
+      "--context",
+      "ide",
+      "--project",
+      "."
+    ],
+    "trust": true,
+    "timeout": 120000
+  }
+  ```
