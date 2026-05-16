@@ -247,20 +247,7 @@ See [Setup for different CLIs](https://github.com/exa-labs/exa-mcp-server)
 
 #### Serena
 
-Install locally and then remove network policies. Run it directly with uv.
-
-```shell
-# Install Serena locally from git
-cd ~
-git clone https://github.com/oraios/serena.git
-cd serena
-uv run serena --help
-
-# Afterwords remove git allow policy from sbx:
-sbx policy rm <gitpolicies>
-```
-
-- Or to run directly from git without manually installing:
+- run directly from git without manually installing:
   ```json
   // .gemini/settings.json
   "serena": {

@@ -79,9 +79,17 @@ chmod +x ./scripts/allow_sbx_policies.sh
 if sbx ls | grep "$SANDBOX_NAME"; then
   echo "✅ Existing sandbox found: $SANDBOX_NAME"
   echo "Reconnecting..."
+
   echo "REMINDER: Once inside the sandbox, run the command 'gemini' to start the cli."
   sbx run "$SANDBOX_NAME"
 else
   echo "🆕 Creating new sandbox: $SANDBOX_NAME"
+  
   sbx create shell . --name "$SANDBOX_NAME"
+
+  echo "In the sandbox: sudo apt update && sudo apt upgrade -y && npm install -g @google/gemini-cli --no-scripts --allow-git=none"
+  echo "Then run:"
+  echo "  gemini"
+
+  sbx run "$SANDBOX_NAME"
 fi

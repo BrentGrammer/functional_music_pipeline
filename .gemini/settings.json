@@ -6,9 +6,10 @@
     "serena": {
       "command": "uv",
       "args": [
+        "tool",
         "run",
-        "--directory",
-        "/home/sandbox/serena",
+        "--from",
+        "git+https://github.com/oraios/serena",
         "serena",
         "start-mcp-server",
         "--context",
