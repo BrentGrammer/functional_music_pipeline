@@ -89,5 +89,5 @@ if sbx ls | grep -q "$SANDBOX_NAME"; then
   sbx run "$SANDBOX_NAME"
 else
   echo "🆕 Creating new sandbox: $SANDBOX_NAME"
-  sbx run shell . --name "$SANDBOX_NAME"
+  sbx create shell . --name "$SANDBOX_NAME"
 fi
