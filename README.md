@@ -170,7 +170,7 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   ```
 - **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension` and `max_step_change_pct` (maximum percentage each tone can change from the previous, 1–100).
 
-### Development
+## Development
 
 All developer commands should be run from inside the running Docker container.
 
@@ -235,9 +235,9 @@ F = 41+
 - Uses pydeps package
 - `pydeps main.py --show-dot --noshow --max-module-depth 3 -x os re sys numpy | sed 's/ \[.*\]//g' > readonly/dependency_graph.dot`
 
-## MCP Tooling
+### MCP Tooling
 
-### Exa (web search MCP)
+#### Exa (web search MCP)
 
 See [Setup for different CLIs](https://github.com/exa-labs/exa-mcp-server)
 
