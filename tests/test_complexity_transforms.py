@@ -1,6 +1,7 @@
 import pytest
 
 from score_model.tone import Tone
+from transforms.complexity.cellular_automata import apply_cellular_automata_transform
 from transforms.complexity.weierstrass import apply_weierstrass_transform
 
 
@@ -41,8 +42,65 @@ def test_weierstrass_returns_empty_for_empty_input():
     assert apply_weierstrass_transform([], dimension="frequency", intensity="medium") == []
 
 
+def test_cellular_automata_is_deterministic():
+    tones = _build_reference_tones()
+
+    result_a = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+    result_b = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+
+    assert _snapshot(result_a) == _snapshot(result_b)
 
 
+def test_cellular_automata_different_input_tones_produce_different_output():
+    tones_a = _build_reference_tones()
+    tones_b = [
+        Tone(frequency=261.63, duration=0.5, amplitude=0.3),
+        Tone(frequency=293.66, duration=0.5, amplitude=0.5),
+        Tone(frequency=329.63, duration=0.5, amplitude=0.7),
+        Tone(frequency=349.23, duration=0.5, amplitude=0.4),
+        Tone(frequency=392.00, duration=0.5, amplitude=0.6),
+    ]
+
+    result_a = apply_cellular_automata_transform(tones_a, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+    result_b = apply_cellular_automata_transform(tones_b, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+
+    assert _snapshot(result_a) != _snapshot(result_b)
+
+
+def test_cellular_automata_different_rules_produce_different_output():
+    tones = _build_reference_tones()
+
+    result_rule30 = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+    result_rule110 = apply_cellular_automata_transform(tones, dimension="frequency", rule=110, generations=5, max_deviation=0.3)
+
+    assert _snapshot(result_rule30) != _snapshot(result_rule110)
+
+
+def test_cellular_automata_returns_empty_for_empty_input():
+    assert apply_cellular_automata_transform([], dimension="frequency", rule=30, generations=5, max_deviation=0.3) == []
+
+
+def test_cellular_automata_returns_single_tone_unchanged():
+    tone = Tone(frequency=440.0, duration=1.0, amplitude=0.5)
+
+    result = apply_cellular_automata_transform([tone], dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+
+    assert len(result) == 1
+    assert result[0].frequency == pytest.approx(tone.frequency)
+    assert result[0].duration == pytest.approx(tone.duration)
+    assert result[0].amplitude == pytest.approx(tone.amplitude)
+
+
+def test_cellular_automata_uniform_input_uses_alternating_fallback():
+    # All tones have the same frequency — _derive_initial_state falls back to
+    # alternating [1, 0, 1, 0, ...] rather than a flat row. The result should
+    # still be a valid, non-trivial output.
+    tones = [Tone(frequency=440.0, duration=1.0, amplitude=0.5) for _ in range(6)]
+
+    result = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+
+    assert len(result) == len(tones)
+    assert all(tone.frequency > 0 for tone in result)
 
 
 

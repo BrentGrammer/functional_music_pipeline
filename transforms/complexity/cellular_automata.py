@@ -16,13 +16,18 @@ CELLULAR_AUTOMATA_PARAMS_SPEC = TransformParamsSpec(
             required=True,
             schema=EnumParam(allowed_values=tuple(ToneDimension)),
         ),
+        "rule": TransformParamFieldSpec(
+            required=True,
+            schema=IntegerParam(),
+        ),
+        "generations": TransformParamFieldSpec(
+            required=True,
+            schema=IntegerParam(),
+        ),
         "max_deviation": TransformParamFieldSpec(
             required=True,
             schema=FloatParam(),
         ),
-        "rule": TransformParamFieldSpec(schema=IntegerParam()),
-        "seed": TransformParamFieldSpec(schema=IntegerParam()),
-        "width": TransformParamFieldSpec(schema=IntegerParam()),
     }
 )
 

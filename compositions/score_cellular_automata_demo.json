@@ -28,7 +28,7 @@
                   "dimension": "amplitude",
                   "max_deviation": 0.9,
                   "rule": 30,
-                  "seed": 42
+                  "generations": 5
                 }
               }
             ]
@@ -43,7 +43,7 @@
                   "dimension": "amplitude",
                   "max_deviation": 0.9,
                   "rule": 110,
-                  "seed": 42
+                  "generations": 5
                 }
               }
             ]
@@ -58,7 +58,7 @@
                   "dimension": "frequency",
                   "max_deviation": 0.3,
                   "rule": 30,
-                  "seed": 42
+                  "generations": 5
                 }
               }
             ]

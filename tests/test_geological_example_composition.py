@@ -63,6 +63,7 @@ def _build_geological_example_composition() -> dict:
                                     "params": {
                                         "dimension": "amplitude",
                                         "rule": 30,
+                                        "generations": 5,
                                         "max_deviation": 0.4,
                                     },
                                 }

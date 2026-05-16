@@ -56,11 +56,12 @@
              "transforms": [
                {
                  "name": "cellular_automata",
-                 "params": {
-                   "dimension": "amplitude",
-                   "rule": 30,
-                   "max_deviation": 0.4
-                 }
+                  "params": {
+                    "dimension": "amplitude",
+                    "rule": 30,
+                    "generations": 5,
+                    "max_deviation": 0.4
+                  }
                }
              ]
            }
