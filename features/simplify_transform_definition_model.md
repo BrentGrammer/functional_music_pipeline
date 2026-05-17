@@ -308,6 +308,117 @@ Done signal: `rg "TransformDefinition\[|PhraseScope|ScoreScope|ScopeType"` retur
 - Update any related feature docs in `features/` that reference the old model.
 Done signal: all of the above clean.
 
+## Estimated Final Shape of `composition/parser.py`
+
+This is a sketch, not a specification. It is the planning team's best guess at the shape `composition/parser.py` will take after the full refactor lands. The implementing model should not treat it as a contract — exact function names, signatures, and decomposition may differ as long as the parser ends up with the responsibilities and pipeline described in the Parser Shape section above.
+
+```python
+# composition/parser.py
+
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
+from score_model.score import Score
+from score_model.tone import Tone
+from score_model.voice import Voice
+from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
+
+
+# --- Tone parsing ---
+
+def _parse_tone_string(tone_string: str) -> Tone:
+    # unchanged from today
+    ...
+
+
+# --- JSON deserialization into the data model ---
+
+def _parse_motif(motif_name: object, tone_strings: object) -> Motif:
+    # Validates motif_name is a string and tone_strings is a list of tone strings,
+    # parses each tone string, returns Motif(name=motif_name, tones=[...]).
+    ...
+
+
+def _parse_phrase(phrase_config: object, declared_motifs: list[Motif]) -> Phrase:
+    # Validates phrase_config, resolves each name in phrase_config["motifs"] by
+    # finding the matching Motif in declared_motifs (by motif.name),
+    # returns Phrase(motifs=[Motif(...), ...]).
+    # Does NOT apply any phrase transforms.
+    ...
+
+
+def _parse_voice(voice_config: object, declared_motifs: list[Motif]) -> Voice:
+    # Builds list[Phrase] from voice_config["phrases"]; returns Voice(phrases=[...]).
+    ...
+
+
+def _validate_composition_structure(composition_document: object):
+    # Returns (motif_definitions, voice_configs, score_transform_specs).
+    ...
+
+
+# --- The whole thing ---
+
+def parse_composition(composition_document: object) -> Score:
+    motif_definitions, voice_configs, score_transform_specs = (
+        _validate_composition_structure(composition_document)
+    )
+    declared_motifs = [
+        _parse_motif(name, tone_strings)
+        for name, tone_strings in motif_definitions.items()
+    ]
+
+    # Build the Score with all phrases populated; no transforms applied yet.
+    score = Score(voices=[_parse_voice(vc, declared_motifs) for vc in voice_configs])
+
+    # Phrase transforms, in JSON order. Apply after the Score is built.
+    for voice_index, voice_config in enumerate(voice_configs):
+        for phrase_index, phrase_config in enumerate(voice_config["phrases"]):
+            for spec in phrase_config.get("transforms", []):
+                name = spec["name"]
+                params = spec.get("params", {})
+                definition = PHRASE_TRANSFORMS[name]
+                definition.validate_params(params)
+                score = definition.apply(score, voice_index, phrase_index, params)
+
+    # Score transforms, in JSON order.
+    for spec in score_transform_specs:
+        # Validate spec shape inline and pull out name + params.
+        ...  # (shape check: spec is dict, "name" is non-empty str, "params" is dict)
+        name = spec["name"]
+        params = spec.get("params", {})
+        definition = SCORE_TRANSFORMS[name]
+        definition.validate_params(params)
+        score = definition.apply(score, params)
+
+    return score
+```
+
+### What's gone vs. today
+
+- `apply_to_each_voice` (moved into the `each_voice` registry helper).
+- `_apply_phrase_transform_spec`, `_apply_score_transform_spec`, `_apply_phrase_transform_specs` — the parser no longer wraps per-spec application in dedicated helpers; it inlines the three-line loop.
+- All scope branching (`if scope is PhraseScope.OWN_PHRASE`, etc.) — moved inside registry-helper closures.
+- `parsed_motifs` threading — `stretto` reads motifs off the `Score` by traversal.
+- `reference_tones` computation in the parser — the `phrase_relative` helper computes it from the current `Score` at apply time.
+- `combined_tones` / `previous_voice_tones` plumbing through `parse_voice` — voice assembly no longer needs cross-voice context.
+
+### What stays
+
+- JSON shape validation.
+- Tone-string parsing (`_parse_tone_string`).
+- Declared motifs list (parser-internal `list[Motif]`, used purely for name resolution during phrase construction — never passed to a transform). Built inline in `parse_composition` via a list comprehension over `_parse_motif`, mirroring how voices are built inline via a list comprehension over `_parse_voice`. Phrase construction looks up motifs by name via linear scan on `motif.name` (the count is small; no dict needed).
+- Transform spec shape validation (the `{"name": str, "params": dict}` check). Inlined at each call site rather than extracted to a helper — the score-transform loop is the only top-level call site, and `_collect_phrase_transform_specs` does its own inline validation while building tuples.
+
+### Size estimate
+
+Today: ~263 lines. After the refactor: roughly 120–140 lines, give or take. The shrinkage comes from removing transform-execution knowledge, not from clever compression.
+
+### Note: two passes over voice/phrase JSON
+
+`_parse_voice` / `_parse_phrase` and the phrase-transform loop in `parse_composition` both walk the same voice/phrase JSON structure. There is a temptation to fuse them into a single pass that builds phrases *and* applies transforms together. The two-pass version is clearer — phrase construction is a pure JSON-to-Score function, and transform application is a separate operation that needs the fully-built Score. Two passes over a small JSON tree is negligible. Keep them separate.
+
 ## Open Items
 
 None at the planning level.
