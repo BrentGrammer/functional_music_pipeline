@@ -353,28 +353,31 @@ def _parse_voice(voice_config: object, declared_motifs: list[Motif]) -> Voice:
     ...
 
 
-def _validate_composition_structure(composition_document: object):
-    # Returns (motif_definitions, voice_configs, score_transform_specs).
+def _validate_composition_structure(composition_document: object) -> None:
+    # Raises if the top-level JSON shape is invalid. Returns nothing.
+    # Each _parse_* function does its own deeper validation.
     ...
 
 
 # --- The whole thing ---
 
 def parse_composition(composition_document: object) -> Score:
-    motif_definitions, voice_configs, score_transform_specs = (
-        _validate_composition_structure(composition_document)
-    )
-    declared_motifs = [
-        _parse_motif(name, tone_strings)
-        for name, tone_strings in motif_definitions.items()
+    _validate_composition_structure(composition_document)
+
+    motifs = [
+        _parse_motif(name, tones)
+        for name, tones in composition_document["motifs"].items()
     ]
+    composition_config = composition_document["composition"]
+    voices = composition_config.get("voices", [])
+    score_transforms = composition_config.get("score_transforms", [])
 
     # Build the Score with all phrases populated; no transforms applied yet.
-    score = Score(voices=[_parse_voice(vc, declared_motifs) for vc in voice_configs])
+    score = Score(voices=[_parse_voice(voice, motifs) for voice in voices])
 
     # Phrase transforms, in JSON order. Apply after the Score is built.
-    for voice_index, voice_config in enumerate(voice_configs):
-        for phrase_index, phrase_config in enumerate(voice_config["phrases"]):
+    for voice_index, voice in enumerate(voices):
+        for phrase_index, phrase_config in enumerate(voice["phrases"]):
             for spec in phrase_config.get("transforms", []):
                 name = spec["name"]
                 params = spec.get("params", {})
@@ -383,7 +386,7 @@ def parse_composition(composition_document: object) -> Score:
                 score = definition.apply(score, voice_index, phrase_index, params)
 
     # Score transforms, in JSON order.
-    for spec in score_transform_specs:
+    for spec in score_transforms:
         # Validate spec shape inline and pull out name + params.
         ...  # (shape check: spec is dict, "name" is non-empty str, "params" is dict)
         name = spec["name"]
