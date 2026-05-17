@@ -429,3 +429,108 @@ None at the planning level.
 ## Note on Rules and Defaults
 
 This document deliberately avoids hard-and-fast rules. The choices recorded here are defaults and design preferences, not laws. If during implementation a real reason emerges to deviate — a helper that genuinely simplifies the design, a structural change that pays off, a consumer that needs to operate differently — that is allowed and expected. The point of the plan is to capture the current best understanding of the direction, not to constrain future judgment.
+
+## Open Question for Second Opinion: How Should Phrase Transforms Receive Their Location?
+
+This is an unresolved design question. The user is not satisfied with the proposed answers and would like a second opinion before settling it.
+
+### The problem
+
+Score transforms operate on the whole `Score`. Their apply signature is naturally:
+
+```python
+apply(score, params) -> Score
+```
+
+Phrase transforms operate on one specific phrase inside the `Score`. They need to know *which* phrase — i.e. `(voice_index, phrase_index)`. So a naive apply signature is:
+
+```python
+apply(score, voice_index, phrase_index, params) -> Score
+```
+
+This is asymmetric with the score-transform shape and the user flagged the four-argument call site as a smell.
+
+### Goal
+
+The parser's two transform-application loops should look as similar as possible. Ideally the inner lines are identical:
+
+```python
+definition.validate_params(params)
+score = definition.apply(score, params)
+```
+
+### Three options considered so far
+
+**Option A — accept the asymmetry.**
+Phrase definitions have a four-argument `apply(score, voice_index, phrase_index, params)`. Score definitions have a two-argument `apply(score, params)`. The parser's two loops differ at the inner apply line. Simple, no extra types, but visibly asymmetric.
+
+**Option B — add a `.bind(voice_index, phrase_index)` method to `PhraseTransformDefinition`** that returns a second class (`BoundPhraseTransform`) whose apply matches the score-transform shape. The parser would do:
+
+```python
+definition = PHRASE_TRANSFORMS[name].bind(voice_index, phrase_index)
+definition.validate_params(params)
+score = definition.apply(score, params)
+```
+
+After `.bind(...)`, both loops have identical inner lines. Cost: two classes, a method that converts between them, a closure inside the method. The user described this as "disgusting" and explicitly does not want a `.bind` step visible at the call site.
+
+**Option C — phrase registry entries are factories.**
+`SCORE_TRANSFORMS` is still `dict[str, ScoreTransformDefinition]`. `PHRASE_TRANSFORMS` becomes `dict[str, Callable[[int, int], PhraseTransformDefinition]]` — each entry is a function that takes location and returns a definition. The location-binding lives entirely inside the registry-authoring helpers (`own_phrase`, `phrase_relative`).
+
+Parser:
+
+```python
+# Score transforms:
+definition = SCORE_TRANSFORMS[spec["name"]]
+definition.validate_params(spec["params"])
+score = definition.apply(score, spec["params"])
+
+# Phrase transforms:
+definition = PHRASE_TRANSFORMS[spec["name"]](voice_index, phrase_index)
+definition.validate_params(spec["params"])
+score = definition.apply(score, spec["params"])
+```
+
+The one visible difference between loops is the lookup line: `SCORE_TRANSFORMS[name]` vs. `PHRASE_TRANSFORMS[name](voice_index, phrase_index)`. After that, the next two lines are identical. The parser never sees `bind`, never passes location to `apply`.
+
+Cost: the two registries have different value types (one is a definition, the other is a callable returning a definition). The asymmetry is moved from the apply line up to the lookup line.
+
+The user finds this hard to follow and would like a second opinion on whether it's actually clean or just a different smell.
+
+### Sketch of `own_phrase` under Option C
+
+```python
+def own_phrase(raw_func):
+    def at_location(voice_index, phrase_index):
+        def apply(score, params):
+            phrase = score.voices[voice_index].phrases[phrase_index]
+            tones = [t for motif in phrase.motifs for t in motif.tones]
+            result = raw_func(tones, **params)
+            new_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=result)])
+            # return a new Score with that phrase replaced at (voice_index, phrase_index)
+            return ...
+        return PhraseTransformDefinition(
+            name=raw_func.__name__,
+            params_spec=...,
+            apply=apply,
+        )
+    return at_location
+```
+
+`each_voice`, `score_aware`, `target_motifs` for score transforms return a `ScoreTransformDefinition` directly (no location to bind).
+
+### What the user wants
+
+A clean, hierarchy-respecting model where the asymmetry between phrase and score transforms is hidden inside the transform definition layer, not exposed at the parser call site, *and* without introducing extra classes, conversion methods, or visible "binding" steps. The user's view is that since the data model is now a clean compositional hierarchy (`Tone → Motif → Phrase → Voice → Score`), the way transforms apply to it should be similarly clean and not require this kind of plumbing.
+
+### What is being asked
+
+Is there a fourth option that:
+
+- Keeps phrase and score apply signatures identical at the call site.
+- Does not introduce a `.bind` step or a second wrapper class.
+- Does not make the two registries have different shapes (Option C).
+- Respects the data-model hierarchy.
+
+Or, if no such fourth option exists, which of A / B / C is genuinely the least bad, and why? Concrete code is preferred over abstract discussion.
+
