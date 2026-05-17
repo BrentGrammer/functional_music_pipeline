@@ -20,12 +20,12 @@
 #    sbx secret rm -g google
 #
 # 2. Allow required network policies:
-#    sbx policy allow network registry.npmjs.org
-#    sbx policy allow network generativelanguage.googleapis.com
-#    sbx policy allow network oauth2.googleapis.com
-#    sbx policy allow network accounts.google.com
-#    sbx policy allow network play.googleapis.com
-#    sbx policy allow network cloudcode-pa.googleapis.com
+#    sbx policy allow network -g registry.npmjs.org
+#    sbx policy allow network -g generativelanguage.googleapis.com
+#    sbx policy allow network -g oauth2.googleapis.com
+#    sbx policy allow network -g accounts.google.com
+#    sbx policy allow network -g play.googleapis.com
+#    sbx policy allow network -g cloudcode-pa.googleapis.com
 #
 # 3. CD into the project root folder and start a generic shell sandbox in your project:
 #    sbx run shell . --name <sandbox-name>

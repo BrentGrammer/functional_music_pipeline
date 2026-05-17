@@ -41,7 +41,7 @@ chmod +x ./scripts/start_docker.sh
 #   my_project -> opencode-my-project
 
 # to get model specs for opencode
-sbx policy allow network models.dev:443
+sbx policy allow network -g models.dev:443
 
 configure_privacy_flags() {
   echo "Configuring privacy/telemetry environment inside sandbox..."
