@@ -9,6 +9,7 @@ from transforms.base import (
     ScoreScope,
     ScorePipelineStep,
     ToneSequence,
+    TransformDefinition,
 )
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
@@ -77,7 +78,7 @@ def parse_transform_spec(
 
 
 def _apply_phrase_transform_spec(
-    descriptor,
+    descriptor: TransformDefinition[PhraseScope],
     phrase_tones: list[Tone],
     transform_params: Mapping[str, object],
     reference_tones: list[Tone] | None,

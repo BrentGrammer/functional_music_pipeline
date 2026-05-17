@@ -8,7 +8,6 @@ from transforms.base import (
     BooleanParam,
     EnumParam,
     FloatParam,
-    PhraseScope,
     ScoreScope,
     TransformDefinition,
     StringParam,

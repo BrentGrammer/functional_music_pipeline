@@ -9,7 +9,6 @@ from score_model.tone import Tone
 ToneSequence: TypeAlias = list[Tone]
 ScorePipelineStep: TypeAlias = Callable[[Score], Score]
 TransformParamsValidator: TypeAlias = Callable[[Mapping[str, object]], None]
-ScopeType = TypeVar("ScopeType", bound=StrEnum)
 
 
 class ToneDimension(StrEnum):
@@ -93,6 +92,11 @@ class ScoreScope(StrEnum):
     TARGET_MOTIFS = auto()
 
 
+ScopeType = TypeVar("ScopeType", bound=StrEnum)
+
+# `Generic[ScopeType]` here is typing metadata, not runtime inheritance from `StrEnum`.
+# It lets type checkers enforce that `scope` is a specific enum family
+# (e.g. `PhraseScope`, `ScoreScope`).
 @dataclass(frozen=True)
 class TransformDefinition(Generic[ScopeType]):
     name: str
@@ -140,84 +144,3 @@ class TransformDefinition(Generic[ScopeType]):
 
         if self.params_spec.validator is not None:
             self.params_spec.validator(transform_params)
-
-
-@dataclass(frozen=True)
-class TransformDescriptor:
-    name: str
-    params_spec: TransformParamsSpec = field(default_factory=TransformParamsSpec, kw_only=True)
-
-    def validate_params(self, transform_params: Mapping[str, object]) -> None:
-        field_specs = self.params_spec.fields
-        required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
-
-        unknown_fields = tuple(field_name for field_name in transform_params if field_name not in field_specs)
-        if unknown_fields:
-            unknown_fields_description = ", ".join(f"'{field}'" for field in unknown_fields)
-            raise ValueError(
-                f"The '{self.name}' transform params include unknown fields: {unknown_fields_description}."
-            )
-
-        missing_fields = tuple(field for field in required_fields if field not in transform_params)
-        if missing_fields:
-            missing_fields_description = ", ".join(f"'{field}'" for field in missing_fields)
-            raise ValueError(
-                f"The '{self.name}' transform params must include {missing_fields_description}."
-            )
-
-        for field_name, field_value in transform_params.items():
-            field_spec = field_specs[field_name]
-            
-            schemas = field_spec.schema if isinstance(field_spec.schema, tuple) else (field_spec.schema,)
-            errors = []
-            is_valid = False
-            for schema in schemas:
-                try:
-                    schema.validate(field_value, field_name)
-                    is_valid = True
-                    break
-                except ValueError as e:
-                    errors.append(str(e))
-                    
-            if not is_valid:
-                if len(errors) == 1:
-                    raise ValueError(errors[0])
-                else:
-                    raise ValueError(f"Param '{field_name}' failed validation: " + " OR ".join(errors))
-
-        if self.params_spec.validator is not None:
-            self.params_spec.validator(transform_params)
-
-
-@dataclass(frozen=True)
-class PhraseTransform(TransformDescriptor):
-    transform: Callable[..., ToneSequence]
-
-
-@dataclass(frozen=True)
-class PhraseRelativeTransform(TransformDescriptor):
-    transform: Callable[..., ToneSequence]
-
-
-@dataclass(frozen=True)
-class ScoreAwareTransform(TransformDescriptor):
-    transform: Callable[..., Score]
-
-
-@dataclass(frozen=True)
-class ScoreTargetMotifsTransform(TransformDescriptor):
-    transform: Callable[..., Score]
-
-
-@dataclass(frozen=True)
-class EachVoiceTransform(TransformDescriptor):
-    transform: Callable[..., ToneSequence]
-
-
-PhraseTransformDefinition: TypeAlias = TransformDefinition[PhraseScope]
-ScoreTransformDefinition: TypeAlias = TransformDefinition[ScoreScope]
-
-
-TransformWithCallable: TypeAlias = (
-    PhraseTransform | PhraseRelativeTransform | ScoreAwareTransform | ScoreTargetMotifsTransform | EachVoiceTransform
-)
