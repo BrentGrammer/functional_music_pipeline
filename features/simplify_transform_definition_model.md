@@ -12,17 +12,22 @@ The parser knows too much about transform execution. The type model leaks `Any`.
 
 ## Goal
 
-The parser's transform pipeline reduces to:
+The parser's transform-side responsibility reduces to preserving placement:
+
+- If a transform spec appears inside a phrase's JSON, attach that spec to the parsed `Phrase`.
+- If a transform spec appears in the composition's `score_transforms`, attach that spec to the parsed `Score`.
+
+The parser does not branch on transform execution style, compute `reference_tones`, pass `parsed_motifs`, call `apply_to_each_voice`, or pass phrase coordinates into transform definitions.
+
+After parsing, a transform application pass walks the hierarchy and consumes the attached specs:
 
 ```python
-for definition, params in transform_pipeline:
-    definition.validate_params(params)
-    score = definition.apply(score, params)
+score = parse_json_into_score(composition_document)
+score = apply_phrase_transform_specs(score)
+score = apply_score_transform_specs(score)
 ```
 
-That is the entire transform-side responsibility of `composition/parser.py`. No scope branching, no `reference_tones` plumbing, no `parsed_motifs` argument, no `apply_to_each_voice` helper, no execution-style knowledge.
-
-The parser retains its honest job: JSON deserialization into the data model. Nothing more.
+The parser retains its honest job: JSON deserialization into the data model, including preserving where each transform spec was written. Transform execution belongs outside the parser.
 
 ## Decision: Expand the Data Model to Match the JSON Hierarchy
 
@@ -39,29 +44,34 @@ Each level wraps a list of the level below. One mental model, one access pattern
 Concretely:
 
 - `Motif` wraps `list[Tone]` and carries its name.
-- `Phrase` wraps `list[Motif]`.
+- `Phrase` wraps `list[Motif]` and carries phrase-level `TransformSpec` authoring metadata until transforms are applied.
 - `Voice` wraps `list[Phrase]` (replacing `list[Tone]`).
-- `Score` wraps `list[Voice]` (unchanged).
+- `Score` wraps `list[Voice]` and carries score-level `TransformSpec` authoring metadata until transforms are applied.
 
 
-## Decision: Unified Transform Execution Model
+## Decision: Transform Specs Stay Attached to the Hierarchy
 
-With the hierarchy in place, every transform — phrase or score — has the same `apply` signature:
+The important split is:
+
+- `TransformDefinition` is global and reusable. It knows how to validate params and how to apply a transform.
+- `TransformSpec` is local authoring data from the JSON: a transform name plus params. It belongs to the phrase or score where it appears.
+- The hierarchy traversal knows the current phrase or score node being transformed.
+
+With the hierarchy in place, phrase transforms apply to the phrase currently being visited, with access to the full score for context when needed. Score transforms apply to the whole score.
+
+`TransformSpec` lives with the score model because it is authoring metadata attached to `Phrase` and `Score`, not registry behavior. Two concrete definition classes replace the generic `TransformDefinition[ScopeType]`:
 
 ```python
-apply(score: Score, params: Mapping[str, object]) -> Score
-```
+@dataclass(frozen=True)
+class TransformSpec:
+    name: str
+    params: Mapping[str, object]
 
-Phrase transforms are addressable inside the `Score` by their `(voice_index, phrase_index)`, which is bound at parse time so the bound `apply` matches the unified signature. The phrase/score split survives only at the public registry level (JSON placement context: phrase-level `transforms` vs. composition-level `score_transforms`) and inside registry authoring helpers. The parser sees one uniform pipeline.
-
-Two concrete definition classes replace the generic `TransformDefinition[ScopeType]`:
-
-```python
 @dataclass(frozen=True)
 class PhraseTransformDefinition:
     name: str
     params_spec: TransformParamsSpec
-    apply: Callable[[Score, Mapping[str, object]], Score]
+    apply: Callable[[Phrase, Score, Mapping[str, object]], Phrase]
 
 @dataclass(frozen=True)
 class ScoreTransformDefinition:
@@ -70,12 +80,12 @@ class ScoreTransformDefinition:
     apply: Callable[[Score, Mapping[str, object]], Score]
 ```
 
-`PhraseScope` and `ScoreScope` enums are removed. "Scope" is encoded as *behavior* inside the `apply` closure, not as a runtime tag.
+`PhraseScope` and `ScoreScope` enums are removed. "Scope" is encoded by the definition type and by where the spec is attached in the parsed hierarchy, not by a runtime tag.
 
 Raw transform functions keep their existing narrow signatures (e.g. `reverse_tones(tones)`, `phrase_feigenbaum_shrink(tones, previous_tones, **params)`, `stretto(score, motif_name, **params)`). Signature adaptation lives in registry authoring helpers that build the `apply` closure at registration time:
 
-- `own_phrase(...)` — closes over `(voice_index, phrase_index)`, extracts that phrase's tones, calls the raw function, returns a new `Score` with the phrase replaced.
-- `phrase_relative(...)` — same as above but also computes reference tones from preceding phrases in the same `Score` at apply time.
+- `own_phrase(...)` — extracts tones from the current `Phrase`, calls the raw function, returns a new `Phrase`.
+- `phrase_relative(...)` — receives the current `Phrase` and the surrounding `Score`, derives the reference material by walking the hierarchy, calls the raw function, returns a new `Phrase`.
 - `each_voice(...)` — iterates `score.voices`, applies the raw function per voice, returns a new `Score`.
 - `score_aware(...)` — passthrough.
 - `target_motifs(...)` — looks up the named motif by traversing the `Score` hierarchy and passes it to the raw function.
@@ -108,10 +118,27 @@ Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase
 
 ## Parser Shape
 
-`composition/parser.py` does two clearly separated things:
+`composition/parser.py` does not implement transform execution. It deserializes JSON into the `Tone → Motif → Phrase → Voice → Score` hierarchy and then delegates to the transform application module.
 
-1. **JSON deserialization** into the `Tone → Motif → Phrase → Voice → Score` hierarchy. Includes shape validation, tone-string parsing (`"440:0.5"` → `Tone`), motif/phrase/voice/score construction, motif-name resolution inside phrases, and collection of transform specs. Phrase-transform location binding (`voice_index`, `phrase_index`) happens here.
-2. **Uniform transform pipeline** — the three-line loop shown in the Goal section.
+That includes shape validation, tone-string parsing (`"440:0.5"` → `Tone`), motif/phrase/voice/score construction, motif-name resolution inside phrases, and preserving transform specs at the hierarchy level where they were declared.
+
+Transform execution is moved out of the parser into a transform application module. That module walks the parsed hierarchy:
+
+```python
+for voice in score.voices:
+    for phrase in voice.phrases:
+        for spec in phrase.transform_specs:
+            definition = PHRASE_TRANSFORMS[spec.name]
+            definition.validate_params(spec.params)
+            phrase = definition.apply(phrase, score, spec.params)
+
+for spec in score.transform_specs:
+    definition = SCORE_TRANSFORMS[spec.name]
+    definition.validate_params(spec.params)
+    score = definition.apply(score, spec.params)
+```
+
+The traversal owns the fact that "this spec belongs to this phrase." The definition does not own a phrase, and the parser does not pass phrase coordinates into `apply`.
 
 ## Acceptance Criteria
 
@@ -120,9 +147,11 @@ Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase
 - `PhraseScope` and `ScoreScope` enums are removed.
 - Generic `TransformDefinition[ScopeType]` is removed; replaced by two concrete dataclasses.
 - `transform_func: Callable[..., Any]` is removed.
-- Both registries' `apply` have signature `(Score, params) -> Score`.
-- Parser does not branch on execution kind; transform pipeline is lookup → `validate_params` → `apply` only.
+- Phrase definitions apply with signature `(Phrase, Score, params) -> Phrase`; score definitions apply with signature `(Score, params) -> Score`.
+- Parser does not branch on execution kind or call transform definitions directly; it preserves transform specs on the parsed hierarchy.
+- Transform application is a separate traversal that performs lookup → `validate_params` → `apply`.
 - Registry authoring helpers (`own_phrase`, `phrase_relative`, `each_voice`, `score_aware`, `target_motifs`) own all signature adaptation; raw transform functions keep their existing narrow signatures.
+- No `voice_index` or `phrase_index` is passed into a transform definition's public `apply`.
 - No in-place mutation of data-model objects by transforms.
 - `mypy .` passes without `cast`.
 - Behavior is preserved across: phrase transforms, score transforms, wrong-scope diagnostics, same-name transforms across registries, target-motif transforms (`stretto`), each-voice score transforms, phrase-relative transforms.
@@ -225,35 +254,40 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 
 ### Phase 3 — Refactor the transform definition model
 
-**Step 4 (low): Add new definition dataclasses and a free `validate_transform_params` function.**
-- In `transforms/base.py`, add two new `@dataclass(frozen=True)` classes: `PhraseTransformDefinition` and `ScoreTransformDefinition`. Each has fields `name: str`, `params_spec: TransformParamsSpec`, and `apply: Callable[[Score, Mapping[str, object]], Score]`.
+**Step 4 (low): Add transform spec and new definition dataclasses.**
+- In `score_model/transform_spec.py`, add `TransformSpec` with fields `name: str` and `params: Mapping[str, object]`.
+- In `transforms/base.py`, add `PhraseTransformDefinition` and `ScoreTransformDefinition`.
+- `PhraseTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `apply: Callable[[Phrase, Score, Mapping[str, object]], Phrase]`.
+- `ScoreTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `apply: Callable[[Score, Mapping[str, object]], Score]`.
 - Extract the existing `TransformDefinition.validate_params` method body into a module-level free function `validate_transform_params(params_spec: TransformParamsSpec, name: str, params: Mapping[str, object]) -> None`. Both new dataclasses expose a `validate_params(self, params)` method that simply calls the free function with `self.params_spec` and `self.name`. Do not duplicate the validation logic across the two classes.
 - The existing `TransformDefinition[ScopeType]` is left alone in this step; the new types are not yet wired in anywhere.
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
 **Step 5 (low): Add registry authoring helpers.**
 - Add a new module `transforms/registry_helpers.py` with five helper functions: `own_phrase(raw_func)`, `phrase_relative(raw_func)`, `each_voice(raw_func)`, `score_aware(raw_func)`, `target_motifs(raw_func)`.
-- Each helper takes a raw transform function (with its existing narrow signature) and returns a callable matching `Callable[[Score, Mapping[str, object]], Score]`. For `own_phrase` and `phrase_relative`, the returned callable also takes `voice_index: int` and `phrase_index: int` as additional parameters bound at parse time (the call site is the parser's location-binding step, Step 6).
+- Phrase helpers take a raw transform function and return a callable matching `Callable[[Phrase, Score, Mapping[str, object]], Phrase]`.
+- Score helpers take a raw transform function and return a callable matching `Callable[[Score, Mapping[str, object]], Score]`.
 - Each helper must:
-  - Walk the `Score` hierarchy to find the relevant tones / motif / voice.
+  - Walk the current `Phrase` or `Score` hierarchy to find the relevant tones / motif / voice.
   - Call the raw transform.
-  - Build a new `Score` with the result substituted in (no mutation).
-- Add a focused test file `tests/test_registry_helpers.py` that exercises each helper with a small synthetic raw function and asserts the constructed callable returns a correctly-shaped `Score`.
+  - Build a new `Phrase` or `Score` with the result substituted in (no mutation).
+- Add a focused test file `tests/test_registry_helpers.py` that exercises each helper with a small synthetic raw function and asserts the constructed callable returns a correctly-shaped `Phrase` or `Score`.
 - Nothing in `transforms/registry.py` or `composition/parser.py` uses these helpers yet.
 Design note: this is the foundation Steps 7 and 8 build on. Bugs here amplify across ~30 registry entries downstream. The user (or a higher-powered reviewer) should review this step's diff carefully before Steps 7 and 8 begin.
 Done signal: `uv run pytest tests/test_registry_helpers.py tests` passes. `mypy .` passes.
 
 **Step 6 (high): Move phrase transform application timing.**
 
-This step changes *when* phrase transforms execute. Today they run during voice assembly (inside the parser's voice loop). After this step, they run after the `Score` is fully built. Behavior must be preserved exactly.
+This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly (inside the parser's voice loop). After this step, the parser builds a `Score` with transform specs attached to the hierarchy, and phrase transforms run in a separate traversal after the `Score` is fully built. Behavior must be preserved exactly.
 
-The change has three parts that move together:
+The change has four parts that move together:
 
-1. **Parse-time location binding.** As the parser walks JSON, instead of applying each phrase transform inline, it collects an ordered list of `(voice_index, phrase_index, transform_name, transform_params)` tuples — one per JSON-declared phrase transform, in JSON order across all voices and phrases.
-2. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
-3. **Sequential phrase-transform application.** After the `Score` is built, the parser walks the collected tuple list in order. For each tuple, it looks up the phrase transform in `PHRASE_TRANSFORMS` (still the old type at this step), computes `reference_tones` at apply time from the *current* `Score` (same rule the parser uses today: all preceding phrases in the same voice, or all tones of all preceding voices if this is the first phrase), applies the transform, and substitutes the result back into the score as a new `Phrase` at that location.
+1. **Add transform-spec storage.** Extend `Phrase` with `transform_specs: list[TransformSpec]` and `Score` with `transform_specs: list[TransformSpec]`, both defaulting to empty lists.
+2. **Parse-time placement preservation.** As the parser walks JSON, it converts each transform object into a `TransformSpec` and attaches it to the `Phrase` or `Score` where it appeared.
+3. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
+4. **Sequential phrase-transform application.** After the `Score` is built, a transform application function walks `score.voices -> voice.phrases -> phrase.transform_specs` in JSON order. For each spec, it looks up the phrase transform in `PHRASE_TRANSFORMS` (still the old type at this step), computes any required context from the *current* `Score`, applies the transform to the current `Phrase`, and substitutes the returned `Phrase` into the rebuilt `Score`.
 
-Ordering rule: application order is the JSON order of `(voice_index, phrase_index, transform_index_within_phrase)`. This is the same order phrase transforms run today. Do not reorder or parallelize.
+Ordering rule: application order is the natural hierarchy order: voices in JSON order, phrases in JSON order, transforms within each phrase in JSON order. This is the same order phrase transforms run today. Do not reorder or parallelize.
 
 Constraints:
 - Phrase transforms still use the old `TransformDefinition[PhraseScope]` and the old phrase-side branching code. Only WHEN they run changes, not HOW.
@@ -270,8 +304,8 @@ Done signal: `uv run pytest tests` passes. `mypy .` passes.
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
 **Step 7b (low): Swap the parser to `PHRASE_TRANSFORMS_V2` and remove the old phrase-side branching.**
-- Update `composition/parser.py` phrase-transform application (Step 6's apply site) to look up definitions in `PHRASE_TRANSFORMS_V2` and call `definition.validate_params(params)` and `definition.apply(score, voice_index, phrase_index, params)` (or whichever signature was settled in Step 5 for the bound phrase-apply form).
-- Delete the old phrase-side scope branching in the parser.
+- Update the phrase-transform application traversal from Step 6 to look up definitions in `PHRASE_TRANSFORMS_V2` and call `definition.validate_params(spec.params)` and `definition.apply(current_phrase, current_score, spec.params)`.
+- Delete the old phrase-side scope branching from the transform application code.
 - Delete the old `PHRASE_TRANSFORMS` dict.
 - Rename `PHRASE_TRANSFORMS_V2` to `PHRASE_TRANSFORMS`.
 Done signal: `uv run pytest tests` passes. `mypy .` passes. `rg "PhraseScope" composition` returns no results.
@@ -282,13 +316,13 @@ Done signal: `uv run pytest tests` passes. `mypy .` passes. `rg "PhraseScope" co
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
 **Step 8b (low): Swap the parser to `SCORE_TRANSFORMS_V2` and remove the old score-side branching.**
-- Update score-transform application in `composition/parser.py` to look up definitions in `SCORE_TRANSFORMS_V2` and call `definition.validate_params(params)` and `definition.apply(score, params)`.
-- Delete the old score-side scope branching, the `apply_to_each_voice` helper if still present in the parser, and the old `SCORE_TRANSFORMS` dict.
+- Update score-transform application to look up definitions in `SCORE_TRANSFORMS_V2` and call `definition.validate_params(spec.params)` and `definition.apply(score, spec.params)`.
+- Delete the old score-side scope branching, the `apply_to_each_voice` helper if still present, and the old `SCORE_TRANSFORMS` dict.
 - Rename `SCORE_TRANSFORMS_V2` to `SCORE_TRANSFORMS`.
-Done signal: `uv run pytest tests` passes. `mypy .` passes. The parser's transform-application loops are now both the three-line uniform form.
+Done signal: `uv run pytest tests` passes. `mypy .` passes. Transform application is now outside the parser and has no runtime scope branching.
 
 **Step 9 (low): Verify parser shape and final small cleanups.**
-- At this point the parser should already have one uniform three-line transform-application loop per registry, and `apply_to_each_voice` and `parsed_motifs` plumbing should already be gone. This step is verification, not new work.
+- At this point the parser should only deserialize JSON into the hierarchy and preserve transform specs at their declaration sites. `apply_to_each_voice` and `parsed_motifs` plumbing should already be gone. This step is verification, not new work.
 - Run `rg "apply_to_each_voice|parsed_motifs|PhraseScope|ScoreScope" composition transforms` and confirm no remaining references in active code paths (definitions in `transforms/base.py` are OK; they are removed in Step 10).
 - If anything unexpected remains, stop and report; do not improvise.
 Done signal: clean `rg` results in active paths. `uv run pytest tests` passes. `mypy .` passes.
@@ -308,58 +342,12 @@ Done signal: `rg "TransformDefinition\[|PhraseScope|ScoreScope|ScopeType"` retur
 - Update any related feature docs in `features/` that reference the old model.
 Done signal: all of the above clean.
 
-## Estimated Final Shape of `composition/parser.py`
+## Estimated Final Shape
 
-This is a sketch, not a specification. It is the planning team's best guess at the shape `composition/parser.py` will take after the full refactor lands. The implementing model should not treat it as a contract — exact function names, signatures, and decomposition may differ as long as the parser ends up with the responsibilities and pipeline described in the Parser Shape section above.
+This is a sketch, not a specification. Exact function names and decomposition may differ as long as the parser preserves transform placement and the transform application pass owns execution.
 
 ```python
 # composition/parser.py
-
-from collections.abc import Mapping
-
-from score_model.motif import Motif
-from score_model.phrase import Phrase
-from score_model.score import Score
-from score_model.tone import Tone
-from score_model.voice import Voice
-from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
-
-
-# --- Tone parsing ---
-
-def _parse_tone_string(tone_string: str) -> Tone:
-    # unchanged from today
-    ...
-
-
-# --- JSON deserialization into the data model ---
-
-def _parse_motif(motif_name: object, tone_strings: object) -> Motif:
-    # Validates motif_name is a string and tone_strings is a list of tone strings,
-    # parses each tone string, returns Motif(name=motif_name, tones=[...]).
-    ...
-
-
-def _parse_phrase(phrase_config: object, declared_motifs: list[Motif]) -> Phrase:
-    # Validates phrase_config, resolves each name in phrase_config["motifs"] by
-    # finding the matching Motif in declared_motifs (by motif.name),
-    # returns Phrase(motifs=[Motif(...), ...]).
-    # Does NOT apply any phrase transforms.
-    ...
-
-
-def _parse_voice(voice_config: object, declared_motifs: list[Motif]) -> Voice:
-    # Builds list[Phrase] from voice_config["phrases"]; returns Voice(phrases=[...]).
-    ...
-
-
-def _validate_composition_structure(composition_document: object) -> None:
-    # Raises if the top-level JSON shape is invalid. Returns nothing.
-    # Each _parse_* function does its own deeper validation.
-    ...
-
-
-# --- The whole thing ---
 
 def parse_composition(composition_document: object) -> Score:
     _validate_composition_structure(composition_document)
@@ -368,59 +356,81 @@ def parse_composition(composition_document: object) -> Score:
         _parse_motif(name, tones)
         for name, tones in composition_document["motifs"].items()
     ]
-    composition_config = composition_document["composition"]
-    voices = composition_config.get("voices", [])
-    score_transforms = composition_config.get("score_transforms", [])
+    composition = composition_document["composition"]
 
-    # Build the Score with all phrases populated; no transforms applied yet.
-    score = Score(voices=[_parse_voice(voice, motifs) for voice in voices])
+    score = Score(
+        voices=[
+            _parse_voice(voice, motifs)
+            for voice in composition.get("voices", [])
+        ],
+        transform_specs=[
+            _parse_transform_spec(spec, "Score")
+            for spec in composition.get("score_transforms", [])
+        ],
+    )
 
-    # Phrase transforms, in JSON order. Apply after the Score is built.
-    for voice_index, voice in enumerate(voices):
-        for phrase_index, phrase_config in enumerate(voice["phrases"]):
-            for spec in phrase_config.get("transforms", []):
-                name = spec["name"]
-                params = spec.get("params", {})
-                definition = PHRASE_TRANSFORMS[name]
-                definition.validate_params(params)
-                score = definition.apply(score, voice_index, phrase_index, params)
-
-    # Score transforms, in JSON order.
-    for spec in score_transforms:
-        # Validate spec shape inline and pull out name + params.
-        ...  # (shape check: spec is dict, "name" is non-empty str, "params" is dict)
-        name = spec["name"]
-        params = spec.get("params", {})
-        definition = SCORE_TRANSFORMS[name]
-        definition.validate_params(params)
-        score = definition.apply(score, params)
-
+    score = apply_phrase_transform_specs(score)
+    score = apply_score_transform_specs(score)
     return score
 ```
 
-### What's gone vs. today
+```python
+# transforms/application.py
 
-- `apply_to_each_voice` (moved into the `each_voice` registry helper).
-- `_apply_phrase_transform_spec`, `_apply_score_transform_spec`, `_apply_phrase_transform_specs` — the parser no longer wraps per-spec application in dedicated helpers; it inlines the three-line loop.
-- All scope branching (`if scope is PhraseScope.OWN_PHRASE`, etc.) — moved inside registry-helper closures.
-- `parsed_motifs` threading — `stretto` reads motifs off the `Score` by traversal.
-- `reference_tones` computation in the parser — the `phrase_relative` helper computes it from the current `Score` at apply time.
-- `combined_tones` / `previous_voice_tones` plumbing through `parse_voice` — voice assembly no longer needs cross-voice context.
+def apply_phrase_transform_specs(score: Score) -> Score:
+    working_score = score
 
-### What stays
+    for voice in working_score.voices:
+        for phrase in voice.phrases:
+            current_phrase = phrase
+            for spec in current_phrase.transform_specs:
+                definition = PHRASE_TRANSFORMS[spec.name]
+                definition.validate_params(spec.params)
+                updated_phrase = definition.apply(current_phrase, working_score, spec.params)
+                working_score = replace_phrase(working_score, current_phrase, updated_phrase)
+                current_phrase = updated_phrase
+
+    return working_score
+
+
+def apply_score_transform_specs(score: Score) -> Score:
+    working_score = score
+
+    for spec in working_score.transform_specs:
+        definition = SCORE_TRANSFORMS[spec.name]
+        definition.validate_params(spec.params)
+        working_score = definition.apply(working_score, spec.params)
+
+    return working_score
+```
+
+### Resolved Placement Design
+
+The resolved design is:
+
+- The parser knows where a transform spec was written because that is JSON structure.
+- The parser preserves that placement by attaching `TransformSpec` objects to `Phrase` and `Score`.
+- The transform application pass walks the hierarchy and therefore naturally knows the current phrase.
+- `PhraseTransformDefinition` does not own a phrase and does not receive `voice_index` or `phrase_index`.
+- Context-aware phrase transforms receive the current `Phrase` and the surrounding `Score`; they can derive reference material by traversing the hierarchy.
+
+This rejects the previous options based on `apply(score, voice_index, phrase_index, params)`, `.bind(...)`, and phrase-registry factories. Those options made transform location a parser-call-site concern instead of a hierarchy concern.
+
+### What's Gone Vs. Today
+
+- `apply_to_each_voice` in the parser.
+- `_apply_phrase_transform_spec`, `_apply_score_transform_spec`, `_apply_phrase_transform_specs` in the parser.
+- All parser-side scope branching (`if scope is PhraseScope.OWN_PHRASE`, etc.).
+- `parsed_motifs` threading through score transforms.
+- `reference_tones` computation in the parser.
+- `voice_index` / `phrase_index` arguments in transform definition APIs.
+
+### What Stays
 
 - JSON shape validation.
 - Tone-string parsing (`_parse_tone_string`).
-- Declared motifs list (parser-internal `list[Motif]`, used purely for name resolution during phrase construction — never passed to a transform). Built inline in `parse_composition` via a list comprehension over `_parse_motif`, mirroring how voices are built inline via a list comprehension over `_parse_voice`. Phrase construction looks up motifs by name via linear scan on `motif.name` (the count is small; no dict needed).
-- Transform spec shape validation (the `{"name": str, "params": dict}` check). Inlined at each call site rather than extracted to a helper — the score-transform loop is the only top-level call site, and `_collect_phrase_transform_specs` does its own inline validation while building tuples.
-
-### Size estimate
-
-Today: ~263 lines. After the refactor: roughly 120–140 lines, give or take. The shrinkage comes from removing transform-execution knowledge, not from clever compression.
-
-### Note: two passes over voice/phrase JSON
-
-`_parse_voice` / `_parse_phrase` and the phrase-transform loop in `parse_composition` both walk the same voice/phrase JSON structure. There is a temptation to fuse them into a single pass that builds phrases *and* applies transforms together. The two-pass version is clearer — phrase construction is a pure JSON-to-Score function, and transform application is a separate operation that needs the fully-built Score. Two passes over a small JSON tree is negligible. Keep them separate.
+- Declared motifs list for phrase construction and motif-name resolution.
+- Transform spec shape validation (`{"name": str, "params": dict}`), returning `TransformSpec`.
 
 ## Open Items
 
@@ -429,108 +439,3 @@ None at the planning level.
 ## Note on Rules and Defaults
 
 This document deliberately avoids hard-and-fast rules. The choices recorded here are defaults and design preferences, not laws. If during implementation a real reason emerges to deviate — a helper that genuinely simplifies the design, a structural change that pays off, a consumer that needs to operate differently — that is allowed and expected. The point of the plan is to capture the current best understanding of the direction, not to constrain future judgment.
-
-## Open Question for Second Opinion: How Should Phrase Transforms Receive Their Location?
-
-This is an unresolved design question. The user is not satisfied with the proposed answers and would like a second opinion before settling it.
-
-### The problem
-
-Score transforms operate on the whole `Score`. Their apply signature is naturally:
-
-```python
-apply(score, params) -> Score
-```
-
-Phrase transforms operate on one specific phrase inside the `Score`. They need to know *which* phrase — i.e. `(voice_index, phrase_index)`. So a naive apply signature is:
-
-```python
-apply(score, voice_index, phrase_index, params) -> Score
-```
-
-This is asymmetric with the score-transform shape and the user flagged the four-argument call site as a smell.
-
-### Goal
-
-The parser's two transform-application loops should look as similar as possible. Ideally the inner lines are identical:
-
-```python
-definition.validate_params(params)
-score = definition.apply(score, params)
-```
-
-### Three options considered so far
-
-**Option A — accept the asymmetry.**
-Phrase definitions have a four-argument `apply(score, voice_index, phrase_index, params)`. Score definitions have a two-argument `apply(score, params)`. The parser's two loops differ at the inner apply line. Simple, no extra types, but visibly asymmetric.
-
-**Option B — add a `.bind(voice_index, phrase_index)` method to `PhraseTransformDefinition`** that returns a second class (`BoundPhraseTransform`) whose apply matches the score-transform shape. The parser would do:
-
-```python
-definition = PHRASE_TRANSFORMS[name].bind(voice_index, phrase_index)
-definition.validate_params(params)
-score = definition.apply(score, params)
-```
-
-After `.bind(...)`, both loops have identical inner lines. Cost: two classes, a method that converts between them, a closure inside the method. The user described this as "disgusting" and explicitly does not want a `.bind` step visible at the call site.
-
-**Option C — phrase registry entries are factories.**
-`SCORE_TRANSFORMS` is still `dict[str, ScoreTransformDefinition]`. `PHRASE_TRANSFORMS` becomes `dict[str, Callable[[int, int], PhraseTransformDefinition]]` — each entry is a function that takes location and returns a definition. The location-binding lives entirely inside the registry-authoring helpers (`own_phrase`, `phrase_relative`).
-
-Parser:
-
-```python
-# Score transforms:
-definition = SCORE_TRANSFORMS[spec["name"]]
-definition.validate_params(spec["params"])
-score = definition.apply(score, spec["params"])
-
-# Phrase transforms:
-definition = PHRASE_TRANSFORMS[spec["name"]](voice_index, phrase_index)
-definition.validate_params(spec["params"])
-score = definition.apply(score, spec["params"])
-```
-
-The one visible difference between loops is the lookup line: `SCORE_TRANSFORMS[name]` vs. `PHRASE_TRANSFORMS[name](voice_index, phrase_index)`. After that, the next two lines are identical. The parser never sees `bind`, never passes location to `apply`.
-
-Cost: the two registries have different value types (one is a definition, the other is a callable returning a definition). The asymmetry is moved from the apply line up to the lookup line.
-
-The user finds this hard to follow and would like a second opinion on whether it's actually clean or just a different smell.
-
-### Sketch of `own_phrase` under Option C
-
-```python
-def own_phrase(raw_func):
-    def at_location(voice_index, phrase_index):
-        def apply(score, params):
-            phrase = score.voices[voice_index].phrases[phrase_index]
-            tones = [t for motif in phrase.motifs for t in motif.tones]
-            result = raw_func(tones, **params)
-            new_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=result)])
-            # return a new Score with that phrase replaced at (voice_index, phrase_index)
-            return ...
-        return PhraseTransformDefinition(
-            name=raw_func.__name__,
-            params_spec=...,
-            apply=apply,
-        )
-    return at_location
-```
-
-`each_voice`, `score_aware`, `target_motifs` for score transforms return a `ScoreTransformDefinition` directly (no location to bind).
-
-### What the user wants
-
-A clean, hierarchy-respecting model where the asymmetry between phrase and score transforms is hidden inside the transform definition layer, not exposed at the parser call site, *and* without introducing extra classes, conversion methods, or visible "binding" steps. The user's view is that since the data model is now a clean compositional hierarchy (`Tone → Motif → Phrase → Voice → Score`), the way transforms apply to it should be similarly clean and not require this kind of plumbing.
-
-### What is being asked
-
-Is there a fourth option that:
-
-- Keeps phrase and score apply signatures identical at the call site.
-- Does not introduce a `.bind` step or a second wrapper class.
-- Does not make the two registries have different shapes (Option C).
-- Respects the data-model hierarchy.
-
-Or, if no such fourth option exists, which of A / B / C is genuinely the least bad, and why? Concrete code is preferred over abstract discussion.
-
