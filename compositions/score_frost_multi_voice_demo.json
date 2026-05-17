@@ -1,5 +1,5 @@
 {
-  "description": "Demonstrates how score_frost_effect works with multiple input voices.",
+  "description": "Demonstrates how frost_effect works with multiple input voices.",
   "motifs": {
     "high": ["880:0.5"],
     "low": ["520:0.5"]

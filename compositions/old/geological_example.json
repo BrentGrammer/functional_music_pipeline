@@ -104,7 +104,7 @@
     ],
      "score_transforms": [
        {
-         "name": "score_weierstrass",
+         "name": "weierstrass",
          "params": {
            "dimension": "amplitude",
            "intensity": "medium"

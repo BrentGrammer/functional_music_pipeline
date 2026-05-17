@@ -52,7 +52,7 @@
     "score_transforms": [
       {
         "comment": "Shifts the entire harmonic sequence (both blocks) down by 5 semitones.",
-        "name": "score_transpose",
+        "name": "transpose",
         "params": { "semitones": -5 }
       }
     ]

@@ -1,5 +1,5 @@
 {
-  "description": "Demonstrates the score_feigenbaum_sequence which scales each voice relative to its predecessor.",
+  "description": "Demonstrates feigenbaum_sequence which scales each voice relative to its predecessor.",
   "motifs": {
     "melody": ["440:1.0", "440:1.0"]
   },
@@ -12,7 +12,7 @@
     "score_transforms": [
       {
         "comment": "Scales the duration of each voice by powers of the Feigenbaum ratio (1/4.669^i). Voice 0 is full length, Voice 1 is ~21%, Voice 2 is ~4%.",
-        "name": "score_feigenbaum_sequence",
+        "name": "feigenbaum_sequence",
         "params": { "dimension": "duration" }
       }
     ]

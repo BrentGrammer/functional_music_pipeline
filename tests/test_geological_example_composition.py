@@ -91,7 +91,7 @@ def _build_geological_example_composition() -> dict:
             ],
             "score_transforms": [
                 {
-                    "name": "score_weierstrass",
+                    "name": "weierstrass",
                     "params": {
                         "dimension": "amplitude",
                         "intensity": "medium",
