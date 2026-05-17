@@ -5,16 +5,12 @@ from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
 from transforms.base import (
-    EachVoiceTransform,
-    PhraseRelativeTransform,
-    PhraseTransform,
-    ScoreAwareTransform,
+    PhraseScope,
+    ScoreScope,
     ScorePipelineStep,
-    ScoreTargetMotifsTransform,
     ToneSequence,
-    TransformWithCallable,
 )
-from transforms.registry import TRANSFORMS
+from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
 
 def apply_to_each_voice(
@@ -81,19 +77,19 @@ def parse_transform_spec(
 
 
 def _apply_phrase_transform_spec(
-    descriptor: TransformWithCallable,
+    descriptor,
     phrase_tones: list[Tone],
     transform_params: Mapping[str, object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     descriptor.validate_params(transform_params)
 
-    if isinstance(descriptor, PhraseTransform):
-        return descriptor.transform(phrase_tones, **transform_params)
+    if descriptor.scope is PhraseScope.OWN_PHRASE:
+        return descriptor.transform_func(phrase_tones, **transform_params)
 
-    if isinstance(descriptor, PhraseRelativeTransform):
+    if descriptor.scope is PhraseScope.PHRASE_RELATIVE:
         phrase_reference_tones = reference_tones if reference_tones else []
-        return descriptor.transform(phrase_tones, phrase_reference_tones, **transform_params)
+        return descriptor.transform_func(phrase_tones, phrase_reference_tones, **transform_params)
 
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
@@ -106,10 +102,13 @@ def _apply_phrase_transform_specs(
     for transform_spec in transform_specs:
         transform_name, transform_params = parse_transform_spec(transform_spec, "Phrase")
 
-        if transform_name not in TRANSFORMS:
+        if transform_name in PHRASE_TRANSFORMS:
+            descriptor = PHRASE_TRANSFORMS[transform_name]
+        elif transform_name in SCORE_TRANSFORMS:
+            raise ValueError(f"Transform '{transform_name}' is only available as a score transform.")
+        else:
             raise ValueError(f"Unknown transform '{transform_name}'")
 
-        descriptor = TRANSFORMS[transform_name]
         phrase_tones = _apply_phrase_transform_spec(descriptor, phrase_tones, transform_params, reference_tones)
 
     return phrase_tones
@@ -230,21 +229,23 @@ def _apply_score_transform_spec(
 ) -> Score:
     transform_name, transform_params = parse_transform_spec(transform_spec, "Score")
 
-    if transform_name not in TRANSFORMS:
+    if transform_name in SCORE_TRANSFORMS:
+        descriptor = SCORE_TRANSFORMS[transform_name]
+    elif transform_name in PHRASE_TRANSFORMS:
+        raise ValueError(f"Transform '{transform_name}' is only available as a phrase transform.")
+    else:
         raise ValueError(f"Unknown score transform '{transform_name}'")
-
-    descriptor = TRANSFORMS[transform_name]
 
     descriptor.validate_params(transform_params)
 
-    if isinstance(descriptor, ScoreTargetMotifsTransform):
-        return descriptor.transform(score, parsed_motifs, **transform_params)
+    if descriptor.scope is ScoreScope.TARGET_MOTIFS:
+        return descriptor.transform_func(score, parsed_motifs, **transform_params)
 
-    if isinstance(descriptor, ScoreAwareTransform):
-        return descriptor.transform(score, **transform_params)
+    if descriptor.scope is ScoreScope.SCORE_AWARE:
+        return descriptor.transform_func(score, **transform_params)
 
-    if isinstance(descriptor, EachVoiceTransform):
-        return apply_to_each_voice(descriptor.transform, **transform_params)(score)
+    if descriptor.scope is ScoreScope.EACH_VOICE:
+        return apply_to_each_voice(descriptor.transform_func, **transform_params)(score)
 
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 
