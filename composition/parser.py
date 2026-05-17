@@ -6,8 +6,8 @@ from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
 from transforms.base import (
     PhraseScope,
-    ScoreScope,
     ScorePipelineStep,
+    ScoreScope,
     ToneSequence,
     TransformDefinition,
 )

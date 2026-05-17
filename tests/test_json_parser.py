@@ -15,8 +15,8 @@ from score_model.tone import Tone
 from transforms.base import (
     EnumParam,
     ScoreScope,
-    TransformDefinition,
     StringParam,
+    TransformDefinition,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )

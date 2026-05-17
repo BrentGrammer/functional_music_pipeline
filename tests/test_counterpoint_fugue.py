@@ -8,7 +8,6 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
 from score_model.voice import Voice
-from transforms.base import ScoreScope
 from transforms.counterpoint.fugue import add_pedal_tone, stretto
 from transforms.registry import SCORE_TRANSFORMS
 

@@ -3,7 +3,6 @@ import pytest
 from composition.parser import parse_composition, parse_phrase
 from composition.schema import PhraseConfig
 from score_model.tone import Tone
-from transforms.base import PhraseScope
 from transforms.basic.pad_silence import pad_silence_tones
 from transforms.registry import PHRASE_TRANSFORMS
 

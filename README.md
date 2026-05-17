@@ -107,7 +107,7 @@ A composition file has two main parts: `motifs` (reusable musical ideas) and `co
 
 ### Available Transforms
 
-Transforms are functions that modify a sequence of tones. Many can be applied to a single phrase or to all voices in a score (e.g., `transpose` vs. `score_transpose`).
+Transforms are functions that modify a sequence of tones. Many can be applied at both phrase and score scope using the same public name (for example, `transpose` inside either `transforms` or `score_transforms`).
 
 When a transform uses `params`, `params` must be an object with named fields.
 
@@ -140,9 +140,9 @@ When a transform uses `params`, `params` must be an object with named fields.
 
 These transforms derive modulation from fractals, cellular automata, or other complex-systems processes. They modulate a musical dimension (`frequency`, `duration`, or `amplitude`) using `dimension`.
 
-- **`weierstrass` / `score_weierstrass`**: A smooth, self-similar fractal wobble. Accepts `dimension` and `intensity` (`"low"`, `"medium"`, `"high"`, or `"extreme"`). The intensity preset controls both the deviation amount and texture characteristics.
-- **`cellular_automata` / `score_cellular_automata`**: A binary modulation derived from an elementary cellular automaton. Accepts `dimension`, `rule` (Wolfram rule number 0–255, e.g. `30`, `90`, `110`), and `max_deviation`. The initial automaton state is derived from the input tones themselves — no randomness involved.
-- **`random_drop` / `score_random_drop`**: Random downward deviations at a controlled rate. Accepts `dimension`, `max_drop_pct` (how severe each drop is, 1–100), and `drop_frequency_pct` (what percentage of tones are affected, 1–100).
+- **`weierstrass`**: A smooth, self-similar fractal wobble. Accepts `dimension` and `intensity` (`"low"`, `"medium"`, `"high"`, or `"extreme"`). The intensity preset controls both the deviation amount and texture characteristics.
+- **`cellular_automata`**: A binary modulation derived from an elementary cellular automaton. Accepts `dimension`, `rule` (Wolfram rule number 0–255, e.g. `30`, `90`, `110`), and `max_deviation`. The initial automaton state is derived from the input tones themselves — no randomness involved.
+- **`random_drop`**: Random downward deviations at a controlled rate. Accepts `dimension`, `max_drop_pct` (how severe each drop is, 1–100), and `drop_frequency_pct` (what percentage of tones are affected, 1–100).
 
   ```json
   "transforms": [
@@ -168,7 +168,7 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   ```json
   "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
   ```
-- **`terraced_drift` / `score_terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension` and `max_step_change_pct` (maximum percentage each tone can change from the previous, 1–100).
+- **`terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension` and `max_step_change_pct` (maximum percentage each tone can change from the previous, 1–100).
 
 ## Development
 
