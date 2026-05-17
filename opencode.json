@@ -31,5 +31,8 @@
         "SERENA_USAGE_REPORTING": "false"
       }
     }
+  },
+  "watcher": {
+    "ignore": ["node_modules/**", "dist/**", "build/**", ".next/**", "coverage/**"]
   }
 }
