@@ -8,7 +8,10 @@ from transforms.base import (
     BooleanParam,
     EnumParam,
     FloatParam,
+    PhraseScope,
     PhraseTransform,
+    ScoreScope,
+    TransformDefinition,
     StringParam,
     ToneDimension,
     TransformParamFieldSpec,
@@ -133,6 +136,25 @@ def test_transform_params_spec_identifies_required_fields_from_metadata():
 
     required_fields = tuple(f for f, s in params_spec.fields.items() if s.required)
     assert required_fields == ("seconds",)
+
+
+def test_transform_definition_preserves_explicit_params_spec():
+    expected_params_spec = TransformParamsSpec(
+        fields={
+            "seconds": TransformParamFieldSpec(
+                schema=FloatParam(),
+                required=True,
+            )
+        }
+    )
+    definition = TransformDefinition(
+        name="delay",
+        transform_func=lambda tones, **_: tones,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=expected_params_spec,
+    )
+
+    assert definition.params_spec == expected_params_spec
 
 def test_apply_to_each_voice_updates_every_voice():
     duration_multiplier = 2.0
