@@ -39,7 +39,7 @@ Each level wraps a list of the level below. One mental model, one access pattern
 Concretely:
 
 - `Motif` wraps `list[Tone]` and carries its name.
-- `Phrase` wraps `list[Motif]` (exact internal shape TBD when the type is designed).
+- `Phrase` wraps `list[Motif]`.
 - `Voice` wraps `list[Phrase]` (replacing `list[Tone]`).
 - `Score` wraps `list[Voice]` (unchanged).
 
@@ -127,8 +127,13 @@ Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase
 - `mypy .` passes without `cast`.
 - Behavior is preserved across: phrase transforms, score transforms, wrong-scope diagnostics, same-name transforms across registries, target-motif transforms (`stretto`), each-voice score transforms, phrase-relative transforms.
 
+## Resolved Design Choices
+
+- **Internal shape:** `Phrase` wraps `list[Motif]` directly. `Motif` wraps `list[Tone]` and carries its name. No `list[Tone]`-with-provenance variant.
+- **No flattening helper.** Consumers (renderers, score-aware transforms) walk the hierarchy directly: `voice.phrases → phrase.motifs → motif.tones`. They take whichever level of the model they actually need.
+- **Sequencing:** the implementation is decomposed into many small, individually reviewable steps. No big-bang migration, no two-phase split. Detailed step decomposition is produced during implementation planning, not in this feature doc.
+- **Backward compatibility:** this is a breaking migration. Old behavior, old types, and old JSON shapes do not need to be preserved.
+
 ## Open Items
 
-- Exact internal shape of `Phrase` and `Motif` (e.g. does `Phrase` hold `list[Motif]` directly, or `list[Tone]` plus motif provenance?). To be decided when the types are designed.
-- How renderers (`wav_writer`, `midi_writer`) and score-aware transforms that currently consume `voice.tones` as a flat list relate to the new hierarchy: explicit flattening helper vs. direct phrase-aware iteration. To be decided when the rendering layer is touched.
-- Sequencing of the work into reviewable chunks (data-model migration first, then registry refactor on top, or interleaved). To be decided during implementation planning.
+None at the planning level. Implementation step decomposition is the next thing to produce when work starts.
