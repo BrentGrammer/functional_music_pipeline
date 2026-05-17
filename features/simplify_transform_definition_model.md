@@ -130,7 +130,7 @@ Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase
 ## Resolved Design Choices
 
 - **Internal shape:** `Phrase` wraps `list[Motif]` directly. `Motif` wraps `list[Tone]` and carries its name. No `list[Tone]`-with-provenance variant.
-- **No flattening helper.** Consumers (renderers, score-aware transforms) walk the hierarchy directly: `voice.phrases → phrase.motifs → motif.tones`. They take whichever level of the model they actually need.
+- **Traversal utilities are permitted in a dedicated module.** A `score_model/traversal.py` (or similarly-named) utilities module holds common operations like flattening a phrase's motifs into a tone list, flattening a voice's phrases into a tone list, concatenating phrases across voices, and similar. These exist as standalone functions, not as methods on the data types, so the data types stay minimal. The default for consumers is to traverse the hierarchy directly using the structure they actually need; reach for the utilities when the same traversal is appearing repeatedly or when a consumer genuinely needs a flat view (e.g. renderers, which have no use for phrase boundaries). Add utilities as real needs arise rather than pre-building a full set. Tests use the same utilities — there is no separate test-only helper module.
 - **Sequencing:** the implementation is decomposed into many small, individually reviewable steps designed for a lower-powered implementing model. No big-bang migration. See the Implementation Plan section below.
 - **Backward compatibility:** this is a breaking migration. Old behavior, old types, and old JSON shapes do not need to be preserved.
 - **Transform boundaries:** transforms operate on `Phrase`, `Voice`, or `Score`. Transforms never operate on `Motif`. Motifs are immutable source material — pure building blocks supplied by the JSON. When a phrase transform produces a new tone sequence, the output `Phrase` contains a single new `Motif` holding those tones; the input motif structure does not survive sequence-reshaping transforms, which is the honest representation (the original motif names referred to the input partitioning, not to the transformed result). Transforms that wanted to produce multiple motifs in their output could, but none of today's phrase transforms do — they all produce one continuous tone sequence.
@@ -147,7 +147,7 @@ The plan is decomposed into small steps suitable for a lower-powered implementin
 
 ### Phase 2 — Migrate the data model end-to-end
 
-Step 3 is split into ten sub-steps. A temporary, explicitly-marked migration helper (`score_model/_migration.py::_legacy_flatten_voice_tones`) is introduced in 3a and removed in 3j. The "no flattening helper" principle refers to the final shape of the code; the helper exists only as a transition scaffold.
+Step 3 is split into ten sub-steps. A temporary, explicitly-marked migration helper (`score_model/_migration.py::_legacy_flatten_voice_tones`) is introduced in 3a and removed in 3j. This helper is a transition scaffold — distinct from the permanent traversal utilities described in the Resolved Design Choices section. It exists to give consumers a deterministic mechanical translation during the migration, and is replaced step-by-step (sub-steps 3c–3i) with either direct hierarchy traversal or calls to the permanent traversal utilities module, whichever is appropriate per consumer.
 
 **Rule for the implementing model:** during sub-steps 3c–3i, migrate only the consumer named in that step. Other consumers continue using the legacy helper until their own step.
 
@@ -164,15 +164,17 @@ Step 3 is split into ten sub-steps. A temporary, explicitly-marked migration hel
 - Renderers and score-aware transforms still use `_legacy_flatten_voice_tones`.
 - Done signal: full test suite passes. Compositions render identically. Internal structure now matches the JSON's motif declarations.
 
-**Step 3c: Migrate `wav_writer`.** Replace `_legacy_flatten_voice_tones` calls in `audio_rendering/wav_writer.py` with direct hierarchy traversal. Done signal: `tests/test_audio_io.py` passes.
+For each consumer-migration sub-step below (3c–3g), the implementing model should: replace `_legacy_flatten_voice_tones` calls with either direct hierarchy traversal where natural, or with a call into a permanent traversal utility (creating `score_model/traversal.py` and adding the needed utility function on first use). The choice is per-consumer based on what reads most clearly. Renderers in particular are good candidates for traversal utilities since they have no use for phrase boundaries.
 
-**Step 3d: Migrate `midi_writer`.** Same in `midi_rendering/midi_writer.py`. Done signal: `tests/test_midi_writer.py` passes.
+**Step 3c: Migrate `wav_writer`.** `audio_rendering/wav_writer.py`. Done signal: `tests/test_audio_io.py` passes.
 
-**Step 3e: Migrate `frost_effect`.** Same in `transforms/geological/frost_effect.py`. Done signal: frost effect tests pass.
+**Step 3d: Migrate `midi_writer`.** `midi_rendering/midi_writer.py`. Done signal: `tests/test_midi_writer.py` passes.
 
-**Step 3f: Migrate `add_pedal_tone`.** Same in `transforms/counterpoint/fugue.py`. Done signal: counterpoint tests pass.
+**Step 3e: Migrate `frost_effect`.** `transforms/geological/frost_effect.py`. Done signal: frost effect tests pass.
 
-**Step 3g: Migrate `score_feigenbaum_sequence`.** Same in `transforms/proportion/feigenbaum.py`. Done signal: feigenbaum tests pass.
+**Step 3f: Migrate `add_pedal_tone`.** `transforms/counterpoint/fugue.py`. Done signal: counterpoint tests pass.
+
+**Step 3g: Migrate `score_feigenbaum_sequence`.** `transforms/proportion/feigenbaum.py`. Done signal: feigenbaum tests pass.
 
 **Step 3h: Migrate `apply_to_each_voice` and `stretto`.**
 - `apply_to_each_voice` in `composition/parser.py` uses direct hierarchy traversal.
@@ -210,4 +212,8 @@ Step 3 is split into ten sub-steps. A temporary, explicitly-marked migration hel
 
 ## Open Items
 
-- Test migration verbosity. Tests after migration will read `score.voices[0].phrases[0].motifs[0].tones[0].frequency` or similar. To be decided whether tests are allowed a small test-only traversal utility, or whether tests use direct traversal everywhere consistent with the production "no flattening helper" rule.
+None at the planning level.
+
+## Note on Rules and Defaults
+
+This document deliberately avoids hard-and-fast rules. The choices recorded here are defaults and design preferences, not laws. If during implementation a real reason emerges to deviate — a helper that genuinely simplifies the design, a structural change that pays off, a consumer that needs to operate differently — that is allowed and expected. The point of the plan is to capture the current best understanding of the direction, not to constrain future judgment.
