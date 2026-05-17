@@ -137,78 +137,174 @@ Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase
 
 ## Implementation Plan
 
-The plan is decomposed into small steps suitable for a lower-powered implementing model. Each step changes one well-defined thing, leaves the codebase in a working state (tests passing), and has a clear "done" signal so progress can be reviewed independently.
+The plan is decomposed into small steps. Each step changes one well-defined thing, leaves the codebase in a working state (tests passing), and has a clear "done" signal so progress can be reviewed independently. Steps are tagged for the model that should perform them:
+
+- **(low)** — mechanical or narrowly-scoped change a lower-powered model can perform safely with the instructions given.
+- **(high)** — involves semantic change, design judgment, or coordinated edits across files that benefit from a stronger model even with precise instructions.
+
+### Standing Rules for the Implementing Model
+
+- Do not modify `compositions/**/*.json` or any transform public names in this refactor unless a step explicitly says to.
+- After every step, run `mypy .` and the test command listed in the step's done signal. If either fails, stop and report — do not improvise beyond the step's scope.
+- During sub-steps 3c–3i, migrate only the consumer named in that step. Other consumers continue using the legacy helper until their own step.
+- When a step says "done signal: tests pass," it means the listed tests pass and the full suite has not regressed (run `uv run pytest tests` once at the end of the step to confirm).
 
 ### Phase 1 — Add new data-model types (additive only)
 
-**Step 1: Add `Motif` type.** New `score_model/motif.py`. `Motif` holds `name: str` and `tones: list[Tone]`. New `tests/test_motif.py` mirroring `tests/test_voice.py`. Nothing else changes.
+**Step 1 (low): Add `Motif` type.** New `score_model/motif.py`. `Motif` holds `name: str` and `tones: list[Tone]`. Mirror the style of `score_model/voice.py` (constructor, `__len__`, `__getitem__`, `__iter__` if `Voice` has it). New `tests/test_motif.py` mirroring `tests/test_voice.py`. Nothing else changes.
+Done signal: `uv run pytest tests/test_motif.py` passes. `mypy .` passes.
 
-**Step 2: Add `Phrase` type.** New `score_model/phrase.py`. `Phrase` holds `motifs: list[Motif]`. New `tests/test_phrase.py`. Nothing else changes.
+**Step 2 (low): Add `Phrase` type.** New `score_model/phrase.py`. `Phrase` holds `motifs: list[Motif]`. Mirror the same style. New `tests/test_phrase.py`. Nothing else changes.
+Done signal: `uv run pytest tests/test_phrase.py` passes. `mypy .` passes.
 
 ### Phase 2 — Migrate the data model end-to-end
 
-Step 3 is split into ten sub-steps. A temporary, explicitly-marked migration helper (`score_model/_migration.py::_legacy_flatten_voice_tones`) is introduced in 3a and removed in 3j. This helper is a transition scaffold — distinct from the permanent traversal utilities described in the Resolved Design Choices section. It exists to give consumers a deterministic mechanical translation during the migration, and is replaced step-by-step (sub-steps 3c–3i) with either direct hierarchy traversal or calls to the permanent traversal utilities module, whichever is appropriate per consumer.
+Step 3 is the data-model migration. It introduces a temporary, explicitly-marked migration helper (`score_model/_migration.py::_legacy_flatten_voice_tones`) in 3a-i and removes it in 3j. This helper is a transition scaffold — distinct from the permanent traversal utilities described in the Resolved Design Choices section. Consumers are migrated off the helper one at a time. Each can choose direct hierarchy traversal or a call into the permanent `score_model/traversal.py` utilities module (creating it and adding the needed utility on first use).
 
-**Rule for the implementing model:** during sub-steps 3c–3i, migrate only the consumer named in that step. Other consumers continue using the legacy helper until their own step.
+**Step 3a-i (low): Create the migration helper module.**
+- Create `score_model/_migration.py`.
+- File header explicitly states this is a temporary migration scaffold that will be removed at the end of Phase 2.
+- Define `_legacy_flatten_voice_tones(voice)` that returns `voice.tones` for now (one-line passthrough). The function exists so callers can be migrated to it before the `Voice` internals change.
+- No other file is touched.
+Done signal: `uv run pytest tests` passes (no behavior change). `mypy .` passes.
 
-**Step 3a: Change `Voice` internals only.**
-- `Voice` stores `phrases: list[Phrase]`.
-- Add `score_model/_migration.py` with `_legacy_flatten_voice_tones(voice)` returning the concatenated tones across all phrases and motifs. File header explicitly states it is temporary and will be removed at the end of Phase 2.
-- Parser changes minimally: wherever it built `Voice(tones=[...])`, it now builds `Voice(phrases=[Phrase(motifs=[Motif(name="<parsed>", tones=[...])])])` — a single motif holding all flattened tones. Phrase transforms still flatten during voice assembly as today.
-- Every consumer (renderers, score-aware transforms, tests) that previously read `voice.tones` is mechanically rewritten to call `_legacy_flatten_voice_tones(voice)`.
-- Done signal: full test suite passes. No semantic change.
+**Step 3a-ii (low): Route all `voice.tones` readers through the migration helper.**
+- Mechanically rewrite every read of `voice.tones`, every `for tone in voice:` iteration, every `len(voice)`, and every `voice[i]` indexing across production files and tests to use `_legacy_flatten_voice_tones(voice)` for tones (e.g. `for tone in _legacy_flatten_voice_tones(voice):`). For `len(voice)` and `voice[i]`, keep them as-is; they will be reviewed in 3a-iii.
+- Files to check: `audio_rendering/wav_writer.py`, `midi_rendering/midi_writer.py`, `transforms/geological/frost_effect.py`, `transforms/counterpoint/fugue.py`, `transforms/proportion/feigenbaum.py`, `composition/parser.py`, all files in `tests/`.
+- Use `rg "voice\.tones|for tone in voice|len\(voice\)|voice\["` to find call sites. Do not skip any.
+- Do not change `Voice` itself yet.
+Done signal: `uv run pytest tests` passes (no behavior change). `mypy .` passes. `rg "voice\.tones" --type py` returns only the implementation inside `_legacy_flatten_voice_tones`.
 
-**Step 3b: Parser builds real motifs and phrases.**
-- Parser stops collapsing all phrase tones into one motif. It builds one `Motif` per motif name referenced in the phrase's JSON `motifs` list, in order.
-- Phrase transforms still run during voice assembly as today, but their output (a flat tone list) is wrapped as `Phrase(motifs=[Motif(name="<transformed>", tones=result)])` — the synthetic-motif decision applied.
+**Step 3a-iii (high): Change `Voice` to hold `phrases: list[Phrase]`.**
+- `Voice.__init__` now accepts `phrases: list[Phrase] | None = None` and stores `self.phrases`.
+- Decide and document `Voice.__iter__`, `__len__`, `__getitem__`: they iterate / measure / index `phrases`, not tones. This is a deliberate semantic change consistent with "voices are sequences of phrases."
+- Update `_legacy_flatten_voice_tones(voice)` to traverse `voice.phrases → phrase.motifs → motif.tones` and return the concatenated tone list.
+- Update the parser's voice-assembly site: where it built `Voice(tones=[...])` it now builds `Voice(phrases=[Phrase(motifs=[Motif(name="<parsed>", tones=[...])])])` — a single motif holding all flattened tones for now. Phrase transforms still flatten during voice assembly as today; phrase-relative `reference_tones` plumbing is unchanged.
+- Update `tests/test_voice.py` and `tests/test_score.py` to assert against `voice.phrases` rather than `voice.tones` directly.
+- All other consumers continue using `_legacy_flatten_voice_tones`.
+Design note: this is the only step in Phase 2 that changes the public shape of `Voice`. Other consumers stay insulated by the helper.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 3b (high): Parser builds real motifs and phrases.**
+- Parser stops collapsing all phrase tones into one motif. For each phrase in JSON, it builds one `Motif` per motif name referenced in the phrase's `motifs` list, in order. Motif names and tones come from the JSON top-level `motifs` block.
+- Phrase transforms still run during voice assembly as today. Input to a phrase transform is the flattened tones of the phrase's motifs (concatenated in order). Output of a phrase transform is a flat tone list and is wrapped as `Phrase(motifs=[Motif(name="<transformed>", tones=result)])` — the synthetic-motif decision applied. The previous motif structure does not survive a phrase transform.
 - Renderers and score-aware transforms still use `_legacy_flatten_voice_tones`.
-- Done signal: full test suite passes. Compositions render identically. Internal structure now matches the JSON's motif declarations.
+- This step touches only `composition/parser.py` and possibly `composition/schema.py`. Do not modify JSON files. Do not touch transform implementations.
+Done signal: `uv run pytest tests` passes. Every existing composition renders identically. `mypy .` passes.
 
-For each consumer-migration sub-step below (3c–3g), the implementing model should: replace `_legacy_flatten_voice_tones` calls with either direct hierarchy traversal where natural, or with a call into a permanent traversal utility (creating `score_model/traversal.py` and adding the needed utility function on first use). The choice is per-consumer based on what reads most clearly. Renderers in particular are good candidates for traversal utilities since they have no use for phrase boundaries.
+For each consumer-migration sub-step below (3c–3g), replace `_legacy_flatten_voice_tones` calls with either direct hierarchy traversal where natural, or with a call into a permanent traversal utility in `score_model/traversal.py` (create the module and add the needed function on first use). The choice is per-consumer based on what reads most clearly. Renderers are good candidates for traversal utilities since they have no use for phrase boundaries.
 
-**Step 3c: Migrate `wav_writer`.** `audio_rendering/wav_writer.py`. Done signal: `tests/test_audio_io.py` passes.
+**Step 3c (low): Migrate `wav_writer`.** `audio_rendering/wav_writer.py` only. Done signal: `uv run pytest tests/test_audio_io.py` passes. `mypy .` passes.
 
-**Step 3d: Migrate `midi_writer`.** `midi_rendering/midi_writer.py`. Done signal: `tests/test_midi_writer.py` passes.
+**Step 3d (low): Migrate `midi_writer`.** `midi_rendering/midi_writer.py` only. Done signal: `uv run pytest tests/test_midi_writer.py` passes. `mypy .` passes.
 
-**Step 3e: Migrate `frost_effect`.** `transforms/geological/frost_effect.py`. Done signal: frost effect tests pass.
+**Step 3e (low): Migrate `frost_effect`.** `transforms/geological/frost_effect.py` only. Done signal: `uv run pytest tests/test_frost_effect_demo.py tests/test_frost_effect_edge_expansion.py tests/test_frost_effect_recursive_demo.py tests/test_frost_helpers.py` passes. `mypy .` passes.
 
-**Step 3f: Migrate `add_pedal_tone`.** `transforms/counterpoint/fugue.py`. Done signal: counterpoint tests pass.
+**Step 3f (low): Migrate `add_pedal_tone`.** `transforms/counterpoint/fugue.py`, the `add_pedal_tone` function only. Do not touch `stretto` in this step. Done signal: `uv run pytest tests/test_counterpoint_fugue.py` passes. `mypy .` passes.
 
-**Step 3g: Migrate `score_feigenbaum_sequence`.** `transforms/proportion/feigenbaum.py`. Done signal: feigenbaum tests pass.
+**Step 3g (low): Migrate `score_feigenbaum_sequence`.** `transforms/proportion/feigenbaum.py`, `score_feigenbaum_sequence` function only. Other functions in that file are phrase-level and untouched here. Done signal: `uv run pytest tests/test_proportion_feigenbaum.py` passes. `mypy .` passes.
 
-**Step 3h: Migrate `apply_to_each_voice` and `stretto`.**
-- `apply_to_each_voice` in `composition/parser.py` uses direct hierarchy traversal.
-- `stretto` in `transforms/counterpoint/fugue.py` finds its target motif by walking the `Score` hierarchy (the named-lookup-by-traversal decision). The parser stops threading `parsed_motifs` into the stretto call site as part of this step or 3i — whichever is cleaner.
-- Done signal: parser and stretto tests pass.
+**Step 3h-i (low): Migrate `apply_to_each_voice` in the parser.** In `composition/parser.py`, `apply_to_each_voice` walks `voice.phrases → phrase.motifs → motif.tones` to gather the voice's flat tones, applies the raw transform, and constructs a new `Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=result)])])` for the result. Use the traversal utility from `score_model/traversal.py` if appropriate. Done signal: `uv run pytest tests/test_parser_helpers.py tests/test_json_parser.py` passes. `mypy .` passes.
 
-**Step 3i: Migrate tests.** All test files still reading through `_legacy_flatten_voice_tones` are updated to direct hierarchy traversal. Done signal: full test suite passes.
+**Step 3h-ii (high): Migrate `stretto` and remove `parsed_motifs` from the score-transform path.**
+- `stretto` in `transforms/counterpoint/fugue.py` is rewritten to look up its target motif by traversing the `Score` hierarchy (`for voice in score.voices: for phrase in voice.phrases: for motif in phrase.motifs: ...`), comparing `motif.name` to the `motif` parameter. If found, it copies that motif's tones; if not found, it raises with a clear error message naming the requested motif. Consider adding a small motif-lookup helper to `score_model/traversal.py` if the traversal reads awkwardly.
+- The `parsed_motifs` argument is removed from `_apply_score_transform_spec` in `composition/parser.py` and from the call site in `parse_composition`. The `parse_motifs` function may stay as parser-internal scaffolding for now if needed for phrase construction; it is removed from any score-transform call path.
+- Update `tests/test_counterpoint_fugue.py` and any related tests so the target motif is present in the score via a phrase that references it. If a test previously injected motifs via a side channel, it is rewritten to put them in the score's hierarchy where the new lookup can find them.
+Design note: after this step, no transform in the codebase receives motifs out-of-band.
+Done signal: `uv run pytest tests/test_counterpoint_fugue.py tests/test_json_parser.py tests/test_parser.py` passes. `mypy .` passes.
 
-**Step 3j: Delete the helper.** Remove `score_model/_migration.py` and any remaining imports. Done signal: `rg _legacy_flatten_voice_tones` returns nothing; full test suite passes; `mypy .` passes.
+**Step 3i (low): Migrate tests.** Update every test file that still reads through `_legacy_flatten_voice_tones` to use direct hierarchy traversal or the permanent `score_model/traversal.py` utilities. Use `rg "_legacy_flatten_voice_tones" tests/` to find them. Done signal: `rg "_legacy_flatten_voice_tones" tests/` returns nothing. `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 3j (low): Delete the migration helper.**
+- Remove `score_model/_migration.py`.
+- Remove all remaining imports of `_legacy_flatten_voice_tones` from production code.
+- Use `rg "_legacy_flatten_voice_tones"` repo-wide to confirm zero results.
+Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest tests` passes. `mypy .` passes.
 
 ### Phase 3 — Refactor the transform definition model
 
-**Step 4: Add new definition dataclasses and `validate_params` helper.** Add `PhraseTransformDefinition` and `ScoreTransformDefinition` dataclasses in `transforms/base.py`. Extract `validate_params` into a module-level helper used by both. Nothing wired yet; existing `TransformDefinition[ScopeType]` still in use.
+**Step 4 (low): Add new definition dataclasses and a free `validate_transform_params` function.**
+- In `transforms/base.py`, add two new `@dataclass(frozen=True)` classes: `PhraseTransformDefinition` and `ScoreTransformDefinition`. Each has fields `name: str`, `params_spec: TransformParamsSpec`, and `apply: Callable[[Score, Mapping[str, object]], Score]`.
+- Extract the existing `TransformDefinition.validate_params` method body into a module-level free function `validate_transform_params(params_spec: TransformParamsSpec, name: str, params: Mapping[str, object]) -> None`. Both new dataclasses expose a `validate_params(self, params)` method that simply calls the free function with `self.params_spec` and `self.name`. Do not duplicate the validation logic across the two classes.
+- The existing `TransformDefinition[ScopeType]` is left alone in this step; the new types are not yet wired in anywhere.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
-**Step 5: Add registry authoring helpers.** Add `own_phrase`, `phrase_relative`, `each_voice`, `score_aware`, `target_motifs` helpers (in `transforms/registry_helpers.py` or inline in `registry.py`). Each takes a raw transform function and returns the unified `apply: Callable[[Score, Mapping[str, object]], Score]`. Not wired yet.
+**Step 5 (low): Add registry authoring helpers.**
+- Add a new module `transforms/registry_helpers.py` with five helper functions: `own_phrase(raw_func)`, `phrase_relative(raw_func)`, `each_voice(raw_func)`, `score_aware(raw_func)`, `target_motifs(raw_func)`.
+- Each helper takes a raw transform function (with its existing narrow signature) and returns a callable matching `Callable[[Score, Mapping[str, object]], Score]`. For `own_phrase` and `phrase_relative`, the returned callable also takes `voice_index: int` and `phrase_index: int` as additional parameters bound at parse time (the call site is the parser's location-binding step, Step 6).
+- Each helper must:
+  - Walk the `Score` hierarchy to find the relevant tones / motif / voice.
+  - Call the raw transform.
+  - Build a new `Score` with the result substituted in (no mutation).
+- Add a focused test file `tests/test_registry_helpers.py` that exercises each helper with a small synthetic raw function and asserts the constructed callable returns a correctly-shaped `Score`.
+- Nothing in `transforms/registry.py` or `composition/parser.py` uses these helpers yet.
+Design note: this is the foundation Steps 7 and 8 build on. Bugs here amplify across ~30 registry entries downstream. The user (or a higher-powered reviewer) should review this step's diff carefully before Steps 7 and 8 begin.
+Done signal: `uv run pytest tests/test_registry_helpers.py tests` passes. `mypy .` passes.
 
-**Step 6: Move phrase transform application timing.** Change the parser so phrase transforms run after the `Score` is fully built, using parse-time `(voice_index, phrase_index)` location binding. Phrase transforms still use the old definition type and old branching — only WHEN they run changes. Phrase-relative `reference_tones` computation moves to the new application site, reading from the current score state. All tests should still pass.
+**Step 6 (high): Move phrase transform application timing.**
 
-**Step 7: Migrate `PHRASE_TRANSFORMS` to new definitions and helpers.** Rewrite each entry in `transforms/registry.py` as a `PhraseTransformDefinition` built via `own_phrase(...)` or `phrase_relative(...)`. Parser's phrase-side dispatch becomes the three-line uniform form. Old phrase branching code in parser deleted.
+This step changes *when* phrase transforms execute. Today they run during voice assembly (inside the parser's voice loop). After this step, they run after the `Score` is fully built. Behavior must be preserved exactly.
 
-**Step 8: Migrate `SCORE_TRANSFORMS` to new definitions and helpers.** Rewrite each entry as a `ScoreTransformDefinition` built via `each_voice(...)`, `score_aware(...)`, or `target_motifs(...)`. Parser's score-side dispatch becomes the three-line uniform form. Old score branching deleted.
+The change has three parts that move together:
 
-**Step 9: Collapse the parser transform pipeline.** Parser now has one uniform three-line loop for both registries. Remove `apply_to_each_voice` helper from parser. Remove any remaining `parsed_motifs` plumbing.
+1. **Parse-time location binding.** As the parser walks JSON, instead of applying each phrase transform inline, it collects an ordered list of `(voice_index, phrase_index, transform_name, transform_params)` tuples — one per JSON-declared phrase transform, in JSON order across all voices and phrases.
+2. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
+3. **Sequential phrase-transform application.** After the `Score` is built, the parser walks the collected tuple list in order. For each tuple, it looks up the phrase transform in `PHRASE_TRANSFORMS` (still the old type at this step), computes `reference_tones` at apply time from the *current* `Score` (same rule the parser uses today: all preceding phrases in the same voice, or all tones of all preceding voices if this is the first phrase), applies the transform, and substitutes the result back into the score as a new `Phrase` at that location.
 
-**Step 10: Delete dead types.** Delete `TransformDefinition[ScopeType]`, `PhraseScope`, `ScoreScope`, the old `transform_func` field, related generic machinery, and any unused type aliases or imports.
+Ordering rule: application order is the JSON order of `(voice_index, phrase_index, transform_index_within_phrase)`. This is the same order phrase transforms run today. Do not reorder or parallelize.
+
+Constraints:
+- Phrase transforms still use the old `TransformDefinition[PhraseScope]` and the old phrase-side branching code. Only WHEN they run changes, not HOW.
+- Do not touch `transforms/registry.py` or transform implementations.
+
+Verification: every existing composition must render identically. Add a focused regression test that exercises phrase-relative ordering — a 2-voice composition where voice 1's phrase 2 has a phrase-relative transform (reference is phrase 1 of voice 1), and voice 2's phrase 1 has a phrase-relative transform (reference is the whole of voice 1 after its transforms) — and assert the resulting tones match expected values consistent with current behavior.
+
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 7a (low): Add new `PHRASE_TRANSFORMS_V2` registry alongside the old one.**
+- In `transforms/registry.py`, add a new module-level dict `PHRASE_TRANSFORMS_V2: dict[str, PhraseTransformDefinition]` populated by rewriting each entry in `PHRASE_TRANSFORMS` using the helpers from Step 5. Use `own_phrase(...)` for entries that today have `scope=PhraseScope.OWN_PHRASE` and `phrase_relative(...)` for those with `scope=PhraseScope.PHRASE_RELATIVE`.
+- Do not delete or modify the old `PHRASE_TRANSFORMS`. Do not touch the parser.
+- Verify entry count matches and every key exists in both dicts.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 7b (low): Swap the parser to `PHRASE_TRANSFORMS_V2` and remove the old phrase-side branching.**
+- Update `composition/parser.py` phrase-transform application (Step 6's apply site) to look up definitions in `PHRASE_TRANSFORMS_V2` and call `definition.validate_params(params)` and `definition.apply(score, voice_index, phrase_index, params)` (or whichever signature was settled in Step 5 for the bound phrase-apply form).
+- Delete the old phrase-side scope branching in the parser.
+- Delete the old `PHRASE_TRANSFORMS` dict.
+- Rename `PHRASE_TRANSFORMS_V2` to `PHRASE_TRANSFORMS`.
+Done signal: `uv run pytest tests` passes. `mypy .` passes. `rg "PhraseScope" composition` returns no results.
+
+**Step 8a (low): Add new `SCORE_TRANSFORMS_V2` registry alongside the old one.**
+- Same pattern as 7a, for `SCORE_TRANSFORMS`. Use `each_voice(...)` for entries with `scope=ScoreScope.EACH_VOICE`, `score_aware(...)` for `ScoreScope.SCORE_AWARE`, and `target_motifs(...)` for `ScoreScope.TARGET_MOTIFS`.
+- Do not delete the old `SCORE_TRANSFORMS`. Do not touch the parser.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 8b (low): Swap the parser to `SCORE_TRANSFORMS_V2` and remove the old score-side branching.**
+- Update score-transform application in `composition/parser.py` to look up definitions in `SCORE_TRANSFORMS_V2` and call `definition.validate_params(params)` and `definition.apply(score, params)`.
+- Delete the old score-side scope branching, the `apply_to_each_voice` helper if still present in the parser, and the old `SCORE_TRANSFORMS` dict.
+- Rename `SCORE_TRANSFORMS_V2` to `SCORE_TRANSFORMS`.
+Done signal: `uv run pytest tests` passes. `mypy .` passes. The parser's transform-application loops are now both the three-line uniform form.
+
+**Step 9 (low): Verify parser shape and final small cleanups.**
+- At this point the parser should already have one uniform three-line transform-application loop per registry, and `apply_to_each_voice` and `parsed_motifs` plumbing should already be gone. This step is verification, not new work.
+- Run `rg "apply_to_each_voice|parsed_motifs|PhraseScope|ScoreScope" composition transforms` and confirm no remaining references in active code paths (definitions in `transforms/base.py` are OK; they are removed in Step 10).
+- If anything unexpected remains, stop and report; do not improvise.
+Done signal: clean `rg` results in active paths. `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 10 (low): Delete dead types.**
+- Delete `TransformDefinition` (the generic one), `PhraseScope`, `ScoreScope`, `ScopeType` TypeVar, related `Generic` machinery, and any unused type aliases or imports in `transforms/base.py`.
+- Use `rg` repo-wide to confirm no remaining imports of these symbols.
+Done signal: `rg "TransformDefinition\[|PhraseScope|ScoreScope|ScopeType"` returns no results. `uv run pytest tests` passes. `mypy .` passes.
 
 ### Phase 4 — Final sweep
 
-**Step 11: Cleanup and verification.**
-- Update `.serena/memories/` for stale references.
-- Run `mypy .` (must pass without `cast`).
+**Step 11 (low): Cleanup and verification.**
+- Update `.serena/memories/` for any stale references (search for `TRANSFORMS`, `PhraseScope`, `ScoreScope`, `Voice.tones`).
+- Run `mypy .` and confirm it passes without any `cast` calls in the changed code paths.
 - Run `uv run pytest tests` (full suite).
-- `rg` for stragglers: `TransformDefinition`, `PhraseScope`, `ScoreScope`, `apply_to_each_voice`, `parsed_motifs`, `voice.tones`, `_legacy_flatten_voice_tones`.
-- Update any related feature docs in `features/`.
+- `rg` repo-wide for stragglers: `TransformDefinition`, `PhraseScope`, `ScoreScope`, `apply_to_each_voice`, `parsed_motifs`, `voice.tones`, `_legacy_flatten_voice_tones`. All should return zero results in active code.
+- Update any related feature docs in `features/` that reference the old model.
+Done signal: all of the above clean.
 
 ## Open Items
 
