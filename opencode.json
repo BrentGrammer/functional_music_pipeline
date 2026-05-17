@@ -22,7 +22,7 @@
         "--prerelease=allow",
         "serena",
         "start-mcp-server",
-        "--project-from-cwd",
+        "--project",
         "--context=ide",
         "--open-web-dashboard=false"
       ],

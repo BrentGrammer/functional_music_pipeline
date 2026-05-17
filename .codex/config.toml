@@ -11,7 +11,7 @@ args = [
   "--prerelease=allow",
   "serena",
   "start-mcp-server",
-  "--project-from-cwd",
+  "--project",
   "--context=codex",
   "--open-web-dashboard=false"
 ]
