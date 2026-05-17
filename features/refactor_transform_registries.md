@@ -100,6 +100,8 @@ Do not:
 
 This can be implemented as a breaking migration. There is no need to preserve legacy `TRANSFORMS` behavior, accept old `score_` names, or support a hybrid fallback period.
 
+Use Serena for symbol-level edits and reference tracing in the codebase, especially when changing class definitions, updating imports, or finding all references to a transform type. Use `rg` or direct file inspection for plain-text checks, fixture scans, and migration verification such as confirming that no JSON still uses `score_` names.
+
 ### Step 1: Add New Transform Definition Types
 - In `transforms/base.py`, add `PhraseScope` and `ScoreScope` enums.
 - Add `TransformDefinition[ScopeType]` with `name`, `transform_func`, `scope`, `params_spec`, and the existing `validate_params` behavior moved over from `TransformDescriptor`.
@@ -139,11 +141,24 @@ uv run pytest tests/test_parser_helpers.py
 
 ### Step 4: Migrate Tests and Fixtures
 - Update tests to import `PHRASE_TRANSFORMS`, `SCORE_TRANSFORMS`, `PhraseScope`, and `ScoreScope` instead of `TRANSFORMS` and legacy descriptor classes.
-- Replace legacy descriptor subclass assertions with `TransformDefinition.scope` and `transform_func` assertions. For example, a test that currently checks `isinstance(descriptor, EachVoiceTransform)` should become a test that checks `definition.scope is ScoreScope.EACH_VOICE` and `definition.transform_func is drift_transform`. A phrase test that currently checks `isinstance(descriptor, PhraseTransform)` should become a test that checks `definition.scope is PhraseScope.OWN_PHRASE` and `definition.transform_func is reverse_tones`.
+- Replace legacy descriptor subclass assertions with `TransformDefinition.scope` assertions. For example, a test that currently checks `isinstance(descriptor, EachVoiceTransform)` should become a test that checks `definition.scope is ScoreScope.EACH_VOICE`. A phrase test that currently checks `isinstance(descriptor, PhraseTransform)` should become a test that checks `definition.scope is PhraseScope.OWN_PHRASE`.
+- Keep `transform_func` identity assertions only in a small number of registry wiring smoke tests where they add value and are not the main contract under test.
 - Update score transform JSON in tests from `score_reverse`, `score_scale`, etc. to `reverse`, `scale`, etc.
 - Replace tests that expect `"reverse"` to be rejected in `score_transforms`; it should now succeed because score `reverse` is valid.
-- Keep or add tests for wrong-scope names using transforms that exist only in one registry, such as `accelerando` under `score_transforms` and `add_pedal_tone` under phrase `transforms`.
-- For tests that temporarily register `_test_score_with_motifs`, add it to `SCORE_TRANSFORMS` with `ScoreScope.TARGET_MOTIFS` and clean it up afterward.
+- Keep or add tests for wrong-scope names using transforms that exist only in one transform dictionary, such as `accelerando` under `score_transforms` and `add_pedal_tone` under phrase `transforms`.
+- For tests that temporarily inject a fake score transform for target-motif coverage, add it to `SCORE_TRANSFORMS` with `ScoreScope.TARGET_MOTIFS` and remove it in `finally`. Example:
+```python
+SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
+    name="_test_score_with_motifs",
+    transform_func=capture_score_target_motifs_transform,
+    scope=ScoreScope.TARGET_MOTIFS,
+    params_spec=TransformParamsSpec(...),
+)
+try:
+    parse_composition(...)
+finally:
+    SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
+```
 
 Checkpoint:
 ```bash
@@ -152,8 +167,8 @@ uv run pytest tests/test_json_parser.py tests/test_counterpoint_fugue.py tests/t
 
 ### Step 5: Migrate Composition JSON
 - Update all `compositions/**/*.json` score transform names that use `score_` prefixes: `score_reverse` to `reverse`, `score_transpose` to `transpose`, `score_scale` to `scale`, and so on.
-- Keep score-only names unchanged: `add_pedal_tone`, `stretto`, `frost_effect`.
-- Update descriptions only when they describe the public transform name and would now be misleading.
+- Keep names without `score_` prepended unchanged: `add_pedal_tone`, `stretto`, `frost_effect`.
+- Update descriptions only when they describe the public transform name and would now be misleading given the new naming convention.
 
 Checkpoint:
 ```bash
