@@ -21,8 +21,8 @@ Introduce a formal taxonomy for transform scopes using Enums to define exactly h
 
 ```python
 class PhraseScope(Enum):
-    STANDARD = "standard"         # f(tones: list[Tone])
-    RELATIVE = "relative"         # f(tones: list[Tone], ref_tones: list[Tone])
+    OWN_PHRASE = "own_phrase"             # f(tones: list[Tone])
+    PHRASE_RELATIVE = "phrase_relative"     # f(tones: list[Tone], ref_tones: list[Tone])
 
 class ScoreScope(Enum):
     SCORE_AWARE = "score_aware"   # f(score: Score)
@@ -49,7 +49,7 @@ Replace the flat `TRANSFORMS` dictionary with two explicit registries in `transf
 
 This allows the same logical name (e.g., `reverse`) to be registered in both places with different execution scopes, while maintaining strict separation.
 
-Do not split the registries more granularly by execution scope. Registry groups should mirror the public JSON placement contexts (`transforms` vs. `score_transforms`), while `PhraseScope` and `ScoreScope` should capture the more detailed execution behavior inside each transform definition. For example, `PHRASE_TRANSFORMS` can contain both `PhraseScope.STANDARD` and `PhraseScope.RELATIVE` definitions, and `SCORE_TRANSFORMS` can contain `ScoreScope.EACH_VOICE`, `ScoreScope.SCORE_AWARE`, and `ScoreScope.TARGET_MOTIFS` definitions.
+Do not split the registries more granularly by execution scope. Registry groups should mirror the public JSON placement contexts (`transforms` vs. `score_transforms`), while `PhraseScope` and `ScoreScope` should capture the more detailed execution behavior inside each transform definition. For example, `PHRASE_TRANSFORMS` can contain both `PhraseScope.OWN_PHRASE` and `PhraseScope.PHRASE_RELATIVE` definitions, and `SCORE_TRANSFORMS` can contain `ScoreScope.EACH_VOICE`, `ScoreScope.SCORE_AWARE`, and `ScoreScope.TARGET_MOTIFS` definitions.
 
 Name overlap across registries is expected and intentional:
 - Names must be unique within a single registry.
@@ -96,46 +96,87 @@ Do not:
 - Require placeholder registrations for unsupported scopes.
 - Treat missing registry membership as an error in the registry itself; it is a valid statement that the transform is not available in that scope.
 
-Implementation can reduce duplicate registration boilerplate with small helper constructors such as `phrase(...)`, `phrase_relative(...)`, `each_voice(...)`, `score_aware(...)`, and `score_target_motifs(...)`.
-
 ## Implementation Plan
 
 This can be implemented as a breaking migration. There is no need to preserve legacy `TRANSFORMS` behavior, accept old `score_` names, or support a hybrid fallback period.
 
-### Phase 1: Foundation
-- Add `PhraseScope` and `ScoreScope` Enums to `transforms/base.py`.
-- Add the generic `TransformDefinition` class to `transforms/base.py`.
-- Add helper constructors such as `phrase(...)`, `phrase_relative(...)`, `each_voice(...)`, `score_aware(...)`, and `score_target_motifs(...)` if they reduce registry boilerplate.
-- *Goal:* Establish the new type system and the authoring helpers needed for the registry migration.
+### Step 1: Add New Transform Definition Types
+- In `transforms/base.py`, add `PhraseScope` and `ScoreScope` enums.
+- Add `TransformDefinition[ScopeType]` with `name`, `transform_func`, `scope`, `params_spec`, and the existing `validate_params` behavior moved over from `TransformDescriptor`.
+- Add type aliases for phrase and score definitions if useful, e.g. `PhraseTransformDefinition` and `ScoreTransformDefinition`.
+- Keep the old descriptor classes temporarily during this step so existing imports still work while the migration is in progress.
 
-### Phase 2: Registry Migration
-- Replace the flat `TRANSFORMS` dictionary with `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`.
-- Register phrase transforms under their existing public names.
-- Register score transforms without `score_` prefixes, e.g. `score_reverse` becomes `SCORE_TRANSFORMS["reverse"]`.
-- Register repeated names in both registries when both contexts are valid.
-- *Goal:* Make the registry structure match the final public API in one migration.
+Checkpoint:
+```bash
+uv run pytest tests/test_transforms_base.py
+```
 
-### Phase 3: Parser Adaptation
-- Modify phrase transform lookup to use only `PHRASE_TRANSFORMS`.
-- Modify score transform lookup to use only `SCORE_TRANSFORMS`.
-- Remove all fallback logic to the legacy flat registry.
-- Dispatch by `PhraseScope` or `ScoreScope` instead of descriptor subclass type.
-- Add wrong-scope diagnostics when a requested name exists in the other registry.
-- *Goal:* Resolve transform names by JSON context and scope-specific registry.
+### Step 2: Replace Registry Authoring
+- In `transforms/registry.py`, replace `TRANSFORMS` with `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`.
+- Author registry entries with explicit inline `TransformDefinition(...)` calls.
+- Register phrase transforms under current public names: `reverse`, `golden_ratio`, `invert`, `feigenbaum_sequence`, `transpose`, `scale`, `pad_silence`, `delay`, `repeat`, `erosion`, `drift`, phrase-relative transforms, `accelerando`, `ritardando`, `weierstrass`, `terraced_drift`, `cellular_automata`, `random_drop`.
+- Register score transforms without `score_`: `feigenbaum_sequence`, `reverse`, `golden_ratio`, `invert`, `transpose`, `scale`, `delay`, `repeat`, `drift`, `weierstrass`, `terraced_drift`, `cellular_automata`, `random_drop`, plus score-only `add_pedal_tone`, `stretto`, `frost_effect`.
+- Do not add score registrations for transforms that do not currently have score behavior.
 
-### Phase 4: JSON and Test Migration
-- Update all `.json` files in `compositions/` to remove `score_` prefixes from score transform names.
-- Update tests to use `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS` directly.
-- Replace tests that expect phrase transforms to be rejected in `score_transforms` when a same-name score transform now exists.
-- Add explicit tests for repeated names across registries, e.g. phrase `reverse` and score `reverse`.
-- Add explicit tests for wrong-scope errors, e.g. a phrase-only transform used under `score_transforms`.
-- *Goal:* Align fixtures and assertions with the final API.
+Checkpoint:
+- Import `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS` in a Python shell or focused test.
+- Verify repeated names like `reverse` and `feigenbaum_sequence` exist in both `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`.
+- Verify no key in `SCORE_TRANSFORMS` starts with `score_`.
 
-### Phase 5: Cleanup
-- Remove the legacy `TRANSFORMS` dictionary.
-- Remove legacy classes (`PhraseTransform`, `ScoreAwareTransform` (formerly ScoreTransform), etc.) from `transforms/base.py`.
-- Remove tests and docs that refer to `score_` names as the supported public API.
-- *Goal:* Finalize the refactor and remove all technical debt.
+### Step 3: Update Parser Lookup and Dispatch
+- In `composition/parser.py`, import `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`; remove `TRANSFORMS`.
+- Phrase parsing should look up names only in `PHRASE_TRANSFORMS`.
+- Score parsing should look up names only in `SCORE_TRANSFORMS`.
+- Dispatch phrase definitions by `PhraseScope.OWN_PHRASE` vs. `PhraseScope.PHRASE_RELATIVE`.
+- Dispatch score definitions by `ScoreScope.EACH_VOICE`, `ScoreScope.SCORE_AWARE`, and `ScoreScope.TARGET_MOTIFS`.
+- If a name is missing from the requested registry but exists in the other registry, raise a wrong-scope error like `Transform 'accelerando' is only available as a phrase transform.`
+- If the name exists in both registries, use the registry implied by JSON context with no ambiguity.
+
+Checkpoint:
+```bash
+uv run pytest tests/test_parser_helpers.py
+```
+
+### Step 4: Migrate Tests and Fixtures
+- Update tests to import `PHRASE_TRANSFORMS`, `SCORE_TRANSFORMS`, `PhraseScope`, and `ScoreScope` instead of `TRANSFORMS` and legacy descriptor classes.
+- Replace legacy descriptor subclass assertions with `TransformDefinition.scope` and `transform_func` assertions. For example, a test that currently checks `isinstance(descriptor, EachVoiceTransform)` should become a test that checks `definition.scope is ScoreScope.EACH_VOICE` and `definition.transform_func is drift_transform`. A phrase test that currently checks `isinstance(descriptor, PhraseTransform)` should become a test that checks `definition.scope is PhraseScope.OWN_PHRASE` and `definition.transform_func is reverse_tones`.
+- Update score transform JSON in tests from `score_reverse`, `score_scale`, etc. to `reverse`, `scale`, etc.
+- Replace tests that expect `"reverse"` to be rejected in `score_transforms`; it should now succeed because score `reverse` is valid.
+- Keep or add tests for wrong-scope names using transforms that exist only in one registry, such as `accelerando` under `score_transforms` and `add_pedal_tone` under phrase `transforms`.
+- For tests that temporarily register `_test_score_with_motifs`, add it to `SCORE_TRANSFORMS` with `ScoreScope.TARGET_MOTIFS` and clean it up afterward.
+
+Checkpoint:
+```bash
+uv run pytest tests/test_json_parser.py tests/test_counterpoint_fugue.py tests/test_drift.py tests/test_pad_silence.py
+```
+
+### Step 5: Migrate Composition JSON
+- Update all `compositions/**/*.json` score transform names that use `score_` prefixes: `score_reverse` to `reverse`, `score_transpose` to `transpose`, `score_scale` to `scale`, and so on.
+- Keep score-only names unchanged: `add_pedal_tone`, `stretto`, `frost_effect`.
+- Update descriptions only when they describe the public transform name and would now be misleading.
+
+Checkpoint:
+```bash
+rg -n '"name": "score_' compositions tests
+```
+
+### Step 6: Remove Legacy Types and Imports
+- Remove `TransformDescriptor`, `PhraseTransform`, `PhraseRelativeTransform`, `ScoreAwareTransform`, `ScoreTargetMotifsTransform`, `EachVoiceTransform`, and `TransformWithCallable` after parser/tests no longer use them.
+- Ensure `TransformDefinition.validate_params` remains the single validation implementation.
+- Remove any remaining `TRANSFORMS` imports or references in active code and tests.
+
+Checkpoint:
+```bash
+rg -n 'TRANSFORMS|PhraseTransform|PhraseRelativeTransform|ScoreAwareTransform|ScoreTargetMotifsTransform|EachVoiceTransform|TransformWithCallable' composition transforms tests
+```
+
+### Final Verification
+- Run the focused parser and registry tests after each migration stage.
+- Run the full suite:
+```bash
+uv run pytest tests
+```
+- Required coverage should include same-name transforms in both registries, wrong-scope diagnostics, score `each_voice` dispatch, score-aware dispatch, target-motifs dispatch, and phrase-relative dispatch.
 
 ## Benefits
 - **Improved UX:** Cleaner JSON schema for users.
