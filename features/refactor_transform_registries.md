@@ -49,6 +49,8 @@ Replace the flat `TRANSFORMS` dictionary with two explicit registries in `transf
 
 This allows the same logical name (e.g., `reverse`) to be registered in both places with different execution scopes, while maintaining strict separation.
 
+Do not split the registries more granularly by execution scope. Registry groups should mirror the public JSON placement contexts (`transforms` vs. `score_transforms`), while `PhraseScope` and `ScoreScope` should capture the more detailed execution behavior inside each transform definition. For example, `PHRASE_TRANSFORMS` can contain both `PhraseScope.STANDARD` and `PhraseScope.RELATIVE` definitions, and `SCORE_TRANSFORMS` can contain `ScoreScope.EACH_VOICE`, `ScoreScope.SCORE_AWARE`, and `ScoreScope.TARGET_MOTIFS` definitions.
+
 Name overlap across registries is expected and intentional:
 - Names must be unique within a single registry.
 - Names may repeat across `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`.
