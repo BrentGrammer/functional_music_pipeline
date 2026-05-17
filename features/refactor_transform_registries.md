@@ -8,6 +8,12 @@ This is a "leaky abstraction" that forces the user to know internal implementati
 ## Goal
 To separate transforms into two distinct registries: `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`. This will allow the same name (e.g., `reverse`) to be used in both the `phrase` and `score_transforms` blocks of a JSON composition, with the parser automatically selecting the correct implementation based on context.
 
+The goal is not to make every transform available in both places. Instead, the public transform identity becomes `(scope, name)`, where the scope is implied by the JSON location:
+- Phrase scope: entries under a phrase's `transforms` list.
+- Score scope: entries under the composition's `score_transforms` list.
+
+This keeps the public API clean without pretending that every transform has both phrase-level and score-level semantics.
+
 ## Proposed Changes
 
 ### 1. Strict Scope Taxonomy
@@ -43,18 +49,46 @@ Replace the flat `TRANSFORMS` dictionary with two explicit registries in `transf
 
 This allows the same logical name (e.g., `reverse`) to be registered in both places with different execution scopes, while maintaining strict separation.
 
+Registry membership should be explicit:
+- Register a transform in both registries only when both meanings are valid.
+- Register phrase-only transforms only in `PHRASE_TRANSFORMS`.
+- Register score-only transforms only in `SCORE_TRANSFORMS`.
+
+Examples:
+- `reverse`, `transpose`, `scale`, `delay`, `drift`, `weierstrass`, and similar tone-list transforms may appear in both registries when score scope means "apply this phrase transform to each voice."
+- `phrase_feigenbaum_shrink`, `phrase_feigenbaum_grow`, `phrase_golden_ratio_shrink`, and `phrase_golden_ratio_grow` are phrase-only because they depend on phrase-relative context.
+- `add_pedal_tone`, `stretto`, and `frost_effect` are score-only because they operate on whole-score structure or parsed motifs.
+- `feigenbaum_sequence` can use the same public name in both registries, but the score registry should point to the score-aware implementation.
+
 ### 4. Parser Update
 Update `composition/parser.py` to:
 - Use `PHRASE_TRANSFORMS` in `_apply_phrase_transform_spec`.
 - Use `SCORE_TRANSFORMS` in `_apply_score_transform_spec`.
 - Dispatch the `transform_func` based on the specific `scope` value using a clean conditional block for each context.
+- Emit scope-aware errors when a name exists in the other registry but not the requested one, e.g. `Transform 'accelerando' is only available as a phrase transform.`
 
 ## Discussion Outcomes & Trade-offs
 - **Outcome:** We chose the two-registry approach over a unified facade to ensure maximum explicitness.
 - **Pro:** Eliminates "implicit magic." Developers must intentionally register a transform for each context where it is valid.
 - **Pro:** Perfectly solves the `score_` prefix naming collision by providing context-isolated lookups.
+- **Pro:** Handles the real asymmetry in the transform model without treating phrase-only or score-only transforms as design problems.
 - **Con:** Slight increase in boilerplate when a transform is applicable to both phrase and score levels (it must be registered in both dictionaries).
 - **Conclusion:** The trade-off is worth it for a more robust and predictable domain model.
+
+### Naming Policy
+Transform names only need to be unique within a registry. The same string can safely mean different implementations when used in different JSON contexts.
+
+Do:
+- Use the same public name in both registries when the user-facing musical idea is the same, even if the execution scope differs.
+- Remove the `score_` prefix from score-level public names once the parser uses `SCORE_TRANSFORMS`.
+- Keep explicit score-only names when the concept has no phrase-level equivalent, e.g. `add_pedal_tone`, `stretto`, `frost_effect`.
+
+Do not:
+- Auto-register every phrase transform as a score transform.
+- Require placeholder registrations for unsupported scopes.
+- Treat missing registry membership as an error in the registry itself; it is a valid statement that the transform is not available in that scope.
+
+Implementation can reduce duplicate registration boilerplate with small helper constructors such as `phrase(...)`, `phrase_relative(...)`, `each_voice(...)`, `score_aware(...)`, and `score_target_motifs(...)`.
 
 ## Implementation Plan
 
@@ -82,6 +116,7 @@ Update `composition/parser.py` to:
 - Remove `score_` prefixes from all keys in `SCORE_TRANSFORMS`.
 - Update parser to *only* use the new registries (remove fallback logic).
 - Update all `.json` files in `compositions/` to remove `score_` prefixes.
+- Preserve scope-specific availability. A score transform name should only be accepted if it is explicitly registered in `SCORE_TRANSFORMS`.
 - *Goal:* Achieve the final intended user-facing API.
 
 ### Phase 6: Cleanup
