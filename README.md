@@ -268,3 +268,7 @@ See [Setup for different CLIs](https://github.com/exa-labs/exa-mcp-server)
     "timeout": 120000
   }
   ```
+
+  ### Docker Sandbox
+
+  - remove policies with `sbx policy rm network --id c4164c09-b43e-429e-a528-ceb034d63028` (don't include the local: or prepended string with the id)
