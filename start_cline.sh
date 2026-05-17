@@ -62,7 +62,7 @@ else
   configure_env
 
   echo "✅ Setup complete! Dropping you into the sandbox."
-  echo "!!! REMINDER: Run 'cline auth' then 'cline' once inside."
+  echo "!!! REMINDER: Run 'cline auth' (requires registering a cline account on their site), then 'cline' to start the CLI."
   
   sbx run "$SANDBOX_NAME"
 fi
