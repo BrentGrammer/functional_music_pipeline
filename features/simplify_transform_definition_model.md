@@ -133,6 +133,7 @@ Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase
 - **No flattening helper.** Consumers (renderers, score-aware transforms) walk the hierarchy directly: `voice.phrases → phrase.motifs → motif.tones`. They take whichever level of the model they actually need.
 - **Sequencing:** the implementation is decomposed into many small, individually reviewable steps. No big-bang migration, no two-phase split. Detailed step decomposition is produced during implementation planning, not in this feature doc.
 - **Backward compatibility:** this is a breaking migration. Old behavior, old types, and old JSON shapes do not need to be preserved.
+- **Transform boundaries:** transforms operate on `Phrase`, `Voice`, or `Score`. Transforms never operate on `Motif`. Motifs are immutable source material — pure building blocks supplied by the JSON. When a phrase transform produces a new tone sequence, the output `Phrase` contains a single new `Motif` holding those tones; the input motif structure does not survive sequence-reshaping transforms, which is the honest representation (the original motif names referred to the input partitioning, not to the transformed result). Transforms that wanted to produce multiple motifs in their output could, but none of today's phrase transforms do — they all produce one continuous tone sequence.
 
 ## Open Items
 
