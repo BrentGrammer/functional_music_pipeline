@@ -22,7 +22,6 @@ set -euo pipefail
 # 8. GLM5
 # 9. Kimi K2.5 # The thinking version is capable, but was really slow and a little glitchy
 
-MODEL="openai/gpt-5.5"
 # MODEL="amazon-bedrock/zai.glm-5"
 PROJECT_DIR="${1:-$PWD}"
 
@@ -61,6 +60,8 @@ export OPENCODE_DISABLE_SHARE=1
 export OPENCODE_DISABLE_AUTOUPDATE=1
 export DO_NOT_TRACK=1
 export SBX_NO_TELEMETRY=1
+export TERM=xterm-256color
+export ANTHROPIC_DEFAULT_OPUS_MODEL_SUPPORTED_CAPABILITIES=effort,xhigh_effort,max_effort,thinking,adaptive_thinking,interleaved_thinking
 # END opencode privacy flags
 EOF
 ' || true
@@ -68,7 +69,7 @@ EOF
 
 # OPENCODE_DISABLE_MODELS_FETCH # this can slow things down, so revisit whether really need this
 
-echo "Starting opencode agent for project $PROJECT_BASENAME with model: $MODEL..."
+echo "Starting opencode agent for project $PROJECT_BASENAME"
 echo "Sandbox name: $SANDBOX_NAME"
 echo "Project dir: $PROJECT_DIR"
 echo "!!! IMPORTANT !!! --- Remember to set your API key with 'sbx secret set ${SANDBOX_NAME} openai' ---"
@@ -80,7 +81,7 @@ if sbx ls | grep "$SANDBOX_NAME"; then
 
   configure_privacy_flags
 
-  sbx run "$SANDBOX_NAME" -- --model "$MODEL"
+  sbx run "$SANDBOX_NAME"
 else
   echo "🆕 Creating new sandbox: $SANDBOX_NAME"
 
@@ -88,5 +89,5 @@ else
 
   configure_privacy_flags
 
-  sbx run "$SANDBOX_NAME" -- --model "$MODEL"
+  sbx run "$SANDBOX_NAME"
 fi
