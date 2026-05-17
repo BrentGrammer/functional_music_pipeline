@@ -1,0 +1,17 @@
+[mcp_servers.serena]
+startup_timeout_sec = 60
+command = "uv"
+args = [
+  "tool",
+  "run",
+  "--python",
+  "3.13",
+  "--from",
+  "serena-agent@latest",
+  "--prerelease=allow",
+  "serena",
+  "start-mcp-server",
+  "--project-from-cwd",
+  "--context=codex",
+  "--open-web-dashboard=false"
+]
