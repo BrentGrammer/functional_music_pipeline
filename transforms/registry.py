@@ -2,8 +2,8 @@ from transforms.base import (
     EachVoiceTransform,
     PhraseRelativeTransform,
     PhraseTransform,
+    ScoreAwareTransform,
     ScoreTargetMotifsTransform,
-    ScoreTransform,
     TransformWithCallable,
 )
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_tones
@@ -116,7 +116,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         phrase_golden_ratio_grow,
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
-    "score_feigenbaum_sequence": ScoreTransform(
+    "score_feigenbaum_sequence": ScoreAwareTransform(
         "score_feigenbaum_sequence",
         score_feigenbaum_sequence,
         params_spec=FEIGENBAUM_PARAMS_SPEC,
@@ -161,7 +161,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         drift_transform,
         params_spec=DRIFT_PARAMS_SPEC,
     ),
-    "add_pedal_tone": ScoreTransform(
+    "add_pedal_tone": ScoreAwareTransform(
         "add_pedal_tone",
         add_pedal_tone,
         params_spec=ADD_PEDAL_TONE_PARAMS_SPEC,
@@ -171,7 +171,7 @@ TRANSFORMS: dict[str, TransformWithCallable] = {
         stretto,
         params_spec=STRETTO_PARAMS_SPEC,
     ),
-    "frost_effect": ScoreTransform(
+    "frost_effect": ScoreAwareTransform(
         "frost_effect",
         frost_effect,
         params_spec=FROST_EFFECT_PARAMS_SPEC,

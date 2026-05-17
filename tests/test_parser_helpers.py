@@ -9,7 +9,7 @@ from composition.parser import (
 from composition.schema import VoiceConfig
 from score_model.tone import Tone
 from transforms.base import (
-    ScoreTransform,
+    ScoreAwareTransform,
     TransformParamsSpec,
 )
 
@@ -82,7 +82,7 @@ def test_parse_voice_uses_previous_voice_as_reference_when_first_phrase_is_relat
 
 
 def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():
-    non_phrase_descriptor = ScoreTransform(
+    non_phrase_descriptor = ScoreAwareTransform(
         name="score_reverse",
         transform=lambda score: score,
         params_spec=TransformParamsSpec(),

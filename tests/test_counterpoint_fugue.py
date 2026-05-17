@@ -9,7 +9,7 @@ from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
 from score_model.voice import Voice
 from transforms.base import (
-    ScoreTransform,
+    ScoreAwareTransform,
 )
 from transforms.counterpoint.fugue import add_pedal_tone, stretto
 
@@ -210,7 +210,7 @@ class TestPedalToneRegistration:
 
     def test_add_pedal_tone_has_score_scope(self):
         descriptor = TRANSFORMS["add_pedal_tone"]
-        assert isinstance(descriptor, ScoreTransform)
+        assert isinstance(descriptor, ScoreAwareTransform)
 
     def test_add_pedal_tone_wraps_transform(self):
         assert TRANSFORMS["add_pedal_tone"].transform is add_pedal_tone

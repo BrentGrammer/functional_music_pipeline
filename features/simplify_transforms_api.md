@@ -591,7 +591,7 @@ Scope:
 2. In `transforms/registry.py`:
    - Update the import to use `ADD_PEDAL_TONE_PARAMS_SPEC` and `add_pedal_tone` (instead of the old names).
    - Change the registration key from `"add_pedal_point"` to `"add_pedal_tone"`.
-   - Update the `ScoreTransform` to reference the renamed function and spec.
+   - Update the `ScoreAwareTransform` to reference the renamed function and spec.
 3. In `composition/transform_params_validation.py`, delete the `validate_add_pedal_point_params` function entirely (it validated pulse_duration which no longer exists).
 
 Verification: `pytest tests/test_counterpoint_fugue.py tests/test_json_parser.py` (tests will fail — expected).

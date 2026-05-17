@@ -8,9 +8,9 @@ from transforms.base import (
     EachVoiceTransform,
     PhraseRelativeTransform,
     PhraseTransform,
+    ScoreAwareTransform,
     ScorePipelineStep,
     ScoreTargetMotifsTransform,
-    ScoreTransform,
     ToneSequence,
     TransformWithCallable,
 )
@@ -240,7 +240,7 @@ def _apply_score_transform_spec(
     if isinstance(descriptor, ScoreTargetMotifsTransform):
         return descriptor.transform(score, parsed_motifs, **transform_params)
 
-    if isinstance(descriptor, ScoreTransform):
+    if isinstance(descriptor, ScoreAwareTransform):
         return descriptor.transform(score, **transform_params)
 
     if isinstance(descriptor, EachVoiceTransform):

@@ -139,7 +139,7 @@ class PhraseRelativeTransform(TransformDescriptor):
 
 
 @dataclass(frozen=True)
-class ScoreTransform(TransformDescriptor):
+class ScoreAwareTransform(TransformDescriptor):
     transform: Callable[..., Score]
 
 
@@ -154,5 +154,5 @@ class EachVoiceTransform(TransformDescriptor):
 
 
 TransformWithCallable: TypeAlias = (
-    PhraseTransform | PhraseRelativeTransform | ScoreTransform | ScoreTargetMotifsTransform | EachVoiceTransform
+    PhraseTransform | PhraseRelativeTransform | ScoreAwareTransform | ScoreTargetMotifsTransform | EachVoiceTransform
 )
