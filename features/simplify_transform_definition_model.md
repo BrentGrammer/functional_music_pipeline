@@ -392,3 +392,56 @@ The earlier open items either resolve or shift:
 
 This document originally framed the refactor as a registry-and-parser change with the data model held fixed. That framing is superseded. The refactor now includes the data-model migration to `Tone → Motif → Phrase → Voice → Score`, because that migration is what makes the parser genuinely simple and the registry model genuinely uniform.
 
+
+## Parser Shape and Lookup Conventions Under the New Hierarchy
+
+This section records conclusions reached after the data-model hierarchy decision above. It clarifies the parser's role, how transforms locate named entities inside a `Score`, and the scope of `validate_params`.
+
+### Parser becomes two clearly separated phases
+
+After the refactor, `composition/parser.py` does two things and nothing more:
+
+1. **JSON deserialization** into the `Tone → Motif → Phrase → Voice → Score` hierarchy. This includes shape validation of the JSON document, tone-string parsing (`"440:0.5"` → `Tone`), motif/phrase/voice/score construction, motif-name resolution inside phrases, and collection of transform specs (extracting `name`/`params` from each spec dict; binding phrase transforms to their `(voice_index, phrase_index)` location at parse time).
+2. **Uniform transform pipeline.** The transform application loop collapses to:
+
+```python
+for definition, params in transform_pipeline:
+    definition.validate_params(params)
+    score = definition.apply(score, params)
+```
+
+That is the whole transform-side responsibility of the parser. No scope branching, no `reference_tones` plumbing, no `parsed_motifs` argument, no `apply_to_each_voice` helper, no `voice_index`/`phrase_index` exposed at the parser level. Phrase-transform location is baked into the bound `apply` by a parse-time helper; the parser does not see it.
+
+Deserialization is honest parser work and stays. The vast majority of today's parser complexity is transform-related and goes away.
+
+### Named-entity lookup is traversal, not a dictionary
+
+Transforms that reference named entities (today: `stretto` referencing a motif by name) do their lookup by walking the data-model hierarchy on the `Score` they were given. No separate name registry is attached to `Score`. The hierarchy is the source of truth:
+
+```python
+# Conceptual: stretto finds its target motif by traversal.
+for voice in score.voices:
+    for phrase in voice.phrases:
+        for motif in phrase.motifs:
+            if motif.name == target_name:
+                ...
+```
+
+Consequences worth flagging, then dropping:
+
+- A motif name is reachable through *use*, not through *declaration*. If the JSON's top-level `motifs` block defines a motif that no phrase references, that motif does not exist in the resulting `Score`. This is correct: unused motifs are not part of the composition.
+- Lookup is O(voices × phrases × motifs). This is small for normal compositions. No need to cache or index.
+
+This is what "first-class motifs in the data model" means in practice. The data model is the lookup table.
+
+### `validate_params` stays parameter-only
+
+`validate_params` validates the params dict against the transform's parameter contract: types, shapes, ranges, allowed values. It does not take a `Score`. It does not do cross-reference checks.
+
+Cross-reference failures (e.g. "motif name not found in score") are runtime resolution errors that happen inside `apply`, not parameter contract violations. They are reported by `apply` raising at the point of lookup. This keeps `validate_params` cheap, score-free, and focused on a single responsibility.
+
+### Open items refined under this section
+
+- ~~Whether `validate_params` should take the `Score` for cross-reference checks.~~ Resolved: no. `validate_params(params)` only.
+- ~~Whether `Score` should carry a `motifs: dict[str, Motif]` registry for name lookup.~~ Resolved: no. Lookup is hierarchy traversal.
+
