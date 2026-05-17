@@ -311,3 +311,84 @@ This is a real future direction that would deliver the "everything is `Score -> 
 
 Flag for a separate feature proposal if/when phrase-level addressability inside `Score` becomes desirable for other reasons (e.g., richer score transforms that target specific phrases, UI inspection, or post-hoc phrase-aware analysis).
 
+---
+
+## Revised Direction: Adopt the Compositional Hierarchy in the Data Model
+
+The "future direction" above is no longer deferred. The decision has been made to expand the scope of this refactor to include the data-model migration, because doing so removes the lifecycle-phase asymmetry that is the load-bearing reason for every remaining complication in the design.
+
+### Observation: the data model already has a hierarchy in the JSON, but not in code
+
+The JSON composition format describes a clean compositional hierarchy:
+
+- A **composition** has motifs and a composition body.
+- A **composition body** has voices and score-level transforms.
+- A **voice** has phrases.
+- A **phrase** references motifs and has phrase-level transforms.
+- A **motif** is a sequence of tones.
+
+The code model only represents the top and bottom of this hierarchy:
+
+```python
+class Score:
+    voices: list[Voice]
+
+class Voice:
+    tones: list[Tone]
+```
+
+`Motif` and `Phrase` exist only as transient parse-time concepts. They are flattened away as soon as a `Voice` is built, which is what forces the lifecycle-phase split, the parser-side phrase iteration with `reference_tones` plumbing, the `each_voice` adapter that mutates voices in place, and the open question about where `parsed_motifs` belongs.
+
+### Decision: introduce `Phrase` and `Motif` as first-class types
+
+The data model becomes a symmetric compositional hierarchy, mirroring the JSON:
+
+```
+Tone → Motif → Phrase → Voice → Score
+```
+
+Each level wraps a list of the level below. One mental model, one access pattern at each level.
+
+Concretely:
+
+- `Motif` wraps `list[Tone]`.
+- `Phrase` wraps `list[Motif]` (or whatever the smallest useful representation is — exact shape TBD when the type is designed).
+- `Voice` wraps `list[Phrase]` instead of `list[Tone]`.
+- `Score` wraps `list[Voice]` as today.
+
+The JSON authoring model and the in-code data model become isomorphic. Compositional building blocks are real types that can be inspected, transformed, and reasoned about uniformly.
+
+### Why this changes the registry refactor
+
+With the hierarchy in place, every previous blocker for full `apply` unification disappears:
+
+- Phrase transforms become addressable inside a `Score` by `(voice_index, phrase_index)`, so they can run after the `Score` is built and return a new `Score`. They no longer need a separate lifecycle phase.
+- The parser stops iterating phrases to apply transforms inline. It builds the full `Score`, then runs a single pipeline of transforms.
+- `phrase_relative` reference-tone computation moves out of the parser and into a registry adapter that reads the relevant phrases from the current `Score` at apply time.
+- `parsed_motifs` no longer needs to be a special argument threaded through the parser. Motifs live in the data model.
+- The `each_voice` adapter no longer needs to mutate; it returns a new `Score` with updated voices, consistent with every other adapter.
+
+### Revised acceptance criteria
+
+In addition to the criteria already listed above:
+
+- `Phrase` and `Motif` types exist in `score_model/` and are used end-to-end.
+- `Voice.tones` is no longer the canonical representation; voices are sequences of phrases.
+- Both registries' `apply` have the signature `(Score, params) -> Score`. The phrase/score split survives only at the public registry level (JSON placement context) and inside registry authoring helpers; the parser sees one uniform pipeline.
+- The parser does not iterate phrases to apply transforms; phrase transform location binding happens at parse time via a helper, and the resulting bound callable matches the unified `apply` signature.
+
+### Items deferred or still open under the revised direction
+
+The earlier open items either resolve or shift:
+
+- ~~Where `parsed_motifs` lives.~~ Resolved: motifs are first-class types in the data model.
+- ~~The exact phrase-locator shape.~~ Resolved in principle: phrase transforms are bound to `(voice_index, phrase_index)` at parse time so their `apply` signature collapses to `(Score, params) -> Score` like score transforms.
+- New: the exact internal shape of `Phrase` and `Motif` (e.g. does `Phrase` hold `list[Motif]` directly, or does it hold a flattened `list[Tone]` plus motif provenance?). To be decided when the types are designed.
+- New: how renderers and score-aware transforms that currently consume `voice.tones` as a flat list relate to the new hierarchy (explicit flattening helper vs. direct phrase-aware iteration). To be decided when the rendering layer is touched.
+- New: mutation discipline across the new types — locked in as "transforms return new objects; no in-place mutation of `Score`, `Voice`, `Phrase`, or `Motif`."
+- New: the sequencing of this work into reviewable chunks (data-model migration first, then registry refactor on top, or interleaved). To be decided during implementation planning.
+
+### Scope note
+
+This document originally framed the refactor as a registry-and-parser change with the data model held fixed. That framing is superseded. The refactor now includes the data-model migration to `Tone → Motif → Phrase → Voice → Score`, because that migration is what makes the parser genuinely simple and the registry model genuinely uniform.
+
