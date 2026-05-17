@@ -1,10 +1,7 @@
 from transforms.base import (
-    EachVoiceTransform,
-    PhraseRelativeTransform,
-    PhraseTransform,
-    ScoreAwareTransform,
-    ScoreTargetMotifsTransform,
-    TransformWithCallable,
+    PhraseScope,
+    ScoreScope,
+    TransformDefinition,
 )
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_tones
 from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_transform
@@ -40,190 +37,236 @@ from transforms.proportion.golden_ratio import (
 from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_transform
 from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_transform
 
-TRANSFORMS: dict[str, TransformWithCallable] = {
-    "reverse": PhraseTransform(
-        "reverse",
-        reverse_tones,
+PHRASE_TRANSFORMS: dict[str, TransformDefinition[PhraseScope]] = {
+    "reverse": TransformDefinition(
+        name="reverse",
+        transform_func=reverse_tones,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=REVERSE_PARAMS_SPEC,
     ),
-    "golden_ratio": PhraseTransform(
-        "golden_ratio",
-        golden_ratio_transform,
+    "golden_ratio": TransformDefinition(
+        name="golden_ratio",
+        transform_func=golden_ratio_transform,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
-    "invert": PhraseTransform(
-        "invert",
-        invert_tones,
+    "invert": TransformDefinition(
+        name="invert",
+        transform_func=invert_tones,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=INVERT_PARAMS_SPEC,
     ),
-    "feigenbaum_sequence": PhraseTransform(
-        "feigenbaum_sequence",
-        feigenbaum_sequence,
+    "feigenbaum_sequence": TransformDefinition(
+        name="feigenbaum_sequence",
+        transform_func=feigenbaum_sequence,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=FEIGENBAUM_PARAMS_SPEC,
     ),
-    "transpose": PhraseTransform(
-        "transpose",
-        transpose_tones,
+    "transpose": TransformDefinition(
+        name="transpose",
+        transform_func=transpose_tones,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=TRANSPOSE_PARAMS_SPEC,
     ),
-    "scale": PhraseTransform(
-        "scale",
-        scale_transform,
+    "scale": TransformDefinition(
+        name="scale",
+        transform_func=scale_transform,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=SCALE_PARAMS_SPEC,
     ),
-    "pad_silence": PhraseTransform(
-        "pad_silence",
-        pad_silence_tones,
+    "pad_silence": TransformDefinition(
+        name="pad_silence",
+        transform_func=pad_silence_tones,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=PAD_SILENCE_PARAMS_SPEC,
     ),
-    "delay": PhraseTransform(
-        "delay",
-        delay_tones,
+    "delay": TransformDefinition(
+        name="delay",
+        transform_func=delay_tones,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=DELAY_PARAMS_SPEC,
     ),
-    "repeat": PhraseTransform(
-        "repeat",
-        repeat_tones,
+    "repeat": TransformDefinition(
+        name="repeat",
+        transform_func=repeat_tones,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=REPEAT_PARAMS_SPEC,
     ),
-    "erosion": PhraseTransform(
-        "erosion",
-        erosion_transform,
+    "erosion": TransformDefinition(
+        name="erosion",
+        transform_func=erosion_transform,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=EROSION_PARAMS_SPEC,
     ),
-    "drift": PhraseTransform(
-        "drift",
-        drift_transform,
+    "drift": TransformDefinition(
+        name="drift",
+        transform_func=drift_transform,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=DRIFT_PARAMS_SPEC,
     ),
-    "phrase_feigenbaum_shrink": PhraseRelativeTransform(
-        "phrase_feigenbaum_shrink",
-        phrase_feigenbaum_shrink,
+    "phrase_feigenbaum_shrink": TransformDefinition(
+        name="phrase_feigenbaum_shrink",
+        transform_func=phrase_feigenbaum_shrink,
+        scope=PhraseScope.PHRASE_RELATIVE,
         params_spec=FEIGENBAUM_PARAMS_SPEC,
     ),
-    "phrase_feigenbaum_grow": PhraseRelativeTransform(
-        "phrase_feigenbaum_grow",
-        phrase_feigenbaum_grow,
+    "phrase_feigenbaum_grow": TransformDefinition(
+        name="phrase_feigenbaum_grow",
+        transform_func=phrase_feigenbaum_grow,
+        scope=PhraseScope.PHRASE_RELATIVE,
         params_spec=FEIGENBAUM_PARAMS_SPEC,
     ),
-    "phrase_golden_ratio_shrink": PhraseRelativeTransform(
-        "phrase_golden_ratio_shrink",
-        phrase_golden_ratio_shrink,
+    "phrase_golden_ratio_shrink": TransformDefinition(
+        name="phrase_golden_ratio_shrink",
+        transform_func=phrase_golden_ratio_shrink,
+        scope=PhraseScope.PHRASE_RELATIVE,
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
-    "phrase_golden_ratio_grow": PhraseRelativeTransform(
-        "phrase_golden_ratio_grow",
-        phrase_golden_ratio_grow,
+    "phrase_golden_ratio_grow": TransformDefinition(
+        name="phrase_golden_ratio_grow",
+        transform_func=phrase_golden_ratio_grow,
+        scope=PhraseScope.PHRASE_RELATIVE,
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
-    "score_feigenbaum_sequence": ScoreAwareTransform(
-        "score_feigenbaum_sequence",
-        score_feigenbaum_sequence,
-        params_spec=FEIGENBAUM_PARAMS_SPEC,
-    ),
-    "score_reverse": EachVoiceTransform(
-        "score_reverse",
-        reverse_tones,
-        params_spec=REVERSE_PARAMS_SPEC,
-    ),
-    "score_golden_ratio": EachVoiceTransform(
-        "score_golden_ratio",
-        golden_ratio_transform,
-        params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-    ),
-    "score_invert": EachVoiceTransform(
-        "score_invert",
-        invert_tones,
-        params_spec=INVERT_PARAMS_SPEC,
-    ),
-    "score_transpose": EachVoiceTransform(
-        "score_transpose",
-        transpose_tones,
-        params_spec=TRANSPOSE_PARAMS_SPEC,
-    ),
-    "score_scale": EachVoiceTransform(
-        "score_scale",
-        scale_transform,
-        params_spec=SCALE_PARAMS_SPEC,
-    ),
-    "score_delay": EachVoiceTransform(
-        "score_delay",
-        delay_tones,
-        params_spec=DELAY_PARAMS_SPEC,
-    ),
-    "score_repeat": EachVoiceTransform(
-        "score_repeat",
-        repeat_tones,
-        params_spec=REPEAT_PARAMS_SPEC,
-    ),
-    "score_drift": EachVoiceTransform(
-        "score_drift",
-        drift_transform,
-        params_spec=DRIFT_PARAMS_SPEC,
-    ),
-    "add_pedal_tone": ScoreAwareTransform(
-        "add_pedal_tone",
-        add_pedal_tone,
-        params_spec=ADD_PEDAL_TONE_PARAMS_SPEC,
-    ),
-    "stretto": ScoreTargetMotifsTransform(
-        "stretto",
-        stretto,
-        params_spec=STRETTO_PARAMS_SPEC,
-    ),
-    "frost_effect": ScoreAwareTransform(
-        "frost_effect",
-        frost_effect,
-        params_spec=FROST_EFFECT_PARAMS_SPEC,
-    ),
-    "accelerando": PhraseTransform(
-        "accelerando",
-        accelerando_transform,
+    "accelerando": TransformDefinition(
+        name="accelerando",
+        transform_func=accelerando_transform,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=ACCELERANDO_PARAMS_SPEC,
     ),
-    "ritardando": PhraseTransform(
-        "ritardando",
-        ritardando_transform,
+    "ritardando": TransformDefinition(
+        name="ritardando",
+        transform_func=ritardando_transform,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=RITARDANDO_PARAMS_SPEC,
     ),
-    "score_weierstrass": EachVoiceTransform(
-        "score_weierstrass",
-        apply_weierstrass_transform,
+    "weierstrass": TransformDefinition(
+        name="weierstrass",
+        transform_func=apply_weierstrass_transform,
+        scope=PhraseScope.OWN_PHRASE,
         params_spec=WEIERSTRASS_PARAMS_SPEC,
     ),
-    "weierstrass": PhraseTransform(
-        "weierstrass",
-        apply_weierstrass_transform,
+    "terraced_drift": TransformDefinition(
+        name="terraced_drift",
+        transform_func=apply_terraced_drift_transform,
+        scope=PhraseScope.OWN_PHRASE,
+        params_spec=TERRACED_DRIFT_PARAMS_SPEC,
+    ),
+    "cellular_automata": TransformDefinition(
+        name="cellular_automata",
+        transform_func=apply_cellular_automata_transform,
+        scope=PhraseScope.OWN_PHRASE,
+        params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
+    ),
+    "random_drop": TransformDefinition(
+        name="random_drop",
+        transform_func=apply_random_drop_transform,
+        scope=PhraseScope.OWN_PHRASE,
+        params_spec=RANDOM_DROP_PARAMS_SPEC,
+    ),
+}
+
+SCORE_TRANSFORMS: dict[str, TransformDefinition[ScoreScope]] = {
+    "feigenbaum_sequence": TransformDefinition(
+        name="feigenbaum_sequence",
+        transform_func=score_feigenbaum_sequence,
+        scope=ScoreScope.SCORE_AWARE,
+        params_spec=FEIGENBAUM_PARAMS_SPEC,
+    ),
+    "reverse": TransformDefinition(
+        name="reverse",
+        transform_func=reverse_tones,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=REVERSE_PARAMS_SPEC,
+    ),
+    "golden_ratio": TransformDefinition(
+        name="golden_ratio",
+        transform_func=golden_ratio_transform,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=GOLDEN_RATIO_PARAMS_SPEC,
+    ),
+    "invert": TransformDefinition(
+        name="invert",
+        transform_func=invert_tones,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=INVERT_PARAMS_SPEC,
+    ),
+    "transpose": TransformDefinition(
+        name="transpose",
+        transform_func=transpose_tones,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=TRANSPOSE_PARAMS_SPEC,
+    ),
+    "scale": TransformDefinition(
+        name="scale",
+        transform_func=scale_transform,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=SCALE_PARAMS_SPEC,
+    ),
+    "delay": TransformDefinition(
+        name="delay",
+        transform_func=delay_tones,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=DELAY_PARAMS_SPEC,
+    ),
+    "repeat": TransformDefinition(
+        name="repeat",
+        transform_func=repeat_tones,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=REPEAT_PARAMS_SPEC,
+    ),
+    "drift": TransformDefinition(
+        name="drift",
+        transform_func=drift_transform,
+        scope=ScoreScope.EACH_VOICE,
+        params_spec=DRIFT_PARAMS_SPEC,
+    ),
+    "weierstrass": TransformDefinition(
+        name="weierstrass",
+        transform_func=apply_weierstrass_transform,
+        scope=ScoreScope.EACH_VOICE,
         params_spec=WEIERSTRASS_PARAMS_SPEC,
     ),
-    "terraced_drift": PhraseTransform(
-        "terraced_drift",
-        apply_terraced_drift_transform,
+    "terraced_drift": TransformDefinition(
+        name="terraced_drift",
+        transform_func=apply_terraced_drift_transform,
+        scope=ScoreScope.EACH_VOICE,
         params_spec=TERRACED_DRIFT_PARAMS_SPEC,
     ),
-    "cellular_automata": PhraseTransform(
-        "cellular_automata",
-        apply_cellular_automata_transform,
+    "cellular_automata": TransformDefinition(
+        name="cellular_automata",
+        transform_func=apply_cellular_automata_transform,
+        scope=ScoreScope.EACH_VOICE,
         params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
     ),
-    "random_drop": PhraseTransform(
-        "random_drop",
-        apply_random_drop_transform,
+    "random_drop": TransformDefinition(
+        name="random_drop",
+        transform_func=apply_random_drop_transform,
+        scope=ScoreScope.EACH_VOICE,
         params_spec=RANDOM_DROP_PARAMS_SPEC,
     ),
-    "score_terraced_drift": EachVoiceTransform(
-        "score_terraced_drift",
-        apply_terraced_drift_transform,
-        params_spec=TERRACED_DRIFT_PARAMS_SPEC,
+    "add_pedal_tone": TransformDefinition(
+        name="add_pedal_tone",
+        transform_func=add_pedal_tone,
+        scope=ScoreScope.SCORE_AWARE,
+        params_spec=ADD_PEDAL_TONE_PARAMS_SPEC,
     ),
-    "score_cellular_automata": EachVoiceTransform(
-        "score_cellular_automata",
-        apply_cellular_automata_transform,
-        params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
+    "stretto": TransformDefinition(
+        name="stretto",
+        transform_func=stretto,
+        scope=ScoreScope.TARGET_MOTIFS,
+        params_spec=STRETTO_PARAMS_SPEC,
     ),
-    "score_random_drop": EachVoiceTransform(
-        "score_random_drop",
-        apply_random_drop_transform,
-        params_spec=RANDOM_DROP_PARAMS_SPEC,
+    "frost_effect": TransformDefinition(
+        name="frost_effect",
+        transform_func=frost_effect,
+        scope=ScoreScope.SCORE_AWARE,
+        params_spec=FROST_EFFECT_PARAMS_SPEC,
     ),
+}
+
+TRANSFORMS: dict[str, TransformDefinition[PhraseScope] | TransformDefinition[ScoreScope]] = {
+    **PHRASE_TRANSFORMS,
+    **{name: definition for name, definition in SCORE_TRANSFORMS.items() if name not in PHRASE_TRANSFORMS},
+    **{f"score_{name}": definition for name, definition in SCORE_TRANSFORMS.items()},
 }
