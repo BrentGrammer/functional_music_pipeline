@@ -15,3 +15,4 @@ args = [
   "--context=codex",
   "--open-web-dashboard=false"
 ]
+env = { SERENA_USAGE_REPORTING = "false" }
