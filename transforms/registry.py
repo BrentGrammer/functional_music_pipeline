@@ -264,9 +264,3 @@ SCORE_TRANSFORMS: dict[str, TransformDefinition[ScoreScope]] = {
         params_spec=FROST_EFFECT_PARAMS_SPEC,
     ),
 }
-
-TRANSFORMS: dict[str, TransformDefinition[PhraseScope] | TransformDefinition[ScoreScope]] = {
-    **PHRASE_TRANSFORMS,
-    **{name: definition for name, definition in SCORE_TRANSFORMS.items() if name not in PHRASE_TRANSFORMS},
-    **{f"score_{name}": definition for name, definition in SCORE_TRANSFORMS.items()},
-}
