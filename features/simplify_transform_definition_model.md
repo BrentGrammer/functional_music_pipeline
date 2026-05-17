@@ -239,5 +239,75 @@ This remains the user's open thread and may be revisited.
 
 1. Where `parsed_motifs` lives (on `Score`, or as a third `apply` argument).
 2. The exact phrase-locator shape passed to `PhraseTransformDefinition.apply`.
-3. Whether to fully unify phrase and score `apply` into `(score, params) -> Score` (currently rejected, but flagged as user's open concern).
+3. ~~Whether to fully unify phrase and score `apply` into `(score, params) -> Score`.~~ **Resolved: rejected for this refactor** due to the data-model finding (phrases are not addressable inside `Score`). Flagged as a future direction contingent on a separate data-model migration.
+4. ~~Whether to reclassify phrase-relative transforms as score transforms.~~ **Resolved: rejected.** They emit `list[Tone]` and run during voice assembly; they are phrase transforms by the lifecycle-phase definition. The `OWN_PHRASE` vs. `PHRASE_RELATIVE` distinction is hidden inside registry helpers, not the public registry split.
+
+
+### Data-model finding: phrases do not exist in `Score`
+
+A follow-up exploration asked: "all transforms ultimately produce a new score, so could we unify every `apply` signature as `(score, params) -> Score`?" Reading `score_model/score.py` and `score_model/voice.py` made the answer concrete:
+
+```python
+class Score:
+    voices: list[Voice]
+
+class Voice:
+    tones: list[Tone]
+```
+
+There is no `Phrase` type. Phrases are a JSON-authoring concept. The parser flattens them during voice assembly (`parser.py` line 179: `combined_tones.extend(phrase_tones)`). By the time a `Score` exists, phrase boundaries are gone — a `Voice` is just a flat tone list.
+
+This is the load-bearing fact for the whole refactor.
+
+### Reframed boundary: lifecycle phase, not scope
+
+Given the data model above, the two registries are best understood as **two different lifecycle phases of composition parsing**, not as two scopes within one uniform model:
+
+- `PHRASE_TRANSFORMS` run **during voice assembly**, before a `Score` exists. They consume and produce `list[Tone]` for one phrase.
+- `SCORE_TRANSFORMS` run **after voice assembly**, once the `Score` has been built. They consume and produce `Score`.
+
+This framing is sharper than "they both produce a score." It explains why their `apply` signatures cannot be unified today without either deep changes to the parser flow or a richer data model.
+
+### Decision: do not unify `apply` to `(score, params) -> Score`
+
+The user's stronger proposal — unify everything as `Score -> Score` — was examined again with the data model in hand. Three implementation paths were considered:
+
+1. **Phrase transforms run after the Score is built.** Requires phrase boundaries to be addressable inside a `Voice`. Currently they are not. Would require adding a `Phrase` type, switching `Voice` to `list[Phrase]`, or tracking `(voice_index, start, end)` ranges out-of-band. That is a **data model migration**, not a transform-registry refactor, and is out of scope for this feature.
+2. **Phrase transforms wrapped as `Score -> Score` closures.** Each phrase registration would close over `(voice_index, phrase_index)`. The parser still iterates phrases to build the closures, so iteration is moved, not eliminated. Each phrase application also constructs a fresh `Score`. Worse than the current design.
+3. **Accept the asymmetry.** Phrase transforms produce `list[Tone]`; score transforms produce `Score`. The parser runs each in its appropriate lifecycle phase. This is what the current code does and what the refined design retains.
+
+Option 3 is adopted. The two concrete definition classes (`PhraseTransformDefinition`, `ScoreTransformDefinition`) keep distinct `apply` signatures, one per lifecycle phase.
+
+### Decision: do not reclassify phrase-relative transforms as score transforms
+
+A related question asked whether `phrase_feigenbaum_shrink`, `phrase_feigenbaum_grow`, `phrase_golden_ratio_shrink`, and `phrase_golden_ratio_grow` belong in `SCORE_TRANSFORMS` because they read context outside their own phrase.
+
+Inspection of the implementations (`transforms/proportion/feigenbaum.py`, `transforms/proportion/golden_ratio.py`) showed:
+
+- They consume `(tones, previous_tones, **params)`. Both inputs are flat tone lists.
+- They never see voices, voice indices, motifs, or the `Score` object.
+- They emit `list[Tone]`, not `Score`.
+- The cross-phrase reference is supplied by the parser as a precomputed flat tone list (`reference_tones = combined_tones if combined_tones else previous_voice_tones`).
+
+By the lifecycle-phase definition above, these are phrase transforms: they run during voice assembly and produce phrase-level output. Their dependency on a precomputed reference tone list is an *input shape* concern (handled by the `phrase_relative` registry helper), not a registry-membership concern.
+
+Promoting them to score transforms would:
+
+- Change their return type from `list[Tone]` to `Score`, forcing them to handle voice/phrase locator plumbing they currently do not need.
+- Move them out of the phrase pipeline, breaking composition with other phrase transforms like `reverse`, `transpose`, `delay`.
+- Make the public JSON UX worse: users could no longer place these inside a phrase's `transforms` list.
+
+The `OWN_PHRASE` vs. `PHRASE_RELATIVE` distinction is a private execution-shape detail, hidden inside the `own_phrase(...)` and `phrase_relative(...)` registry helpers. The parser does not need to know it. No public reclassification is required.
+
+### Future direction (out of scope for this feature)
+
+If `Score` were extended to preserve phrase structure — for example, `Voice = list[Phrase]` and `Phrase = list[Tone]` — then unifying `apply` to `(score, params) -> Score` for all transforms would become feasible. Phrase transforms could locate and rewrite their target phrase inside the existing `Score`. Lifecycle phases would collapse into one.
+
+This is a real future direction that would deliver the "everything is `Score -> Score`" model cleanly. It is intentionally not pursued in this refactor because:
+
+- It is a data-model change, not a registry change.
+- It touches `score_model/`, every consumer of `Voice.tones`, serialization, and any rendering or audio export paths.
+- The current refactor can ship the parser-simplification and type-clarity wins without it.
+
+Flag for a separate feature proposal if/when phrase-level addressability inside `Score` becomes desirable for other reasons (e.g., richer score transforms that target specific phrases, UI inspection, or post-hoc phrase-aware analysis).
 
