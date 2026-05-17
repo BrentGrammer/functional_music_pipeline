@@ -1,7 +1,8 @@
 import pytest
 
 from composition.parser import (
-    TRANSFORMS,
+    PHRASE_TRANSFORMS,
+    SCORE_TRANSFORMS,
     parse_composition,
     parse_motifs,
     parse_phrase,
@@ -13,7 +14,8 @@ from score_model.score import Score
 from score_model.tone import Tone
 from transforms.base import (
     EnumParam,
-    ScoreTargetMotifsTransform,
+    ScoreScope,
+    TransformDefinition,
     StringParam,
     TransformParamFieldSpec,
     TransformParamsSpec,
@@ -21,7 +23,7 @@ from transforms.base import (
 
 
 def test_stretto_spacing_descriptor_accepts_named_or_float_spacing():
-    spacing_spec = TRANSFORMS["stretto"].params_spec.fields["spacing"]
+    spacing_spec = SCORE_TRANSFORMS["stretto"].params_spec.fields["spacing"]
 
     assert isinstance(spacing_spec.schema, tuple)
     assert spacing_spec.required is True
@@ -31,7 +33,7 @@ def test_stretto_spacing_descriptor_accepts_named_or_float_spacing():
 
 @pytest.mark.parametrize("transform_name", ["accelerando", "ritardando"])
 def test_tempo_curve_descriptor_accepts_preset_or_float_controls(transform_name):
-    fields = TRANSFORMS[transform_name].params_spec.fields
+    fields = PHRASE_TRANSFORMS[transform_name].params_spec.fields
 
     assert isinstance(fields["strength"].schema, tuple)
     assert fields["strength"].required is True
@@ -44,7 +46,7 @@ def test_tempo_curve_descriptor_accepts_preset_or_float_controls(transform_name)
 
 
 def test_fixed_string_descriptors_use_enum_metadata():
-    position_spec = TRANSFORMS["pad_silence"].params_spec.fields["position"]
+    position_spec = PHRASE_TRANSFORMS["pad_silence"].params_spec.fields["position"]
 
     assert isinstance(position_spec.schema, EnumParam)
     assert position_spec.schema.allowed_values == ("start", "end")
@@ -312,7 +314,7 @@ class TestScaleTransformParsing:
 
     def test_scale_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["scale"]
+        descriptor = PHRASE_TRANSFORMS["scale"]
         valid_params = {"dimension": "duration", "factor": 2.0}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -332,14 +334,14 @@ class TestScaleTransformParsing:
             "motifs": {"seed": ["440"]},
             "composition": {
                 "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                "score_transforms": [{"name": "score_scale", "params": 2.0}],
+                "score_transforms": [{"name": "scale", "params": 2.0}],
             },
         }
         with pytest.raises(ValueError):
             parse_composition(composition_doc)
 
     def test_score_scale_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_scale"]
+        descriptor = SCORE_TRANSFORMS["scale"]
         valid_params = {"dimension": "duration", "factor": 2.0}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -349,7 +351,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_scale", "params": incomplete_params}],
+                    "score_transforms": [{"name": "scale", "params": incomplete_params}],
                 },
             }
 
@@ -358,7 +360,7 @@ class TestScaleTransformParsing:
 
     def test_transpose_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["transpose"]
+        descriptor = PHRASE_TRANSFORMS["transpose"]
         valid_params = {"semitones": 1.0}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -373,7 +375,7 @@ class TestScaleTransformParsing:
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_transpose_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_transpose"]
+        descriptor = SCORE_TRANSFORMS["transpose"]
         valid_params = {"semitones": 1.0}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -383,7 +385,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_transpose", "params": incomplete_params}],
+                    "score_transforms": [{"name": "transpose", "params": incomplete_params}],
                 },
             }
 
@@ -432,7 +434,7 @@ class TestScaleTransformParsing:
 
     def test_delay_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["delay"]
+        descriptor = PHRASE_TRANSFORMS["delay"]
         valid_params = {"seconds": 0.25}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -447,7 +449,7 @@ class TestScaleTransformParsing:
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_delay_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_delay"]
+        descriptor = SCORE_TRANSFORMS["delay"]
         valid_params = {"seconds": 0.25}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -457,7 +459,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_delay", "params": incomplete_params}],
+                    "score_transforms": [{"name": "delay", "params": incomplete_params}],
                 },
             }
 
@@ -466,7 +468,7 @@ class TestScaleTransformParsing:
 
     def test_repeat_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["repeat"]
+        descriptor = PHRASE_TRANSFORMS["repeat"]
         valid_params = {"count": 2}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -481,7 +483,7 @@ class TestScaleTransformParsing:
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_repeat_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_repeat"]
+        descriptor = SCORE_TRANSFORMS["repeat"]
         valid_params = {"count": 2}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -491,7 +493,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_repeat", "params": incomplete_params}],
+                    "score_transforms": [{"name": "repeat", "params": incomplete_params}],
                 },
             }
 
@@ -500,7 +502,7 @@ class TestScaleTransformParsing:
 
     def test_accelerando_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["accelerando"]
+        descriptor = PHRASE_TRANSFORMS["accelerando"]
         valid_params = {"strength": "medium", "jaggedness": "none"}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -516,7 +518,7 @@ class TestScaleTransformParsing:
 
     def test_ritardando_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["ritardando"]
+        descriptor = PHRASE_TRANSFORMS["ritardando"]
         valid_params = {"strength": "medium", "jaggedness": "none"}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -532,7 +534,7 @@ class TestScaleTransformParsing:
 
     def test_drift_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["drift"]
+        descriptor = PHRASE_TRANSFORMS["drift"]
         valid_params = {"dimension": "frequency", "rate": 0.1}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -547,7 +549,7 @@ class TestScaleTransformParsing:
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_drift_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_drift"]
+        descriptor = SCORE_TRANSFORMS["drift"]
         valid_params = {"dimension": "frequency", "rate": 0.1}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -557,7 +559,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_drift", "params": incomplete_params}],
+                    "score_transforms": [{"name": "drift", "params": incomplete_params}],
                 },
             }
 
@@ -566,7 +568,7 @@ class TestScaleTransformParsing:
 
     def test_weierstrass_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["weierstrass"]
+        descriptor = PHRASE_TRANSFORMS["weierstrass"]
         valid_params = {
             "dimension": "frequency",
             "intensity": "medium",
@@ -584,7 +586,7 @@ class TestScaleTransformParsing:
                 parse_phrase(phrase_config, parsed_motifs)
 
     def test_score_weierstrass_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_weierstrass"]
+        descriptor = SCORE_TRANSFORMS["weierstrass"]
         valid_params = {
             "dimension": "frequency",
             "intensity": "medium",
@@ -597,7 +599,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_weierstrass", "params": incomplete_params}],
+                    "score_transforms": [{"name": "weierstrass", "params": incomplete_params}],
                 },
             }
 
@@ -606,7 +608,7 @@ class TestScaleTransformParsing:
 
     def test_cellular_automata_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
-        descriptor = TRANSFORMS["cellular_automata"]
+        descriptor = PHRASE_TRANSFORMS["cellular_automata"]
         valid_params = {
             "dimension": "frequency",
             "rule": 30,
@@ -627,7 +629,7 @@ class TestScaleTransformParsing:
             assert str(exc_info.value)
 
     def test_score_cellular_automata_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["score_cellular_automata"]
+        descriptor = SCORE_TRANSFORMS["cellular_automata"]
         valid_params = {
             "dimension": "frequency",
             "rule": 30,
@@ -642,7 +644,7 @@ class TestScaleTransformParsing:
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-                    "score_transforms": [{"name": "score_cellular_automata", "params": incomplete_params}],
+                    "score_transforms": [{"name": "cellular_automata", "params": incomplete_params}],
                 },
             }
 
@@ -651,7 +653,7 @@ class TestScaleTransformParsing:
             assert str(exc_info.value)
 
     def test_add_pedal_tone_with_missing_required_fields_raises_error(self):
-        descriptor = TRANSFORMS["add_pedal_tone"]
+        descriptor = SCORE_TRANSFORMS["add_pedal_tone"]
         valid_params = {"frequency": 130.81}
 
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
@@ -928,7 +930,7 @@ def test_parse_composition_unknown_score_transform():
         "motifs": {},
         "composition": {
             "voices": [],
-            "score_transforms": [{"name": "score_unknown"}]
+            "score_transforms": [{"name": "unknown"}]
         }
     }
 
@@ -941,12 +943,23 @@ def test_parse_composition_rejects_phrase_transform_in_score_transforms():
         "motifs": {"seed": ["440:0.5", "660:0.5"]},
         "composition": {
             "voices": [{"phrases": [{"motifs": ["seed"]}]}],
-            "score_transforms": [{"name": "reverse"}],
+            "score_transforms": [{"name": "accelerando"}],
         },
     }
 
     with pytest.raises(ValueError):
         parse_composition(json_data)
+
+
+def test_parse_phrase_rejects_score_transform_in_phrase_transforms():
+    parsed_motifs = {"seed": [Tone(440.0, duration=0.5)]}
+    phrase_config = {
+        "motifs": ["seed"],
+        "transforms": [{"name": "add_pedal_tone"}],
+    }
+
+    with pytest.raises(ValueError):
+        parse_phrase(phrase_config, parsed_motifs)
 
 
 def test_parse_composition_score_reverse_applies_to_all_voices_without_params():
@@ -960,7 +973,7 @@ def test_parse_composition_score_reverse_applies_to_all_voices_without_params():
                 {"phrases": [{"motifs": ["voice_a"]}]},
                 {"phrases": [{"motifs": ["voice_b"]}]},
             ],
-            "score_transforms": [{"name": "score_reverse"}],
+            "score_transforms": [{"name": "reverse"}],
         },
     }
 
@@ -990,7 +1003,7 @@ def test_parse_composition():
                     ]
                 }
             ],
-            "score_transforms": [{"name": "score_feigenbaum_sequence"}]
+            "score_transforms": [{"name": "feigenbaum_sequence"}]
         }
     }
 
@@ -1023,7 +1036,7 @@ def test_parse_composition_with_value_score_transform():
                 }
             ],
             "score_transforms": [
-                {"name": "score_scale", "params": {"dimension": "duration", "factor": factor}}
+                {"name": "scale", "params": {"dimension": "duration", "factor": factor}}
             ]
         }
     }
@@ -1041,9 +1054,10 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
         captured["parsed_motifs"] = parsed_motifs
         return score
 
-    TRANSFORMS["_test_score_with_motifs"] = ScoreTargetMotifsTransform(
-        "_test_score_with_motifs",
-        capture_score_target_motifs_transform,
+    SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
+        name="_test_score_with_motifs",
+        transform_func=capture_score_target_motifs_transform,
+        scope=ScoreScope.TARGET_MOTIFS,
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
@@ -1069,7 +1083,7 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
             }
         )
     finally:
-        TRANSFORMS.pop("_test_score_with_motifs", None)
+        SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
     assert captured["motif"] == "seed"
     assert captured["parsed_motifs"]["seed"][0].frequency == 440.0
@@ -1080,9 +1094,10 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
     def noop_score_target_motifs_transform(score, parsed_motifs, motif):
         return score
 
-    TRANSFORMS["_test_score_with_motifs"] = ScoreTargetMotifsTransform(
-        "_test_score_with_motifs",
-        noop_score_target_motifs_transform,
+    SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
+        name="_test_score_with_motifs",
+        transform_func=noop_score_target_motifs_transform,
+        scope=ScoreScope.TARGET_MOTIFS,
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
@@ -1107,19 +1122,20 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
                             }
                         ],
                     },
-                }
-            )
+            }
+        )
     finally:
-        TRANSFORMS.pop("_test_score_with_motifs", None)
+        SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
 
 def test_parse_composition_score_target_motifs_scope_requires_params():
     def noop_score_target_motifs_transform(score, parsed_motifs, motif):
         return score
 
-    TRANSFORMS["_test_score_with_motifs"] = ScoreTargetMotifsTransform(
-        "_test_score_with_motifs",
-        noop_score_target_motifs_transform,
+    SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
+        name="_test_score_with_motifs",
+        transform_func=noop_score_target_motifs_transform,
+        scope=ScoreScope.TARGET_MOTIFS,
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
@@ -1138,14 +1154,14 @@ def test_parse_composition_score_target_motifs_scope_requires_params():
                         "voices": [],
                         "score_transforms": [{"name": "_test_score_with_motifs"}],
                     },
-                }
-            )
+            }
+        )
     finally:
-        TRANSFORMS.pop("_test_score_with_motifs", None)
+        SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
 
 def test_stretto_with_missing_required_fields_raises_error():
-    descriptor = TRANSFORMS["stretto"]
+    descriptor = SCORE_TRANSFORMS["stretto"]
     valid_params = {
         "motif": "subject",
         "num_times": 2,

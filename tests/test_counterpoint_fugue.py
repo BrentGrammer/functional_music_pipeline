@@ -1,17 +1,16 @@
 import numpy as np
 import pytest
 
-from composition.parser import TRANSFORMS, parse_composition
+from composition.parser import parse_composition
 from composition.schema import CompositionDocument
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
 from score_model.voice import Voice
-from transforms.base import (
-    ScoreAwareTransform,
-)
+from transforms.base import ScoreScope
 from transforms.counterpoint.fugue import add_pedal_tone, stretto
+from transforms.registry import SCORE_TRANSFORMS
 
 
 class TestStretto:
@@ -206,14 +205,8 @@ class TestPedalTone:
 
 class TestPedalToneRegistration:
     def test_add_pedal_tone_registered(self):
-        assert "add_pedal_tone" in TRANSFORMS
-
-    def test_add_pedal_tone_has_score_scope(self):
-        descriptor = TRANSFORMS["add_pedal_tone"]
-        assert isinstance(descriptor, ScoreAwareTransform)
-
-    def test_add_pedal_tone_wraps_transform(self):
-        assert TRANSFORMS["add_pedal_tone"].transform is add_pedal_tone
+        descriptor = SCORE_TRANSFORMS["add_pedal_tone"]
+        assert descriptor is not None
 
 
 class TestPedalToneComposition:

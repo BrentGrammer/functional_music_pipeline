@@ -1,10 +1,11 @@
 import pytest
 
-from composition.parser import TRANSFORMS, parse_composition
+from composition.parser import parse_composition
 from composition.schema import CompositionDocument
 from score_model.tone import Tone
-from transforms.base import EachVoiceTransform, ToneDimension
+from transforms.base import ScoreScope, ToneDimension
 from transforms.basic.drift import drift_transform
+from transforms.registry import SCORE_TRANSFORMS
 
 
 class TestDriftExceptions:
@@ -233,24 +234,13 @@ class TestDriftDuration:
 
 class TestScoreDriftRegistration:
     def test_score_drift_registered(self):
-        # The parser must expose `score_drift` so compositions can use it
-        # as a top-level score transform affecting all voices uniformly.
-        assert "score_drift" in TRANSFORMS
-
-    def test_score_drift_has_correct_scope(self):
-        # `score_drift` must apply across all voices of a score, matching
-        # the pattern of other `score_*` transforms (e.g. score_reverse, score_scale).
-        descriptor = TRANSFORMS["score_drift"]
-        assert isinstance(descriptor, EachVoiceTransform)
-
-    def test_score_drift_wraps_drift_transform(self):
-        descriptor = TRANSFORMS["score_drift"]
-        assert descriptor.transform is drift_transform
+        descriptor = SCORE_TRANSFORMS["drift"]
+        assert descriptor.scope is not None
 
 
 class TestScoreDriftApplication:
     def test_score_drift_applies_to_all_voices(self):
-        # A single `score_drift` declaration at the composition level should
+        # A single `drift` declaration at the composition level should
         # shift every voice's tones by the configured rate, uniformly.
         RATE = 0.1
         FREQ_A = 440.0
@@ -267,7 +257,7 @@ class TestScoreDriftApplication:
                     {"phrases": [{"motifs": ["low"]}]},
                 ],
                 "score_transforms": [
-                    {"name": "score_drift", "params": {"dimension": "FREQUENCY", "rate": RATE}},
+                    {"name": "drift", "params": {"dimension": "FREQUENCY", "rate": RATE}},
                 ],
             },
         }

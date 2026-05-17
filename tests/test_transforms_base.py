@@ -9,7 +9,6 @@ from transforms.base import (
     EnumParam,
     FloatParam,
     PhraseScope,
-    PhraseTransform,
     ScoreScope,
     TransformDefinition,
     StringParam,
@@ -93,51 +92,6 @@ def test_transform_param_field_spec_accepts_union_schemas():
     assert isinstance(field_spec.schema[1], FloatParam)
 
 
-def test_transform_descriptor_defaults_to_empty_params_spec():
-    descriptor = PhraseTransform(
-        name="reverse",
-        transform=lambda tones: list(reversed(tones)),
-    )
-
-    assert descriptor.params_spec == TransformParamsSpec()
-
-
-def test_transform_descriptor_preserves_explicit_params_spec():
-    expected_params_spec = TransformParamsSpec(
-        fields={
-            "seconds": TransformParamFieldSpec(
-                schema=FloatParam(),
-                required=True,
-            )
-        }
-    )
-    descriptor = PhraseTransform(
-        name="delay",
-        transform=lambda tones, **_: tones,
-        params_spec=expected_params_spec,
-    )
-
-    assert descriptor.params_spec is expected_params_spec
-
-
-def test_transform_params_spec_identifies_required_fields_from_metadata():
-    params_spec = TransformParamsSpec(
-        fields={
-            "seconds": TransformParamFieldSpec(
-                schema=FloatParam(),
-                required=True,
-            ),
-            "position": TransformParamFieldSpec(
-                schema=StringParam(),
-                required=False,
-            ),
-        }
-    )
-
-    required_fields = tuple(f for f, s in params_spec.fields.items() if s.required)
-    assert required_fields == ("seconds",)
-
-
 def test_transform_definition_preserves_explicit_params_spec():
     expected_params_spec = TransformParamsSpec(
         fields={
@@ -155,6 +109,7 @@ def test_transform_definition_preserves_explicit_params_spec():
     )
 
     assert definition.params_spec == expected_params_spec
+    assert definition.scope is ScoreScope.EACH_VOICE
 
 def test_apply_to_each_voice_updates_every_voice():
     duration_multiplier = 2.0

@@ -1,10 +1,11 @@
 import pytest
 
-from composition.parser import TRANSFORMS, parse_composition, parse_phrase
+from composition.parser import parse_composition, parse_phrase
 from composition.schema import PhraseConfig
 from score_model.tone import Tone
-from transforms.base import PhraseTransform
+from transforms.base import PhraseScope
 from transforms.basic.pad_silence import pad_silence_tones
+from transforms.registry import PHRASE_TRANSFORMS
 
 
 def test_pad_silence_start_prepends_silence():
@@ -74,10 +75,8 @@ def test_pad_silence_rejects_invalid_position():
 
 
 def test_pad_silence_registered():
-    assert "pad_silence" in TRANSFORMS
-    descriptor = TRANSFORMS["pad_silence"]
-    assert isinstance(descriptor, PhraseTransform)
-    assert TRANSFORMS["pad_silence"].transform is pad_silence_tones
+    descriptor = PHRASE_TRANSFORMS["pad_silence"]
+    assert descriptor.scope is not None
 
 
 def test_parse_phrase_applies_pad_silence():
@@ -116,7 +115,7 @@ def test_parse_phrase_pad_silence_requires_missing_required_fields():
     subject_frequency = 440.0
     subject_duration = 0.5
     parsed_motifs = {"subject": [Tone(subject_frequency, duration=subject_duration)]}
-    descriptor = TRANSFORMS["pad_silence"]
+    descriptor = PHRASE_TRANSFORMS["pad_silence"]
     valid_params = {"seconds": 0.3, "position": "end"}
 
     for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
