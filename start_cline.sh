@@ -22,13 +22,17 @@ else
   
   sbx create shell . --name "$SANDBOX_NAME"
   
-  echo "⚙️ Installing and configuring Cline directly inside the sandbox..."
-  # uv tool run --python 3.13 --from serena-agent@latest --prerelease=allow serena start-mcp-server --project . --context=ide --open-web-dashboard=false
-  # Use 'sbx exec' to run the setup strictly inside the container/microVM
-  sbx exec "$SANDBOX_NAME" bash -c "npm install -g cline --no-scripts --allow-git=none && cline mcp add serena -- uv tool run --python 3.13 --from serena-agent@latest --prerelease=allow serena start-mcp-server --project . --context=ide --open-web-dashboard=false && cline mcp add exa https://mcp.exa.ai/mcp --type http"
+  echo "⚙️ Upgrading Node, installing Cline..."
+  # to install node:
+  sbx policy allow network nodejs.org:443 # disable this afterwards if not needed
+
+  # CONFIG_JSON='{"mcpServers":{"serena":{"command":"uv","args":["tool","run","--python","3.13","--from","serena-agent@latest","--prerelease=allow","serena","start-mcp-server","--project",".","--context=ide","--open-web-dashboard=false"]},"exa":{"url":"https://mcp.exa.ai/mcp"}}}'
+  # && mkdir -p ~/.config/cline ~/.cline/data/settings && echo '$CONFIG_JSON' > ~/.config/cline/mcp.json && echo '$CONFIG_JSON' > ~/.cline/data/settings/cline_mcp_settings.json"
   
+  sbx exec "$SANDBOX_NAME" bash -c "curl -fsSL https://nodejs.org/dist/v24.9.0/node-v24.9.0-linux-arm64.tar.gz | sudo tar -xz -C /usr/local --strip-components=1 && sudo npm install -g cline --no-scripts --allow-git=none"
+
   echo "✅ Setup complete! Dropping you into the sandbox."
   echo "!!! REMINDER: Run 'cline auth' then 'cline' once inside."
   
-  sbx run
+  sbx run "$SANDBOX_NAME"
 fi
