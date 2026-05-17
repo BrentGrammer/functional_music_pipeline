@@ -51,8 +51,10 @@ else
   sbx create shell . --name "$SANDBOX_NAME"
   
   echo "⚙️ Upgrading Node, installing Cline..."
-  # to install node:
-  sbx policy allow network nodejs.org:443 # disable this afterwards if not needed
+  # to install node and allow cline auth:
+  sbx policy allow network $SANDBOX_NAME nodejs.org:443
+  sbx policy allow network $SANDBOX_NAME api.workos.com:443
+  sbx policy allow network $SANDBOX_NAME api.cline.bot:443
 
   # CONFIG_JSON='{"mcpServers":{"serena":{"command":"uv","args":["tool","run","--python","3.13","--from","serena-agent@latest","--prerelease=allow","serena","start-mcp-server","--project",".","--context=ide","--open-web-dashboard=false"]},"exa":{"url":"https://mcp.exa.ai/mcp"}}}'
   # && mkdir -p ~/.config/cline ~/.cline/data/settings && echo '$CONFIG_JSON' > ~/.config/cline/mcp.json && echo '$CONFIG_JSON' > ~/.cline/data/settings/cline_mcp_settings.json"
@@ -61,8 +63,14 @@ else
 
   configure_env
 
+  # Create the directory so sbx cp's internal tar extraction doesn't crash
+  sbx exec "$SANDBOX_NAME" bash -c "mkdir -p /home/agent/.cline/data/settings"
+
+  # move global config with mcp server and telemtry flags to the sandbox directory where cline expects these.
+  sbx cp .cline/data/settings/cline_mcp_settings.json "$SANDBOX_NAME":/home/agent/.cline/data/settings/cline_mcp_settings.json
+  sbx cp .cline/data/settings/global-settings.json "$SANDBOX_NAME":/home/agent/.cline/data/settings/global-settings.json
+  
   echo "✅ Setup complete! Dropping you into the sandbox."
   echo "!!! REMINDER: Run 'cline auth' (requires registering a cline account on their site), then 'cline' to start the CLI."
-  
   sbx run "$SANDBOX_NAME"
 fi
