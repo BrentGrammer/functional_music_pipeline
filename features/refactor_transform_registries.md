@@ -49,6 +49,12 @@ Replace the flat `TRANSFORMS` dictionary with two explicit registries in `transf
 
 This allows the same logical name (e.g., `reverse`) to be registered in both places with different execution scopes, while maintaining strict separation.
 
+Name overlap across registries is expected and intentional:
+- Names must be unique within a single registry.
+- Names may repeat across `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`.
+- Repeated names are resolved by JSON context, not by a global lookup.
+- The parser should never ask "what is `reverse` globally?" It should ask "what is the phrase transform named `reverse`?" or "what is the score transform named `reverse`?"
+
 Registry membership should be explicit:
 - Register a transform in both registries only when both meanings are valid.
 - Register phrase-only transforms only in `PHRASE_TRANSFORMS`.
@@ -92,36 +98,41 @@ Implementation can reduce duplicate registration boilerplate with small helper c
 
 ## Implementation Plan
 
-### Phase 1: Foundation (Non-Breaking)
+This can be implemented as a breaking migration. There is no need to preserve legacy `TRANSFORMS` behavior, accept old `score_` names, or support a hybrid fallback period.
+
+### Phase 1: Foundation
 - Add `PhraseScope` and `ScoreScope` Enums to `transforms/base.py`.
 - Add the generic `TransformDefinition` class to `transforms/base.py`.
-- *Goal:* Establish the new type system without touching existing logic.
+- Add helper constructors such as `phrase(...)`, `phrase_relative(...)`, `each_voice(...)`, `score_aware(...)`, and `score_target_motifs(...)` if they reduce registry boilerplate.
+- *Goal:* Establish the new type system and the authoring helpers needed for the registry migration.
 
-### Phase 2: Registry Scaffolding (Non-Breaking)
-- Initialize empty `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS` in `transforms/registry.py`.
-- Migrate exactly one transform (e.g., `reverse`) into both new registries as a "proof of concept" (keeping the `score_reverse` name for now).
-- *Goal:* Verify the new data structures can coexist with the old registry.
+### Phase 2: Registry Migration
+- Replace the flat `TRANSFORMS` dictionary with `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS`.
+- Register phrase transforms under their existing public names.
+- Register score transforms without `score_` prefixes, e.g. `score_reverse` becomes `SCORE_TRANSFORMS["reverse"]`.
+- Register repeated names in both registries when both contexts are valid.
+- *Goal:* Make the registry structure match the final public API in one migration.
 
-### Phase 3: Parser Adaptation (Hybrid Support)
-- Modify `_apply_phrase_transform_spec` to look in `PHRASE_TRANSFORMS` first, falling back to `TRANSFORMS`.
-- Modify `_apply_score_transform_spec` to look in `SCORE_TRANSFORMS` first, falling back to `TRANSFORMS`.
-- *Goal:* Enable the new execution path while maintaining full backward compatibility.
+### Phase 3: Parser Adaptation
+- Modify phrase transform lookup to use only `PHRASE_TRANSFORMS`.
+- Modify score transform lookup to use only `SCORE_TRANSFORMS`.
+- Remove all fallback logic to the legacy flat registry.
+- Dispatch by `PhraseScope` or `ScoreScope` instead of descriptor subclass type.
+- Add wrong-scope diagnostics when a requested name exists in the other registry.
+- *Goal:* Resolve transform names by JSON context and scope-specific registry.
 
-### Phase 4: Full Migration of Registry Definitions
-- Migrate all remaining phrase transforms to `PHRASE_TRANSFORMS`.
-- Migrate all remaining score transforms to `SCORE_TRANSFORMS` (keep `score_` prefixes for now).
-- *Goal:* Empty the old `TRANSFORMS` registry logically, though it may still exist as a fallback.
+### Phase 4: JSON and Test Migration
+- Update all `.json` files in `compositions/` to remove `score_` prefixes from score transform names.
+- Update tests to use `PHRASE_TRANSFORMS` and `SCORE_TRANSFORMS` directly.
+- Replace tests that expect phrase transforms to be rejected in `score_transforms` when a same-name score transform now exists.
+- Add explicit tests for repeated names across registries, e.g. phrase `reverse` and score `reverse`.
+- Add explicit tests for wrong-scope errors, e.g. a phrase-only transform used under `score_transforms`.
+- *Goal:* Align fixtures and assertions with the final API.
 
-### Phase 5: The "Big Switch" (Breaking)
-- Remove `score_` prefixes from all keys in `SCORE_TRANSFORMS`.
-- Update parser to *only* use the new registries (remove fallback logic).
-- Update all `.json` files in `compositions/` to remove `score_` prefixes.
-- Preserve scope-specific availability. A score transform name should only be accepted if it is explicitly registered in `SCORE_TRANSFORMS`.
-- *Goal:* Achieve the final intended user-facing API.
-
-### Phase 6: Cleanup
+### Phase 5: Cleanup
 - Remove the legacy `TRANSFORMS` dictionary.
 - Remove legacy classes (`PhraseTransform`, `ScoreAwareTransform` (formerly ScoreTransform), etc.) from `transforms/base.py`.
+- Remove tests and docs that refer to `score_` names as the supported public API.
 - *Goal:* Finalize the refactor and remove all technical debt.
 
 ## Benefits
