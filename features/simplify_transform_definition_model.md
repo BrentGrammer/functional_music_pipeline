@@ -53,9 +53,9 @@ Concretely:
 
 The important split is:
 
-- `TransformDefinition` is global and reusable. It knows how to validate params and how to apply a transform.
+- `TransformDefinition` is global and reusable. It knows how to validate params and how to transform the input type declared by its callable signature.
 - `TransformRequest` is local authoring data from the JSON: a transform name plus supplied params. It does not replace `TransformParamsSpec`; the full parameter contract stays on the transform definition. A request does not encode its target scope; placement does that. Requests in `PhrasePlan.transforms` are phrase-level, and requests in `ScorePlan.transforms` are score-level.
-- `TransformStep` is one executable transform step derived from `ScorePlan` during application.
+- `TransformStep` is a derived execution adapter. It resolves a request plus its placement into one uniform callable shape so `apply_transform_requests` stays simple.
 - `ScorePlan` is the parsed authoring recipe. It preserves which transform requests were written on which phrase and which were written at score level.
 - `Score`, `Voice`, `Phrase`, `Motif`, and `Tone` remain musical data only. They do not store transform requests.
 
@@ -93,13 +93,13 @@ Two concrete transform definition classes replace the generic `TransformDefiniti
 class PhraseTransformDefinition:
     name: str
     params_spec: TransformParamsSpec
-    apply: Callable[[Phrase, Score, Mapping[str, object]], Phrase]
+    transform: Callable[[Phrase, Score, Mapping[str, object]], Phrase]
 
 @dataclass(frozen=True)
 class ScoreTransformDefinition:
     name: str
     params_spec: TransformParamsSpec
-    apply: Callable[[Score, Mapping[str, object]], Score]
+    transform: Callable[[Score, Mapping[str, object]], Score]
 ```
 
 Executable transform steps use this class:
@@ -114,7 +114,9 @@ class TransformStep:
 
 `PhraseScope` and `ScoreScope` enums are removed. "Scope" is encoded by the definition type and by where the request lives in `ScorePlan`, not by a runtime tag.
 
-Raw transform functions keep their existing narrow signatures (e.g. `reverse_tones(tones)`, `phrase_feigenbaum_shrink(tones, previous_tones, **params)`, `stretto(score, motif_name, **params)`). Registry entries should prefer explicit `apply` functions over generic helper factories. Add a helper only when repeated adaptation logic becomes materially noisy; do not make helper functions a required part of the design.
+Definition-level `transform` means "run the reusable transform logic on the input type declared by the definition's callable signature." Step-level `apply` means "apply one resolved request to the whole `Score`."
+
+Raw transform functions keep their existing narrow signatures (e.g. `reverse_tones(tones)`, `phrase_feigenbaum_shrink(tones, previous_tones, **params)`, `stretto(score, motif_name, **params)`). Registry entries should prefer explicit `transform` functions over generic helper factories. Add a helper only when repeated adaptation logic becomes materially noisy; do not make helper functions a required part of the design.
 
 Phrase-relative transforms read surrounding score context but still return one new `Phrase`. If a transform needs to rewrite multiple phrases, voices, or the whole score, it belongs in `SCORE_TRANSFORMS`.
 
@@ -137,7 +139,7 @@ Consequence: a motif declared in the JSON `motifs` block but never referenced by
 
 `validate_params(params)` validates the params dict against the transform's parameter contract: types, shapes, ranges, allowed values. It does not take a `Score`.
 
-Cross-reference failures (e.g. "motif name not found in score") are runtime resolution errors raised inside `apply`, not parameter contract violations.
+Cross-reference failures (e.g. "motif name not found in score") are runtime resolution errors raised inside `transform`, not parameter contract violations.
 
 ## Decision: Mutation Discipline
 
@@ -156,7 +158,9 @@ Transform execution is moved out of the parser into a transform application modu
 score = apply_transform_requests(score, score_plan)
 ```
 
-The application module has one uniform execution loop over `TransformStep`s: validate params, apply the step, and produce the next `Score`. Generating transform steps discovers request placement; it should not create a separate transform execution path.
+The application module has one uniform execution loop over `TransformStep`s: validate params, apply the step, and produce the next `Score`. Generating transform steps discovers request placement and hides phrase-vs-score traversal complexity from the executor.
+
+This keeps `TransformStep` intentionally. It is not a second authoring/request model and it is not stored in `ScorePlan`; it is a temporary resolved execution adapter created while applying transforms.
 
 ## Acceptance Criteria
 
@@ -165,11 +169,11 @@ The application module has one uniform execution loop over `TransformStep`s: val
 - `PhraseScope` and `ScoreScope` enums are removed.
 - Generic `TransformDefinition[ScopeType]` is removed; replaced by two concrete dataclasses.
 - `transform_func: Callable[..., Any]` is removed.
-- Phrase definitions apply with signature `(Phrase, Score, params) -> Phrase`; score definitions apply with signature `(Score, params) -> Score`.
+- Phrase definitions transform with signature `(Phrase, Score, params) -> Phrase`; score definitions transform with signature `(Score, params) -> Score`.
 - Parser does not branch on execution kind or call transform definitions directly; it preserves transform requests in `ScorePlan`.
 - Transform application is a separate traversal that performs lookup → `validate_params` → `apply`.
-- Registry entries prefer explicit `apply` functions; helper factories are avoided unless repeated adaptation logic becomes materially noisy.
-- No `voice_index` or `phrase_index` is passed into a transform definition's public `apply`.
+- Registry entries prefer explicit `transform` functions; helper factories are avoided unless repeated adaptation logic becomes materially noisy.
+- No `voice_index` or `phrase_index` is passed into a transform definition's public `transform`.
 - No in-place mutation of data-model objects by transforms.
 - `mypy .` passes without `cast`.
 - Behavior is preserved across: phrase transforms, score transforms, wrong-scope diagnostics, same-name transforms across registries, target-motif transforms (`stretto`), each-voice score transforms, phrase-relative transforms.
@@ -278,19 +282,19 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 - `PhrasePlan` has `motif_names: list[str]` and `transforms: list[TransformRequest]`; `VoicePlan` has `phrases: list[PhrasePlan]`; `ScorePlan` has `motifs: dict[str, Motif]`, `voices: list[VoicePlan]`, and `transforms: list[TransformRequest]`.
 - These plan classes are authoring metadata only. Do not add transform request fields to `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
 - In `transforms/base.py`, add `PhraseTransformDefinition` and `ScoreTransformDefinition`.
-- `PhraseTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `apply: Callable[[Phrase, Score, Mapping[str, object]], Phrase]`.
-- `ScoreTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `apply: Callable[[Score, Mapping[str, object]], Score]`.
+- `PhraseTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[Phrase, Score, Mapping[str, object]], Phrase]`.
+- `ScoreTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[Score, Mapping[str, object]], Score]`.
 - Add `TransformStep`. Each `TransformStep` holds the source `TransformRequest`, the resolved transform definition, and an `apply(score) -> Score` callable.
 - Extract the existing `TransformDefinition.validate_params` method body into a module-level free function `validate_transform_params(params_spec: TransformParamsSpec, name: str, params: Mapping[str, object]) -> None`. Both new dataclasses expose a `validate_params(self, params)` method that simply calls the free function with `self.params_spec` and `self.name`. Do not duplicate the validation logic across the two classes.
 - The existing `TransformDefinition[ScopeType]` is left alone in this step; the new types are not yet wired in anywhere.
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
-**Step 5 (low): Add explicit apply functions.**
-- Add explicit phrase and score apply functions near registry authoring code. Each function adapts one raw transform family to the new definition signature.
+**Step 5 (low): Add explicit transform functions.**
+- Add explicit phrase and score transform functions near registry authoring code. Each function adapts one raw transform family to the new definition signature.
 - Do not add generic helper factories such as `own_phrase(...)`, `phrase_relative(...)`, `each_voice(...)`, `score_aware(...)`, or `target_motifs(...)` as part of the design.
 - If a small private helper is needed to avoid real duplication inside one module, keep it local and narrow. Do not create a broad registry-helper abstraction.
-- Add focused tests for representative explicit apply functions: one plain phrase transform, one phrase-relative transform, one each-voice score transform, one score-aware transform, and one target-motif transform.
-Done signal: focused apply-function tests and `uv run pytest tests` pass. `mypy .` passes.
+- Add focused tests for representative explicit transform functions: one plain phrase transform, one phrase-relative transform, one each-voice score transform, one score-aware transform, and one target-motif transform.
+Done signal: focused transform-function tests and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 6 (high): Move phrase transform application timing.**
 
@@ -314,23 +318,23 @@ Verification: every existing composition must render identically. Add a focused 
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
 **Step 7 (low): Migrate `PHRASE_TRANSFORMS` in place.**
-- In `transforms/registry.py`, convert each `PHRASE_TRANSFORMS` entry from the old generic shape `TransformDefinition(name=..., transform_func=..., scope=..., params_spec=...)` to the new phrase-specific shape `PhraseTransformDefinition(name=..., params_spec=..., apply=...)`.
-- Each `apply` function adapts one raw phrase transform to the standard phrase API: `apply(phrase, score, params) -> Phrase`.
-- For old `PhraseScope.OWN_PHRASE` entries, the apply function reads tones from the active `Phrase`, calls the raw tone-list transform, and wraps the returned tones in a new `Phrase`.
-- For old `PhraseScope.PHRASE_RELATIVE` entries, the apply function also derives reference material from the surrounding `Score` before calling the raw phrase-relative transform.
+- In `transforms/registry.py`, convert each `PHRASE_TRANSFORMS` entry from the old generic shape `TransformDefinition(name=..., transform_func=..., scope=..., params_spec=...)` to the new phrase-specific shape `PhraseTransformDefinition(name=..., params_spec=..., transform=...)`.
+- Each `transform` function adapts one raw phrase transform to the standard phrase API: `transform(phrase, score, params) -> Phrase`.
+- For old `PhraseScope.OWN_PHRASE` entries, the transform function reads tones from the active `Phrase`, calls the raw tone-list transform, and wraps the returned tones in a new `Phrase`.
+- For old `PhraseScope.PHRASE_RELATIVE` entries, the transform function also derives reference material from the surrounding `Score` before calling the raw phrase-relative transform.
 - The old `PhraseScope` values are migration guidance only. Do not keep a runtime `if` / `elif` / switch over phrase scope in the final code.
-- Update phrase-transform application to look up definitions in `PHRASE_TRANSFORMS` and call `definition.validate_params(request.params)` and `definition.apply(phrase, score, request.params)`.
+- Update phrase-transform application to look up definitions in `PHRASE_TRANSFORMS` and call `definition.validate_params(request.params)` and `definition.transform(phrase, score, request.params)`.
 - Delete the old phrase-side scope branching from the transform application code.
 Done signal: `uv run pytest tests` passes. `mypy .` passes. `rg "PhraseScope" composition` returns no results.
 
 **Step 8 (low): Migrate `SCORE_TRANSFORMS` in place.**
-- In `transforms/registry.py`, convert each `SCORE_TRANSFORMS` entry from the old generic shape `TransformDefinition(name=..., transform_func=..., scope=..., params_spec=...)` to the new score-specific shape `ScoreTransformDefinition(name=..., params_spec=..., apply=...)`.
-- Each `apply` function adapts one raw score transform to the standard score API: `apply(score, params) -> Score`.
-- For old `ScoreScope.EACH_VOICE` entries, the apply function iterates the score's voices, reads each voice's tones, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
-- For old `ScoreScope.SCORE_AWARE` entries, the apply function calls the raw score transform directly.
-- For old `ScoreScope.TARGET_MOTIFS` entries, the apply function derives the target motif by traversing the `Score` hierarchy before calling the raw transform.
+- In `transforms/registry.py`, convert each `SCORE_TRANSFORMS` entry from the old generic shape `TransformDefinition(name=..., transform_func=..., scope=..., params_spec=...)` to the new score-specific shape `ScoreTransformDefinition(name=..., params_spec=..., transform=...)`.
+- Each `transform` function adapts one raw score transform to the standard score API: `transform(score, params) -> Score`.
+- For old `ScoreScope.EACH_VOICE` entries, the transform function iterates the score's voices, reads each voice's tones, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
+- For old `ScoreScope.SCORE_AWARE` entries, the transform function calls the raw score transform directly.
+- For old `ScoreScope.TARGET_MOTIFS` entries, the transform function derives the target motif by traversing the `Score` hierarchy before calling the raw transform.
 - The old `ScoreScope` values are migration guidance only. Do not keep a runtime `if` / `elif` / switch over score scope in the final code.
-- Update score-transform application to look up definitions in `SCORE_TRANSFORMS` and call `definition.validate_params(request.params)` and `definition.apply(score, request.params)`.
+- Update score-transform application to look up definitions in `SCORE_TRANSFORMS` and call `definition.validate_params(request.params)` and `definition.transform(score, request.params)`.
 - Delete the old score-side scope branching and the `apply_to_each_voice` helper if still present.
 Done signal: `uv run pytest tests` passes. `mypy .` passes. Transform application is now outside the parser and has no runtime scope branching.
 
@@ -415,7 +419,7 @@ The resolved design is:
 - `PhraseTransformDefinition` does not own a phrase and does not receive `voice_index` or `phrase_index`.
 - Context-aware phrase transforms receive the active `Phrase` and the surrounding `Score`; they can derive reference material by traversing the hierarchy.
 
-This rejects the previous options based on `apply(score, voice_index, phrase_index, params)`, `.bind(...)`, and phrase-registry factories. Those options made transform location a parser-call-site concern instead of a hierarchy concern.
+This rejects the previous public transform-definition options based on `transform(score, voice_index, phrase_index, params)`, `.bind(...)`, and phrase-registry factories. Those options made transform location a parser-call-site concern instead of a hierarchy concern.
 
 ### What's Gone Vs. Today
 
