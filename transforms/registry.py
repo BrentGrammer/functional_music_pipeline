@@ -1,6 +1,13 @@
+from collections.abc import Callable, Mapping
+from typing import cast
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from transforms.base import (
     PhraseScope,
+    PhraseTransformDefinition,
     ScoreScope,
+    ToneDimension,
     TransformDefinition,
 )
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_tones
@@ -37,72 +44,169 @@ from transforms.proportion.golden_ratio import (
 from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_transform
 from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_transform
 
-PHRASE_TRANSFORMS: dict[str, TransformDefinition[PhraseScope]] = {
-    "reverse": TransformDefinition(
+
+PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition | TransformDefinition[PhraseScope]] = {
+    "reverse": PhraseTransformDefinition(
         name="reverse",
-        transform_func=reverse_tones,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=REVERSE_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=reverse_tones([tone for motif in context.phrase.motifs for tone in motif.tones]),
+                )
+            ]
+        ),
     ),
-    "golden_ratio": TransformDefinition(
+    "golden_ratio": PhraseTransformDefinition(
         name="golden_ratio",
-        transform_func=golden_ratio_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=golden_ratio_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params.get("dimension", ToneDimension.DURATION)),
+                    ),
+                )
+            ]
+        ),
     ),
-    "invert": TransformDefinition(
+    "invert": PhraseTransformDefinition(
         name="invert",
-        transform_func=invert_tones,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=INVERT_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=invert_tones([tone for motif in context.phrase.motifs for tone in motif.tones]),
+                )
+            ]
+        ),
     ),
-    "feigenbaum_sequence": TransformDefinition(
+    "feigenbaum_sequence": PhraseTransformDefinition(
         name="feigenbaum_sequence",
-        transform_func=feigenbaum_sequence,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=FEIGENBAUM_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=feigenbaum_sequence(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params.get("dimension", ToneDimension.DURATION)),
+                    ),
+                )
+            ]
+        ),
     ),
-    "transpose": TransformDefinition(
+    "transpose": PhraseTransformDefinition(
         name="transpose",
-        transform_func=transpose_tones,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=TRANSPOSE_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=transpose_tones(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        semitones=cast(float, params["semitones"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "scale": TransformDefinition(
+    "scale": PhraseTransformDefinition(
         name="scale",
-        transform_func=scale_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=SCALE_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=scale_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params["dimension"]),
+                        factor=cast(float, params["factor"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "pad_silence": TransformDefinition(
+    "pad_silence": PhraseTransformDefinition(
         name="pad_silence",
-        transform_func=pad_silence_tones,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=PAD_SILENCE_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=pad_silence_tones(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        seconds=cast(float, params["seconds"]),
+                        position=cast(str, params["position"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "delay": TransformDefinition(
+    "delay": PhraseTransformDefinition(
         name="delay",
-        transform_func=delay_tones,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=DELAY_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=delay_tones(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        seconds=cast(float, params["seconds"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "repeat": TransformDefinition(
+    "repeat": PhraseTransformDefinition(
         name="repeat",
-        transform_func=repeat_tones,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=REPEAT_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=repeat_tones(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        count=cast(int, params["count"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "erosion": TransformDefinition(
+    "erosion": PhraseTransformDefinition(
         name="erosion",
-        transform_func=erosion_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=EROSION_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=erosion_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params.get("dimension", ToneDimension.DURATION)),
+                    ),
+                )
+            ]
+        ),
     ),
-    "drift": TransformDefinition(
+    "drift": PhraseTransformDefinition(
         name="drift",
-        transform_func=drift_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=DRIFT_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=drift_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params["dimension"]),
+                        rate=cast(float, params["rate"]),
+                    ),
+                )
+            ]
+        ),
     ),
     "phrase_feigenbaum_shrink": TransformDefinition(
         name="phrase_feigenbaum_shrink",
@@ -128,41 +232,104 @@ PHRASE_TRANSFORMS: dict[str, TransformDefinition[PhraseScope]] = {
         scope=PhraseScope.PHRASE_RELATIVE,
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
     ),
-    "accelerando": TransformDefinition(
+    "accelerando": PhraseTransformDefinition(
         name="accelerando",
-        transform_func=accelerando_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=ACCELERANDO_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=accelerando_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        strength=cast(str | float, params.get("strength", "medium")),
+                        jaggedness=cast(str | float, params.get("jaggedness", "none")),
+                    ),
+                )
+            ]
+        ),
     ),
-    "ritardando": TransformDefinition(
+    "ritardando": PhraseTransformDefinition(
         name="ritardando",
-        transform_func=ritardando_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=RITARDANDO_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=ritardando_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        strength=cast(str | float, params.get("strength", "medium")),
+                        jaggedness=cast(str | float, params.get("jaggedness", "none")),
+                    ),
+                )
+            ]
+        ),
     ),
-    "weierstrass": TransformDefinition(
+    "weierstrass": PhraseTransformDefinition(
         name="weierstrass",
-        transform_func=apply_weierstrass_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=WEIERSTRASS_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=apply_weierstrass_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params["dimension"]),
+                        intensity=cast(str, params["intensity"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "terraced_drift": TransformDefinition(
+    "terraced_drift": PhraseTransformDefinition(
         name="terraced_drift",
-        transform_func=apply_terraced_drift_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=TERRACED_DRIFT_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=apply_terraced_drift_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params["dimension"]),
+                        max_step_change_pct=cast(int, params["max_step_change_pct"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "cellular_automata": TransformDefinition(
+    "cellular_automata": PhraseTransformDefinition(
         name="cellular_automata",
-        transform_func=apply_cellular_automata_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=apply_cellular_automata_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params["dimension"]),
+                        rule=cast(int, params["rule"]),
+                        generations=cast(int, params["generations"]),
+                        max_deviation=cast(float, params["max_deviation"]),
+                    ),
+                )
+            ]
+        ),
     ),
-    "random_drop": TransformDefinition(
+    "random_drop": PhraseTransformDefinition(
         name="random_drop",
-        transform_func=apply_random_drop_transform,
-        scope=PhraseScope.OWN_PHRASE,
         params_spec=RANDOM_DROP_PARAMS_SPEC,
+        transform=lambda context, params: Phrase(
+            motifs=[
+                Motif(
+                    name="<transformed>",
+                    tones=apply_random_drop_transform(
+                        [tone for motif in context.phrase.motifs for tone in motif.tones],
+                        dimension=cast(ToneDimension | str, params["dimension"]),
+                        max_drop_pct=cast(int, params["max_drop_pct"]),
+                        drop_frequency_pct=cast(int, params["drop_frequency_pct"]),
+                    ),
+                )
+            ]
+        ),
     ),
 }
 
