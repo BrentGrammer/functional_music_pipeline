@@ -419,7 +419,7 @@ score = build_score(score_plan)
 return apply_transform_requests(score, score_plan)
 ```
 
-The parser still owns JSON validation and parsing. `composition/transformation.py` owns transform preparation and execution. `parse_score_plan` and `build_score` already exist from earlier steps; this step does not re-add, redesign, or duplicate that storage. `parse_composition` must use `parse_score_plan(composition_document)`, then `build_score(score_plan)`, then `apply_transform_requests(score, score_plan)` directly.
+The parser still owns JSON validation and parsing. `composition/transformer.py` owns transform preparation and execution. `parse_score_plan` and `build_score` already exist from earlier steps; this step does not re-add, redesign, or duplicate that storage. `parse_composition` must use `parse_score_plan(composition_document)`, then `build_score(score_plan)`, then `apply_transform_requests(score, score_plan)` directly.
 
 The change has four parts that move together:
 

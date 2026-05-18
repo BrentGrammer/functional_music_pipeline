@@ -132,8 +132,8 @@ def assemble_prepared_transforms(score_plan: ScorePlan) -> list[PreparedTransfor
     return prepared_transforms
 
 
-def apply_transform_requests(score: Score, prepared_transforms: list[PreparedTransform]) -> Score:
+def apply_transform_requests(score: Score, score_plan: ScorePlan) -> Score:
     current_score = score
-    for transform in prepared_transforms:
+    for transform in assemble_prepared_transforms(score_plan):
         current_score = transform(current_score)
     return current_score

@@ -1,5 +1,5 @@
 import pytest
-from composition.transformation import (
+from composition.transformer import (
     apply_transform_requests,
     assemble_prepared_transforms,
     prepare_phrase_transform,
@@ -103,7 +103,7 @@ def test_assemble_and_apply_transform_requests():
     prepared_transforms = assemble_prepared_transforms(score_plan)
     assert len(prepared_transforms) == 2
 
-    new_score = apply_transform_requests(score, prepared_transforms)
+    new_score = apply_transform_requests(score, score_plan)
 
     assert len(new_score.voices) == 2
     # Check that phrase transform was applied (transposed up 1 semitone)
