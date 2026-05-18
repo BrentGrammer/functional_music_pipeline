@@ -269,7 +269,7 @@ Done signal: `uv run pytest tests` passes. `mypy .` passes.
 - Phrase transforms still run during voice assembly as today. Input to a phrase transform is the flattened tones of the phrase's motifs (concatenated in order). Output of a phrase transform is a flat tone list and is wrapped as `Phrase(motifs=[Motif(name="<transformed>", tones=result)])` — the synthetic-motif decision applied. The previous motif structure does not survive a phrase transform.
 - Renderers and score-aware transforms still use `_legacy_flatten_voice_tones`.
 - This step touches only `composition/parser.py` and possibly `composition/schema.py`. Do not modify JSON files. Do not touch transform implementations.
-Done signal: `uv run pytest tests` passes. Every existing composition renders identically. `mypy .` passes.
+Done signal: `uv run pytest tests` passes only for the tests relevant to the change. Every existing composition renders identically. `mypy .` passes.
 
 For each consumer-migration sub-step below (3c–3g), replace `_legacy_flatten_voice_tones` calls with direct hierarchy traversal at the call site. The one exception: if a consumer needs the flat tone stream of a whole voice, use the canonical `iter_voice_tones(voice)` utility in `score_model/traversal.py` (create the module on first use with that one function, and only that function). Do not introduce additional traversal utilities. Inline everything else at the call site. See the standing "No new helper functions unless required" rule.
 

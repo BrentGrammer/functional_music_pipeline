@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from typing import TypeAlias
 
 from score_model._migration import _legacy_flatten_voice_tones
+from score_model.motif import Motif
 from score_model.pitch_utils import CENTS_PER_OCTAVE
+from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
@@ -58,7 +60,18 @@ class FrostEventBuildSpec:
 
 
 def _copy_voice_retaining_frost_history(voice: Voice) -> Voice:
-    copied_voice = Voice(copy_tones(_legacy_flatten_voice_tones(voice)))
+    copied_voice = Voice(
+        phrases=[
+            Phrase(
+                motifs=[
+                    Motif(
+                        name="<frost_copy>",
+                        tones=copy_tones(_legacy_flatten_voice_tones(voice)),
+                    )
+                ]
+            )
+        ]
+    )
     setattr(copied_voice, "frost_generation", getattr(voice, "frost_generation", 0))
     setattr(copied_voice, "frost_role", getattr(voice, "frost_role", FROST_ROLE_CENTER))
     return copied_voice
@@ -66,17 +79,26 @@ def _copy_voice_retaining_frost_history(voice: Voice) -> Voice:
 
 def _build_frost_voice(spec: FrostVoiceBuildSpec) -> Voice:
     child_voice = Voice(
-        delay_tones(
-            [
-                Tone(
-                    frequency=spec.frequency,
-                    duration=spec.tone.duration,
-                    sample_rate=spec.tone.sample_rate,
-                    amplitude=spec.tone.amplitude,
-                )
-            ],
-            spec.delay_seconds,
-        )
+        phrases=[
+            Phrase(
+                motifs=[
+                    Motif(
+                        name="<frost>",
+                        tones=delay_tones(
+                            [
+                                Tone(
+                                    frequency=spec.frequency,
+                                    duration=spec.tone.duration,
+                                    sample_rate=spec.tone.sample_rate,
+                                    amplitude=spec.tone.amplitude,
+                                )
+                            ],
+                            spec.delay_seconds,
+                        ),
+                    )
+                ]
+            )
+        ]
     )
     setattr(child_voice, "frost_generation", spec.generation)
     setattr(child_voice, "frost_role", spec.role)

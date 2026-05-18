@@ -1,5 +1,6 @@
 import pytest
 
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.math_constants import FEIGENBAUM_DELTA
 from score_model.score import Score
 from score_model.tone import Tone
@@ -201,11 +202,14 @@ class TestScoreFeigenbaumSequence:
         )
 
         result_score = score_feigenbaum_sequence(score)
+        first_voice_tones = _legacy_flatten_voice_tones(result_score.voices[0])
+        second_voice_tones = _legacy_flatten_voice_tones(result_score.voices[1])
+        third_voice_tones = _legacy_flatten_voice_tones(result_score.voices[2])
 
         assert len(result_score.voices) == 3
-        assert result_score.voices[0][0].duration == 1.0
-        assert result_score.voices[1][0].duration == pytest.approx(1.0 / FEIGENBAUM_DELTA)
-        assert result_score.voices[2][0].duration == pytest.approx((1.0 / FEIGENBAUM_DELTA) / FEIGENBAUM_DELTA)
+        assert first_voice_tones[0].duration == 1.0
+        assert second_voice_tones[0].duration == pytest.approx(1.0 / FEIGENBAUM_DELTA)
+        assert third_voice_tones[0].duration == pytest.approx((1.0 / FEIGENBAUM_DELTA) / FEIGENBAUM_DELTA)
 
     def test_empty_score_returns_original_score(self):
         empty_score = Score()
@@ -229,6 +233,8 @@ class TestScoreFeigenbaumSequence:
         )
 
         result = score_feigenbaum_sequence(score, dimension="FREQUENCY")
+        first_voice_tones = _legacy_flatten_voice_tones(result.voices[0])
+        second_voice_tones = _legacy_flatten_voice_tones(result.voices[1])
 
-        assert result.voices[0][0].frequency == pytest.approx(440.0)
-        assert result.voices[1][0].frequency == pytest.approx(440.0 / FEIGENBAUM_DELTA)
+        assert first_voice_tones[0].frequency == pytest.approx(440.0)
+        assert second_voice_tones[0].frequency == pytest.approx(440.0 / FEIGENBAUM_DELTA)

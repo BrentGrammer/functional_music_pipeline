@@ -10,4 +10,9 @@ from score_model.voice import Voice
 
 
 def _legacy_flatten_voice_tones(voice: Voice) -> list[Tone]:
-    return voice.tones
+    return [
+        tone
+        for phrase in voice.phrases
+        for motif in phrase.motifs
+        for tone in motif.tones
+    ]

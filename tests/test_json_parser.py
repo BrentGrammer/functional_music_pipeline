@@ -9,6 +9,7 @@ from composition.parser import (
     parse_transform_spec,
 )
 from composition.schema import PhraseConfig
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
@@ -780,18 +781,19 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
     }
 
     score = parse_composition(json_data)
+    voice_tones = _legacy_flatten_voice_tones(score.voices[0])
 
     assert len(score.voices) == 1
-    assert len(score.voices[0]) == 3
+    assert len(voice_tones) == 3
 
-    assert score.voices[0][0].frequency == 440.0
-    assert score.voices[0][0].duration == 0.5
-    assert score.voices[0][1].frequency == 660.0
-    assert score.voices[0][1].duration == 0.5
+    assert voice_tones[0].frequency == 440.0
+    assert voice_tones[0].duration == 0.5
+    assert voice_tones[1].frequency == 660.0
+    assert voice_tones[1].duration == 0.5
 
     expected_third_duration = 1.0 / FEIGENBAUM_DELTA
-    assert score.voices[0][2].frequency == 880.0
-    assert score.voices[0][2].duration == pytest.approx(expected_third_duration)
+    assert voice_tones[2].frequency == 880.0
+    assert voice_tones[2].duration == pytest.approx(expected_third_duration)
 
 def test_parse_phrase_missing_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
@@ -1011,14 +1013,16 @@ def test_parse_composition():
 
     assert isinstance(score, Score)
     assert len(score.voices) == 2
-    assert len(score.voices[0]) == 1
-    assert len(score.voices[1]) == 1
+    voice_0_tones = _legacy_flatten_voice_tones(score.voices[0])
+    voice_1_tones = _legacy_flatten_voice_tones(score.voices[1])
+    assert len(voice_0_tones) == 1
+    assert len(voice_1_tones) == 1
 
-    assert score.voices[0][0].frequency == 440.0
-    assert score.voices[0][0].duration == 0.5
+    assert voice_0_tones[0].frequency == 440.0
+    assert voice_0_tones[0].duration == 0.5
 
-    assert score.voices[1][0].frequency == 880.0
-    assert score.voices[1][0].duration == pytest.approx(0.5 / FEIGENBAUM_DELTA)
+    assert voice_1_tones[0].frequency == 880.0
+    assert voice_1_tones[0].duration == pytest.approx(0.5 / FEIGENBAUM_DELTA)
 
 def test_parse_composition_with_value_score_transform():
     factor = 2.0
@@ -1044,7 +1048,7 @@ def test_parse_composition_with_value_score_transform():
     score = parse_composition(json_data)
 
     assert len(score.voices) == 1
-    assert score.voices[0][0].duration == original_duration * factor
+    assert _legacy_flatten_voice_tones(score.voices[0])[0].duration == original_duration * factor
 
 def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
     captured = {}

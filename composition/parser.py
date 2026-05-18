@@ -1,6 +1,8 @@
 from collections.abc import Callable, Mapping
 
 from score_model._migration import _legacy_flatten_voice_tones
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
@@ -23,7 +25,9 @@ def apply_to_each_voice(
     def wrapper(score: Score) -> Score:
         for i, voice in enumerate(score.voices):
             modified_tones = transform_func(_legacy_flatten_voice_tones(voice), *args, **kwargs)
-            score.voices[i] = Voice(modified_tones)
+            score.voices[i] = Voice(
+                phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])]
+            )
         return score
 
     return wrapper
@@ -180,7 +184,8 @@ def parse_voice(
         phrase_tones = parse_phrase(phrase_config, parsed_motifs, reference_tones)
         combined_tones.extend(phrase_tones)
 
-    return Voice(combined_tones), combined_tones
+    parsed_phrase = Phrase(motifs=[Motif(name="<parsed>", tones=combined_tones)])
+    return Voice(phrases=[parsed_phrase]), combined_tones
 
 
 def _validate_composition_structure(

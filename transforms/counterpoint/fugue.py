@@ -1,5 +1,7 @@
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model._migration import _legacy_flatten_voice_tones
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones, make_silence_tone
@@ -64,7 +66,9 @@ def stretto(
         entry_tones = copy_tones(parsed_motifs[motif])
         if offset > 0:
             entry_tones = [make_silence_tone(offset)] + entry_tones
-        generated_voices.append(Voice(entry_tones))
+        generated_voices.append(
+            Voice(phrases=[Phrase(motifs=[Motif(name=motif, tones=entry_tones)])])
+        )
 
     return Score(score.voices + generated_voices)
 
@@ -86,7 +90,9 @@ def add_pedal_tone(
 
     amplitude = 0.5  # Fixed sensible default
     pedal_tones = [Tone(frequency=frequency, duration=duration, amplitude=amplitude)]
-    return Score(score.voices + [Voice(pedal_tones)])
+    return Score(
+        score.voices + [Voice(phrases=[Phrase(motifs=[Motif(name="<pedal>", tones=pedal_tones)])])]
+    )
 
 
 def _resolve_stretto_spacing(spacing: object, motif_duration: float) -> float:
