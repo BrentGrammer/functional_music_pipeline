@@ -20,9 +20,14 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
+from transforms.base import PhraseTransformDefinition
+from transforms.registry import PHRASE_TRANSFORMS
 
 
 def test_prepare_phrase_transform_applies_transform_and_replaces_target_phrase():
+    descriptor = PHRASE_TRANSFORMS["reverse"]
+    assert isinstance(descriptor, PhraseTransformDefinition)
+
     score = Score(
         [
             Voice(

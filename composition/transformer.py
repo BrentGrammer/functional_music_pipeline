@@ -16,6 +16,7 @@ from score_model.voice import Voice
 from transforms.base import (
     PhraseScope,
     PhraseTransformContext,
+    PhraseTransformDefinition,
     ScoreScope,
     ToneSequence,
 )
@@ -61,9 +62,12 @@ def prepare_phrase_transform(request: PhraseTransformRequest) -> PreparedTransfo
         target_phrase = context.phrase
         phrase_tones = [tone for motif in target_phrase.motifs for tone in motif.tones]
 
-        if descriptor.scope is PhraseScope.OWN_PHRASE:
+        if isinstance(descriptor, PhraseTransformDefinition):
+            transformed_phrase = descriptor.transform(context, transform_params)
+        elif descriptor.scope is PhraseScope.OWN_PHRASE:
             own_phrase_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
             new_tones = own_phrase_transform(phrase_tones, **transform_params)
+            transformed_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=new_tones)])
         elif descriptor.scope is PhraseScope.PHRASE_RELATIVE:
             reference_tones: list[Tone] = []
             if request.phrase_index > 0:
@@ -78,15 +82,15 @@ def prepare_phrase_transform(request: PhraseTransformRequest) -> PreparedTransfo
 
             phrase_relative_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
             new_tones = phrase_relative_transform(phrase_tones, reference_tones, **transform_params)
+            transformed_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=new_tones)])
         else:
             raise ValueError(f"Unknown phrase scope {descriptor.scope}")
 
-        new_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=new_tones)])
         new_voices = []
         for v_idx, voice in enumerate(score.voices):
             if v_idx == request.voice_index:
                 new_phrases = list(voice.phrases)
-                new_phrases[request.phrase_index] = new_phrase
+                new_phrases[request.phrase_index] = transformed_phrase
                 new_voices.append(Voice(phrases=new_phrases))
             else:
                 new_voices.append(voice)
@@ -124,9 +128,7 @@ def prepare_score_transform(request: ScoreTransformRequest) -> PreparedTransform
             new_voices = []
             for voice in score.voices:
                 modified_tones = each_voice_transform(flatten_voice_tones(voice), **transform_params)
-                new_voices.append(
-                    Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])])
-                )
+                new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])]))
             return Score(voices=new_voices)
 
         raise ValueError(f"Unknown score scope {descriptor.scope}")

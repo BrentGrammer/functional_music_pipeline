@@ -7,6 +7,7 @@ from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from transforms.base import ToneDimension
 from transforms.basic.drift import drift_transform
+from transforms.base import PhraseTransformDefinition
 from transforms.registry import SCORE_TRANSFORMS
 
 
@@ -14,7 +15,7 @@ class TestDriftExceptions:
     def test_unknown_dimension_raises(self):
         tones = [Tone(440.0, 1.0)]
         with pytest.raises(ValueError):
-            drift_transform(tones, dimension='InvalidDimension', rate=0.1)
+            drift_transform(tones, dimension="InvalidDimension", rate=0.1)
 
 
 class TestDriftFrequency:
@@ -26,10 +27,10 @@ class TestDriftFrequency:
         FREQ_A = 440.0
         RATE = 0.1
         EXPECTED_FREQ = FREQ_A + (FREQ_A * RATE)
-        
+
         tones = [Tone(FREQ_A, 1.0)]
         result = drift_transform(tones, dimension=ToneDimension.FREQUENCY, rate=RATE)
-        
+
         assert len(result) == 1
         assert result[0].frequency == pytest.approx(EXPECTED_FREQ)
 
@@ -40,10 +41,10 @@ class TestDriftFrequency:
         FREQ_A = 440.0
         RATE = 0.1
         STEP = FREQ_A * RATE
-        
+
         tones = [Tone(FREQ_A, 1.0), Tone(FREQ_A, 1.0), Tone(FREQ_A, 1.0)]
         result = drift_transform(tones, dimension=ToneDimension.FREQUENCY, rate=RATE)
-        
+
         assert len(result) == 3
         assert result[0].frequency == pytest.approx(FREQ_A + STEP)
         assert result[1].frequency == pytest.approx(FREQ_A + (2 * STEP))
@@ -56,10 +57,10 @@ class TestDriftFrequency:
         FREQ_A = 440.0
         RATE = -0.1
         STEP = FREQ_A * RATE
-        
+
         tones = [Tone(FREQ_A, 1.0), Tone(FREQ_A, 1.0), Tone(FREQ_A, 1.0)]
         result = drift_transform(tones, dimension=ToneDimension.FREQUENCY, rate=RATE)
-        
+
         assert len(result) == 3
         assert result[0].frequency == pytest.approx(FREQ_A + STEP)
         assert result[1].frequency == pytest.approx(FREQ_A + (2 * STEP))
@@ -70,10 +71,10 @@ class TestDriftFrequency:
         # must remain untouched regardless of sequence length.
         FREQ_A = 440.0
         FREQ_B = 880.0
-        
+
         tones = [Tone(FREQ_A, 1.0), Tone(FREQ_B, 1.0)]
         result = drift_transform(tones, dimension=ToneDimension.FREQUENCY, rate=0.0)
-        
+
         assert len(result) == 2
         assert result[0].frequency == pytest.approx(FREQ_A)
         assert result[1].frequency == pytest.approx(FREQ_B)
@@ -82,10 +83,10 @@ class TestDriftFrequency:
         FREQ_A = 440.0
         RATE = 0.1
         EXPECTED_FREQ = FREQ_A + (FREQ_A * RATE)
-        
+
         tones = [Tone(FREQ_A, 1.0)]
         result = drift_transform(tones, dimension="FREQUENCY", rate=RATE)
-        
+
         assert result[0].frequency == pytest.approx(EXPECTED_FREQ)
 
     def test_preserves_untouched_fields(self):
@@ -95,10 +96,10 @@ class TestDriftFrequency:
         CUSTOM_SAMPLE_RATE = 22050
         DURATION = 0.75
         AMPLITUDE = 0.6
-        
+
         tones = [Tone(440.0, DURATION, sample_rate=CUSTOM_SAMPLE_RATE, amplitude=AMPLITUDE)]
         result = drift_transform(tones, dimension=ToneDimension.FREQUENCY, rate=0.1)
-        
+
         assert result[0].duration == pytest.approx(DURATION)
         assert result[0].sample_rate == CUSTOM_SAMPLE_RATE
         assert result[0].amplitude == pytest.approx(AMPLITUDE)
@@ -112,10 +113,10 @@ class TestDriftAmplitude:
         AMP = 0.5
         RATE = 0.2
         STEP = AMP * RATE
-        
+
         tones = [Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP)]
         result = drift_transform(tones, dimension=ToneDimension.AMPLITUDE, rate=RATE)
-        
+
         assert len(result) == 3
         assert result[0].amplitude == pytest.approx(AMP + STEP)
         assert result[1].amplitude == pytest.approx(AMP + (2 * STEP))
@@ -128,10 +129,10 @@ class TestDriftAmplitude:
         AMP = 0.5
         RATE = -0.2
         STEP = AMP * RATE
-        
+
         tones = [Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP)]
         result = drift_transform(tones, dimension=ToneDimension.AMPLITUDE, rate=RATE)
-        
+
         assert len(result) == 3
         assert result[0].amplitude == pytest.approx(AMP + STEP)
         assert result[1].amplitude == pytest.approx(AMP + (2 * STEP))
@@ -143,10 +144,10 @@ class TestDriftAmplitude:
         # Result: [1.0, 1.0, 1.0] (Clamped)
         AMP = 0.5
         RATE = 1.0
-        
+
         tones = [Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP)]
         result = drift_transform(tones, dimension=ToneDimension.AMPLITUDE, rate=RATE)
-        
+
         assert result[0].amplitude == 1.0
         assert result[1].amplitude == 1.0
         assert result[2].amplitude == 1.0
@@ -157,10 +158,10 @@ class TestDriftAmplitude:
         # Result: [0.0, 0.0, 0.0] (Clamped)
         AMP = 0.5
         RATE = -1.0
-        
+
         tones = [Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP)]
         result = drift_transform(tones, dimension=ToneDimension.AMPLITUDE, rate=RATE)
-        
+
         assert result[0].amplitude == 0.0
         assert result[1].amplitude == 0.0
         assert result[2].amplitude == 0.0
@@ -168,10 +169,10 @@ class TestDriftAmplitude:
     def test_zero_rate_is_identity(self):
         # A rate of 0 means "no drift", so amplitude must remain untouched.
         AMP = 0.5
-        
+
         tones = [Tone(440, 1.0, amplitude=AMP), Tone(440, 1.0, amplitude=AMP)]
         result = drift_transform(tones, dimension=ToneDimension.AMPLITUDE, rate=0.0)
-        
+
         assert result[0].amplitude == pytest.approx(AMP)
         assert result[1].amplitude == pytest.approx(AMP)
 
@@ -184,10 +185,10 @@ class TestDriftDuration:
         DUR = 0.5
         RATE = 0.5
         STEP = DUR * RATE
-        
+
         tones = [Tone(440, DUR), Tone(440, DUR), Tone(440, DUR)]
         result = drift_transform(tones, dimension=ToneDimension.DURATION, rate=RATE)
-        
+
         assert len(result) == 3
         assert result[0].duration == pytest.approx(DUR + STEP)
         assert result[1].duration == pytest.approx(DUR + (2 * STEP))
@@ -200,10 +201,10 @@ class TestDriftDuration:
         DUR = 0.5
         RATE = -0.5
         STEP = DUR * RATE
-        
+
         tones = [Tone(440, DUR), Tone(440, DUR), Tone(440, DUR)]
         result = drift_transform(tones, dimension=ToneDimension.DURATION, rate=RATE)
-        
+
         assert len(result) == 3
         assert result[0].duration == pytest.approx(DUR + STEP)
         assert result[1].duration == pytest.approx(max(0.0, DUR + (2 * STEP)))
@@ -215,10 +216,10 @@ class TestDriftDuration:
         # Result: [0.0, 0.0, 0.0] (Clamped)
         DUR = 0.5
         RATE = -2.0
-        
+
         tones = [Tone(440, DUR), Tone(440, DUR), Tone(440, DUR)]
         result = drift_transform(tones, dimension=ToneDimension.DURATION, rate=RATE)
-        
+
         assert result[0].duration == 0.0
         assert result[1].duration == 0.0
         assert result[2].duration == 0.0
@@ -226,10 +227,10 @@ class TestDriftDuration:
     def test_zero_rate_is_identity(self):
         # A rate of 0 means "no drift", so duration must remain untouched.
         DUR = 0.5
-        
+
         tones = [Tone(440, DUR), Tone(440, DUR)]
         result = drift_transform(tones, dimension=ToneDimension.DURATION, rate=0.0)
-        
+
         assert result[0].duration == pytest.approx(DUR)
         assert result[1].duration == pytest.approx(DUR)
 

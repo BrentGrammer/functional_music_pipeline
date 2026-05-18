@@ -6,6 +6,7 @@ from composition.transformer import transform_score
 from score_model.tone import Tone
 from transforms.basic.pad_silence import pad_silence_tones
 from score_model.traversal import flatten_voice_tones
+from transforms.base import PhraseTransformDefinition
 from transforms.registry import PHRASE_TRANSFORMS
 
 
@@ -75,10 +76,6 @@ def test_pad_silence_rejects_invalid_position():
         pad_silence_tones([Tone(frequency)], seconds=silence_seconds, position=invalid_position)
 
 
-def test_pad_silence_registered():
-    descriptor = PHRASE_TRANSFORMS["pad_silence"]
-    assert descriptor.scope is not None
-
 
 def test_parse_phrase_applies_pad_silence():
     subject_frequency = 440.0
@@ -147,9 +144,7 @@ def test_applies_pad_silence_between_phrases():
                     "phrases": [
                         {
                             "motifs": ["subject"],
-                            "transforms": [
-                                {"name": "pad_silence", "params": {"seconds": silence_seconds, "position": "end"}}
-                            ],
+                            "transforms": [{"name": "pad_silence", "params": {"seconds": silence_seconds, "position": "end"}}],
                         },
                         {"motifs": ["answer"]},
                     ]
@@ -162,6 +157,4 @@ def test_applies_pad_silence_between_phrases():
 
     assert len(score.voices) == 1
     assert [tone.frequency for tone in flatten_voice_tones(score.voices[0])] == pytest.approx([subject_frequency, 0, answer_frequency])
-    assert [tone.duration for tone in flatten_voice_tones(score.voices[0])] == pytest.approx(
-        [phrase_duration, silence_seconds, phrase_duration]
-    )
+    assert [tone.duration for tone in flatten_voice_tones(score.voices[0])] == pytest.approx([phrase_duration, silence_seconds, phrase_duration])
