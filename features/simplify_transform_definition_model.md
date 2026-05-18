@@ -316,14 +316,67 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 - The existing `TransformDefinition[ScopeType]` is left alone in this step; the new types are not yet wired in anywhere.
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
-**Step 5 (low): Add explicit transform functions.**
-- Add explicit phrase and score transform functions near registry authoring code. Each function adapts one raw transform family to the new definition signature.
-- Do not add generic helper factories such as `own_phrase(...)`, `phrase_relative(...)`, `each_voice(...)`, `score_aware(...)`, or `target_motifs(...)` as part of the design.
-- If a small private helper is needed to avoid real duplication inside one module, keep it local and narrow. Do not create a broad registry-helper abstraction.
-- Add focused tests for representative explicit transform functions: one plain phrase transform, one phrase-relative transform, one each-voice score transform, one score-aware transform, and one target-motif transform.
-Done signal: focused transform-function tests and `uv run pytest tests` pass. `mypy .` passes.
+**Step 5a (low): Add representative own-phrase explicit transform function.**
+- Add one explicit own-phrase transform function near registry authoring code. It adapts one existing raw tone-list phrase transform to the new standard phrase API: `transform(context, params) -> Phrase`.
+- The function reads tones from `context.phrase`, calls the raw transform, and wraps the returned tones in `Phrase(motifs=[Motif(name="<transformed>", tones=result)])`.
+- Do not wire this into `PHRASE_TRANSFORMS` yet. Do not add generic helper factories.
+- Add a focused test for this representative function.
+Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
 
-**Step 6 (high): Move phrase transform application timing.**
+**Step 5b (low): Add representative phrase-relative explicit transform function.**
+- Add one explicit phrase-relative transform function near registry authoring code.
+- The function derives reference material from `context.score` relative to `context.voice_index` and `context.phrase_index`, calls one existing phrase-relative raw transform, and wraps the returned tones in a new one-motif `Phrase`.
+- Do not wire this into `PHRASE_TRANSFORMS` yet. Do not add generic helper factories.
+- Add a focused test for this representative function.
+Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
+
+**Step 5c (low): Add representative each-voice score explicit transform function.**
+- Add one explicit score transform function for an old `ScoreScope.EACH_VOICE` transform.
+- The function iterates voices, reads each voice's tones with `iter_voice_tones(voice)`, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
+- Do not wire this into `SCORE_TRANSFORMS` yet. Do not add generic helper factories.
+- Add a focused test for this representative function.
+Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
+
+**Step 5d (low): Add representative score-aware explicit transform function.**
+- Add one explicit score transform function for an old `ScoreScope.SCORE_AWARE` transform.
+- The function calls the raw score transform with the current `Score` and params, returning the new `Score`.
+- Do not wire this into `SCORE_TRANSFORMS` yet. Do not add generic helper factories.
+- Add a focused test for this representative function.
+Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
+
+**Step 5e (low): Add representative target-motif explicit transform function.**
+- Add one explicit score transform function for an old `ScoreScope.TARGET_MOTIFS` transform.
+- The function derives the target motif by traversing the `Score` hierarchy, calls the raw transform, and returns the new `Score`.
+- Do not wire this into `SCORE_TRANSFORMS` yet. Do not add generic helper factories.
+- Add a focused test for this representative function.
+Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
+
+**Step 6a (high): Add `parse_score_plan` and `build_score` without switching `parse_composition`.**
+- Add `parse_score_plan(composition_json) -> ScorePlan` and `build_score(score_plan) -> Score` side by side with the existing parser flow.
+- `parse_score_plan` parses the top-level motif table, resolves phrase motif-name references into `PhrasePlan.motifs`, preserves voice/phrase order, and collects score transform requests. Phrase transform request collection may be stubbed as empty in this step if needed to avoid changing behavior.
+- `build_score` constructs a pure `Score` from `ScorePlan` without applying transforms, creating fresh `Motif` and `Tone` instances for each phrase use.
+- Do not change `parse_composition` yet. Do not move phrase transform execution yet.
+- Add focused tests for `parse_score_plan` / `build_score`, including repeated motif references producing distinct `Motif` and `Tone` instances with the same frequency and duration values.
+Done signal: focused tests and `uv run pytest tests` pass. `mypy .` passes.
+
+**Step 6b (high): Collect phrase transform requests into `ScorePlan`.**
+- Extend `parse_score_plan` so phrase transforms are preserved as `PhraseTransformRequest`s with `voice_index`, `phrase_index`, and `TransformRequest`.
+- Collect phrase requests by walking JSON voices from first to last, phrases within each voice from first to last, and transforms within each phrase from first to last.
+- Do not change `parse_composition` yet. Do not apply these requests yet.
+- Add focused tests that assert the collected phrase request order and placement.
+Done signal: focused tests and `uv run pytest tests` pass. `mypy .` passes.
+
+**Step 6c (high): Add prepared-transform assembly and application using legacy definitions.**
+- Add `assemble_prepared_transforms`, `prepare_phrase_transform`, `prepare_score_transform`, and `apply_transform_requests`.
+- Use the existing old `TransformDefinition[PhraseScope]` / `TransformDefinition[ScoreScope]` registries and old scope-specific call logic inside the new application module for now. Only the ownership and location of execution changes.
+- Phrase prepared transforms build `PhraseTransformContext` from the current score plus stored placement, apply the legacy phrase transform logic, and return a new `Score` with only the target phrase replaced.
+- Score prepared transforms apply the legacy score transform logic and return the next `Score`.
+- Do not switch `parse_composition` yet.
+Done signal: focused application tests and `uv run pytest tests` pass. `mypy .` passes.
+
+**Step 6d (high): Switch `parse_composition` to the new parse/build/apply flow.**
+
+This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly (inside the parser's voice loop). After this step, the parser builds a pure `Score` model plus a `ScorePlan` with the transforms to apply to it, and phrase transforms run in a separate traversal after the `Score` is fully built. Behavior must be preserved exactly.
 
 This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly (inside the parser's voice loop). After this step, the parser builds a pure `Score` model plus a `ScorePlan` with the transforms to apply to it, and phrase transforms run in a separate traversal after the `Score` is fully built. Behavior must be preserved exactly.
 
@@ -344,25 +397,47 @@ Verification: every existing composition must render identically. Add a focused 
 
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
-**Step 7 (low): Migrate `PHRASE_TRANSFORMS` in place.**
-- In `transforms/registry.py`, convert each `PHRASE_TRANSFORMS` entry from the old generic shape `TransformDefinition(name=..., transform_func=..., scope=..., params_spec=...)` to the new phrase-specific shape `PhraseTransformDefinition(name=..., params_spec=..., transform=...)`.
-- Each `transform` function adapts one raw phrase transform to the standard phrase API: `transform(context, params) -> Phrase`.
-- For old `PhraseScope.OWN_PHRASE` entries, the transform function reads tones from `context.phrase`, calls the raw tone-list transform, and wraps the returned tones in a new `Phrase`.
-- For old `PhraseScope.PHRASE_RELATIVE` entries, the transform function derives reference material from `context.score` relative to `context.voice_index` and `context.phrase_index` before calling the raw phrase-relative transform.
-- The old `PhraseScope` values are migration guidance only. Do not keep a runtime `if` / `elif` / switch over phrase scope in the final code.
-- Update phrase-transform application to look up definitions in `PHRASE_TRANSFORMS`, build `PhraseTransformContext` from the current score plus the request's stored placement, and call `definition.validate_params(request.params)` and `definition.transform(context, request.params)`.
-- Delete the old phrase-side scope branching from the transform application code.
-Done signal: `uv run pytest tests` passes. `mypy .` passes. `rg "PhraseScope" composition` returns no results.
+**Step 7a (low): Migrate own-phrase `PHRASE_TRANSFORMS`.**
+- In `transforms/registry.py`, convert old `PhraseScope.OWN_PHRASE` entries from `TransformDefinition(...)` to `PhraseTransformDefinition(...)`.
+- Each `transform` function adapts one raw phrase transform to `transform(context, params) -> Phrase` by reading tones from `context.phrase`, calling the raw tone-list transform, and wrapping the returned tones in a new one-motif `Phrase`.
+- Update phrase-transform application enough to call new phrase definitions for migrated entries while any remaining old phrase entries continue through the legacy path.
+- Do not migrate `PhraseScope.PHRASE_RELATIVE` entries in this step.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
-**Step 8 (low): Migrate `SCORE_TRANSFORMS` in place.**
-- In `transforms/registry.py`, convert each `SCORE_TRANSFORMS` entry from the old generic shape `TransformDefinition(name=..., transform_func=..., scope=..., params_spec=...)` to the new score-specific shape `ScoreTransformDefinition(name=..., params_spec=..., transform=...)`.
-- Each `transform` function adapts one raw score transform to the standard score API: `transform(score, params) -> Score`.
-- For old `ScoreScope.EACH_VOICE` entries, the transform function iterates the score's voices, reads each voice's tones, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
-- For old `ScoreScope.SCORE_AWARE` entries, the transform function calls the raw score transform directly.
-- For old `ScoreScope.TARGET_MOTIFS` entries, the transform function derives the target motif by traversing the `Score` hierarchy before calling the raw transform.
-- The old `ScoreScope` values are migration guidance only. Do not keep a runtime `if` / `elif` / switch over score scope in the final code.
-- Update score-transform application to look up definitions in `SCORE_TRANSFORMS` and call `definition.validate_params(request.params)` and `definition.transform(score, request.params)`.
-- Delete the old score-side scope branching and the `apply_to_each_voice` helper if still present.
+**Step 7b (low): Migrate phrase-relative `PHRASE_TRANSFORMS`.**
+- Convert old `PhraseScope.PHRASE_RELATIVE` entries to `PhraseTransformDefinition(...)`.
+- Each transform function derives reference material from `context.score` relative to `context.voice_index` and `context.phrase_index`, calls the raw phrase-relative transform, and wraps the returned tones in a new one-motif `Phrase`.
+- After this step, all `PHRASE_TRANSFORMS` entries use `PhraseTransformDefinition`.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 7c (low): Remove phrase-side legacy scope branching.**
+- Update phrase-transform application to assume `PHRASE_TRANSFORMS` contains only `PhraseTransformDefinition`s.
+- Delete old phrase-side scope branching from the transform application code.
+- Confirm `PhraseScope` is no longer referenced in active phrase application code.
+Done signal: `uv run pytest tests` passes. `mypy .` passes. `rg "PhraseScope" composition transforms/registry.py` returns no results.
+
+**Step 8a (low): Migrate each-voice `SCORE_TRANSFORMS`.**
+- Convert old `ScoreScope.EACH_VOICE` entries to `ScoreTransformDefinition(...)`.
+- Each transform function iterates the score's voices, reads each voice's tones, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
+- Update score-transform application enough to call new score definitions for migrated entries while any remaining old score entries continue through the legacy path.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 8b (low): Migrate score-aware `SCORE_TRANSFORMS`.**
+- Convert old `ScoreScope.SCORE_AWARE` entries to `ScoreTransformDefinition(...)`.
+- Each transform function calls the raw score transform directly with the current `Score` and params.
+- Remaining old score entries continue through the legacy path.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 8c (low): Migrate target-motif `SCORE_TRANSFORMS`.**
+- Convert old `ScoreScope.TARGET_MOTIFS` entries to `ScoreTransformDefinition(...)`.
+- Each transform function derives the target motif by traversing the `Score` hierarchy before calling the raw transform.
+- After this step, all `SCORE_TRANSFORMS` entries use `ScoreTransformDefinition`.
+Done signal: `uv run pytest tests` passes. `mypy .` passes.
+
+**Step 8d (low): Remove score-side legacy scope branching.**
+- Update score-transform application to assume `SCORE_TRANSFORMS` contains only `ScoreTransformDefinition`s.
+- Delete old score-side scope branching and the `apply_to_each_voice` helper if still present.
+- Confirm transform application is outside the parser and has no runtime scope branching.
 Done signal: `uv run pytest tests` passes. `mypy .` passes. Transform application is now outside the parser and has no runtime scope branching.
 
 **Step 9 (low): Verify parser shape and final small cleanups.**
