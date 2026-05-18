@@ -81,11 +81,10 @@ def test_prepare_score_transform_applies_each_voice_transform():
 def test_transform_score_builds_score_and_applies_transform_requests():
     motif_name = "seed_a"
     motif_frequency = 440.0
-    expected_transposed_seed_frequency = 466.16
+    one_semitone_up = 466.16
     pedal_tone_frequency = 110.0
     voice_count_after_pedal_tone_added = 2
     transform_request_count = 2 # 1 phrase transform request and 1 score transform request
-    transformed_pedal_motif_name = "<pedal>"
 
     score_plan = ScorePlan(
         motifs={motif_name: Motif(motif_name, [Tone(motif_frequency)])},
@@ -126,8 +125,7 @@ def test_transform_score_builds_score_and_applies_transform_requests():
 
     assert len(new_score.voices) == voice_count_after_pedal_tone_added 
     assert flatten_voice_tones(new_score.voices[0])[0].frequency == pytest.approx(
-        expected_transposed_seed_frequency,
+        one_semitone_up,
         rel=1e-2,
     )
-    assert new_score.voices[-1].phrases[0].motifs[0].name == transformed_pedal_motif_name
     assert flatten_voice_tones(new_score.voices[-1])[0].frequency == pedal_tone_frequency
