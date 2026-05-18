@@ -1,15 +1,17 @@
 import pytest
 from composition.transformer import (
-    apply_transform_requests,
     assemble_prepared_transforms,
     prepare_phrase_transform,
     prepare_score_transform,
+    transform_score,
 )
 from composition.score_plan import (
+    PhrasePlan,
     PhraseTransformRequest,
     ScorePlan,
     ScoreTransformRequest,
     TransformRequest,
+    VoicePlan,
 )
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -76,38 +78,56 @@ def test_prepare_score_transform_applies_each_voice_transform():
         assert voice.phrases[0].motifs[0].name == "<each_voice>"
 
 
-def test_assemble_and_apply_transform_requests():
-    score = Score(
-        [
-            Voice([Phrase([Motif("seed_a", [Tone(440)])])]),
-        ]
-    )
+def test_transform_score_builds_score_and_applies_transform_requests():
+    motif_name = "seed_a"
+    motif_frequency = 440.0
+    expected_transposed_seed_frequency = 466.16
+    pedal_tone_frequency = 110.0
+    voice_count_after_pedal_tone_added = 2
+    transform_request_count = 2 # 1 phrase transform request and 1 score transform request
+    transformed_pedal_motif_name = "<pedal>"
 
     score_plan = ScorePlan(
-        motifs={},
+        motifs={motif_name: Motif(motif_name, [Tone(motif_frequency)])},
         voices=[],
         phrase_transform_requests=[
             PhraseTransformRequest(
                 voice_index=0,
                 phrase_index=0,
-                transform_request=TransformRequest(name="transpose", params={"semitones": 1}),
+                transform_request=TransformRequest(
+                    name="transpose",
+                    params={"semitones": 1},
+                ),
             )
         ],
         score_transform_requests=[
             ScoreTransformRequest(
-                transform_request=TransformRequest(name="add_pedal_tone", params={"frequency": 110.0}),
+                transform_request=TransformRequest(
+                    name="add_pedal_tone",
+                    params={"frequency": pedal_tone_frequency},
+                ),
             )
         ],
     )
+    score_plan.voices.append(
+        VoicePlan(
+            phrases=[
+                PhrasePlan(
+                    motifs=[score_plan.motifs[motif_name]],
+                )
+            ]
+        )
+    )
 
     prepared_transforms = assemble_prepared_transforms(score_plan)
-    assert len(prepared_transforms) == 2
+    assert len(prepared_transforms) == transform_request_count
 
-    new_score = apply_transform_requests(score, score_plan)
+    new_score = transform_score(score_plan)
 
-    assert len(new_score.voices) == 2
-    # Check that phrase transform was applied (transposed up 1 semitone)
-    assert flatten_voice_tones(new_score.voices[0])[0].frequency == pytest.approx(466.16, rel=1e-2)
-    # Check that score transform was applied (pedal tone added)
-    assert new_score.voices[-1].phrases[0].motifs[0].name == "<pedal>"
-    assert flatten_voice_tones(new_score.voices[-1])[0].frequency == 110.0
+    assert len(new_score.voices) == voice_count_after_pedal_tone_added 
+    assert flatten_voice_tones(new_score.voices[0])[0].frequency == pytest.approx(
+        expected_transposed_seed_frequency,
+        rel=1e-2,
+    )
+    assert new_score.voices[-1].phrases[0].motifs[0].name == transformed_pedal_motif_name
+    assert flatten_voice_tones(new_score.voices[-1])[0].frequency == pedal_tone_frequency
