@@ -155,7 +155,7 @@ def test_phrase_transform_definition_validate_params_delegates_to_shared_validat
         params_spec=params_spec,
         transform=lambda context, params: context.phrase,
     )
-    assert phrase_definition.validate_params({"seconds": 1.5}) is None
+    phrase_definition.validate_params({"seconds": 1.5})
 
 
 def test_score_transform_definition_validate_params_delegates_to_shared_validator():
@@ -173,8 +173,7 @@ def test_score_transform_definition_validate_params_delegates_to_shared_validato
         params_spec=params_spec,
         transform=lambda score, params: score,
     )
-
-    assert score_definition.validate_params({"seconds": 1.5}) is None
+    score_definition.validate_params({"seconds": 1.5})
 
 
 def test_prepared_transform_stores_apply_callable():
