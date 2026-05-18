@@ -18,6 +18,11 @@ class ToneDimension(StrEnum):
     DURATION = auto()
     AMPLITUDE = auto()
 
+# Should this be named Scope not "Level"?
+class TransformLevel(StrEnum):
+    PHRASE = "Phrase"
+    SCORE = "Score"
+
 
 def parse_dimension(dim: ToneDimension | str) -> ToneDimension:
     if isinstance(dim, ToneDimension):
