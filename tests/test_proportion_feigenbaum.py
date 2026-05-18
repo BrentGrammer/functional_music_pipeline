@@ -8,6 +8,7 @@ from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
+from transforms.base import PhraseTransformDefinition
 from transforms.proportion.feigenbaum import (
     feigenbaum_sequence,
     phrase_feigenbaum_grow,
@@ -162,7 +163,7 @@ class TestPhraseFeigenbaumShrink:
 
         transformed_motifs = result.motifs[0]
         assert transformed_motifs.name == "<transformed>"
-        
+
         scaled_total_phrase_duration_based_on_ref_phrase = prev_phrase_total_duration / FEIGENBAUM_DELTA
         # The phrase has two equal-length tones, so after scaling the total
         # phrase duration, each tone should get half of that total.

@@ -102,26 +102,36 @@ def _apply_phrase_transform_spec(
     descriptor.validate_params(transform_params)
 
     if isinstance(descriptor, PhraseTransformDefinition):
+        reference_phrase = Phrase(
+            motifs=[
+                Motif(
+                    name="<parsed>",
+                    tones=copy_tones(reference_tones or []),
+                )
+            ]
+        )
+        current_phrase = Phrase(
+            motifs=[
+                Motif(
+                    name="<parsed>",
+                    tones=copy_tones(phrase_tones),
+                )
+            ]
+        )
         transformed_phrase = descriptor.transform(
             PhraseTransformContext(
                 score=Score(
                     voices=[
                         Voice(
                             phrases=[
-                                Phrase(
-                                    motifs=[
-                                        Motif(
-                                            name="<parsed>",
-                                            tones=copy_tones(phrase_tones),
-                                        )
-                                    ]
-                                )
+                                reference_phrase,
+                                current_phrase,
                             ]
                         )
                     ]
                 ),
                 voice_index=0,
-                phrase_index=0,
+                phrase_index=1,
             ),
             transform_params,
         )
