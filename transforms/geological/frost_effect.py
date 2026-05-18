@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import TypeAlias
 
 from score_model.motif import Motif
-from score_model.pitch_utils import CENTS_PER_OCTAVE
 from score_model.phrase import Phrase
+from score_model.pitch_utils import CENTS_PER_OCTAVE
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
