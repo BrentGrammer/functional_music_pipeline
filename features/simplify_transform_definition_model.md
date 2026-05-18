@@ -319,38 +319,71 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
 **Step 5a (low): Add representative own-phrase explicit transform function.**
-- Add one explicit own-phrase transform function near registry authoring code. It adapts one existing raw tone-list phrase transform to the new standard phrase API: `transform(context, params) -> Phrase`.
-- The function reads tones from `context.phrase`, calls the raw transform, and wraps the returned tones in `Phrase(motifs=[Motif(name="<transformed>", tones=result)])`.
-- Do not wire this into `PHRASE_TRANSFORMS` yet. Do not add generic helper factories.
-- Add a focused test for this representative function.
+- Add exactly one explicit own-phrase adapter function: `reverse_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase`.
+- Put the function in `transforms/basic/reversal.py`, next to the raw `reverse_tones` function it adapts. Do not put this function in `transforms/registry.py`.
+- The function is a representative implementation for the new phrase-transform API only. It is not registered yet.
+- Implementation details:
+  - Ignore `params`; `reverse_tones` has no params. Do not validate params here. Definition-level validation remains the responsibility of `PhraseTransformDefinition.validate_params`.
+  - Read the tones from `context.phrase` by walking `context.phrase.motifs -> motif.tones` directly. Do not use `flatten_voice_tones`, because that helper is for whole `Voice` traversal.
+  - Call `reverse_tones(phrase_tones)`.
+  - Return `Phrase(motifs=[Motif(name="<transformed>", tones=result)])`.
+- Add a focused test in a new or existing transform test module that builds a `Score`, creates a `PhraseTransformContext`, calls `reverse_phrase_transform`, and asserts the returned `Phrase` contains the reversed tones in a single `"<transformed>"` motif.
+- Do not wire this into `PHRASE_TRANSFORMS`. Do not add generic helper factories. Do not add any other explicit transform functions in this step.
 Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 5b (low): Add representative phrase-relative explicit transform function.**
-- Add one explicit phrase-relative transform function near registry authoring code.
-- The function derives reference material from `context.score` relative to `context.voice_index` and `context.phrase_index`, calls one existing phrase-relative raw transform, and wraps the returned tones in a new one-motif `Phrase`.
-- Do not wire this into `PHRASE_TRANSFORMS` yet. Do not add generic helper factories.
-- Add a focused test for this representative function.
+- Add exactly one explicit phrase-relative adapter function: `phrase_feigenbaum_shrink_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase`.
+- Put the function in `transforms/proportion/feigenbaum.py`, next to the raw `phrase_feigenbaum_shrink` function it adapts. Do not put this function in `transforms/registry.py`.
+- The function is a representative implementation for the new phrase-relative API only. It is not registered yet.
+- Implementation details:
+  - Read the current phrase tones from `context.phrase` by walking `context.phrase.motifs -> motif.tones` directly. Do not use `flatten_voice_tones`, because that helper is for whole `Voice` traversal.
+  - Derive reference tones using the same semantics as the current parser flow: if `context.phrase_index > 0`, reference all earlier phrases in the same voice; otherwise reference the immediately previous voice's full tone stream when `context.voice_index > 0`; otherwise use an empty reference list and let the raw transform raise its existing no-reference error.
+  - Read `dimension` from `params` with the same default as `phrase_feigenbaum_shrink`. Keep any local type narrowing minimal and local to the call; definition-level validation remains the responsibility of `PhraseTransformDefinition.validate_params`.
+  - Call `phrase_feigenbaum_shrink(current_tones, reference_tones, dimension=dimension)`.
+  - Return `Phrase(motifs=[Motif(name="<transformed>", tones=result)])`.
+- Add a focused test that builds a score with reference material, creates a `PhraseTransformContext`, calls `phrase_feigenbaum_shrink_transform`, and asserts the returned `Phrase` contains the expected resized tones in a single `"<transformed>"` motif.
+- Do not wire this into `PHRASE_TRANSFORMS`. Do not add generic helper factories. Do not add any other explicit transform functions in this step.
 Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 5c (low): Add representative each-voice score explicit transform function.**
-- Add one explicit score transform function for an old `ScoreScope.EACH_VOICE` transform.
-- The function iterates voices, reads each voice's tones with `flatten_voice_tones(voice)`, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
-- Do not wire this into `SCORE_TRANSFORMS` yet. Do not add generic helper factories.
-- Add a focused test for this representative function.
+- Add exactly one explicit each-voice score adapter function: `reverse_score_transform(score: Score, params: Mapping[str, object]) -> Score`.
+- Put the function in `transforms/basic/reversal.py`, next to the raw `reverse_tones` function it adapts. Do not put this function in `transforms/registry.py`.
+- The function is a representative implementation for the new score-transform API for old `ScoreScope.EACH_VOICE` entries only. It is not registered yet.
+- Implementation details:
+  - Ignore `params`; `reverse_tones` has no params. Do not validate params here. Definition-level validation remains the responsibility of `ScoreTransformDefinition.validate_params`.
+  - Iterate `score.voices`.
+  - For each voice, read the flat whole-voice tone stream with `flatten_voice_tones(voice)`.
+  - Call `reverse_tones(voice_tones)`.
+  - Build a new `Voice(phrases=[Phrase(motifs=[Motif(name="<transformed>", tones=result)])])` for each transformed voice.
+  - Return a new `Score` containing the transformed voices. Do not mutate the input `Score`.
+- Add a focused test that builds a multi-voice score, calls `reverse_score_transform`, and asserts each output voice contains its own reversed tone stream.
+- Do not wire this into `SCORE_TRANSFORMS`. Do not add generic helper factories. Do not add any other explicit transform functions in this step.
 Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 5d (low): Add representative score-aware explicit transform function.**
-- Add one explicit score transform function for an old `ScoreScope.SCORE_AWARE` transform.
-- The function calls the raw score transform with the current `Score` and params, returning the new `Score`.
-- Do not wire this into `SCORE_TRANSFORMS` yet. Do not add generic helper factories.
-- Add a focused test for this representative function.
+- Add exactly one explicit score-aware adapter function: `add_pedal_tone_score_transform(score: Score, params: Mapping[str, object]) -> Score`.
+- Put the function in `transforms/counterpoint/fugue.py`, next to the raw `add_pedal_tone` function it adapts. Do not put this function in `transforms/registry.py`.
+- The function is a representative implementation for the new score-transform API for old `ScoreScope.SCORE_AWARE` entries only. It is not registered yet.
+- Implementation details:
+  - Read `frequency` from `params`. Keep any local type narrowing minimal and local to the call; definition-level validation remains the responsibility of `ScoreTransformDefinition.validate_params`.
+  - Call `add_pedal_tone(score, frequency=frequency)`.
+  - Return the `Score` produced by `add_pedal_tone`.
+- Add a focused test that builds a score, calls `add_pedal_tone_score_transform`, and asserts the returned score has the expected appended pedal-tone voice.
+- Do not wire this into `SCORE_TRANSFORMS`. Do not add generic helper factories. Do not add any other explicit transform functions in this step.
 Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 5e (low): Add representative target-motif explicit transform function.**
-- Add one explicit score transform function for an old `ScoreScope.TARGET_MOTIFS` transform.
-- The function derives the target motif by traversing the `Score` hierarchy, calls the raw transform, and returns the new `Score`.
-- Do not wire this into `SCORE_TRANSFORMS` yet. Do not add generic helper factories.
-- Add a focused test for this representative function.
+- Add exactly one explicit target-motif adapter function: `stretto_score_transform(score: Score, params: Mapping[str, object]) -> Score`.
+- Put the function in `transforms/counterpoint/fugue.py`, next to the raw `stretto` function it adapts. Do not put this function in `transforms/registry.py`.
+- The function is a representative implementation for the new score-transform API for old `ScoreScope.TARGET_MOTIFS` entries only. It is not registered yet.
+- Implementation details:
+  - Read `motif`, `num_times`, and `spacing` from `params`. Keep any local type narrowing minimal and local to the call; definition-level validation remains the responsibility of `ScoreTransformDefinition.validate_params`.
+  - Resolve the target motif by traversing `score.voices -> voice.phrases -> phrase.motifs` and finding the first motif whose `name` matches the requested motif name.
+  - If the motif is not found, raise the same kind of runtime lookup error as `stretto` raises today.
+  - Call `stretto(score, motif=target_motif.name, num_times=num_times, spacing=spacing)`.
+  - Return the `Score` produced by `stretto`.
+- Add a focused test that builds a score containing the target motif in the hierarchy, calls `stretto_score_transform`, and asserts the returned score contains the expected generated entry voice.
+- Do not wire this into `SCORE_TRANSFORMS`. Do not add generic helper factories. Do not add any other explicit transform functions in this step.
 Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 6a (high): Add `parse_score_plan` and `build_score` without switching `parse_composition`.**
