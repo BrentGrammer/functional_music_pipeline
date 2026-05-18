@@ -1,8 +1,11 @@
 import pytest
 
 from composition.parser import apply_to_each_voice
+from score_model.motif import Motif
 from score_model.score import Score
+from score_model.phrase import Phrase
 from score_model.tone import Tone
+from score_model.traversal import iter_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     BooleanParam,
@@ -18,8 +21,8 @@ from transforms.base import (
 
 
 def _build_score_with_two_voices() -> Score:
-    first_voice = Voice([Tone(440.0, duration=1.0)])
-    second_voice = Voice([Tone(660.0, duration=0.5)])
+    first_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+    second_voice = Voice([Phrase([Motif("<test>", [Tone(660.0, duration=0.5)])])])
     return Score([first_voice, second_voice])
 
 
@@ -117,11 +120,12 @@ def test_apply_to_each_voice_updates_every_voice():
     result = pipeline_step(score)
 
     assert result is score
-    assert result.voices[0].tones[0].duration == pytest.approx(2.0)
-    assert result.voices[1].tones[0].duration == pytest.approx(1.0)
+    assert iter_voice_tones(result.voices[0])[0].duration == pytest.approx(2.0)
+    assert iter_voice_tones(result.voices[1])[0].duration == pytest.approx(1.0)
 
 
 def test_apply_to_each_voice_forwards_keyword_arguments():
+    # TODO: the values used here are too opaque. 220 and 330 should be variables, score with two voices is unclear because relavant values are hidden from the reader in this test.
     duration_multiplier = 0.5
     score = _build_score_with_two_voices()
 
@@ -132,8 +136,8 @@ def test_apply_to_each_voice_forwards_keyword_arguments():
     )
     result = pipeline_step(score)
 
-    assert result.voices[0].tones[0].frequency == pytest.approx(220.0)
-    assert result.voices[1].tones[0].frequency == pytest.approx(330.0)
+    assert iter_voice_tones(result.voices[0])[0].frequency == pytest.approx(220.0)
+    assert iter_voice_tones(result.voices[1])[0].frequency == pytest.approx(330.0)
 
 
 def test_apply_to_each_voice_handles_empty_score():

@@ -1,8 +1,8 @@
 import pytest
 
 from composition.parser import parse_composition, parse_motifs
-from score_model._migration import _legacy_flatten_voice_tones
 from score_model.score import Score
+from score_model.traversal import iter_voice_tones
 
 
 def _build_geological_example_composition() -> dict:
@@ -117,7 +117,7 @@ class TestGeologicalExampleComposition:
 
         # The motif "c_major_arpeggio" has 4 tones, so each voice should have 4 tones.
         for voice in score.voices:
-            assert len(_legacy_flatten_voice_tones(voice)) == 4
+            assert len(iter_voice_tones(voice)) == 4
 
     def test_parsing_is_deterministic(self):
         # Stochastic transforms are seeded, so repeated parsing of the same
@@ -131,8 +131,10 @@ class TestGeologicalExampleComposition:
         assert len(score1.voices) == len(score2.voices)
 
         for voice1, voice2 in zip(score1.voices, score2.voices):
-            assert len(voice1.tones) == len(voice2.tones)
-            for tone1, tone2 in zip(voice1.tones, voice2.tones):
+            voice1_tones = iter_voice_tones(voice1)
+            voice2_tones = iter_voice_tones(voice2)
+            assert len(voice1_tones) == len(voice2_tones)
+            for tone1, tone2 in zip(voice1_tones, voice2_tones):
                 assert tone1.frequency == pytest.approx(tone2.frequency)
                 assert tone1.duration == pytest.approx(tone2.duration)
                 assert tone1.amplitude == pytest.approx(tone2.amplitude)
@@ -150,19 +152,19 @@ class TestGeologicalExampleComposition:
         original_motif_tones = parsed_motifs["c_major_arpeggio"]
 
         # Voice 1: Weierstrass on Frequency
-        voice1_tones = score.voices[0].tones
+        voice1_tones = iter_voice_tones(score.voices[0])
         for i, transformed_tone in enumerate(voice1_tones):
             original_freq = original_motif_tones[i].frequency
             assert transformed_tone.frequency != original_freq
 
         # Voice 2: Terraced Brownian on Duration
-        voice2_tones = score.voices[1].tones
+        voice2_tones = iter_voice_tones(score.voices[1])
         for transformed_tone in voice2_tones:
             assert transformed_tone.duration > 0
 
         # All Voices: Verify score-level amplitude transform and general amplitude invariants
         for i, voice in enumerate(score.voices):
-            for j, transformed_tone in enumerate(_legacy_flatten_voice_tones(voice)):
+            for j, transformed_tone in enumerate(iter_voice_tones(voice)):
                 # Check invariant: amplitude must be in valid range
                 assert 0.0 <= transformed_tone.amplitude <= 1.0
 

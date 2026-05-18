@@ -1,5 +1,7 @@
 from collections.abc import Callable, Mapping
 
+from typing import Callable, cast
+
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
@@ -91,11 +93,13 @@ def _apply_phrase_transform_spec(
     descriptor.validate_params(transform_params)
 
     if descriptor.scope is PhraseScope.OWN_PHRASE:
-        return descriptor.transform_func(phrase_tones, **transform_params)
+        own_phrase_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
+        return own_phrase_transform(phrase_tones, **transform_params)
 
     if descriptor.scope is PhraseScope.PHRASE_RELATIVE:
         phrase_reference_tones = reference_tones if reference_tones else []
-        return descriptor.transform_func(phrase_tones, phrase_reference_tones, **transform_params)
+        phrase_relative_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
+        return phrase_relative_transform(phrase_tones, phrase_reference_tones, **transform_params)
 
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
@@ -264,13 +268,16 @@ def _apply_score_transform_spec(
     descriptor.validate_params(transform_params)
 
     if descriptor.scope is ScoreScope.TARGET_MOTIFS:
-        return descriptor.transform_func(score, **transform_params)
+        score_transform = cast(Callable[..., Score], descriptor.transform_func)
+        return score_transform(score, **transform_params)
 
     if descriptor.scope is ScoreScope.SCORE_AWARE:
-        return descriptor.transform_func(score, **transform_params)
+        score_transform = cast(Callable[..., Score], descriptor.transform_func)
+        return score_transform(score, **transform_params)
 
     if descriptor.scope is ScoreScope.EACH_VOICE:
-        return apply_to_each_voice(descriptor.transform_func, **transform_params)(score)
+        each_voice_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
+        return apply_to_each_voice(each_voice_transform, **transform_params)(score)
 
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 

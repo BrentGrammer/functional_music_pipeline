@@ -1,8 +1,8 @@
 import pytest
 
 from composition.parser import parse_composition
-from score_model._migration import _legacy_flatten_voice_tones
 from score_model.score import Score
+from score_model.traversal import iter_voice_tones
 from transforms.geological.frost_effect import (
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS,
@@ -13,7 +13,7 @@ from transforms.geological.frost_effect import (
 
 
 def _voice_start_time(voice):
-    voice_tones = _legacy_flatten_voice_tones(voice)
+    voice_tones = iter_voice_tones(voice)
     if voice_tones and voice_tones[0].frequency == 0:
         return voice_tones[0].duration
 
@@ -21,7 +21,7 @@ def _voice_start_time(voice):
 
 
 def _voice_end_time(voice):
-    return sum(tone.duration for tone in _legacy_flatten_voice_tones(voice))
+    return sum(tone.duration for tone in iter_voice_tones(voice))
 
 
 def _voices_with_role(voices, role):
@@ -91,33 +91,33 @@ def test_frost_single_seed_demo_loads_and_sequences_original_then_frost():
 
     assert isinstance(score, Score)
     assert len(score.voices) == 16
-    assert len(_legacy_flatten_voice_tones(score.voices[0])) == 1
-    assert len(_legacy_flatten_voice_tones(score.voices[1])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[2])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[3])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[4])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[5])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[6])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[7])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[8])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[9])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[10])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[11])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[12])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[13])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[14])) == 2
-    assert len(_legacy_flatten_voice_tones(score.voices[15])) == 2
-    assert _legacy_flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(440.0)
+    assert len(iter_voice_tones(score.voices[0])) == 1
+    assert len(iter_voice_tones(score.voices[1])) == 2
+    assert len(iter_voice_tones(score.voices[2])) == 2
+    assert len(iter_voice_tones(score.voices[3])) == 2
+    assert len(iter_voice_tones(score.voices[4])) == 2
+    assert len(iter_voice_tones(score.voices[5])) == 2
+    assert len(iter_voice_tones(score.voices[6])) == 2
+    assert len(iter_voice_tones(score.voices[7])) == 2
+    assert len(iter_voice_tones(score.voices[8])) == 2
+    assert len(iter_voice_tones(score.voices[9])) == 2
+    assert len(iter_voice_tones(score.voices[10])) == 2
+    assert len(iter_voice_tones(score.voices[11])) == 2
+    assert len(iter_voice_tones(score.voices[12])) == 2
+    assert len(iter_voice_tones(score.voices[13])) == 2
+    assert len(iter_voice_tones(score.voices[14])) == 2
+    assert len(iter_voice_tones(score.voices[15])) == 2
+    assert iter_voice_tones(score.voices[0])[0].frequency == pytest.approx(440.0)
 
     source_event_voices = score.voices[0:1]
     first_event_voices = score.voices[1:4]
     second_event_voices = score.voices[4:9]
     third_event_voices = score.voices[9:16]
-    first_event_frequencies = {_legacy_flatten_voice_tones(voice)[1].frequency for voice in first_event_voices}
+    first_event_frequencies = {iter_voice_tones(voice)[1].frequency for voice in first_event_voices}
 
-    assert _legacy_flatten_voice_tones(score.voices[1])[0].frequency == 0
-    assert _legacy_flatten_voice_tones(score.voices[1])[1].duration == pytest.approx(
-        _legacy_flatten_voice_tones(score.voices[0])[0].duration
+    assert iter_voice_tones(score.voices[1])[0].frequency == 0
+    assert iter_voice_tones(score.voices[1])[1].duration == pytest.approx(
+        iter_voice_tones(score.voices[0])[0].duration
     )
     assert any(frequency == pytest.approx(440.0) for frequency in first_event_frequencies)
     assert any(frequency < 440.0 for frequency in first_event_frequencies)

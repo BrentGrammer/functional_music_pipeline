@@ -1,9 +1,11 @@
 import pytest
 
-from score_model._migration import _legacy_flatten_voice_tones
 from score_model.math_constants import FEIGENBAUM_DELTA
+from score_model.motif import Motif
 from score_model.score import Score
+from score_model.phrase import Phrase
 from score_model.tone import Tone
+from score_model.traversal import iter_voice_tones
 from score_model.voice import Voice
 from transforms.base import ToneDimension
 from transforms.proportion.feigenbaum import (
@@ -195,16 +197,16 @@ class TestScoreFeigenbaumSequence:
     def test_score_duration_sequence_scales_each_voice_by_position(self):
         score = Score(
             [
-                Voice([Tone(440.0, 1.0)]),
-                Voice([Tone(880.0, 1.0)]),
-                Voice([Tone(523.0, 1.0)]),
+                Voice([Phrase([Motif("<test>", [Tone(440.0, 1.0)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(880.0, 1.0)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(523.0, 1.0)])])]),
             ]
         )
 
         result_score = score_feigenbaum_sequence(score)
-        first_voice_tones = _legacy_flatten_voice_tones(result_score.voices[0])
-        second_voice_tones = _legacy_flatten_voice_tones(result_score.voices[1])
-        third_voice_tones = _legacy_flatten_voice_tones(result_score.voices[2])
+        first_voice_tones = iter_voice_tones(result_score.voices[0])
+        second_voice_tones = iter_voice_tones(result_score.voices[1])
+        third_voice_tones = iter_voice_tones(result_score.voices[2])
 
         assert len(result_score.voices) == 3
         assert first_voice_tones[0].duration == 1.0
@@ -219,7 +221,7 @@ class TestScoreFeigenbaumSequence:
         assert result is empty_score
 
     def test_single_voice_score_raises_error(self):
-        single_voice_score = Score([Voice([Tone(440.0, duration=1.0)])])
+        single_voice_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
 
         with pytest.raises(ValueError, match="requires at least 2 voices"):
             score_feigenbaum_sequence(single_voice_score)
@@ -227,14 +229,14 @@ class TestScoreFeigenbaumSequence:
     def test_frequency_dimension_scales_each_voice_by_position(self):
         score = Score(
             [
-                Voice([Tone(440.0, duration=1.0)]),
-                Voice([Tone(440.0, duration=1.0)]),
+                Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
             ]
         )
 
         result = score_feigenbaum_sequence(score, dimension="FREQUENCY")
-        first_voice_tones = _legacy_flatten_voice_tones(result.voices[0])
-        second_voice_tones = _legacy_flatten_voice_tones(result.voices[1])
+        first_voice_tones = iter_voice_tones(result.voices[0])
+        second_voice_tones = iter_voice_tones(result.voices[1])
 
         assert first_voice_tones[0].frequency == pytest.approx(440.0)
         assert second_voice_tones[0].frequency == pytest.approx(440.0 / FEIGENBAUM_DELTA)

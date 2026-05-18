@@ -12,6 +12,8 @@ from midi_rendering.midi_writer import (
     is_rest,
     save_score_to_midi,
 )
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.pitch_utils import cents_to_frequency, semitones_to_frequency
 from score_model.score import Score
 from score_model.tone import Tone
@@ -176,12 +178,21 @@ def test_save_score_to_midi_turns_rests_into_delayed_note_starts(tmp_path):
         [
             Voice(
                 [
-                    Tone(frequency=0, duration=LEADING_REST_SECONDS),
-                    Tone(frequency=440.0, duration=NOTE_DURATION_SECONDS),
-                    Tone(frequency=0, duration=BETWEEN_NOTES_REST_SECONDS),
-                    Tone(frequency=523.25, duration=NOTE_DURATION_SECONDS),
-                    Tone(frequency=0, duration=SECOND_BETWEEN_NOTES_REST_SECONDS),
-                    Tone(frequency=659.25, duration=NOTE_DURATION_SECONDS),
+                    Phrase(
+                        [
+                            Motif(
+                                "<test>",
+                                [
+                                    Tone(frequency=0, duration=LEADING_REST_SECONDS),
+                                    Tone(frequency=440.0, duration=NOTE_DURATION_SECONDS),
+                                    Tone(frequency=0, duration=BETWEEN_NOTES_REST_SECONDS),
+                                    Tone(frequency=523.25, duration=NOTE_DURATION_SECONDS),
+                                    Tone(frequency=0, duration=SECOND_BETWEEN_NOTES_REST_SECONDS),
+                                    Tone(frequency=659.25, duration=NOTE_DURATION_SECONDS),
+                                ],
+                            )
+                        ]
+                    )
                 ]
             )
         ]
@@ -222,9 +233,9 @@ def test_save_score_to_midi_exports_each_voice_as_separate_track(tmp_path):
     output_file = tmp_path / "voices.mid"
     score = Score(
         [
-            Voice([Tone(frequency=440.0)]),
-            Voice([Tone(frequency=523.25)]),
-            Voice([Tone(frequency=659.25)]),
+            Voice([Phrase([Motif("<test>", [Tone(frequency=440.0)])])]),
+            Voice([Phrase([Motif("<test>", [Tone(frequency=523.25)])])]),
+            Voice([Phrase([Motif("<test>", [Tone(frequency=659.25)])])]),
         ]
     )
 
@@ -242,7 +253,7 @@ def test_save_score_to_midi_skips_drum_channel(tmp_path):
     # We create 10 voices to force the channel assignment logic to encounter 
     # the reserved percussion channel (Channel 9). We want to verify that the 
     # 10th voice (index 9) is correctly shifted to Channel 10.
-    voices = [Voice([Tone(frequency=440.0)]) for _ in range(10)]
+    voices = [Voice([Phrase([Motif("<test>", [Tone(frequency=440.0)])])]) for _ in range(10)]
     score = Score(voices)
     
     save_score_to_midi(score, str(output_file))
@@ -273,7 +284,7 @@ def test_save_score_to_midi_wraps_channels_and_zeros_fallback(tmp_path):
     A4_FREQ = 440.0
     SHARP_FREQ = cents_to_frequency(A4_FREQ, 50.0)
     
-    voices = [Voice([Tone(frequency=SHARP_FREQ)]) for _ in range(17)]
+    voices = [Voice([Phrase([Motif("<test>", [Tone(frequency=SHARP_FREQ)])])]) for _ in range(17)]
     score = Score(voices)
     
     save_score_to_midi(score, str(output_file))
@@ -296,11 +307,11 @@ def test_save_score_to_midi_warns_on_exceeding_voice_limit(mock_logger, tmp_path
     output_file = tmp_path / "warning.mid"
     
     # Exactly 15 voices should NOT warn
-    save_score_to_midi(Score([Voice([Tone(frequency=440.0)]) for _ in range(15)]), str(output_file))
+    save_score_to_midi(Score([Voice([Phrase([Motif("<test>", [Tone(frequency=440.0)])])]) for _ in range(15)]), str(output_file))
     mock_logger.warning.assert_not_called()
     
     # 16 voices SHOULD warn
-    save_score_to_midi(Score([Voice([Tone(frequency=440.0)]) for _ in range(16)]), str(output_file))
+    save_score_to_midi(Score([Voice([Phrase([Motif("<test>", [Tone(frequency=440.0)])])]) for _ in range(16)]), str(output_file))
     mock_logger.warning.assert_called_once()
     assert "Voices 16 and above have been rounded to standard tuning" in mock_logger.warning.call_args[0][0]
 
@@ -311,7 +322,7 @@ def test_save_score_to_midi_initializes_pitch_bend_range(tmp_path):
     required to explicitly set the pitch bend sensitivity to +/- 1 semitone.
     """
     output_file = tmp_path / "rpn_init.mid"
-    score = Score([Voice([Tone(frequency=440.0)])])
+    score = Score([Voice([Phrase([Motif("<test>", [Tone(frequency=440.0)])])])])
     
     save_score_to_midi(score, str(output_file))
     
@@ -362,7 +373,7 @@ def test_save_score_to_midi_resets_pitch_bend_for_standard_notes(tmp_path):
         Tone(frequency=A4_FREQ, duration=1.0),
     ]
     score = Score([
-        Voice(tones)
+        Voice([Phrase([Motif("<test>", tones)])])
     ])
     
     save_score_to_midi(score, str(output_file))
@@ -397,11 +408,11 @@ def test_save_score_to_midi_accumulates_sequential_rests(tmp_path):
     NOTE_DURATION = 1.0
     
     score = Score([
-        Voice([
+        Voice([Phrase([Motif("<test>", [
             Tone(frequency=0, duration=REST_1_DURATION),
             Tone(frequency=0, duration=REST_2_DURATION),
             Tone(frequency=440.0, duration=NOTE_DURATION),
-        ])
+        ])])])
     ])
     
     save_score_to_midi(score, str(output_file))
@@ -428,10 +439,10 @@ def test_save_score_to_midi_handles_leading_silence_with_rpn_headers(tmp_path):
     NOTE_DURATION = 1.0
     
     score = Score([
-        Voice([
+        Voice([Phrase([Motif("<test>", [
             Tone(frequency=0, duration=LEADING_REST_DURATION),
             Tone(frequency=440.0, duration=NOTE_DURATION),
-        ])
+        ])])])
     ])
     
     save_score_to_midi(score, str(output_file))
@@ -466,10 +477,10 @@ def test_save_score_to_midi_clamps_pitchwheel_values(tmp_path):
         mock_pitch.side_effect = [large_pitch, extreme_flat_pitch]
         
         score = Score([
-            Voice([
+            Voice([Phrase([Motif("<test>", [
                 Tone(frequency=440.0, duration=1.0),
                 Tone(frequency=440.0, duration=1.0),
-            ])
+            ])])])
         ])
         
         save_score_to_midi(score, str(output_file))

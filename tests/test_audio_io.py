@@ -7,6 +7,8 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from audio_rendering.wav_writer import mix_waveforms, save_score_to_wav
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
@@ -42,7 +44,12 @@ class TestSaveScoreToWav:
     def test_save_score_to_wav(self, tmp_path):
         tone1 = Tone(frequency=440.0, duration=0.1)
         tone2 = Tone(frequency=880.0, duration=0.1)
-        score = Score([Voice([tone1]), Voice([tone2])])
+        score = Score(
+            [
+                Voice([Phrase([Motif("<test>", [tone1])])]),
+                Voice([Phrase([Motif("<test>", [tone2])])]),
+            ]
+        )
         
         output_file = tmp_path / "test_output.wav"
         
@@ -55,7 +62,7 @@ class TestSaveScoreToWav:
         from audio_rendering.wav_writer import MAX_DURATION_SECONDS
         
         long_tone = Tone(frequency=440.0, duration=MAX_DURATION_SECONDS + 1.0)
-        score = Score([Voice([long_tone])])
+        score = Score([Voice([Phrase([Motif("<test>", [long_tone])])])])
         
         output_file = tmp_path / "test_output_too_long.wav"
         
