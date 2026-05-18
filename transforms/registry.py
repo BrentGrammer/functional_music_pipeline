@@ -27,7 +27,13 @@ from transforms.complexity.cellular_automata import (
 )
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform
 from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform
-from transforms.counterpoint.fugue import ADD_PEDAL_TONE_PARAMS_SPEC, STRETTO_PARAMS_SPEC, add_pedal_tone, stretto
+from transforms.counterpoint.fugue import (
+    ADD_PEDAL_TONE_PARAMS_SPEC,
+    STRETTO_PARAMS_SPEC,
+    add_pedal_tone,
+    add_pedal_tone_score_transform,
+    stretto,
+)
 from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_transform
 from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
 from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform
@@ -433,11 +439,11 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
 }
 
 SCORE_TRANSFORMS: dict[str, object] = {
-    "feigenbaum_sequence": TransformDefinition(
+    "feigenbaum_sequence": ScoreTransformDefinition(
         name="feigenbaum_sequence",
-        transform_func=score_feigenbaum_sequence,
         scope=ScoreScope.SCORE_AWARE,
         params_spec=FEIGENBAUM_PARAMS_SPEC,
+        transform=lambda score, params: score_feigenbaum_sequence(score, **params),
     ),
     "reverse": ScoreTransformDefinition(
         name="reverse",
@@ -558,11 +564,11 @@ SCORE_TRANSFORMS: dict[str, object] = {
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_random_drop_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), max_drop_pct=cast(int, params["max_drop_pct"]), drop_frequency_pct=cast(int, params["drop_frequency_pct"])) )])]) for voice in score.voices]
         ),
     ),
-    "add_pedal_tone": TransformDefinition(
+    "add_pedal_tone": ScoreTransformDefinition(
         name="add_pedal_tone",
-        transform_func=add_pedal_tone,
         scope=ScoreScope.SCORE_AWARE,
         params_spec=ADD_PEDAL_TONE_PARAMS_SPEC,
+        transform=lambda score, params: add_pedal_tone_score_transform(score, params),
     ),
     "stretto": TransformDefinition(
         name="stretto",
@@ -570,10 +576,10 @@ SCORE_TRANSFORMS: dict[str, object] = {
         scope=ScoreScope.TARGET_MOTIFS,
         params_spec=STRETTO_PARAMS_SPEC,
     ),
-    "frost_effect": TransformDefinition(
+    "frost_effect": ScoreTransformDefinition(
         name="frost_effect",
-        transform_func=frost_effect,
         scope=ScoreScope.SCORE_AWARE,
         params_spec=FROST_EFFECT_PARAMS_SPEC,
+        transform=lambda score, params: frost_effect(score, **params),
     ),
 }
