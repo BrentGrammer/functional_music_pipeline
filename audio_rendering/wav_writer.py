@@ -4,7 +4,7 @@ import wave
 import numpy as np
 
 from score_model.score import Score
-from score_model._migration import _legacy_flatten_voice_tones
+from score_model.traversal import iter_voice_tones
 from score_model.tone import DEFAULT_SAMPLE_RATE_HZ, MAX_16BIT_PCM
 
 logger = logging.getLogger(__name__)
@@ -35,13 +35,14 @@ def save_score_to_wav(score: Score, filename: str = "output.wav") -> None:
     voice_waveforms: list[np.ndarray] = []
 
     for voice in score.voices:
-        total_duration = sum(tone.duration for tone in _legacy_flatten_voice_tones(voice))
+        voice_tones = list(iter_voice_tones(voice))
+        total_duration = sum(tone.duration for tone in voice_tones)
         if total_duration > MAX_DURATION_SECONDS:
             raise ValueError(
                 f"Voice duration ({total_duration:.1f}s) exceeds the maximum allowed duration of {MAX_DURATION_SECONDS}s."
             )
 
-        tone_waveforms = [tone.generate_tone() for tone in _legacy_flatten_voice_tones(voice)]
+        tone_waveforms = [tone.generate_tone() for tone in voice_tones]
 
         if tone_waveforms:
             voice_waveform = np.concatenate(tone_waveforms)
