@@ -55,7 +55,7 @@ The important split is:
 
 - `TransformDefinition` is global and reusable. It knows how to validate params and how to transform the input type declared by its callable signature.
 - `TransformRequest` is local authoring data from the JSON: a transform name plus supplied params. It does not replace `TransformParamsSpec`; the full parameter contract stays on the transform definition. A request does not encode its target scope; placement does that. Requests in `PhrasePlan.transforms` are phrase-level, and requests in `ScorePlan.transforms` are score-level.
-- `TransformStep` is a derived execution adapter. It resolves a request plus its placement into one uniform callable shape so `apply_transform_requests` stays simple.
+- `TransformApplication` is a derived execution adapter. It resolves a request plus its placement into one uniform callable shape so `apply_transform_requests` stays simple.
 - `ScorePlan` is the parsed authoring recipe. It preserves which transform requests were written on which phrase and which were written at score level.
 - `Score`, `Voice`, `Phrase`, `Motif`, and `Tone` remain musical data only. They do not store transform requests.
 
@@ -102,19 +102,19 @@ class ScoreTransformDefinition:
     transform: Callable[[Score, Mapping[str, object]], Score]
 ```
 
-Executable transform steps use this class:
+Executable transform applications use this class:
 
 ```python
 @dataclass(frozen=True)
-class TransformStep:
-    request: TransformRequest
-    definition: PhraseTransformDefinition | ScoreTransformDefinition
+class TransformApplication:
+    transform_request: TransformRequest
+    transform_definition: PhraseTransformDefinition | ScoreTransformDefinition
     apply: Callable[[Score], Score]
 ```
 
 `PhraseScope` and `ScoreScope` enums are removed. "Scope" is encoded by the definition type and by where the request lives in `ScorePlan`, not by a runtime tag.
 
-Definition-level `transform` means "run the reusable transform logic on the input type declared by the definition's callable signature." Step-level `apply` means "apply one resolved request to the whole `Score`."
+Definition-level `transform` means "run the reusable transform logic on the input type declared by the definition's callable signature." Application-level `apply` means "apply one resolved request to the whole `Score`."
 
 Raw transform functions keep their existing narrow signatures (e.g. `reverse_tones(tones)`, `phrase_feigenbaum_shrink(tones, previous_tones, **params)`, `stretto(score, motif_name, **params)`). Registry entries should prefer explicit `transform` functions over generic helper factories. Add a helper only when repeated adaptation logic becomes materially noisy; do not make helper functions a required part of the design.
 
@@ -158,9 +158,9 @@ Transform execution is moved out of the parser into a transform application modu
 score = apply_transform_requests(score, score_plan)
 ```
 
-The application module has one uniform execution loop over `TransformStep`s: validate params, apply the step, and produce the next `Score`. Generating transform steps discovers request placement and hides phrase-vs-score traversal complexity from the executor.
+The application module has one uniform execution loop over `TransformApplication`s: validate params, apply the application, and produce the next `Score`. Generating transform applications discovers request placement and hides phrase-vs-score traversal complexity from the executor.
 
-This keeps `TransformStep` intentionally. It is not a second authoring/request model and it is not stored in `ScorePlan`; it is a temporary resolved execution adapter created while applying transforms.
+This keeps `TransformApplication` intentionally. It is not a second authoring/request model and it is not stored in `ScorePlan`; it is a temporary resolved execution adapter created while applying transforms.
 
 ## Acceptance Criteria
 
@@ -277,14 +277,14 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 
 ### Phase 3 — Refactor the transform definition model
 
-**Step 4 (low): Add transform request, transform step, and new definition dataclasses.**
+**Step 4 (low): Add transform request, transform application, and new definition dataclasses.**
 - Add a score-plan module with `TransformRequest`, `PhrasePlan`, `VoicePlan`, and `ScorePlan`. `TransformRequest` has fields `name: str` and `params: Mapping[str, object]`.
 - `PhrasePlan` has `motif_names: list[str]` and `transforms: list[TransformRequest]`; `VoicePlan` has `phrases: list[PhrasePlan]`; `ScorePlan` has `motifs: dict[str, Motif]`, `voices: list[VoicePlan]`, and `transforms: list[TransformRequest]`.
 - These plan classes are authoring metadata only. Do not add transform request fields to `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
 - In `transforms/base.py`, add `PhraseTransformDefinition` and `ScoreTransformDefinition`.
 - `PhraseTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[Phrase, Score, Mapping[str, object]], Phrase]`.
 - `ScoreTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[Score, Mapping[str, object]], Score]`.
-- Add `TransformStep`. Each `TransformStep` holds the source `TransformRequest`, the resolved transform definition, and an `apply(score) -> Score` callable.
+- Add `TransformApplication`. Each `TransformApplication` holds `transform_request: TransformRequest`, `transform_definition: PhraseTransformDefinition | ScoreTransformDefinition`, and an `apply(score) -> Score` callable.
 - Extract the existing `TransformDefinition.validate_params` method body into a module-level free function `validate_transform_params(params_spec: TransformParamsSpec, name: str, params: Mapping[str, object]) -> None`. Both new dataclasses expose a `validate_params(self, params)` method that simply calls the free function with `self.params_spec` and `self.name`. Do not duplicate the validation logic across the two classes.
 - The existing `TransformDefinition[ScopeType]` is left alone in this step; the new types are not yet wired in anywhere.
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
@@ -305,7 +305,7 @@ The change has four parts that move together:
 1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring recipe with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy, and `transforms` for score-level `TransformRequest`s.
 2. **Parse-time placement preservation.** As the parser walks JSON, it converts each transform object into a `TransformRequest` and stores it in the matching phrase plan or score plan.
 3. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
-4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` iterates `TransformStep`s derived from `ScorePlan`. Phrase-level steps are discovered by walking `score_plan.voices -> voice_plan.phrases -> phrase_plan.transforms`; score-level steps come from `score_plan.transforms`. Every step is applied with the same execution shape: validate params, apply, and return the next `Score`.
+4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` iterates `TransformApplication`s derived from `ScorePlan`. Phrase-level applications are discovered by walking `score_plan.voices -> voice_plan.phrases -> phrase_plan.transforms`; score-level applications come from `score_plan.transforms`. Every application is executed with the same shape: validate params, apply, and return the next `Score`.
 
 Ordering rule: application order is the natural hierarchy order: voices in JSON order, phrases in JSON order, transforms within each phrase in JSON order. This is the same order phrase transforms run today. Do not reorder or parallelize.
 
@@ -392,18 +392,18 @@ def build_score(score_plan: ScorePlan) -> Score:
 ```python
 # transforms/application.py
 
-def iter_transform_steps(score_plan: ScorePlan) -> Iterator[TransformStep]:
-    # Creates phrase transform steps in voice/phrase/transform order,
-    # followed by score transform steps.
+def iter_transform_applications(score_plan: ScorePlan) -> Iterator[TransformApplication]:
+    # Creates phrase transform applications in voice/phrase/transform order,
+    # followed by score transform applications.
     ...
 
 
 def apply_transform_requests(score: Score, score_plan: ScorePlan) -> Score:
     transformed_score = score
 
-    for step in iter_transform_steps(score_plan):
-        step.definition.validate_params(step.request.params)
-        transformed_score = step.apply(transformed_score)
+    for application in iter_transform_applications(score_plan):
+        application.transform_definition.validate_params(application.transform_request.params)
+        transformed_score = application.apply(transformed_score)
 
     return transformed_score
 ```
@@ -414,8 +414,8 @@ The resolved design is:
 
 - The parser knows where a transform request was written because that is JSON structure.
 - The parser preserves that placement in `ScorePlan`, not in `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
-- `iter_transform_steps` walks `ScorePlan` to resolve request placement into ordered `TransformStep`s.
-- `apply_transform_requests` uses one uniform loop: validate params, apply step, produce the next `Score`.
+- `iter_transform_applications` walks `ScorePlan` to resolve request placement into ordered `TransformApplication`s.
+- `apply_transform_requests` uses one uniform loop: validate params, apply the application, produce the next `Score`.
 - `PhraseTransformDefinition` does not own a phrase and does not receive `voice_index` or `phrase_index`.
 - Context-aware phrase transforms receive the active `Phrase` and the surrounding `Score`; they can derive reference material by traversing the hierarchy.
 
