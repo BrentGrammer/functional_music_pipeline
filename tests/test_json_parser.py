@@ -19,6 +19,7 @@ from transforms.base import (
     ScoreScope,
     StringParam,
     TransformDefinition,
+    ScoreTransformDefinition,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -1107,9 +1108,8 @@ def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params
         captured["score"] = score
         return score
 
-    SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
+    SCORE_TRANSFORMS["_test_score_with_motifs"] = ScoreTransformDefinition(
         name="_test_score_with_motifs",
-        transform_func=capture_score_target_motifs_transform,
         scope=ScoreScope.TARGET_MOTIFS,
         params_spec=TransformParamsSpec(
             fields={
@@ -1119,6 +1119,7 @@ def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params
                 )
             }
         ),
+        transform=lambda score, params: capture_score_target_motifs_transform(score, params["motif"]),
     )
     try:
         transform_score(generate_score_plan(

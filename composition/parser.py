@@ -24,6 +24,7 @@ from transforms.base import (
     ToneSequence,
     TransformDefinition,
     TransformLevel,
+    ScoreTransformDefinition,
 )
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
@@ -311,21 +312,12 @@ def _apply_score_transform_spec(
     else:
         raise ValueError(f"Unknown score transform '{transform_name}'")
 
+    # Expect SCORE_TRANSFORMS to contain ScoreTransformDefinition instances only.
+    if not isinstance(descriptor, ScoreTransformDefinition):
+        raise ValueError(f"Score transform '{transform_name}' must be a ScoreTransformDefinition.")
+
     descriptor.validate_params(transform_params)
-
-    if descriptor.scope is ScoreScope.TARGET_MOTIFS:
-        score_transform = cast(Callable[..., Score], descriptor.transform_func)
-        return score_transform(score, **transform_params)
-
-    if descriptor.scope is ScoreScope.SCORE_AWARE:
-        score_transform = cast(Callable[..., Score], descriptor.transform_func)
-        return score_transform(score, **transform_params)
-
-    if descriptor.scope is ScoreScope.EACH_VOICE:
-        each_voice_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
-        return apply_to_each_voice(each_voice_transform, **transform_params)(score)
-
-    raise ValueError(f"Transform '{transform_name}' is not a score transform.")
+    return descriptor.transform(score, transform_params)
 
 
 def _extract_requests_from_phrase(phrase_config: object, voice_index: int, phrase_index: int) -> list[PhraseTransformRequest]:
