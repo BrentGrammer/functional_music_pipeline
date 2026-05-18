@@ -15,6 +15,7 @@ from transforms.counterpoint.fugue import (
     add_pedal_tone,
     add_pedal_tone_score_transform,
     stretto,
+    stretto_score_transform,
 )
 from transforms.registry import SCORE_TRANSFORMS
 
@@ -239,6 +240,48 @@ class TestAddPedalToneScoreTransform:
         assert pedal_voice.phrases[0].motifs[0].name == "<pedal>"
         assert flatten_voice_tones(pedal_voice)[0].frequency == pytest.approx(pedal_frequency)
         assert flatten_voice_tones(pedal_voice)[0].duration == pytest.approx(seed_duration)
+
+
+class TestStrettoScoreTransform:
+    def test_stretto_score_transform_appends_entries(self):
+        subject_name = "subject"
+        subject_frequency = 440.0
+        subject_duration = 0.5
+        spacing = 0.25
+        num_times = 2
+        silence_frequency = 0
+
+        score = Score(
+            [
+                Voice(
+                    [
+                        Phrase(
+                            [
+                                Motif(subject_name, [Tone(subject_frequency, duration=subject_duration)]),
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+        params = {
+            "motif": subject_name,
+            "num_times": num_times,
+            "spacing": spacing,
+        }
+
+        result = stretto_score_transform(score=score, params=params)
+
+        # Original voice + num_times entries = 3 voices
+        assert len(result.voices) == num_times + 1
+
+        # Second entry (voice num_times) should have 'spacing' duration of silence followed by subject
+        second_entry_voice = result.voices[num_times]
+        tones = flatten_voice_tones(second_entry_voice)
+        assert len(tones) == num_times
+        assert tones[0].frequency == silence_frequency
+        assert tones[0].duration == pytest.approx(spacing)
+        assert tones[1].frequency == pytest.approx(subject_frequency)
 
 
 class TestPedalToneRegistration:

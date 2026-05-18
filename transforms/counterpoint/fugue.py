@@ -48,6 +48,16 @@ STRETTO_PARAMS_SPEC = TransformParamsSpec(
 )
 
 
+def find_motif_by_name(score: Score, name: str) -> Motif | None:
+    return next((
+        motif
+        for voice in score.voices
+        for phrase in voice.phrases
+        for motif in phrase.motifs
+        if motif.name == name
+    ), None)
+
+
 def stretto(
     score: Score,
     motif: str,
@@ -57,10 +67,11 @@ def stretto(
     if num_times < 1:
         raise ValueError("Stretto num_times must be at least 1.")
 
-    target_motif_tones = _find_motif_tones_by_name(score, motif)
-    if target_motif_tones is None:
+    target_motif = find_motif_by_name(score, motif)
+    if target_motif is None:
         raise ValueError(f"Stretto motif '{motif}' was not found in score.")
 
+    target_motif_tones = target_motif.tones
     target_tones_total_duration = sum(tone.duration for tone in target_motif_tones)
     entry_spacing = _calculate_entry_spacing(spacing, target_tones_total_duration)
 
@@ -106,6 +117,30 @@ def add_pedal_tone_score_transform(score: Score, params: Mapping[str, object]) -
     return add_pedal_tone(score, frequency=float(frequency_val))
 
 
+def stretto_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    motif_name = params["motif"]
+    if not isinstance(motif_name, str):
+        raise TypeError(f"Expected str for motif, got {type(motif_name)}")
+
+    num_times = params["num_times"]
+    if not isinstance(num_times, int):
+        raise TypeError(f"Expected int for num_times, got {type(num_times)}")
+
+    spacing = params["spacing"]
+    if not isinstance(spacing, (str, int, float)):
+        raise TypeError(f"Expected str, int, or float for spacing, got {type(spacing)}")
+
+    if find_motif_by_name(score, motif_name) is None:
+        raise ValueError(f"Stretto motif '{motif_name}' was not found in score.")
+
+    return stretto(
+        score,
+        motif=motif_name,
+        num_times=num_times,
+        spacing=spacing,
+    )
+
+
 def _calculate_entry_spacing(spacing: object, target_tones_total_duration: float) -> float:
     if isinstance(spacing, (int, float)):
         if spacing <= 0:
@@ -123,12 +158,3 @@ def _calculate_entry_spacing(spacing: object, target_tones_total_duration: float
             ) from exc
 
     raise ValueError("Stretto spacing must be a string or number when provided.")
-
-
-def _find_motif_tones_by_name(score: Score, motif_name: str) -> list[Tone] | None:
-    for voice in score.voices:
-        for phrase in voice.phrases:
-            for motif in phrase.motifs:
-                if motif.name == motif_name:
-                    return motif.tones
-    return None
