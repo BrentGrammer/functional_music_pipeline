@@ -334,7 +334,7 @@ The change has four parts that move together:
 3. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
 4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` builds `TransformApplication`s from `score_plan.phrase_transform_requests` and `score_plan.score_transform_requests`. Every application is executed with the same shape: validate params, apply, and return the next `Score`.
 
-Ordering rule: the parser appends phrase requests in voice order, phrase order, and transform order, then appends score requests in `score_transforms` order. Application uses those stored list orders. Do not reorder or parallelize.
+Ordering rule: preserve the current parser execution order. Collect phrase transform requests by walking the JSON as nested loops: voices from first to last, phrases within each voice from first to last, and transforms within each phrase from first to last. Apply those phrase requests in that collected order. After all phrase requests have been applied, apply `score_transforms` from first to last as they appear in the top-level JSON. This preserves phrase-relative behavior, where later phrase transforms can depend on earlier transformed phrases or earlier completed voices. Do not reorder or parallelize.
 
 Constraints:
 - Phrase transforms still use the old `TransformDefinition[PhraseScope]` and the old phrase-side branching code. Only WHEN they run changes, not HOW.
