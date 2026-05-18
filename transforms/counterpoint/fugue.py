@@ -141,6 +141,15 @@ def stretto_score_transform(score: Score, params: Mapping[str, object]) -> Score
     )
 
 
+def stretto_score_transform_adapter(score: Score, params: Mapping[str, object]) -> Score:
+    """Adapter kept for registry compatibility; delegates to stretto_score_transform.
+
+    This named adapter gives the registry a stable callable object to reference
+    instead of relying on inline lambdas.
+    """
+    return stretto_score_transform(score, params)
+
+
 def _calculate_entry_spacing(spacing: object, target_tones_total_duration: float) -> float:
     if isinstance(spacing, (int, float)):
         if spacing <= 0:
