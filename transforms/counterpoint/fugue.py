@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -95,6 +97,13 @@ def add_pedal_tone(
     return Score(
         score.voices + [Voice(phrases=[Phrase(motifs=[Motif(name="<pedal>", tones=pedal_tones)])])]
     )
+
+
+def add_pedal_tone_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    frequency_val = params["frequency"]
+    if not isinstance(frequency_val, (int, float)):
+        raise TypeError(f"Expected int or float for frequency, got {type(frequency_val)}")
+    return add_pedal_tone(score, frequency=float(frequency_val))
 
 
 def _calculate_entry_spacing(spacing: object, target_tones_total_duration: float) -> float:

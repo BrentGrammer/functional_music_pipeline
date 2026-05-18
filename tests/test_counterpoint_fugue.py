@@ -11,7 +11,11 @@ from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
-from transforms.counterpoint.fugue import add_pedal_tone, stretto
+from transforms.counterpoint.fugue import (
+    add_pedal_tone,
+    add_pedal_tone_score_transform,
+    stretto,
+)
 from transforms.registry import SCORE_TRANSFORMS
 
 
@@ -204,6 +208,37 @@ class TestPedalTone:
         result = add_pedal_tone(Score(), frequency=130.81)
 
         assert flatten_voice_tones(result.voices[0])[0].duration > 0
+
+
+class TestAddPedalToneScoreTransform:
+    def test_add_pedal_tone_score_transform_appends_pedal_voice(self):
+        seed_frequency = 440.0
+        seed_duration = 2.0
+        pedal_frequency = 130.81
+        score = Score(
+            [
+                Voice(
+                    [
+                        Phrase(
+                            [
+                                Motif("seed", [Tone(seed_frequency, duration=seed_duration)]),
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+        params = {"frequency": pedal_frequency}
+
+        result = add_pedal_tone_score_transform(score=score, params=params)
+
+        assert len(result.voices) == 2
+        pedal_voice = result.voices[-1]
+        assert len(pedal_voice.phrases) == 1
+        assert len(pedal_voice.phrases[0].motifs) == 1
+        assert pedal_voice.phrases[0].motifs[0].name == "<pedal>"
+        assert flatten_voice_tones(pedal_voice)[0].frequency == pytest.approx(pedal_frequency)
+        assert flatten_voice_tones(pedal_voice)[0].duration == pytest.approx(seed_duration)
 
 
 class TestPedalToneRegistration:
