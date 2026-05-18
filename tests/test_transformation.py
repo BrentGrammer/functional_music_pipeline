@@ -1,10 +1,5 @@
 import pytest
-from composition.transformer import (
-    assemble_prepared_transforms,
-    prepare_phrase_transform,
-    prepare_score_transform,
-    transform_score,
-)
+
 from composition.score_plan import (
     PhrasePlan,
     PhraseTransformRequest,
@@ -12,6 +7,12 @@ from composition.score_plan import (
     ScoreTransformRequest,
     TransformRequest,
     VoicePlan,
+)
+from composition.transformer import (
+    assemble_prepared_transforms,
+    prepare_phrase_transform,
+    prepare_score_transform,
+    transform_score,
 )
 from score_model.motif import Motif
 from score_model.phrase import Phrase

@@ -4,9 +4,8 @@ from composition.parser import generate_score_plan, parse_phrase
 from composition.schema import PhraseConfig
 from composition.transformer import transform_score
 from score_model.tone import Tone
-from transforms.basic.pad_silence import pad_silence_tones
 from score_model.traversal import flatten_voice_tones
-from transforms.base import PhraseTransformDefinition
+from transforms.basic.pad_silence import pad_silence_tones
 from transforms.registry import PHRASE_TRANSFORMS
 
 

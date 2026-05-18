@@ -1,15 +1,14 @@
-from collections.abc import Callable, Mapping
 from typing import cast
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
-from score_model.score import Score
 from transforms.base import (
     PhraseTransformDefinition,
-    ToneDimension,
     ScoreTransformDefinition,
+    ToneDimension,
 )
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_tones
 from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_transform
@@ -28,9 +27,7 @@ from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_wei
 from transforms.counterpoint.fugue import (
     ADD_PEDAL_TONE_PARAMS_SPEC,
     STRETTO_PARAMS_SPEC,
-    add_pedal_tone,
     add_pedal_tone_score_transform,
-    stretto,
     stretto_score_transform_adapter,
 )
 from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_transform
@@ -51,7 +48,6 @@ from transforms.proportion.golden_ratio import (
 )
 from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_transform
 from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_transform
-
 
 PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "reverse": PhraseTransformDefinition(

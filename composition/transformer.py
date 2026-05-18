@@ -9,9 +9,7 @@ from composition.score_plan import (
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
-from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     PhraseTransformContext,

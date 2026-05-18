@@ -4,9 +4,9 @@ from typing import NamedTuple
 from mido import Message, MetaMessage, MidiFile, MidiTrack  # type: ignore[import-untyped]
 
 from score_model.pitch_utils import frequency_to_semitones
-from score_model.traversal import flatten_voice_tones
 from score_model.score import Score
 from score_model.tone import Tone
+from score_model.traversal import flatten_voice_tones
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
 from collections.abc import Mapping
+from dataclasses import dataclass, field
 
 from score_model.motif import Motif
 

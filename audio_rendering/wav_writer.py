@@ -4,8 +4,8 @@ import wave
 import numpy as np
 
 from score_model.score import Score
-from score_model.traversal import flatten_voice_tones
 from score_model.tone import DEFAULT_SAMPLE_RATE_HZ, MAX_16BIT_PCM
+from score_model.traversal import flatten_voice_tones
 
 logger = logging.getLogger(__name__)
 

@@ -12,12 +12,12 @@ from composition.schema import PhraseConfig
 from composition.transformer import transform_score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
-from score_model.traversal import flatten_voice_tones
 from score_model.tone import Tone
+from score_model.traversal import flatten_voice_tones
 from transforms.base import (
     EnumParam,
-    StringParam,
     ScoreTransformDefinition,
+    StringParam,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
