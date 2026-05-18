@@ -60,7 +60,9 @@ The important split is:
 - `ScorePlan` is the parsed authoring recipe. It preserves phrase transform requests in parse order and score transform requests in parse order.
 - `Score`, `Voice`, `Phrase`, `Motif`, and `Tone` remain musical data only. They do not store transform requests.
 
-With the hierarchy in place, phrase transforms apply to the active phrase, with access to the full score for context when needed. Score transforms apply to the whole score. The transform application pass receives both the `Score` model and the parsed `ScorePlan`, so it can preserve placement without storing authoring metadata on the score model.
+With the hierarchy in place, phrase transforms apply to the active phrase through an explicit `PhraseTransformContext`. The parsed `PhraseTransformRequest` stores the request's `voice_index` and `phrase_index`; `build_phrase_transform_application` uses those coordinates to create a `TransformApplication.apply(score)` callable that, at execution time, builds `PhraseTransformContext(score=score, voice_index=voice_index, phrase_index=phrase_index)`. The phrase transform definition receives that context, so the active phrase is available as `context.phrase`, neighboring phrases are reachable through `context.score.voices[context.voice_index].phrases`, and phrases in other voices are reachable through `context.score.voices`.
+
+This keeps placement explicit without making `Score`, `Voice`, `Phrase`, `Motif`, or `Tone` carry authoring metadata. The parser still only preserves where the request was written; the transform application pass turns that stored placement into executable context.
 
 The parsed authoring model uses these plan/request classes:
 
@@ -101,10 +103,20 @@ Two concrete transform definition classes replace the generic `TransformDefiniti
 
 ```python
 @dataclass(frozen=True)
+class PhraseTransformContext:
+    score: Score
+    voice_index: int
+    phrase_index: int
+
+    @property
+    def phrase(self) -> Phrase:
+        return self.score.voices[self.voice_index].phrases[self.phrase_index]
+
+@dataclass(frozen=True)
 class PhraseTransformDefinition:
     name: str
     params_spec: TransformParamsSpec
-    transform: Callable[[Phrase, Score, Mapping[str, object]], Phrase]
+    transform: Callable[[PhraseTransformContext, Mapping[str, object]], Phrase]
 
 @dataclass(frozen=True)
 class ScoreTransformDefinition:
@@ -129,7 +141,7 @@ Definition-level `transform` means "run the reusable transform logic on the inpu
 
 Raw transform functions keep their existing narrow signatures (e.g. `reverse_tones(tones)`, `phrase_feigenbaum_shrink(tones, previous_tones, **params)`, `stretto(score, motif_name, **params)`). Registry entries should prefer explicit `transform` functions over generic helper factories. Add a helper only when repeated adaptation logic becomes materially noisy; do not make helper functions a required part of the design.
 
-Phrase-relative transforms read surrounding score context but still return one new `Phrase`. If a transform needs to rewrite multiple phrases, voices, or the whole score, it belongs in `SCORE_TRANSFORMS`.
+Phrase-relative transforms read surrounding score context from `PhraseTransformContext` but still return one new `Phrase`. For existing phrase-relative raw transforms, the explicit phrase transform function derives the needed reference material from `context.score` relative to `context.voice_index` and `context.phrase_index`, then calls the narrow raw transform function. If a transform needs to rewrite multiple phrases, voices, or the whole score, it belongs in `SCORE_TRANSFORMS`.
 
 ## Decision: Named-Entity Lookup is Hierarchy Traversal
 
@@ -180,11 +192,11 @@ This keeps `TransformApplication` intentionally. It is not a second authoring/re
 - `PhraseScope` and `ScoreScope` enums are removed.
 - Generic `TransformDefinition[ScopeType]` is removed; replaced by two concrete dataclasses.
 - `transform_func: Callable[..., Any]` is removed.
-- Phrase definitions transform with signature `(Phrase, Score, params) -> Phrase`; score definitions transform with signature `(Score, params) -> Score`.
+- Phrase definitions transform with signature `(PhraseTransformContext, params) -> Phrase`; score definitions transform with signature `(Score, params) -> Score`.
 - Parser does not branch on execution kind or call transform definitions directly; it preserves transform requests in `ScorePlan`.
 - Transform application is a separate traversal that performs lookup → `validate_params` → `apply`.
 - Registry entries prefer explicit `transform` functions; helper factories are avoided unless repeated adaptation logic becomes materially noisy.
-- No `voice_index` or `phrase_index` is passed into a transform definition's public `transform`.
+- Phrase placement is passed to phrase transforms only through `PhraseTransformContext`, not as loose `voice_index` / `phrase_index` parameters.
 - No in-place mutation of data-model objects by transforms.
 - `mypy .` passes without `cast`.
 - Behavior is preserved across: phrase transforms, score transforms, wrong-scope diagnostics, same-name transforms across registries, target-motif transforms (`stretto`), each-voice score transforms, phrase-relative transforms.
@@ -293,8 +305,9 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 - `PhraseTransformRequest` has `voice_index: int`, `phrase_index: int`, and `transform_request: TransformRequest`. `ScoreTransformRequest` has `transform_request: TransformRequest`.
 - `PhrasePlan` has `motif_names: list[str]`; `VoicePlan` has `phrases: list[PhrasePlan]`; `ScorePlan` has `motifs: dict[str, Motif]`, `voices: list[VoicePlan]`, `phrase_transform_requests: list[PhraseTransformRequest]`, and `score_transform_requests: list[ScoreTransformRequest]`.
 - These plan classes are authoring metadata only. Do not add transform request fields to `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
-- In `transforms/base.py`, add `PhraseTransformDefinition` and `ScoreTransformDefinition`.
-- `PhraseTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[Phrase, Score, Mapping[str, object]], Phrase]`.
+- In `transforms/base.py`, add `PhraseTransformContext`, `PhraseTransformDefinition`, and `ScoreTransformDefinition`.
+- `PhraseTransformContext` has fields `score: Score`, `voice_index: int`, and `phrase_index: int`, plus a `phrase` property that returns `score.voices[voice_index].phrases[phrase_index]`.
+- `PhraseTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[PhraseTransformContext, Mapping[str, object]], Phrase]`.
 - `ScoreTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[Score, Mapping[str, object]], Score]`.
 - Add `TransformApplication`. Each `TransformApplication` holds `transform_request: TransformRequest`, `transform_definition: PhraseTransformDefinition | ScoreTransformDefinition`, and an `apply(score) -> Score` callable.
 - Extract the existing `TransformDefinition.validate_params` method body into a module-level free function `validate_transform_params(params_spec: TransformParamsSpec, name: str, params: Mapping[str, object]) -> None`. Both new dataclasses expose a `validate_params(self, params)` method that simply calls the free function with `self.params_spec` and `self.name`. Do not duplicate the validation logic across the two classes.
@@ -331,11 +344,11 @@ Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
 **Step 7 (low): Migrate `PHRASE_TRANSFORMS` in place.**
 - In `transforms/registry.py`, convert each `PHRASE_TRANSFORMS` entry from the old generic shape `TransformDefinition(name=..., transform_func=..., scope=..., params_spec=...)` to the new phrase-specific shape `PhraseTransformDefinition(name=..., params_spec=..., transform=...)`.
-- Each `transform` function adapts one raw phrase transform to the standard phrase API: `transform(phrase, score, params) -> Phrase`.
-- For old `PhraseScope.OWN_PHRASE` entries, the transform function reads tones from the active `Phrase`, calls the raw tone-list transform, and wraps the returned tones in a new `Phrase`.
-- For old `PhraseScope.PHRASE_RELATIVE` entries, the transform function also derives reference material from the surrounding `Score` before calling the raw phrase-relative transform.
+- Each `transform` function adapts one raw phrase transform to the standard phrase API: `transform(context, params) -> Phrase`.
+- For old `PhraseScope.OWN_PHRASE` entries, the transform function reads tones from `context.phrase`, calls the raw tone-list transform, and wraps the returned tones in a new `Phrase`.
+- For old `PhraseScope.PHRASE_RELATIVE` entries, the transform function derives reference material from `context.score` relative to `context.voice_index` and `context.phrase_index` before calling the raw phrase-relative transform.
 - The old `PhraseScope` values are migration guidance only. Do not keep a runtime `if` / `elif` / switch over phrase scope in the final code.
-- Update phrase-transform application to look up definitions in `PHRASE_TRANSFORMS` and call `definition.validate_params(request.params)` and `definition.transform(phrase, score, request.params)`.
+- Update phrase-transform application to look up definitions in `PHRASE_TRANSFORMS`, build `PhraseTransformContext` from the current score plus the request's stored placement, and call `definition.validate_params(request.params)` and `definition.transform(context, request.params)`.
 - Delete the old phrase-side scope branching from the transform application code.
 Done signal: `uv run pytest tests` passes. `mypy .` passes. `rg "PhraseScope" composition` returns no results.
 
@@ -422,7 +435,16 @@ def build_phrase_transform_application(
 ) -> TransformApplication:
     transform_request = phrase_transform_request.transform_request
     transform_definition = PHRASE_TRANSFORMS[transform_request.name]
-    ...
+    voice_index = phrase_transform_request.voice_index
+    phrase_index = phrase_transform_request.phrase_index
+
+    def apply(score: Score) -> Score:
+        context = PhraseTransformContext(score, voice_index, phrase_index)
+        transformed_phrase = transform_definition.transform(context, transform_request.params)
+        # Return a new Score with only the target phrase replaced.
+        ...
+
+    return TransformApplication(transform_request, transform_definition, apply)
 
 
 def build_score_transform_application(
@@ -451,11 +473,12 @@ The resolved design is:
 - The parser preserves that placement in `ScorePlan`, not in `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
 - `ScorePlan.phrase_transform_requests` and `ScorePlan.score_transform_requests` keep application-building flat and ordered.
 - `build_transform_applications` resolves placed requests into ordered `TransformApplication`s.
+- For phrase requests, `build_phrase_transform_application` closes over the request's `voice_index` and `phrase_index`; the resulting `TransformApplication.apply(score)` builds `PhraseTransformContext(score, voice_index, phrase_index)` for the current `Score` before calling the phrase transform definition.
 - `apply_transform_requests` uses one uniform loop: validate params, apply the application, produce the next `Score`.
-- `PhraseTransformDefinition` does not own a phrase and does not receive `voice_index` or `phrase_index`.
-- Context-aware phrase transforms receive the active `Phrase` and the surrounding `Score`; they can derive reference material by traversing the hierarchy.
+- `PhraseTransformDefinition` does not own a phrase and does not receive loose `voice_index` or `phrase_index` parameters; placement lives inside `PhraseTransformContext`.
+- Context-aware phrase transforms use `context.phrase`, `context.score`, `context.voice_index`, and `context.phrase_index` to inspect neighboring phrases or other voices directly.
 
-This rejects the previous public transform-definition options based on `transform(score, voice_index, phrase_index, params)`, `.bind(...)`, and phrase-registry factories. Those options made transform location a parser-call-site concern instead of a hierarchy concern.
+This rejects the previous public transform-definition options based on loose coordinate arguments like `transform(score, voice_index, phrase_index, params)`, `.bind(...)`, and phrase-registry factories. `PhraseTransformContext` keeps location explicit while grouping it with the current score model instead of making the parser call transform definitions directly.
 
 ### What's Gone Vs. Today
 
@@ -464,7 +487,7 @@ This rejects the previous public transform-definition options based on `transfor
 - All parser-side scope branching (`if scope is PhraseScope.OWN_PHRASE`, etc.).
 - `parsed_motifs` threading through score transforms.
 - `reference_tones` computation in the parser.
-- `voice_index` / `phrase_index` arguments in transform definition APIs.
+- Loose `voice_index` / `phrase_index` arguments in transform definition APIs; phrase placement is grouped in `PhraseTransformContext` instead.
 
 ### What Stays
 
