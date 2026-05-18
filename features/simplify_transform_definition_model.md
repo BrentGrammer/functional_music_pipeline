@@ -14,8 +14,8 @@ The parser knows too much about transform execution. The type model leaks `Any`.
 
 The parser's transform-side responsibility reduces to preserving placement:
 
-- If a transform request appears inside a phrase's JSON, store that request in the matching `PhrasePlan`. A 'Plan' is the parsed recipe from a request made by the user.
-- If a transform request appears in the JSON `score_transforms` field, store that request in `ScorePlan.transforms`.
+- If a transform request appears inside a phrase's JSON, store it as a `PhraseTransformRequest` with the phrase's `voice_index` and `phrase_index`.
+- If a transform request appears in the JSON `score_transforms` field, store it as a `ScoreTransformRequest`.
 
 The parser does not branch on transform execution style, compute `reference_tones`, pass `parsed_motifs`, call `apply_to_each_voice`, or pass phrase coordinates into transform definitions.
 
@@ -54,9 +54,10 @@ Concretely:
 The important split is:
 
 - `TransformDefinition` is global and reusable. It knows how to validate params and how to transform the input type declared by its callable signature.
-- `TransformRequest` is local authoring data from the JSON: a transform name plus supplied params. It does not replace `TransformParamsSpec`; the full parameter contract stays on the transform definition. A request does not encode its target scope; placement does that. Requests in `PhrasePlan.transforms` are phrase-level, and requests in `ScorePlan.transforms` are score-level.
+- `TransformRequest` is local authoring data from the JSON: a transform name plus supplied params. It does not replace `TransformParamsSpec`; the full parameter contract stays on the transform definition. A request does not encode its target scope; `PhraseTransformRequest` and `ScoreTransformRequest` do that.
+- `PhraseTransformRequest` and `ScoreTransformRequest` are parsed placement-aware requests. They keep transform application flat and predictable without storing authoring metadata on `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
 - `TransformApplication` is a derived execution adapter. It resolves a request plus its placement into one uniform callable shape so `apply_transform_requests` stays simple.
-- `ScorePlan` is the parsed authoring recipe. It preserves which transform requests were written on which phrase and which were written at score level.
+- `ScorePlan` is the parsed authoring recipe. It preserves phrase transform requests in parse order and score transform requests in parse order.
 - `Score`, `Voice`, `Phrase`, `Motif`, and `Tone` remain musical data only. They do not store transform requests.
 
 With the hierarchy in place, phrase transforms apply to the active phrase, with access to the full score for context when needed. Score transforms apply to the whole score. The transform application pass receives both the `Score` model and the parsed `ScorePlan`, so it can preserve placement without storing authoring metadata on the score model.
@@ -70,9 +71,18 @@ class TransformRequest:
     params: Mapping[str, object]
 
 @dataclass(frozen=True)
+class PhraseTransformRequest:
+    voice_index: int
+    phrase_index: int
+    transform_request: TransformRequest
+
+@dataclass(frozen=True)
+class ScoreTransformRequest:
+    transform_request: TransformRequest
+
+@dataclass(frozen=True)
 class PhrasePlan:
     motif_names: list[str]
-    transforms: list[TransformRequest]
 
 @dataclass(frozen=True)
 class VoicePlan:
@@ -83,7 +93,8 @@ class VoicePlan:
 class ScorePlan:
     motifs: dict[str, Motif]
     voices: list[VoicePlan]
-    transforms: list[TransformRequest]
+    phrase_transform_requests: list[PhraseTransformRequest]
+    score_transform_requests: list[ScoreTransformRequest]
 ```
 
 Two concrete transform definition classes replace the generic `TransformDefinition[ScopeType]`:
@@ -158,7 +169,7 @@ Transform execution is moved out of the parser into a transform application modu
 score = apply_transform_requests(score, score_plan)
 ```
 
-The application module has one uniform execution loop over `TransformApplication`s: validate params, apply the application, and produce the next `Score`. Generating transform applications discovers request placement and hides phrase-vs-score traversal complexity from the executor.
+The application module builds `TransformApplication`s from the flat request lists, then uses one uniform execution loop: validate params, apply the application, and produce the next `Score`. Building applications uses plain list construction, not generator/yield machinery.
 
 This keeps `TransformApplication` intentionally. It is not a second authoring/request model and it is not stored in `ScorePlan`; it is a temporary resolved execution adapter created while applying transforms.
 
@@ -277,9 +288,10 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 
 ### Phase 3 — Refactor the transform definition model
 
-**Step 4 (low): Add transform request, transform application, and new definition dataclasses.**
-- Add a score-plan module with `TransformRequest`, `PhrasePlan`, `VoicePlan`, and `ScorePlan`. `TransformRequest` has fields `name: str` and `params: Mapping[str, object]`.
-- `PhrasePlan` has `motif_names: list[str]` and `transforms: list[TransformRequest]`; `VoicePlan` has `phrases: list[PhrasePlan]`; `ScorePlan` has `motifs: dict[str, Motif]`, `voices: list[VoicePlan]`, and `transforms: list[TransformRequest]`.
+**Step 4 (low): Add transform request, placed requests, transform application, and new definition dataclasses.**
+- Add a score-plan module with `TransformRequest`, `PhraseTransformRequest`, `ScoreTransformRequest`, `PhrasePlan`, `VoicePlan`, and `ScorePlan`. `TransformRequest` has fields `name: str` and `params: Mapping[str, object]`.
+- `PhraseTransformRequest` has `voice_index: int`, `phrase_index: int`, and `transform_request: TransformRequest`. `ScoreTransformRequest` has `transform_request: TransformRequest`.
+- `PhrasePlan` has `motif_names: list[str]`; `VoicePlan` has `phrases: list[PhrasePlan]`; `ScorePlan` has `motifs: dict[str, Motif]`, `voices: list[VoicePlan]`, `phrase_transform_requests: list[PhraseTransformRequest]`, and `score_transform_requests: list[ScoreTransformRequest]`.
 - These plan classes are authoring metadata only. Do not add transform request fields to `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
 - In `transforms/base.py`, add `PhraseTransformDefinition` and `ScoreTransformDefinition`.
 - `PhraseTransformDefinition` has fields `name: str`, `params_spec: TransformParamsSpec`, and `transform: Callable[[Phrase, Score, Mapping[str, object]], Phrase]`.
@@ -302,12 +314,12 @@ This step changes *when* phrase transforms execute and where transform placement
 
 The change has four parts that move together:
 
-1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring recipe with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy, and `transforms` for score-level `TransformRequest`s.
-2. **Parse-time placement preservation.** As the parser walks JSON, it converts each transform object into a `TransformRequest` and stores it in the matching phrase plan or score plan.
+1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring recipe with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy, and flat request lists for phrase-level and score-level transforms.
+2. **Parse-time placement preservation.** As the parser walks JSON, it converts each transform object into a `TransformRequest`. Phrase requests are appended to `ScorePlan.phrase_transform_requests` as `PhraseTransformRequest`s with their `voice_index` and `phrase_index`; score requests are appended to `ScorePlan.score_transform_requests` as `ScoreTransformRequest`s.
 3. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
-4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` iterates `TransformApplication`s derived from `ScorePlan`. Phrase-level applications are discovered by walking `score_plan.voices -> voice_plan.phrases -> phrase_plan.transforms`; score-level applications come from `score_plan.transforms`. Every application is executed with the same shape: validate params, apply, and return the next `Score`.
+4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` builds `TransformApplication`s from `score_plan.phrase_transform_requests` and `score_plan.score_transform_requests`. Every application is executed with the same shape: validate params, apply, and return the next `Score`.
 
-Ordering rule: application order is the natural hierarchy order: voices in JSON order, phrases in JSON order, transforms within each phrase in JSON order. This is the same order phrase transforms run today. Do not reorder or parallelize.
+Ordering rule: the parser appends phrase requests in voice order, phrase order, and transform order, then appends score requests in `score_transforms` order. Application uses those stored list orders. Do not reorder or parallelize.
 
 Constraints:
 - Phrase transforms still use the old `TransformDefinition[PhraseScope]` and the old phrase-side branching code. Only WHEN they run changes, not HOW.
@@ -378,8 +390,9 @@ def parse_composition(composition_json: object) -> Score:
 # composition/score_plan.py
 
 def parse_score_plan(composition_json: object) -> ScorePlan:
-    # Parses the top-level JSON motifs table, phrase motif-name references, phrase transforms,
-    # voice ordering, and score-level transforms into a ScorePlan.
+    # Parses the top-level JSON motifs table, phrase motif-name references,
+    # voice ordering, phrase transform requests, and score transform requests
+    # into a ScorePlan.
     ...
 
 
@@ -392,16 +405,38 @@ def build_score(score_plan: ScorePlan) -> Score:
 ```python
 # transforms/application.py
 
-def iter_transform_applications(score_plan: ScorePlan) -> Iterator[TransformApplication]:
-    # Creates phrase transform applications in voice/phrase/transform order,
-    # followed by score transform applications.
+def build_transform_applications(score_plan: ScorePlan) -> list[TransformApplication]:
+    applications: list[TransformApplication] = []
+
+    for phrase_transform_request in score_plan.phrase_transform_requests:
+        applications.append(build_phrase_transform_application(phrase_transform_request))
+
+    for score_transform_request in score_plan.score_transform_requests:
+        applications.append(build_score_transform_application(score_transform_request))
+
+    return applications
+
+
+def build_phrase_transform_application(
+    phrase_transform_request: PhraseTransformRequest,
+) -> TransformApplication:
+    transform_request = phrase_transform_request.transform_request
+    transform_definition = PHRASE_TRANSFORMS[transform_request.name]
+    ...
+
+
+def build_score_transform_application(
+    score_transform_request: ScoreTransformRequest,
+) -> TransformApplication:
+    transform_request = score_transform_request.transform_request
+    transform_definition = SCORE_TRANSFORMS[transform_request.name]
     ...
 
 
 def apply_transform_requests(score: Score, score_plan: ScorePlan) -> Score:
     transformed_score = score
 
-    for application in iter_transform_applications(score_plan):
+    for application in build_transform_applications(score_plan):
         application.transform_definition.validate_params(application.transform_request.params)
         transformed_score = application.apply(transformed_score)
 
@@ -414,7 +449,8 @@ The resolved design is:
 
 - The parser knows where a transform request was written because that is JSON structure.
 - The parser preserves that placement in `ScorePlan`, not in `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
-- `iter_transform_applications` walks `ScorePlan` to resolve request placement into ordered `TransformApplication`s.
+- `ScorePlan.phrase_transform_requests` and `ScorePlan.score_transform_requests` keep application-building flat and ordered.
+- `build_transform_applications` resolves placed requests into ordered `TransformApplication`s.
 - `apply_transform_requests` uses one uniform loop: validate params, apply the application, produce the next `Score`.
 - `PhraseTransformDefinition` does not own a phrase and does not receive `voice_index` or `phrase_index`.
 - Context-aware phrase transforms receive the active `Phrase` and the surrounding `Score`; they can derive reference material by traversing the hierarchy.
