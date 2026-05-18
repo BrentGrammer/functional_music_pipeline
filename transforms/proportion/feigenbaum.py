@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from score_model.math_constants import FEIGENBAUM_DELTA as FEIGENBAUM_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -7,6 +9,7 @@ from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -75,6 +78,36 @@ def phrase_feigenbaum_shrink(
 
     scale_factor = (previous / FEIGENBAUM_RATIO) / current
     return scale_transform(tones, dim, scale_factor)
+
+
+def phrase_feigenbaum_shrink_transform(
+    context: PhraseTransformContext,
+    params: Mapping[str, object],
+) -> Phrase:
+    current_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+
+    if context.phrase_index > 0:
+        previous_tones = [
+            tone
+            for phrase in context.score.voices[context.voice_index].phrases[:context.phrase_index]
+            for motif in phrase.motifs
+            for tone in motif.tones
+        ]
+    elif context.voice_index > 0:
+        previous_tones = flatten_voice_tones(context.score.voices[context.voice_index - 1])
+    else:
+        previous_tones = []
+
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Phrase feigenbaum shrink dimension must be a string or ToneDimension.")
+
+    result = phrase_feigenbaum_shrink(current_tones, previous_tones, dimension=dimension)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
 
 
 def phrase_feigenbaum_grow(

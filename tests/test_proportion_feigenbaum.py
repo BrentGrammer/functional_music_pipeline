@@ -7,11 +7,12 @@ from score_model.phrase import Phrase
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import ToneDimension
+from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.proportion.feigenbaum import (
     feigenbaum_sequence,
     phrase_feigenbaum_grow,
     phrase_feigenbaum_shrink,
+    phrase_feigenbaum_shrink_transform,
     score_feigenbaum_sequence,
 )
 
@@ -125,6 +126,50 @@ class TestPhraseFeigenbaumShrink:
         actual_total_amplitude = sum(tone.amplitude for tone in transformed_phrase)
 
         assert actual_total_amplitude == pytest.approx(0.6 / FEIGENBAUM_DELTA)
+
+    def test_phrase_feigenbaum_shrink_transform_scales_against_previous_phrase(self):
+        prev_phrase_total_duration = 2.0
+        current_phrase_duration = 1.0
+
+        reference_phrase_idx = 0
+        active_phrase_idx = 1
+
+        score = Score(
+            [
+                Voice(
+                    [
+                        Phrase([Motif("first", [Tone(440.0, duration=prev_phrase_total_duration)])]),
+                        Phrase(
+                            [
+                                Motif(
+                                    "second",
+                                    [
+                                        Tone(880.0, duration=current_phrase_duration),
+                                        Tone(523.0, duration=current_phrase_duration),
+                                    ],
+                                )
+                            ]
+                        ),
+                    ]
+                )
+            ]
+        )
+        context = PhraseTransformContext(score=score, voice_index=reference_phrase_idx, phrase_index=active_phrase_idx)
+
+        result = phrase_feigenbaum_shrink_transform(context, {})
+
+        assert len(result.motifs) == 1
+
+        transformed_motifs = result.motifs[0]
+        assert transformed_motifs.name == "<transformed>"
+        
+        scaled_total_phrase_duration_based_on_ref_phrase = prev_phrase_total_duration / FEIGENBAUM_DELTA
+        # The phrase has two equal-length tones, so after scaling the total
+        # phrase duration, each tone should get half of that total.
+        assert [tone.duration for tone in transformed_motifs.tones] == [
+            pytest.approx(scaled_total_phrase_duration_based_on_ref_phrase / 2),
+            pytest.approx(scaled_total_phrase_duration_based_on_ref_phrase / 2),
+        ]
 
 
 class TestPhraseFeigenbaumGrow:
