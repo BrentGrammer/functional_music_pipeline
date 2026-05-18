@@ -15,6 +15,7 @@ from composition.score_plan import (
 )
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.pitch_utils import transpose_frequency_by_semitones
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
@@ -80,14 +81,17 @@ def test_prepare_score_transform_applies_each_voice_transform():
 
 def test_transform_score_builds_score_and_applies_transform_requests():
     motif_name = "seed_a"
-    motif_frequency = 440.0
-    one_semitone_up = 466.16
+    seed_frequency = 440.0
+    transpose_up_one_semitone = 1
+    expected_seed_frequency_after_transpose = transpose_frequency_by_semitones(
+        seed_frequency,
+        transpose_up_one_semitone,
+    )
     pedal_tone_frequency = 110.0
-    voice_count_after_pedal_tone_added = 2
-    transform_request_count = 2 # 1 phrase transform request and 1 score transform request
+    expected_transform_request_count = 2
 
     score_plan = ScorePlan(
-        motifs={motif_name: Motif(motif_name, [Tone(motif_frequency)])},
+        motifs={motif_name: Motif(motif_name, [Tone(seed_frequency)])},
         voices=[],
         phrase_transform_requests=[
             PhraseTransformRequest(
@@ -95,7 +99,7 @@ def test_transform_score_builds_score_and_applies_transform_requests():
                 phrase_index=0,
                 transform_request=TransformRequest(
                     name="transpose",
-                    params={"semitones": 1},
+                    params={"semitones": transpose_up_one_semitone},
                 ),
             )
         ],
@@ -119,13 +123,12 @@ def test_transform_score_builds_score_and_applies_transform_requests():
     )
 
     prepared_transforms = assemble_prepared_transforms(score_plan)
-    assert len(prepared_transforms) == transform_request_count
+    assert len(prepared_transforms) == expected_transform_request_count
 
     new_score = transform_score(score_plan)
 
-    assert len(new_score.voices) == voice_count_after_pedal_tone_added 
+    assert len(new_score.voices) == 2
     assert flatten_voice_tones(new_score.voices[0])[0].frequency == pytest.approx(
-        one_semitone_up,
-        rel=1e-2,
+        expected_seed_frequency_after_transpose,
     )
     assert flatten_voice_tones(new_score.voices[-1])[0].frequency == pedal_tone_frequency
