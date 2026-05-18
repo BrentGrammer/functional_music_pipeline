@@ -84,7 +84,7 @@ class ScoreTransformRequest:
 
 @dataclass(frozen=True)
 class PhrasePlan:
-    motif_names: list[str]
+    motifs: list[Motif]
 
 @dataclass(frozen=True)
 class VoicePlan:
@@ -168,12 +168,14 @@ Cross-reference failures (e.g. "motif name not found in score") are runtime reso
 
 Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase`, or `Motif`. Today's `each_voice` adapter (which mutates `score.voices[i]`) is replaced by a new-`Score`-returning version.
 
+Because `Motif` and `Tone` contain mutable Python objects (`list[Tone]` and tone instances), score construction must avoid shared mutable state. `ScorePlan.motifs` is the parsed motif definition table, and `PhrasePlan.motifs` is a resolved construction plan; `build_score(score_plan)` must create fresh `Motif` instances for each phrase and fresh `Tone` instances for each motif's tones. If the same motif name is used more than once, each use gets its own `Motif` and `Tone` instances with the same frequency and duration values.
+
 
 ## Parser Shape
 
 `composition/parser.py` does not implement transform execution. It parses composition JSON into a `Score` model plus a `ScorePlan` that preserves transform placement as a recipe or change set, then delegates to the transform application module.
 
-That includes shape validation, tone-string parsing (`"440:0.5"` → `Tone`), motif/phrase/voice/score construction, motif-name resolution inside phrases, and preserving transform requests in the score plan where they were declared.
+That includes shape validation, tone-string parsing (`"440:0.5"` → `Tone`), top-level motif parsing, motif-name resolution inside phrases, motif/phrase/voice/score construction, and preserving transform requests in the score plan where they were declared.
 
 Transform execution is moved out of the parser into a transform application module:
 
@@ -208,7 +210,7 @@ This keeps `TransformApplication` intentionally. It is not a second authoring/re
 - **Sequencing:** the implementation is decomposed into many small, individually reviewable steps designed for a lower-powered implementing model. No big-bang migration. See the Implementation Plan section below.
 - **Backward compatibility:** this is a breaking migration. Old behavior, old types, and old JSON shapes do not need to be preserved.
 - **Transform boundaries:** transforms operate on `Phrase`, `Voice`, or `Score`. Transforms never operate on `Motif`. Motifs are immutable source material — pure building blocks supplied by the JSON. When a phrase transform produces a new tone sequence, the output `Phrase` contains a single new `Motif` holding those tones; the input motif structure does not survive sequence-reshaping transforms, which is the honest representation (the original motif names referred to the input partitioning, not to the transformed result). Transforms that wanted to produce multiple motifs in their output could, but none of today's phrase transforms do — they all produce one continuous tone sequence.
-- **Plan naming:** `PhrasePlan.motif_names` stores references to the top-level JSON `motifs` table. It intentionally does not use `motifs`, because `ScorePlan.motifs` stores the named `Motif` objects parsed from that table. The redundant naming is explicit so the two identities are not confused.
+- **Plan resolution:** `PhrasePlan.motifs` stores the resolved ordered motif sequence for that phrase. `parse_score_plan` resolves the phrase's JSON motif-name references against `ScorePlan.motifs`; `build_score` then copies those already-resolved motifs into phrase-local `Motif` objects with copied tones. The top-level `ScorePlan.motifs` table remains the parsed definition table, while `PhrasePlan.motifs` is the per-phrase resolved sequence.
 
 ## Implementation Plan
 
@@ -303,7 +305,7 @@ Done signal: `rg "_legacy_flatten_voice_tones"` returns nothing. `uv run pytest 
 **Step 4 (low): Add transform request, placed requests, transform application, and new definition dataclasses.**
 - Add a score-plan module with `TransformRequest`, `PhraseTransformRequest`, `ScoreTransformRequest`, `PhrasePlan`, `VoicePlan`, and `ScorePlan`. `TransformRequest` has fields `name: str` and `params: Mapping[str, object]`.
 - `PhraseTransformRequest` has `voice_index: int`, `phrase_index: int`, and `transform_request: TransformRequest`. `ScoreTransformRequest` has `transform_request: TransformRequest`.
-- `PhrasePlan` has `motif_names: list[str]`; `VoicePlan` has `phrases: list[PhrasePlan]`; `ScorePlan` has `motifs: dict[str, Motif]`, `voices: list[VoicePlan]`, `phrase_transform_requests: list[PhraseTransformRequest]`, and `score_transform_requests: list[ScoreTransformRequest]`.
+- `PhrasePlan` has `motifs: list[Motif]`; `VoicePlan` has `phrases: list[PhrasePlan]`; `ScorePlan` has `motifs: dict[str, Motif]`, `voices: list[VoicePlan]`, `phrase_transform_requests: list[PhraseTransformRequest]`, and `score_transform_requests: list[ScoreTransformRequest]`.
 - These plan classes are authoring metadata only. Do not add transform request fields to `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
 - In `transforms/base.py`, add `PhraseTransformContext`, `PhraseTransformDefinition`, and `ScoreTransformDefinition`.
 - `PhraseTransformContext` has fields `score: Score`, `voice_index: int`, and `phrase_index: int`, plus a `phrase` property that returns `score.voices[voice_index].phrases[phrase_index]`.
@@ -327,7 +329,7 @@ This step changes *when* phrase transforms execute and where transform placement
 
 The change has four parts that move together:
 
-1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring recipe with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy, and flat request lists for phrase-level and score-level transforms.
+1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring recipe with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy where each `PhrasePlan` stores the resolved ordered `list[Motif]`, and flat request lists for phrase-level and score-level transforms.
 2. **Parse-time placement preservation.** As the parser walks JSON, it converts each transform object into a `TransformRequest`. Phrase requests are appended to `ScorePlan.phrase_transform_requests` as `PhraseTransformRequest`s with their `voice_index` and `phrase_index`; score requests are appended to `ScorePlan.score_transform_requests` as `ScoreTransformRequest`s.
 3. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
 4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` builds `TransformApplication`s from `score_plan.phrase_transform_requests` and `score_plan.score_transform_requests`. Every application is executed with the same shape: validate params, apply, and return the next `Score`.
@@ -403,15 +405,18 @@ def parse_composition(composition_json: object) -> Score:
 # composition/score_plan.py
 
 def parse_score_plan(composition_json: object) -> ScorePlan:
-    # Parses the top-level JSON motifs table, phrase motif-name references,
-    # voice ordering, phrase transform requests, and score transform requests
-    # into a ScorePlan.
+    # Parses the top-level JSON motifs table, resolves phrase motif-name
+    # references into PhrasePlan.motifs, and preserves voice ordering,
+    # phrase transform requests, and score transform requests.
     ...
 
 
 def build_score(score_plan: ScorePlan) -> Score:
-    # Constructs the pure Score hierarchy from score_plan.motifs and
-    # PhrasePlan.motif_names. Does not apply transforms.
+    # Constructs the pure Score hierarchy by creating fresh Motif instances
+    # for each phrase and fresh Tone instances for each motif's tones.
+    # If the same motif name is used more than once, each use gets its own
+    # Motif and Tone instances with the same frequency and duration values.
+    # Does not apply transforms.
     ...
 ```
 
@@ -493,12 +498,16 @@ This rejects the previous public transform-definition options based on loose coo
 
 - JSON shape validation.
 - Tone-string parsing (`_parse_tone_string`).
-- Declared motifs list for phrase construction and motif-name resolution.
+- Declared motifs list for phrase construction; phrase motif-name references are resolved into `PhrasePlan.motifs`.
 - Transform request shape validation (`{"name": str, "params": dict}`), returning `TransformRequest`.
 
 ## Open Items
 
 None at the planning level.
+
+## Future Consideration: Deep Immutability
+
+This refactor keeps the current list-based model and prevents accidental shared mutable state by creating fresh `Motif` and `Tone` instances when building the final `Score`. After this migration, revisit whether the score model should become deeply immutable — for example, by using frozen dataclasses with tuple-backed collections throughout `Tone → Motif → Phrase → Voice → Score`. That would make repeated references safe by construction and provide a stronger guardrail against unexpected in-place mutation, but it is intentionally outside the scope of this refactor.
 
 ## Note on Rules and Defaults
 
