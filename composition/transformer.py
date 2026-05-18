@@ -55,9 +55,6 @@ def prepare_phrase_transform(request: PhraseTransformRequest) -> PreparedTransfo
             phrase_index=request.phrase_index,
         )
 
-        target_phrase = context.phrase
-        phrase_tones = [tone for motif in target_phrase.motifs for tone in motif.tones]
-
         # PHRASE_TRANSFORMS now contains only PhraseTransformDefinition instances.
         # Call the explicit phrase-transform API which receives a PhraseTransformContext
         # and returns a new Phrase. Legacy scope-based branching has been removed.

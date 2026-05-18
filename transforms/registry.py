@@ -460,7 +460,13 @@ SCORE_TRANSFORMS: dict[str, object] = {
                             motifs=[
                                 Motif(
                                     name="<each_voice>",
-                                    tones=golden_ratio_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params.get("dimension", ToneDimension.DURATION))),
+                                    tones=golden_ratio_transform(
+                                        flatten_voice_tones(voice),
+                                        dimension=cast(
+                                            ToneDimension | str,
+                                            params.get("dimension", ToneDimension.DURATION),
+                                        ),
+                                    ),
                                 )
                             ]
                         )
@@ -474,7 +480,21 @@ SCORE_TRANSFORMS: dict[str, object] = {
         name="invert",
         params_spec=INVERT_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=invert_tones(flatten_voice_tones(voice)))])]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=invert_tones(flatten_voice_tones(voice)),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "transpose": ScoreTransformDefinition(
@@ -482,7 +502,21 @@ SCORE_TRANSFORMS: dict[str, object] = {
         params_spec=TRANSPOSE_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[
-                Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transpose_tones(flatten_voice_tones(voice), semitones=cast(float, params["semitones"])))])])
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=transpose_tones(
+                                        flatten_voice_tones(voice),
+                                        semitones=cast(float, params["semitones"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
                 for voice in score.voices
             ]
         ),
@@ -492,7 +526,22 @@ SCORE_TRANSFORMS: dict[str, object] = {
         params_spec=SCALE_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[
-                Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=scale_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), factor=cast(float, params["factor"])))])])
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=scale_transform(
+                                        flatten_voice_tones(voice),
+                                        dimension=cast(ToneDimension | str, params["dimension"]),
+                                        factor=cast(float, params["factor"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
                 for voice in score.voices
             ]
         ),
@@ -501,49 +550,176 @@ SCORE_TRANSFORMS: dict[str, object] = {
         name="delay",
         params_spec=DELAY_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=delay_tones(flatten_voice_tones(voice), seconds=cast(float, params["seconds"])))])]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=delay_tones(
+                                        flatten_voice_tones(voice),
+                                        seconds=cast(float, params["seconds"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "repeat": ScoreTransformDefinition(
         name="repeat",
         params_spec=REPEAT_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Motif(name="<each_voice>", tones=repeat_tones(flatten_voice_tones(voice), count=cast(int, params["count"])) )]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=repeat_tones(
+                                        flatten_voice_tones(voice),
+                                        count=cast(int, params["count"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "drift": ScoreTransformDefinition(
         name="drift",
         params_spec=DRIFT_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=drift_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), rate=cast(float, params["rate"])) )])]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=drift_transform(
+                                        flatten_voice_tones(voice),
+                                        dimension=cast(ToneDimension | str, params["dimension"]),
+                                        rate=cast(float, params["rate"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "weierstrass": ScoreTransformDefinition(
         name="weierstrass",
         params_spec=WEIERSTRASS_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_weierstrass_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), intensity=cast(str, params["intensity"])) )])]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=apply_weierstrass_transform(
+                                        flatten_voice_tones(voice),
+                                        dimension=cast(ToneDimension | str, params["dimension"]),
+                                        intensity=cast(str, params["intensity"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "terraced_drift": ScoreTransformDefinition(
         name="terraced_drift",
         params_spec=TERRACED_DRIFT_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_terraced_drift_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), max_step_change_pct=cast(int, params["max_step_change_pct"])) )])]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=apply_terraced_drift_transform(
+                                        flatten_voice_tones(voice),
+                                        dimension=cast(ToneDimension | str, params["dimension"]),
+                                        max_step_change_pct=cast(int, params["max_step_change_pct"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "cellular_automata": ScoreTransformDefinition(
         name="cellular_automata",
         params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_cellular_automata_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), rule=cast(int, params["rule"]), generations=cast(int, params["generations"]), max_deviation=cast(float, params["max_deviation"])) )])]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=apply_cellular_automata_transform(
+                                        flatten_voice_tones(voice),
+                                        dimension=cast(ToneDimension | str, params["dimension"]),
+                                        rule=cast(int, params["rule"]),
+                                        generations=cast(int, params["generations"]),
+                                        max_deviation=cast(float, params["max_deviation"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "random_drop": ScoreTransformDefinition(
         name="random_drop",
         params_spec=RANDOM_DROP_PARAMS_SPEC,
         transform=lambda score, params: Score(
-            voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_random_drop_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), max_drop_pct=cast(int, params["max_drop_pct"]), drop_frequency_pct=cast(int, params["drop_frequency_pct"])) )])]) for voice in score.voices]
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(
+                                    name="<each_voice>",
+                                    tones=apply_random_drop_transform(
+                                        flatten_voice_tones(voice),
+                                        dimension=cast(ToneDimension | str, params["dimension"]),
+                                        max_drop_pct=cast(int, params["max_drop_pct"]),
+                                        drop_frequency_pct=cast(int, params["drop_frequency_pct"]),
+                                    ),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                for voice in score.voices
+            ]
         ),
     ),
     "add_pedal_tone": ScoreTransformDefinition(
