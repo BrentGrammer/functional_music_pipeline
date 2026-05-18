@@ -1,4 +1,4 @@
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 
 from composition.score_plan import (
     PhrasePlan,
@@ -19,25 +19,10 @@ from transforms.base import (
     PhraseTransformContext,
     PhraseTransformDefinition,
     ScorePipelineStep,
-    ToneSequence,
     TransformLevel,
     ScoreTransformDefinition,
 )
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
-
-
-def apply_to_each_voice(
-    transform_func: Callable[..., ToneSequence],
-    *args: int | float,
-    **kwargs: object,
-) -> ScorePipelineStep:
-    def wrapper(score: Score) -> Score:
-        for i, voice in enumerate(score.voices):
-            modified_tones = transform_func(flatten_voice_tones(voice), *args, **kwargs)
-            score.voices[i] = Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])])
-        return score
-
-    return wrapper
 
 
 def _parse_tone_string(tone_string: str) -> Tone:

@@ -1,6 +1,5 @@
 import pytest
 
-from composition.parser import apply_to_each_voice
 from score_model.motif import Motif
 from score_model.score import Score
 from score_model.phrase import Phrase
@@ -172,44 +171,6 @@ def test_prepared_transform_stores_apply_callable():
     assert prepared.transform_request is request
     assert prepared.transform_definition is definition
     assert prepared.apply(score) is score
-
-def test_apply_to_each_voice_updates_every_voice():
-    duration_multiplier = 2.0
-    score = _build_score_with_two_voices()
-
-    pipeline_step = apply_to_each_voice(_scale_duration, duration_multiplier)
-    result = pipeline_step(score)
-
-    assert result is score
-    assert flatten_voice_tones(result.voices[0])[0].duration == pytest.approx(2.0)
-    assert flatten_voice_tones(result.voices[1])[0].duration == pytest.approx(1.0)
-
-
-def test_apply_to_each_voice_forwards_keyword_arguments():
-    # TODO: the values used here are too opaque. 220 and 330 should be variables, score with two voices is unclear because relavant values are hidden from the reader in this test.
-    duration_multiplier = 0.5
-    score = _build_score_with_two_voices()
-
-    pipeline_step = apply_to_each_voice(
-        _scale_duration,
-        duration_multiplier,
-        preserve_frequency=False,
-    )
-    result = pipeline_step(score)
-
-    assert flatten_voice_tones(result.voices[0])[0].frequency == pytest.approx(220.0)
-    assert flatten_voice_tones(result.voices[1])[0].frequency == pytest.approx(330.0)
-
-
-def test_apply_to_each_voice_handles_empty_score():
-    empty_score = Score()
-
-    pipeline_step = apply_to_each_voice(_scale_duration, 2.0)
-    result = pipeline_step(empty_score)
-
-    assert result is empty_score
-    assert len(result.voices) == 0
-
 
 def test_boolean_param_accepts_true():
     BooleanParam().validate(True, "test_field")
