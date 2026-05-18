@@ -173,17 +173,17 @@ Because `Motif` and `Tone` contain mutable Python objects (`list[Tone]` and tone
 
 ## Parser Shape
 
-`composition/parser.py` does not implement transform execution. It parses composition JSON into a `Score` model plus a `ScorePlan` that preserves transform placement and the resolved materials needed to build the initial score, then delegates to the transform application module.
+`composition/parser.py` does not implement transform execution. It parses composition JSON into a `Score` model plus a `ScorePlan` that preserves transform placement and the resolved materials needed to build the initial score, then delegates to the transform tranformation module.
 
 That includes shape validation, tone-string parsing (`"440:0.5"` → `Tone`), top-level motif parsing, motif-name resolution inside phrases, motif/phrase/voice/score construction, and preserving transform requests in the score plan where they were declared.
 
-Transform execution is moved out of the parser into a transform application module:
+Transform execution is moved out of the parser into a transform tranformation module:
 
 ```python
 score = apply_transform_requests(score, score_plan)
 ```
 
-The application module assembles `PreparedTransform`s from the flat request lists, then uses one uniform execution loop: validate params, apply the prepared transform, and produce the next `Score`. Assembling prepared transforms uses plain list construction, not generator/yield machinery.
+The tranformation module assembles `PreparedTransform`s from the flat request lists, then uses one uniform execution loop: validate params, apply the prepared transform, and produce the next `Score`. Assembling prepared transforms uses plain list construction, not generator/yield machinery.
 
 This keeps `PreparedTransform` intentionally. It is not a second authoring/request model and it is not stored in `ScorePlan`; it is a temporary execution adapter created while applying transforms.
 
@@ -403,7 +403,7 @@ Done signal: focused tests and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 6c (high): Add prepared-transform assembly and application using legacy definitions.**
 - Add `assemble_prepared_transforms`, `prepare_phrase_transform`, `prepare_score_transform`, and `apply_transform_requests`.
-- Use the existing old `TransformDefinition[PhraseScope]` / `TransformDefinition[ScoreScope]` registries and old scope-specific call logic inside the new application module for now. Only the ownership and location of execution changes.
+- Use the existing old `TransformDefinition[PhraseScope]` / `TransformDefinition[ScoreScope]` registries and old scope-specific call logic inside the new tranformation module for now. Only the ownership and location of execution changes.
 - Phrase prepared transforms build `PhraseTransformContext` from the current score plus stored placement, apply the legacy phrase transform logic, and return a new `Score` with only the target phrase replaced.
 - Score prepared transforms apply the legacy score transform logic and return the next `Score`.
 - Do not switch `parse_composition` yet.
