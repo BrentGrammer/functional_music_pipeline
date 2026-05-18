@@ -4,9 +4,9 @@ from typing import NamedTuple
 from mido import Message, MetaMessage, MidiFile, MidiTrack  # type: ignore[import-untyped]
 
 from score_model.pitch_utils import frequency_to_semitones
+from score_model.traversal import iter_voice_tones
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model._migration import _legacy_flatten_voice_tones
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ def save_score_to_midi(score: Score, filename: str) -> None:
         
         pending_rest_ticks = 0
 
-        for tone in _legacy_flatten_voice_tones(voice):
+        for tone in iter_voice_tones(voice):
             if is_rest(tone):
                 pending_rest_ticks += duration_to_ticks(tone.duration)
                 continue

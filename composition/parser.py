@@ -1,11 +1,11 @@
 from collections.abc import Callable, Mapping
 
-from score_model._migration import _legacy_flatten_voice_tones
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
+from score_model.traversal import iter_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     PhraseScope,
@@ -24,7 +24,7 @@ def apply_to_each_voice(
 ) -> ScorePipelineStep:
     def wrapper(score: Score) -> Score:
         for i, voice in enumerate(score.voices):
-            modified_tones = transform_func(_legacy_flatten_voice_tones(voice), *args, **kwargs)
+            modified_tones = transform_func(iter_voice_tones(voice), *args, **kwargs)
             score.voices[i] = Voice(
                 phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])]
             )
@@ -251,7 +251,6 @@ def _build_score_voices(voice_configs: list[object], parsed_motifs: dict[str, li
 def _apply_score_transform_spec(
     score: Score,
     transform_spec: object,
-    parsed_motifs: dict[str, list[Tone]],
 ) -> Score:
     transform_name, transform_params = parse_transform_spec(transform_spec, "Score")
 
@@ -265,7 +264,7 @@ def _apply_score_transform_spec(
     descriptor.validate_params(transform_params)
 
     if descriptor.scope is ScoreScope.TARGET_MOTIFS:
-        return descriptor.transform_func(score, parsed_motifs, **transform_params)
+        return descriptor.transform_func(score, **transform_params)
 
     if descriptor.scope is ScoreScope.SCORE_AWARE:
         return descriptor.transform_func(score, **transform_params)
@@ -283,6 +282,6 @@ def parse_composition(composition_document: object) -> Score:
     score = Score(_build_score_voices(voice_configs, parsed_motifs))
 
     for transform_spec in score_transform_specs:
-        score = _apply_score_transform_spec(score, transform_spec, parsed_motifs)
+        score = _apply_score_transform_spec(score, transform_spec)
 
     return score
