@@ -1,7 +1,8 @@
 import pytest
 
-from composition.parser import parse_composition, parse_phrase
+from composition.parser import generate_score_plan, parse_phrase
 from composition.schema import PhraseConfig
+from composition.transformer import transform_score
 from score_model.tone import Tone
 from transforms.basic.pad_silence import pad_silence_tones
 from score_model.traversal import flatten_voice_tones
@@ -130,7 +131,7 @@ def test_parse_phrase_pad_silence_requires_missing_required_fields():
             parse_phrase(phrase_config, parsed_motifs)
 
 
-def test_parse_composition_applies_pad_silence_between_phrases():
+def test_applies_pad_silence_between_phrases():
     subject_frequency = 261.63
     answer_frequency = 329.63
     phrase_duration = 0.5
@@ -157,7 +158,7 @@ def test_parse_composition_applies_pad_silence_between_phrases():
         },
     }
 
-    score = parse_composition(composition_document)
+    score = transform_score(generate_score_plan(composition_document))
 
     assert len(score.voices) == 1
     assert [tone.frequency for tone in flatten_voice_tones(score.voices[0])] == pytest.approx([subject_frequency, 0, answer_frequency])

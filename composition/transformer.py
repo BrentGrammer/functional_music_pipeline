@@ -10,6 +10,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
+from score_model.tone_utils import copy_tones
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
@@ -21,6 +22,19 @@ from transforms.base import (
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
 PreparedTransform: TypeAlias = Callable[[Score], Score]
+
+
+def build_score(score_plan: ScorePlan) -> Score:
+    voices = []
+    for voice_plan in score_plan.voices:
+        phrases = []
+        for phrase_plan in voice_plan.phrases:
+            motifs = []
+            for plan_motif in phrase_plan.motifs:
+                motifs.append(Motif(name=plan_motif.name, tones=copy_tones(plan_motif.tones)))
+            phrases.append(Phrase(motifs=motifs))
+        voices.append(Voice(phrases=phrases))
+    return Score(voices=voices)
 
 
 def prepare_phrase_transform(request: PhraseTransformRequest) -> PreparedTransform:
@@ -132,8 +146,8 @@ def assemble_prepared_transforms(score_plan: ScorePlan) -> list[PreparedTransfor
     return prepared_transforms
 
 
-def apply_transform_requests(score: Score, score_plan: ScorePlan) -> Score:
-    current_score = score
+def transform_score(score_plan: ScorePlan) -> Score:
+    current_score = build_score(score_plan)
     for transform in assemble_prepared_transforms(score_plan):
         current_score = transform(current_score)
     return current_score

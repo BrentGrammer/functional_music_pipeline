@@ -401,7 +401,7 @@ def _create_voice_plans_from_document(
     return voice_plans
 
 
-def parse_score_plan(composition_document: object) -> ScorePlan:
+def generate_score_plan(composition_document: object) -> ScorePlan:
     _validate_composition_structure(composition_document)
     motifs_section, voices_section, score_transforms_section = _extract_composition_sections(
         composition_document
@@ -429,31 +429,3 @@ def parse_score_plan(composition_document: object) -> ScorePlan:
         phrase_transform_requests=phrase_transform_requests,
         score_transform_requests=score_transform_requests,
     )
-
-
-def build_score(score_plan: ScorePlan) -> Score:
-    voices = []
-    for voice_plan in score_plan.voices:
-        phrases = []
-        for phrase_plan in voice_plan.phrases:
-            motifs = []
-            for plan_motif in phrase_plan.motifs:
-                motifs.append(Motif(name=plan_motif.name, tones=copy_tones(plan_motif.tones)))
-            phrases.append(Phrase(motifs=motifs))
-        voices.append(Voice(phrases=phrases))
-    return Score(voices=voices)
-
-
-def parse_composition(composition_document: object) -> Score:
-    _validate_composition_structure(composition_document)
-    motif_definitions, voice_configs, score_transform_specs = _extract_composition_sections(
-        composition_document
-    )
-
-    parsed_motifs = parse_motifs(motif_definitions)
-    score = Score(_build_score_voices(voice_configs, parsed_motifs))
-
-    for transform_spec in score_transform_specs:
-        score = _apply_score_transform_spec(score, transform_spec)
-
-    return score

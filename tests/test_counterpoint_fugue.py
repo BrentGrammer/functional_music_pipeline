@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 
-from composition.parser import parse_composition
+from composition.parser import generate_score_plan
 from composition.schema import CompositionDocument
+from composition.transformer import transform_score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -311,7 +312,7 @@ class TestPedalToneComposition:
             },
         }
 
-        score = parse_composition(composition_document)
+        score = transform_score(generate_score_plan(composition_document))
 
         assert len(score.voices) == 2
         assert flatten_voice_tones(score.voices[1])[0].frequency == pytest.approx(130.81)
@@ -341,7 +342,7 @@ class TestStrettoComposition:
             },
         }
 
-        score = parse_composition(composition_document)
+        score = transform_score(generate_score_plan(composition_document))
 
         assert len(score.voices) == 4
         assert flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(261.63)
@@ -376,7 +377,7 @@ class TestStrettoComposition:
             },
         }
 
-        score = parse_composition(composition_document)
+        score = transform_score(generate_score_plan(composition_document))
         voice_waveforms = []
         for voice in score.voices:
             tone_waveforms = [tone.generate_tone() for tone in flatten_voice_tones(voice)]

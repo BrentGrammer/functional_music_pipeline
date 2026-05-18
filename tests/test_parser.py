@@ -1,5 +1,6 @@
-from composition.parser import parse_composition
+from composition.parser import generate_score_plan
 from composition.schema import CompositionDocument
+from composition.transformer import transform_score
 from score_model.traversal import flatten_voice_tones
 
 
@@ -33,7 +34,7 @@ class TestAccelerandoParserIntegration:
             }
         }
 
-        score = parse_composition(composition)
+        score = transform_score(generate_score_plan(composition))
         tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
@@ -69,7 +70,7 @@ class TestAccelerandoParserIntegration:
             }
         }
 
-        score = parse_composition(composition)
+        score = transform_score(generate_score_plan(composition))
         tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
@@ -102,7 +103,7 @@ class TestAccelerandoParserIntegration:
             }
         }
 
-        score = parse_composition(composition)
+        score = transform_score(generate_score_plan(composition))
         tones = flatten_voice_tones(score.voices[0])
 
         assert tones[0].frequency == 440
@@ -140,7 +141,7 @@ class TestRitardandoParserIntegration:
             }
         }
 
-        score = parse_composition(composition)
+        score = transform_score(generate_score_plan(composition))
         tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
@@ -176,7 +177,7 @@ class TestRitardandoParserIntegration:
             }
         }
 
-        score = parse_composition(composition)
+        score = transform_score(generate_score_plan(composition))
         tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
@@ -209,7 +210,7 @@ class TestRitardandoParserIntegration:
             }
         }
 
-        score = parse_composition(composition)
+        score = transform_score(generate_score_plan(composition))
         tones = flatten_voice_tones(score.voices[0])
 
         assert tones[0].frequency == 440

@@ -1,7 +1,8 @@
 import pytest
 
-from composition.parser import parse_composition
+from composition.parser import generate_score_plan
 from composition.schema import CompositionDocument
+from composition.transformer import transform_score
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from transforms.base import ToneDimension
@@ -263,7 +264,7 @@ class TestScoreDriftApplication:
             },
         }
 
-        score = parse_composition(composition_document)
+        score = transform_score(generate_score_plan(composition_document))
 
         assert len(score.voices) == 2
 

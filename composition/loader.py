@@ -1,7 +1,8 @@
 import json
 import os
 
-from composition.parser import parse_composition
+from composition.parser import generate_score_plan
+from composition.transformer import transform_score
 from score_model.score import Score
 
 
@@ -25,4 +26,4 @@ def load_composition_score(composition_filepath: str) -> Score:
     with open(composition_filepath, "r", encoding="utf-8") as composition_file:
         json_data = json.load(composition_file)
 
-    return parse_composition(json_data)
+    return transform_score(generate_score_plan(json_data))

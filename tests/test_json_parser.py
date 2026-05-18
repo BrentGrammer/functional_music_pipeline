@@ -3,12 +3,13 @@ import pytest
 from composition.parser import (
     PHRASE_TRANSFORMS,
     SCORE_TRANSFORMS,
-    parse_composition,
+    generate_score_plan,
     parse_motifs,
     parse_phrase,
     parse_transform_spec,
 )
 from composition.schema import PhraseConfig
+from composition.transformer import transform_score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.traversal import flatten_voice_tones
@@ -339,7 +340,7 @@ class TestScaleTransformParsing:
             },
         }
         with pytest.raises(ValueError):
-            parse_composition(composition_doc)
+            transform_score(generate_score_plan(composition_doc))
 
     def test_score_scale_with_missing_required_fields_raises_error(self):
         descriptor = SCORE_TRANSFORMS["scale"]
@@ -357,7 +358,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
 
     def test_transpose_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -391,7 +392,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
 
     def test_reverse_rejects_unknown_top_level_params(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -465,7 +466,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
 
     def test_repeat_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -499,7 +500,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
 
     def test_accelerando_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -565,7 +566,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
 
     def test_weierstrass_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -605,7 +606,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
 
     def test_cellular_automata_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -650,7 +651,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError) as exc_info:
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
             assert str(exc_info.value)
 
     def test_add_pedal_tone_with_missing_required_fields_raises_error(self):
@@ -669,7 +670,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_composition(composition_doc)
+                transform_score(generate_score_plan(composition_doc))
 
     def test_add_pedal_tone_applies_from_composition_json(self):
         pedal_tone = 330.1
@@ -687,7 +688,7 @@ class TestScaleTransformParsing:
             },
         }
 
-        score = parse_composition(composition_doc)
+        score = transform_score(generate_score_plan(composition_doc))
 
         assert len(score.voices) == 1
         assert flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(pedal_tone)
@@ -761,7 +762,7 @@ def test_parse_phrase_reference_transform_uses_total_grouped_phrase_duration():
     assert result[0].duration == pytest.approx(expected_total_duration / 2.0)
     assert result[1].duration == pytest.approx(expected_total_duration / 2.0)
 
-def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_level_reference():
+def test_generate_score_plan_multi_motif_phrase_followed_by_phrase_uses_phrase_level_reference():
     json_data = {
         "motifs": {
             "seed_a": ["440:0.5"],
@@ -780,7 +781,7 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
         }
     }
 
-    score = parse_composition(json_data)
+    score = transform_score(generate_score_plan(json_data))
     voice_tones = flatten_voice_tones(score.voices[0])
 
     assert len(score.voices) == 1
@@ -794,6 +795,54 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
     expected_third_duration = 1.0 / FEIGENBAUM_DELTA
     assert voice_tones[2].frequency == 880.0
     assert voice_tones[2].duration == pytest.approx(expected_third_duration)
+
+
+def test_generate_score_plan_phrase_relative_transforms_use_document_order():
+    json_data = {
+        "motifs": {
+            "anchor": ["440:1.0"],
+            "response": ["550:1.0"],
+            "second_voice": ["660:1.0"],
+        },
+        "composition": {
+            "voices": [
+                {
+                    "phrases": [
+                        {
+                            "motifs": ["anchor"],
+                            "transforms": [
+                                {
+                                    "name": "scale",
+                                    "params": {"dimension": "duration", "factor": 2.0},
+                                }
+                            ],
+                        },
+                        {
+                            "motifs": ["response"],
+                            "transforms": [{"name": "phrase_golden_ratio_grow"}],
+                        },
+                    ]
+                },
+                {
+                    "phrases": [
+                        {
+                            "motifs": ["second_voice"],
+                            "transforms": [{"name": "phrase_golden_ratio_grow"}],
+                        }
+                    ]
+                },
+            ]
+        },
+    }
+
+    score = transform_score(generate_score_plan(json_data))
+    first_voice_tones = flatten_voice_tones(score.voices[0])
+    second_voice_tones = flatten_voice_tones(score.voices[1])
+
+    assert first_voice_tones[0].duration == pytest.approx(2.0)
+    assert first_voice_tones[1].duration == pytest.approx(2.0 * GOLDEN_RATIO)
+    assert second_voice_tones[0].duration == pytest.approx((2.0 + (2.0 * GOLDEN_RATIO)) * GOLDEN_RATIO)
+
 
 def test_parse_phrase_missing_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
@@ -887,35 +936,35 @@ def test_parse_phrase_requires_params_object_when_transform_params_are_missing()
 
 
 
-def test_parse_composition_requires_document_object():
+def test_generate_score_plan_requires_document_object():
     with pytest.raises(ValueError):
-        parse_composition([])
+        transform_score(generate_score_plan([]))
 
-def test_parse_composition_requires_motifs_object():
+def test_generate_score_plan_requires_motifs_object():
     with pytest.raises(ValueError):
-        parse_composition({"motifs": [], "composition": {}})
+        transform_score(generate_score_plan({"motifs": [], "composition": {}}))
 
-def test_parse_composition_requires_composition_object():
+def test_generate_score_plan_requires_composition_object():
     with pytest.raises(ValueError):
-        parse_composition({"motifs": {}, "composition": []})
+        transform_score(generate_score_plan({"motifs": {}, "composition": []}))
 
-def test_parse_composition_requires_voices_list():
+def test_generate_score_plan_requires_voices_list():
     with pytest.raises(ValueError):
-        parse_composition({"motifs": {}, "composition": {"voices": {}}})
+        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": {}}}))
 
-def test_parse_composition_requires_voice_objects():
+def test_generate_score_plan_requires_voice_objects():
     with pytest.raises(ValueError):
-        parse_composition({"motifs": {}, "composition": {"voices": ["voice_a"]}})
+        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": ["voice_a"]}}))
 
-def test_parse_composition_requires_phrases_list():
+def test_generate_score_plan_requires_phrases_list():
     with pytest.raises(ValueError):
-        parse_composition({"motifs": {}, "composition": {"voices": [{"phrases": {}}]}})
+        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": [{"phrases": {}}]}}))
 
-def test_parse_composition_score_transforms_must_be_list():
+def test_generate_score_plan_score_transforms_must_be_list():
     with pytest.raises(ValueError):
-        parse_composition({"motifs": {}, "composition": {"voices": [], "score_transforms": {}}})
+        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": [], "score_transforms": {}}}))
 
-def test_parse_composition_score_transform_object_requires_name():
+def test_generate_score_plan_score_transform_object_requires_name():
     json_data = {
         "motifs": {},
         "composition": {
@@ -925,9 +974,9 @@ def test_parse_composition_score_transform_object_requires_name():
     }
 
     with pytest.raises(ValueError):
-        parse_composition(json_data)
+        transform_score(generate_score_plan(json_data))
 
-def test_parse_composition_unknown_score_transform():
+def test_generate_score_plan_unknown_score_transform():
     json_data = {
         "motifs": {},
         "composition": {
@@ -937,10 +986,10 @@ def test_parse_composition_unknown_score_transform():
     }
 
     with pytest.raises(ValueError):
-        parse_composition(json_data)
+        transform_score(generate_score_plan(json_data))
 
 
-def test_parse_composition_rejects_phrase_transform_in_score_transforms():
+def test_generate_score_plan_rejects_phrase_transform_in_score_transforms():
     json_data = {
         "motifs": {"seed": ["440:0.5", "660:0.5"]},
         "composition": {
@@ -950,7 +999,7 @@ def test_parse_composition_rejects_phrase_transform_in_score_transforms():
     }
 
     with pytest.raises(ValueError):
-        parse_composition(json_data)
+        transform_score(generate_score_plan(json_data))
 
 
 def test_parse_phrase_rejects_score_transform_in_phrase_transforms():
@@ -964,7 +1013,7 @@ def test_parse_phrase_rejects_score_transform_in_phrase_transforms():
         parse_phrase(phrase_config, parsed_motifs)
 
 
-def test_parse_composition_score_reverse_applies_to_all_voices_without_params():
+def test_generate_score_plan_score_reverse_applies_to_all_voices_without_params():
     json_data = {
         "motifs": {
             "voice_a": ["440:0.5", "660:0.25"],
@@ -979,14 +1028,14 @@ def test_parse_composition_score_reverse_applies_to_all_voices_without_params():
         },
     }
 
-    score = parse_composition(json_data)
+    score = transform_score(generate_score_plan(json_data))
 
     assert [tone.frequency for tone in flatten_voice_tones(score.voices[0])] == [660.0, 440.0]
     assert [tone.duration for tone in flatten_voice_tones(score.voices[0])] == [0.25, 0.5]
     assert [tone.frequency for tone in flatten_voice_tones(score.voices[1])] == [990.0, 880.0]
     assert [tone.duration for tone in flatten_voice_tones(score.voices[1])] == [1.0, 0.75]
 
-def test_parse_composition():
+def test_generate_score_plan_full_score_path():
     json_data = {
         "motifs": {
             "seed_a": ["440:0.5"],
@@ -1009,7 +1058,7 @@ def test_parse_composition():
         }
     }
 
-    score = parse_composition(json_data)
+    score = transform_score(generate_score_plan(json_data))
 
     assert isinstance(score, Score)
     assert len(score.voices) == 2
@@ -1024,7 +1073,7 @@ def test_parse_composition():
     assert voice_1_tones[0].frequency == 880.0
     assert voice_1_tones[0].duration == pytest.approx(0.5 / FEIGENBAUM_DELTA)
 
-def test_parse_composition_with_value_score_transform():
+def test_generate_score_plan_with_value_score_transform():
     factor = 2.0
     original_duration = 0.5
     json_data = {
@@ -1045,12 +1094,12 @@ def test_parse_composition_with_value_score_transform():
         }
     }
 
-    score = parse_composition(json_data)
+    score = transform_score(generate_score_plan(json_data))
 
     assert len(score.voices) == 1
     assert flatten_voice_tones(score.voices[0])[0].duration == original_duration * factor
 
-def test_parse_composition_score_target_motifs_scope_receives_score_and_params_only():
+def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params_only():
     captured = {}
 
     def capture_score_target_motifs_transform(score, motif):
@@ -1072,7 +1121,7 @@ def test_parse_composition_score_target_motifs_scope_receives_score_and_params_o
         ),
     )
     try:
-        parse_composition(
+        transform_score(generate_score_plan(
             {
                 "motifs": {"seed": ["440:0.5"]},
                 "composition": {
@@ -1085,7 +1134,7 @@ def test_parse_composition_score_target_motifs_scope_receives_score_and_params_o
                     ],
                 },
             }
-        )
+        ))
     finally:
         SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
@@ -1093,7 +1142,7 @@ def test_parse_composition_score_target_motifs_scope_receives_score_and_params_o
     assert isinstance(captured["score"], Score)
 
 
-def test_parse_composition_score_target_motifs_scope_requires_params_object():
+def test_generate_score_plan_score_target_motifs_scope_requires_params_object():
     def noop_score_target_motifs_transform(score, motif):
         return score
 
@@ -1113,7 +1162,7 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
     try:
         invalid_raw_scalar_param = 1.0
         with pytest.raises(ValueError):
-            parse_composition(
+            transform_score(generate_score_plan(
                 {
                     "motifs": {"seed": ["440:0.5"]},
                     "composition": {
@@ -1125,13 +1174,13 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
                             }
                         ],
                     },
-            }
-        )
+                }
+            ))
     finally:
         SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
 
-def test_parse_composition_score_target_motifs_scope_requires_params():
+def test_generate_score_plan_score_target_motifs_scope_requires_params():
     def noop_score_target_motifs_transform(score, motif):
         return score
 
@@ -1150,15 +1199,15 @@ def test_parse_composition_score_target_motifs_scope_requires_params():
     )
     try:
         with pytest.raises(ValueError):
-            parse_composition(
+            transform_score(generate_score_plan(
                 {
                     "motifs": {"seed": ["440:0.5"]},
                     "composition": {
                         "voices": [],
                         "score_transforms": [{"name": "_test_score_with_motifs"}],
                     },
-            }
-        )
+                }
+            ))
     finally:
         SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
@@ -1183,4 +1232,4 @@ def test_stretto_with_missing_required_fields_raises_error():
         }
 
         with pytest.raises(ValueError):
-            parse_composition(composition_doc)
+            transform_score(generate_score_plan(composition_doc))

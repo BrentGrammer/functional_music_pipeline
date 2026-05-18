@@ -1,6 +1,7 @@
 import pytest
 
-from composition.parser import parse_composition
+from composition.parser import generate_score_plan
+from composition.transformer import transform_score
 from score_model.score import Score
 from score_model.traversal import flatten_voice_tones
 from transforms.geological.frost_effect import (
@@ -103,7 +104,7 @@ def _build_cluster_frost_composition() -> dict:
 
 
 def test_frost_cluster_demo_grows_by_audible_events():
-    score = parse_composition(_build_cluster_frost_composition())
+    score = transform_score(generate_score_plan(_build_cluster_frost_composition()))
 
     assert isinstance(score, Score)
     expected_total_voice_count = 35

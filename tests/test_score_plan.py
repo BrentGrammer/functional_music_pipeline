@@ -1,4 +1,4 @@
-from composition.parser import build_score, parse_score_plan
+from composition.parser import generate_score_plan
 from composition.schema import CompositionDocument
 from composition.score_plan import (
     PhrasePlan,
@@ -8,6 +8,7 @@ from composition.score_plan import (
     TransformRequest,
     VoicePlan,
 )
+from composition.transformer import build_score
 from score_model.motif import Motif
 from score_model.tone import Tone
 
@@ -70,7 +71,7 @@ def test_parse_score_plan_resolves_motifs_and_preserves_structure():
         },
     }
 
-    score_plan = parse_score_plan(composition_document)
+    score_plan = generate_score_plan(composition_document)
 
     assert "m1" in score_plan.motifs
     assert len(score_plan.motifs["m1"].tones) == 1
@@ -123,7 +124,7 @@ def test_parse_score_plan_collects_phrase_transform_requests():
         },
     }
 
-    score_plan = parse_score_plan(composition_document)
+    score_plan = generate_score_plan(composition_document)
 
     requests = score_plan.phrase_transform_requests
     assert len(requests) == 3
@@ -163,7 +164,7 @@ def test_build_score_creates_fresh_instances_for_repeated_references():
         },
     }
 
-    score_plan = parse_score_plan(composition_document)
+    score_plan = generate_score_plan(composition_document)
     score = build_score(score_plan)
 
     assert len(score.voices) == 1

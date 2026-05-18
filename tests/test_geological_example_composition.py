@@ -1,6 +1,7 @@
 import pytest
 
-from composition.parser import parse_composition, parse_motifs
+from composition.parser import generate_score_plan, parse_motifs
+from composition.transformer import transform_score
 from score_model.score import Score
 from score_model.traversal import flatten_voice_tones
 
@@ -110,7 +111,7 @@ class TestGeologicalExampleComposition:
         # basic integration test for the flat stochastic transform API.
         composition_data = _build_geological_example_composition()
 
-        score = parse_composition(composition_data)
+        score = transform_score(generate_score_plan(composition_data))
 
         assert isinstance(score, Score)
         assert len(score.voices) == 4
@@ -125,8 +126,8 @@ class TestGeologicalExampleComposition:
         # that invariant.
         composition_data = _build_geological_example_composition()
 
-        score1 = parse_composition(composition_data)
-        score2 = parse_composition(composition_data)
+        score1 = transform_score(generate_score_plan(composition_data))
+        score2 = transform_score(generate_score_plan(composition_data))
 
         assert len(score1.voices) == len(score2.voices)
 
@@ -144,7 +145,7 @@ class TestGeologicalExampleComposition:
         # at the composition boundary.
         composition_data = _build_geological_example_composition()
 
-        score = parse_composition(composition_data)
+        score = transform_score(generate_score_plan(composition_data))
 
         # Retrieve original tones for comparison by reusing the motif parser.
         # This avoids duplicating tone-string parsing logic in the test.
