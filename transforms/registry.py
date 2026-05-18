@@ -8,9 +8,7 @@ from score_model.voice import Voice
 from score_model.score import Score
 from transforms.base import (
     PhraseTransformDefinition,
-    ScoreScope,
     ToneDimension,
-    TransformDefinition,
     ScoreTransformDefinition,
 )
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_tones
@@ -442,13 +440,11 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
 SCORE_TRANSFORMS: dict[str, object] = {
     "feigenbaum_sequence": ScoreTransformDefinition(
         name="feigenbaum_sequence",
-        scope=ScoreScope.SCORE_AWARE,
         params_spec=FEIGENBAUM_PARAMS_SPEC,
         transform=lambda score, params: score_feigenbaum_sequence(score, **params),
     ),
     "reverse": ScoreTransformDefinition(
         name="reverse",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=REVERSE_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[
@@ -459,7 +455,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "golden_ratio": ScoreTransformDefinition(
         name="golden_ratio",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[
@@ -481,7 +476,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "invert": ScoreTransformDefinition(
         name="invert",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=INVERT_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=invert_tones(flatten_voice_tones(voice)))])]) for voice in score.voices]
@@ -489,7 +483,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "transpose": ScoreTransformDefinition(
         name="transpose",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=TRANSPOSE_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[
@@ -500,7 +493,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "scale": ScoreTransformDefinition(
         name="scale",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=SCALE_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[
@@ -511,7 +503,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "delay": ScoreTransformDefinition(
         name="delay",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=DELAY_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=delay_tones(flatten_voice_tones(voice), seconds=cast(float, params["seconds"])))])]) for voice in score.voices]
@@ -519,7 +510,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "repeat": ScoreTransformDefinition(
         name="repeat",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=REPEAT_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Motif(name="<each_voice>", tones=repeat_tones(flatten_voice_tones(voice), count=cast(int, params["count"])) )]) for voice in score.voices]
@@ -527,7 +517,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "drift": ScoreTransformDefinition(
         name="drift",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=DRIFT_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=drift_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), rate=cast(float, params["rate"])) )])]) for voice in score.voices]
@@ -535,7 +524,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "weierstrass": ScoreTransformDefinition(
         name="weierstrass",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=WEIERSTRASS_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_weierstrass_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), intensity=cast(str, params["intensity"])) )])]) for voice in score.voices]
@@ -543,7 +531,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "terraced_drift": ScoreTransformDefinition(
         name="terraced_drift",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=TERRACED_DRIFT_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_terraced_drift_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), max_step_change_pct=cast(int, params["max_step_change_pct"])) )])]) for voice in score.voices]
@@ -551,7 +538,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "cellular_automata": ScoreTransformDefinition(
         name="cellular_automata",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_cellular_automata_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), rule=cast(int, params["rule"]), generations=cast(int, params["generations"]), max_deviation=cast(float, params["max_deviation"])) )])]) for voice in score.voices]
@@ -559,7 +545,6 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "random_drop": ScoreTransformDefinition(
         name="random_drop",
-        scope=ScoreScope.EACH_VOICE,
         params_spec=RANDOM_DROP_PARAMS_SPEC,
         transform=lambda score, params: Score(
             voices=[Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=apply_random_drop_transform(flatten_voice_tones(voice), dimension=cast(ToneDimension | str, params["dimension"]), max_drop_pct=cast(int, params["max_drop_pct"]), drop_frequency_pct=cast(int, params["drop_frequency_pct"])) )])]) for voice in score.voices]
@@ -567,19 +552,16 @@ SCORE_TRANSFORMS: dict[str, object] = {
     ),
     "add_pedal_tone": ScoreTransformDefinition(
         name="add_pedal_tone",
-        scope=ScoreScope.SCORE_AWARE,
         params_spec=ADD_PEDAL_TONE_PARAMS_SPEC,
         transform=lambda score, params: add_pedal_tone_score_transform(score, params),
     ),
     "stretto": ScoreTransformDefinition(
         name="stretto",
-        scope=ScoreScope.TARGET_MOTIFS,
         params_spec=STRETTO_PARAMS_SPEC,
         transform=lambda score, params: stretto_score_transform_adapter(score, params),
     ),
     "frost_effect": ScoreTransformDefinition(
         name="frost_effect",
-        scope=ScoreScope.SCORE_AWARE,
         params_spec=FROST_EFFECT_PARAMS_SPEC,
         transform=lambda score, params: frost_effect(score, **params),
     ),

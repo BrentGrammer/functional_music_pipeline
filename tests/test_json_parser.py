@@ -16,9 +16,7 @@ from score_model.traversal import flatten_voice_tones
 from score_model.tone import Tone
 from transforms.base import (
     EnumParam,
-    ScoreScope,
     StringParam,
-    TransformDefinition,
     ScoreTransformDefinition,
     TransformParamFieldSpec,
     TransformParamsSpec,
@@ -1110,7 +1108,6 @@ def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params
 
     SCORE_TRANSFORMS["_test_score_with_motifs"] = ScoreTransformDefinition(
         name="_test_score_with_motifs",
-        scope=ScoreScope.TARGET_MOTIFS,
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
@@ -1147,10 +1144,9 @@ def test_generate_score_plan_score_target_motifs_scope_requires_params_object():
     def noop_score_target_motifs_transform(score, motif):
         return score
 
-    SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
+    SCORE_TRANSFORMS["_test_score_with_motifs"] = ScoreTransformDefinition(
         name="_test_score_with_motifs",
-        transform_func=noop_score_target_motifs_transform,
-        scope=ScoreScope.TARGET_MOTIFS,
+        transform=lambda score, params: noop_score_target_motifs_transform(score, params["motif"]),
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(
@@ -1185,10 +1181,9 @@ def test_generate_score_plan_score_target_motifs_scope_requires_params():
     def noop_score_target_motifs_transform(score, motif):
         return score
 
-    SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
+    SCORE_TRANSFORMS["_test_score_with_motifs"] = ScoreTransformDefinition(
         name="_test_score_with_motifs",
-        transform_func=noop_score_target_motifs_transform,
-        scope=ScoreScope.TARGET_MOTIFS,
+        transform=lambda score, params: noop_score_target_motifs_transform(score, params["motif"]),
         params_spec=TransformParamsSpec(
             fields={
                 "motif": TransformParamFieldSpec(

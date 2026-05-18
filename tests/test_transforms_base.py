@@ -15,10 +15,8 @@ from transforms.base import (
     PhraseTransformContext,
     PhraseTransformDefinition,
     PreparedTransform,
-    ScoreScope,
     ScoreTransformDefinition,
     ToneDimension,
-    TransformDefinition,
     TransformParamFieldSpec,
     TransformParamsSpec,
     validate_transform_params,
@@ -98,25 +96,6 @@ def test_transform_param_field_spec_accepts_union_schemas():
     assert field_spec.schema[0].allowed_values == ("low", "medium", "high")
     assert isinstance(field_spec.schema[1], FloatParam)
 
-
-def test_transform_definition_preserves_explicit_params_spec():
-    expected_params_spec = TransformParamsSpec(
-        fields={
-            "seconds": TransformParamFieldSpec(
-                schema=FloatParam(),
-                required=True,
-            )
-        }
-    )
-    definition = TransformDefinition(
-        name="delay",
-        transform_func=lambda tones, **_: tones,
-        scope=ScoreScope.EACH_VOICE,
-        params_spec=expected_params_spec,
-    )
-
-    assert definition.params_spec == expected_params_spec
-    assert definition.scope is ScoreScope.EACH_VOICE
 
 
 def test_validate_transform_params_rejects_unknown_fields():

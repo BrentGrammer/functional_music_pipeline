@@ -5,7 +5,7 @@ from composition.schema import CompositionDocument
 from composition.transformer import transform_score
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
-from transforms.base import ToneDimension
+from transforms.base import ScoreTransformDefinition, ToneDimension
 from transforms.basic.drift import drift_transform
 from transforms.base import PhraseTransformDefinition
 from transforms.registry import SCORE_TRANSFORMS
@@ -238,7 +238,7 @@ class TestDriftDuration:
 class TestScoreDriftRegistration:
     def test_score_drift_registered(self):
         descriptor = SCORE_TRANSFORMS["drift"]
-        assert descriptor.scope is not None
+        assert isinstance(descriptor, ScoreTransformDefinition)
 
 
 class TestScoreDriftApplication:

@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
-from typing import Any, Generic, TypeAlias, TypeVar
+from typing import TypeAlias
 
 from composition.score_plan import TransformRequest
 from score_model.phrase import Phrase
@@ -88,17 +88,6 @@ class TransformParamsSpec:
     validator: TransformParamsValidator | None = None
 
 
-class PhraseScope(StrEnum):
-    OWN_PHRASE = auto()
-    PHRASE_RELATIVE = auto()
-
-
-class ScoreScope(StrEnum):
-    SCORE_AWARE = auto()
-    EACH_VOICE = auto()
-    TARGET_MOTIFS = auto()
-
-
 def validate_transform_params(
     params_spec: TransformParamsSpec,
     name: str,
@@ -140,22 +129,6 @@ def validate_transform_params(
         params_spec.validator(params)
 
 
-ScopeType = TypeVar("ScopeType", bound=StrEnum)
-
-# `Generic[ScopeType]` here is typing metadata, not runtime inheritance from `StrEnum`.
-# It lets type checkers enforce that `scope` is a specific enum family
-# (e.g. `PhraseScope`, `ScoreScope`).
-@dataclass(frozen=True)
-class TransformDefinition(Generic[ScopeType]):
-    name: str
-    transform_func: Callable[..., Any]
-    scope: ScopeType
-    params_spec: TransformParamsSpec
-
-    def validate_params(self, transform_params: Mapping[str, object]) -> None:
-        validate_transform_params(self.params_spec, self.name, transform_params)
-
-
 @dataclass(frozen=True)
 class PhraseTransformContext:
     score: Score
@@ -182,10 +155,6 @@ class ScoreTransformDefinition:
     name: str
     params_spec: TransformParamsSpec
     transform: Callable[[Score, Mapping[str, object]], Score]
-    # Backwards-compatibility: expose `scope` during the staged migration so
-    # registry consumers and tests that still expect a `scope` attribute do
-    # not break. This field is removed in Step 10.
-    scope: ScoreScope | None = None
 
     def validate_params(self, params: Mapping[str, object]) -> None:
         validate_transform_params(self.params_spec, self.name, params)

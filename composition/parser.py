@@ -1,5 +1,4 @@
 from collections.abc import Callable, Mapping
-from typing import Callable, Mapping, cast
 
 from composition.score_plan import (
     PhrasePlan,
@@ -20,9 +19,7 @@ from transforms.base import (
     PhraseTransformContext,
     PhraseTransformDefinition,
     ScorePipelineStep,
-    ScoreScope,
     ToneSequence,
-    TransformDefinition,
     TransformLevel,
     ScoreTransformDefinition,
 )
@@ -94,16 +91,11 @@ def parse_transform_spec(
 
 
 def _apply_phrase_transform_spec(
-    descriptor: TransformDefinition | PhraseTransformDefinition,
+    descriptor: PhraseTransformDefinition,
     phrase_tones: list[Tone],
     transform_params: Mapping[str, object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
-    # The descriptor must either be a new PhraseTransformDefinition or a legacy
-    # TransformDefinition. For new PhraseTransformDefinition entries, call the
-    # explicit transform API which receives a PhraseTransformContext and returns
-    # a Phrase. Legacy TransformDefinition entries should be migrated; if any
-    # remain, treat them as errors here to encourage completing migration steps.
     descriptor.validate_params(transform_params)
 
     if isinstance(descriptor, PhraseTransformDefinition):
@@ -118,7 +110,6 @@ def _apply_phrase_transform_spec(
         )
         return [tone for motif in transformed_phrase.motifs for tone in motif.tones]
 
-    # Legacy TransformDefinition-based descriptors are no longer supported here.
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
 

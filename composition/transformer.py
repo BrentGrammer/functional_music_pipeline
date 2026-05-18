@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, TypeAlias, cast
+from typing import TypeAlias
 
 from composition.score_plan import (
     PhraseTransformRequest,
@@ -16,9 +16,6 @@ from score_model.voice import Voice
 from transforms.base import (
     PhraseTransformContext,
     PhraseTransformDefinition,
-    ScoreScope,
-    ToneSequence,
-    TransformDefinition,
     ScoreTransformDefinition,
 )
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
@@ -105,8 +102,6 @@ def prepare_score_transform(request: ScoreTransformRequest) -> PreparedTransform
 
     def prepared_transform(score: Score) -> Score:
         return descriptor.transform(score, transform_params)
-
-    return prepared_transform
 
     return prepared_transform
 

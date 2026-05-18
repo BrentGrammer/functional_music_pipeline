@@ -7,15 +7,8 @@ from composition.parser import (
     parse_voice,
 )
 from composition.schema import VoiceConfig
-from typing import cast
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
-from transforms.base import (
-    PhraseScope,
-    ScoreScope,
-    TransformDefinition,
-    TransformParamsSpec,
-)
 
 
 def test_parse_motifs_rejects_non_string_motif_names():
@@ -84,20 +77,3 @@ def test_parse_voice_uses_previous_voice_as_reference_when_first_phrase_is_relat
     assert len(combined_tones) == 1
     assert voice.phrases[0].motifs[0].tones[0].duration < seed_duration
 
-
-def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():
-    non_phrase_descriptor = TransformDefinition(
-        name="reverse",
-        transform_func=lambda score: score,
-        scope=ScoreScope.SCORE_AWARE,
-        params_spec=TransformParamsSpec(),
-    )
-    phrase_tones = [Tone(440.0, duration=1.0)]
-
-    with pytest.raises(ValueError):
-        _apply_phrase_transform_spec(
-            descriptor=cast(TransformDefinition[PhraseScope], non_phrase_descriptor),
-            phrase_tones=phrase_tones,
-            transform_params={},
-            reference_tones=None,
-        )
