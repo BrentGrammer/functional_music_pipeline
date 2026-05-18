@@ -90,6 +90,63 @@ def test_parse_score_plan_resolves_motifs_and_preserves_structure():
     assert score_plan.score_transform_requests[0].transform_request.name == "add_pedal_tone"
 
 
+def test_parse_score_plan_collects_phrase_transform_requests():
+    composition_document: CompositionDocument = {
+        "motifs": {
+            "m1": ["440.0:1.0"],
+        },
+        "composition": {
+            "voices": [
+                {
+                    "phrases": [
+                        {"motifs": ["m1"]},
+                        {
+                            "motifs": ["m1"],
+                            "transforms": [
+                                {"name": "delay", "params": {"seconds": 0.5}},
+                            ],
+                        },
+                    ]
+                },
+                {
+                    "phrases": [
+                        {
+                            "motifs": ["m1"],
+                            "transforms": [
+                                {"name": "reverse"},
+                                {"name": "transpose", "params": {"semitones": 2}},
+                            ],
+                        }
+                    ]
+                },
+            ]
+        },
+    }
+
+    score_plan = parse_score_plan(composition_document)
+
+    requests = score_plan.phrase_transform_requests
+    assert len(requests) == 3
+
+    # First request: Voice 0, Phrase 1, "delay"
+    assert requests[0].voice_index == 0
+    assert requests[0].phrase_index == 1
+    assert requests[0].transform_request.name == "delay"
+    assert requests[0].transform_request.params == {"seconds": 0.5}
+
+    # Second request: Voice 1, Phrase 0, "reverse"
+    assert requests[1].voice_index == 1
+    assert requests[1].phrase_index == 0
+    assert requests[1].transform_request.name == "reverse"
+    assert requests[1].transform_request.params == {}
+
+    # Third request: Voice 1, Phrase 0, "transpose"
+    assert requests[2].voice_index == 1
+    assert requests[2].phrase_index == 0
+    assert requests[2].transform_request.name == "transpose"
+    assert requests[2].transform_request.params == {"semitones": 2}
+
+
 def test_build_score_creates_fresh_instances_for_repeated_references():
     composition_document: CompositionDocument = {
         "motifs": {

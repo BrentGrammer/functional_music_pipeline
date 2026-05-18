@@ -22,6 +22,7 @@ from transforms.base import (
     ScoreScope,
     ToneSequence,
     TransformDefinition,
+    TransformLevel,
 )
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
@@ -117,7 +118,7 @@ def _apply_phrase_transform_specs(
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
     for transform_spec in transform_specs:
-        transform_name, transform_params = parse_transform_spec(transform_spec, "Phrase")
+        transform_name, transform_params = parse_transform_spec(transform_spec, TransformLevel.PHRASE)
 
         if transform_name in PHRASE_TRANSFORMS:
             descriptor = PHRASE_TRANSFORMS[transform_name]
@@ -316,6 +317,58 @@ def _apply_score_transform_spec(
     raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 
 
+def _extract_requests_from_phrase(
+    phrase_config: object, voice_index: int, phrase_index: int
+) -> list[PhraseTransformRequest]:
+    if not isinstance(phrase_config, dict):
+        raise ValueError("Each phrase must be an object.")
+        
+    transform_specs = phrase_config.get("transforms", [])
+    if not isinstance(transform_specs, list):
+        raise ValueError("Phrase 'transforms' must be a list.")
+
+    def build_request(spec: object) -> PhraseTransformRequest:
+        name, params = parse_transform_spec(spec, TransformLevel.PHRASE)
+        return PhraseTransformRequest(
+            voice_index=voice_index,
+            phrase_index=phrase_index,
+            transform_request=TransformRequest(name=name, params=params),
+        )
+
+    return [build_request(spec) for spec in transform_specs]
+
+
+def _extract_requests_from_voice(
+    voice_config: object, voice_index: int
+) -> list[PhraseTransformRequest]:
+    if not isinstance(voice_config, dict):
+        raise ValueError("Each voice must be an object.")
+
+    phrase_configs = voice_config.get("phrases", [])
+    if not isinstance(phrase_configs, list):
+        raise ValueError("Voice 'phrases' must be a list.")
+
+    return [
+        request
+        for phrase_index, phrase_config in enumerate(phrase_configs)
+        for request in _extract_requests_from_phrase(phrase_config, voice_index, phrase_index)
+    ]
+
+
+def _extract_phrase_transform_requests(
+    voices_section: list[object],
+) -> list[PhraseTransformRequest]:
+    """
+    Extracts all phrase transform requests from the voices section,
+    preserving their structural location.
+    """
+    return [
+        request
+        for voice_index, voice_config in enumerate(voices_section)
+        for request in _extract_requests_from_voice(voice_config, voice_index)
+    ]
+
+
 def _create_voice_plans_from_document(
     voices_section: list[object], plan_motifs: dict[str, Motif]
 ) -> list[VoicePlan]:
@@ -324,6 +377,7 @@ def _create_voice_plans_from_document(
     to the corresponding Motif instances defined in the score plan.
     """
     voice_plans = []
+    
     for voice_config in voices_section:
         if not isinstance(voice_config, dict):
             raise ValueError("Each voice must be an object.")
@@ -341,6 +395,7 @@ def _create_voice_plans_from_document(
                     raise ValueError(f"Motif '{name}' not found in parsed motifs.")
                 phrase_plan_motifs.append(plan_motifs[name])
             phrase_plans.append(PhrasePlan(motifs=phrase_plan_motifs))
+            
         voice_plans.append(VoicePlan(phrases=phrase_plans))
 
     return voice_plans
@@ -359,10 +414,11 @@ def parse_score_plan(composition_document: object) -> ScorePlan:
     }
 
     voice_plans = _create_voice_plans_from_document(voices_section, plan_motifs)
+    phrase_transform_requests = _extract_phrase_transform_requests(voices_section)
 
     score_transform_requests = []
     for spec in score_transforms_section:
-        name, params = parse_transform_spec(spec, "Score")
+        name, params = parse_transform_spec(spec, TransformLevel.SCORE)
         score_transform_requests.append(
             ScoreTransformRequest(transform_request=TransformRequest(name=name, params=params))
         )
@@ -370,7 +426,7 @@ def parse_score_plan(composition_document: object) -> ScorePlan:
     return ScorePlan(
         motifs=plan_motifs,
         voices=voice_plans,
-        phrase_transform_requests=[],
+        phrase_transform_requests=phrase_transform_requests,
         score_transform_requests=score_transform_requests,
     )
 
