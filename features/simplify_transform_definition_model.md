@@ -228,7 +228,7 @@ NOTE ON TESTING: during the migration it is okay if tests break. do not add lega
 - During sub-steps 3c–3i, migrate only the consumer named in that step. Other consumers continue using the legacy helper until their own step.
 - When a step says "done signal: tests pass," it means the listed tests pass and the full suite has not regressed (run `uv run pytest tests` once at the end of the step to confirm).
 - **No new helper functions unless required.** Do not introduce a new helper function (in any module) unless either: (a) the same logic is needed in three or more call sites, or (b) the step explicitly says to. Prefer inlining. If unsure, inline. Tiny one-liner wrappers around a for-loop, a `sum(...)`, or a single attribute access are exactly the bloat to avoid.
-- **`score_model/traversal.py` is bounded.** It contains at most one canonical function: `iter_voice_tones(voice) -> Iterator[Tone]` (or equivalent), which yields all tones of a voice by walking `voice.phrases → phrase.motifs → motif.tones`. Do not invent additional traversal utilities (`iter_phrase_tones`, `flatten_motif`, `voice_durations`, `motif_lookup`, etc.) during this refactor. Inline anything else at the call site. If a second canonical operation genuinely needs to live in this module, raise it for review rather than adding it unilaterally.
+- **`score_model/traversal.py` is bounded.** It contains at most one canonical function: `flatten_voice_tones(voice) -> Iterator[Tone]` (or equivalent), which yields all tones of a voice by walking `voice.phrases → phrase.motifs → motif.tones`. Do not invent additional traversal utilities (`iter_phrase_tones`, `flatten_motif`, `voice_durations`, `motif_lookup`, etc.) during this refactor. Inline anything else at the call site. If a second canonical operation genuinely needs to live in this module, raise it for review rather than adding it unilaterally.
 
 ### Phase 1 — Add new data-model types (additive only)
 
@@ -240,7 +240,7 @@ Done signal: `uv run pytest tests/test_phrase.py` passes. `mypy .` passes.
 
 ### Phase 2 — Migrate the data model end-to-end
 
-Step 3 is the data-model migration. It introduces a temporary, explicitly-marked migration helper (`score_model/_migration.py::_legacy_flatten_voice_tones`) in 3a-i and removes it in 3j. This helper is a transition scaffold — distinct from the bounded `score_model/traversal.py` permitted by the standing rules. Consumers are migrated off the helper one at a time. The default is direct hierarchy traversal at the call site. The single permitted utility, `iter_voice_tones(voice)`, is created in `score_model/traversal.py` on first use, and no other traversal utility is added during this refactor.
+Step 3 is the data-model migration. It introduces a temporary, explicitly-marked migration helper (`score_model/_migration.py::_legacy_flatten_voice_tones`) in 3a-i and removes it in 3j. This helper is a transition scaffold — distinct from the bounded `score_model/traversal.py` permitted by the standing rules. Consumers are migrated off the helper one at a time. The default is direct hierarchy traversal at the call site. The single permitted utility, `flatten_voice_tones(voice)`, is created in `score_model/traversal.py` on first use, and no other traversal utility is added during this refactor.
 
 **Step 3a-i (low): Create the migration helper module.**
 - Create `score_model/_migration.py`.
@@ -273,7 +273,7 @@ Done signal: `uv run pytest tests` passes. `mypy .` passes.
 - This step touches only `composition/parser.py` and possibly `composition/schema.py`. Do not modify JSON files. Do not touch transform implementations.
 Done signal: `uv run pytest tests` passes only for the tests relevant to the change. Every existing composition renders identically. `mypy .` passes.
 
-For each consumer-migration sub-step below (3c–3g), replace `_legacy_flatten_voice_tones` calls with direct hierarchy traversal at the call site. The one exception: if a consumer needs the flat tone stream of a whole voice, use the canonical `iter_voice_tones(voice)` utility in `score_model/traversal.py` (create the module on first use with that one function, and only that function). Do not introduce additional traversal utilities. Inline everything else at the call site. See the standing "No new helper functions unless required" rule.
+For each consumer-migration sub-step below (3c–3g), replace `_legacy_flatten_voice_tones` calls with direct hierarchy traversal at the call site. The one exception: if a consumer needs the flat tone stream of a whole voice, use the canonical `flatten_voice_tones(voice)` utility in `score_model/traversal.py` (create the module on first use with that one function, and only that function). Do not introduce additional traversal utilities. Inline everything else at the call site. See the standing "No new helper functions unless required" rule.
 
 **Step 3c (low): Update `wav_writer` to stop using the temporary voice-flattening helper.** In `audio_rendering/wav_writer.py` only, replace `_legacy_flatten_voice_tones(voice)` with the canonical whole-voice tone traversal from `score_model/traversal.py`. The WAV writer still needs a flat tone list because audio rendering plays each voice as a continuous tone stream. Done signal: `uv run pytest tests/test_audio_io.py` passes. `mypy .` passes.
 
@@ -285,7 +285,7 @@ For each consumer-migration sub-step below (3c–3g), replace `_legacy_flatten_v
 
 **Step 3g (low): Update `score_feigenbaum_sequence` to stop using the temporary voice-flattening helper.** In `transforms/proportion/feigenbaum.py`, update only the `score_feigenbaum_sequence` function so it reads each voice's flat tone stream through the canonical traversal from `score_model/traversal.py`. Other functions in that file are phrase-level and untouched here. Done signal: `uv run pytest tests/test_proportion_feigenbaum.py` passes. `mypy .` passes.
 
-**Step 3h-i (low): Prepare each-voice score transform adaptation.** Move the each-voice adaptation out of parser ownership. The adaptation gathers the voice's flat tones using `iter_voice_tones(voice)` from `score_model/traversal.py`, applies the raw transform, and constructs a new `Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=result)])])` for the result. Do not add any other helper. Done signal: `uv run pytest tests/test_parser_helpers.py tests/test_json_parser.py` passes. `mypy .` passes.
+**Step 3h-i (low): Prepare each-voice score transform adaptation.** Move the each-voice adaptation out of parser ownership. The adaptation gathers the voice's flat tones using `flatten_voice_tones(voice)` from `score_model/traversal.py`, applies the raw transform, and constructs a new `Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=result)])])` for the result. Do not add any other helper. Done signal: `uv run pytest tests/test_parser_helpers.py tests/test_json_parser.py` passes. `mypy .` passes.
 
 **Step 3h-ii (high): Migrate `stretto` and remove `parsed_motifs` from the score-transform path.**
 - `stretto` in `transforms/counterpoint/fugue.py` is rewritten to look up its target motif by inlining the traversal of the `Score` hierarchy (`for voice in score.voices: for phrase in voice.phrases: for motif in phrase.motifs: ...`), comparing `motif.name` to the `motif` parameter. If found, it copies that motif's tones; if not found, it raises with a clear error message naming the requested motif. Inline the traversal directly in `stretto`; do not extract a motif-lookup helper. (No other transform in the codebase needs this lookup today.)
@@ -294,7 +294,7 @@ For each consumer-migration sub-step below (3c–3g), replace `_legacy_flatten_v
 Design note: after this step, no transform in the codebase receives motifs out-of-band.
 Done signal: `uv run pytest tests/test_counterpoint_fugue.py tests/test_json_parser.py tests/test_parser.py` passes. `mypy .` passes.
 
-**Step 3i (low): Migrate tests.** Update every test file that still reads through `_legacy_flatten_voice_tones` to use direct hierarchy traversal at the assertion site. Use `iter_voice_tones(voice)` only where the test genuinely needs the full flat tone stream of a voice. Do not add any test-only helpers. Use `rg "_legacy_flatten_voice_tones" tests/` to find call sites. Done signal: `rg "_legacy_flatten_voice_tones" tests/` returns nothing. `uv run pytest tests` passes. `mypy .` passes.
+**Step 3i (low): Migrate tests.** Update every test file that still reads through `_legacy_flatten_voice_tones` to use direct hierarchy traversal at the assertion site. Use `flatten_voice_tones(voice)` only where the test genuinely needs the full flat tone stream of a voice. Do not add any test-only helpers. Use `rg "_legacy_flatten_voice_tones" tests/` to find call sites. Done signal: `rg "_legacy_flatten_voice_tones" tests/` returns nothing. `uv run pytest tests` passes. `mypy .` passes.
 
 **Step 3j (low): Delete the migration helper.**
 - Remove `score_model/_migration.py`.
@@ -334,7 +334,7 @@ Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
 
 **Step 5c (low): Add representative each-voice score explicit transform function.**
 - Add one explicit score transform function for an old `ScoreScope.EACH_VOICE` transform.
-- The function iterates voices, reads each voice's tones with `iter_voice_tones(voice)`, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
+- The function iterates voices, reads each voice's tones with `flatten_voice_tones(voice)`, calls the raw tone-list transform, and returns a new `Score` with transformed voices.
 - Do not wire this into `SCORE_TRANSFORMS` yet. Do not add generic helper factories.
 - Add a focused test for this representative function.
 Done signal: focused test and `uv run pytest tests` pass. `mypy .` passes.
