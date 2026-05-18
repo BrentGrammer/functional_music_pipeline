@@ -1,10 +1,10 @@
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
-from score_model._migration import _legacy_flatten_voice_tones
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones, make_silence_tone
+from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
@@ -84,7 +84,7 @@ def add_pedal_tone(
 
     duration = 0.0
     for voice in score.voices:
-        voice_duration = sum(tone.duration for tone in _legacy_flatten_voice_tones(voice))
+        voice_duration = sum(tone.duration for tone in flatten_voice_tones(voice))
         duration = max(duration, voice_duration)
 
     if duration <= 0:
