@@ -7,15 +7,21 @@ from score_model.phrase import Phrase
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
+from composition.score_plan import TransformRequest
 from transforms.base import (
     BooleanParam,
     EnumParam,
     FloatParam,
+    PhraseTransformContext,
+    PhraseTransformDefinition,
+    PreparedTransform,
     ScoreScope,
+    ScoreTransformDefinition,
     ToneDimension,
     TransformDefinition,
     TransformParamFieldSpec,
     TransformParamsSpec,
+    validate_transform_params,
     parse_dimension,
 )
 
@@ -111,6 +117,83 @@ def test_transform_definition_preserves_explicit_params_spec():
 
     assert definition.params_spec == expected_params_spec
     assert definition.scope is ScoreScope.EACH_VOICE
+
+
+def test_validate_transform_params_rejects_unknown_fields():
+    params_spec = TransformParamsSpec(
+        fields={
+            "seconds": TransformParamFieldSpec(
+                schema=FloatParam(),
+                required=True,
+            )
+        }
+    )
+
+    with pytest.raises(ValueError, match="unknown fields"):
+        validate_transform_params(params_spec, "delay", {"seconds": 1.0, "extra": 2.0})
+
+
+def test_phrase_transform_context_exposes_current_phrase():
+    score = _build_score_with_two_voices()
+    context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
+
+    assert context.phrase is score.voices[1].phrases[0]
+
+
+def test_phrase_transform_definition_validate_params_delegates_to_shared_validator():
+    params_spec = TransformParamsSpec(
+        fields={
+            "seconds": TransformParamFieldSpec(
+                schema=FloatParam(),
+                required=True,
+            )
+        }
+    )
+
+    phrase_definition = PhraseTransformDefinition(
+        name="phrase_delay",
+        params_spec=params_spec,
+        transform=lambda context, params: context.phrase,
+    )
+    assert phrase_definition.validate_params({"seconds": 1.5}) is None
+
+
+def test_score_transform_definition_validate_params_delegates_to_shared_validator():
+    params_spec = TransformParamsSpec(
+        fields={
+            "seconds": TransformParamFieldSpec(
+                schema=FloatParam(),
+                required=True,
+            )
+        }
+    )
+
+    score_definition = ScoreTransformDefinition(
+        name="score_delay",
+        params_spec=params_spec,
+        transform=lambda score, params: score,
+    )
+
+    assert score_definition.validate_params({"seconds": 1.5}) is None
+
+
+def test_prepared_transform_stores_apply_callable():
+    request = TransformRequest(name="delay", params={"seconds": 1.0})
+    score = Score()
+    definition = ScoreTransformDefinition(
+        name="delay",
+        params_spec=TransformParamsSpec(),
+        transform=lambda score, params: score,
+    )
+    prepared = PreparedTransform(
+        transform_request=request,
+        transform_definition=definition,
+        apply=lambda score: score,
+    )
+
+    assert prepared.transform_request is request
+    assert prepared.transform_definition is definition
+    assert prepared.apply(score) is score
 
 def test_apply_to_each_voice_updates_every_voice():
     duration_multiplier = 2.0
