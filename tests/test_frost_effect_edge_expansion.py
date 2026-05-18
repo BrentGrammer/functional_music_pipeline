@@ -7,7 +7,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.geological.frost_effect import (
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
@@ -32,7 +32,7 @@ CENTS_PER_OCTAVE = 1200.0
 
 
 def _first_audible_frequency(voice: Voice) -> float | None:
-    for tone in iter_voice_tones(voice):
+    for tone in flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
             return tone.frequency
 
@@ -63,7 +63,7 @@ def _event_voices(score: Score, event_number: int) -> list[Voice]:
 
 
 def _voice_start_time(voice: Voice) -> float:
-    voice_tones = iter_voice_tones(voice)
+    voice_tones = flatten_voice_tones(voice)
     if voice_tones and voice_tones[0].frequency == 0:
         return voice_tones[0].duration
 
@@ -71,7 +71,7 @@ def _voice_start_time(voice: Voice) -> float:
 
 
 def _voice_end_time(voice: Voice) -> float:
-    return sum(tone.duration for tone in iter_voice_tones(voice))
+    return sum(tone.duration for tone in flatten_voice_tones(voice))
 
 
 def _event_relative_start_times_by_frequency(score: Score, event_number: int) -> dict[float, float]:
@@ -668,7 +668,7 @@ def test_build_replayed_event_voices_generates_entry_delays_when_not_provided():
     )
 
     assert len(replayed_voices) == 1
-    assert iter_voice_tones(replayed_voices[0])[1].frequency == pytest.approx(source_frequency)
+    assert flatten_voice_tones(replayed_voices[0])[1].frequency == pytest.approx(source_frequency)
     assert _voice_start_time(replayed_voices[0]) >= event_start + FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
 
 

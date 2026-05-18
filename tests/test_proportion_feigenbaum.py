@@ -5,7 +5,7 @@ from score_model.motif import Motif
 from score_model.score import Score
 from score_model.phrase import Phrase
 from score_model.tone import Tone
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import ToneDimension
 from transforms.proportion.feigenbaum import (
@@ -204,9 +204,9 @@ class TestScoreFeigenbaumSequence:
         )
 
         result_score = score_feigenbaum_sequence(score)
-        first_voice_tones = iter_voice_tones(result_score.voices[0])
-        second_voice_tones = iter_voice_tones(result_score.voices[1])
-        third_voice_tones = iter_voice_tones(result_score.voices[2])
+        first_voice_tones = flatten_voice_tones(result_score.voices[0])
+        second_voice_tones = flatten_voice_tones(result_score.voices[1])
+        third_voice_tones = flatten_voice_tones(result_score.voices[2])
 
         assert len(result_score.voices) == 3
         assert first_voice_tones[0].duration == 1.0
@@ -235,8 +235,8 @@ class TestScoreFeigenbaumSequence:
         )
 
         result = score_feigenbaum_sequence(score, dimension="FREQUENCY")
-        first_voice_tones = iter_voice_tones(result.voices[0])
-        second_voice_tones = iter_voice_tones(result.voices[1])
+        first_voice_tones = flatten_voice_tones(result.voices[0])
+        second_voice_tones = flatten_voice_tones(result.voices[1])
 
         assert first_voice_tones[0].frequency == pytest.approx(440.0)
         assert second_voice_tones[0].frequency == pytest.approx(440.0 / FEIGENBAUM_DELTA)

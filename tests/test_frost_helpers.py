@@ -5,7 +5,7 @@ import pytest
 from score_model.motif import Motif
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from score_model.phrase import Phrase
 from score_model.voice import Voice
 from transforms.geological.frost_effect import (
@@ -37,7 +37,7 @@ from transforms.geological.frost_effect import (
 
 
 def _voice_start_time(voice: Voice) -> float:
-    voice_tones = iter_voice_tones(voice)
+    voice_tones = flatten_voice_tones(voice)
     if voice_tones and voice_tones[0].frequency == 0:
         return voice_tones[0].duration
 
@@ -56,9 +56,9 @@ def test_copy_voice_retaining_frost_history_preserves_metadata_and_copies_tones(
     copied_voice = _copy_voice_retaining_frost_history(source_voice)
 
     assert copied_voice is not source_voice
-    assert iter_voice_tones(copied_voice) is not iter_voice_tones(source_voice)
-    assert iter_voice_tones(copied_voice)[0] is not iter_voice_tones(source_voice)[0]
-    assert iter_voice_tones(copied_voice)[0].frequency == pytest.approx(source_frequency)
+    assert flatten_voice_tones(copied_voice) is not flatten_voice_tones(source_voice)
+    assert flatten_voice_tones(copied_voice)[0] is not flatten_voice_tones(source_voice)[0]
+    assert flatten_voice_tones(copied_voice)[0].frequency == pytest.approx(source_frequency)
     assert getattr(copied_voice, "frost_generation") == expected_generation
     assert getattr(copied_voice, "frost_role") == expected_role
 
@@ -79,11 +79,11 @@ def test_build_frost_voice_applies_delay_and_metadata():
 
     child_voice = _build_frost_voice(spec)
 
-    assert len(iter_voice_tones(child_voice)) == 2
-    assert iter_voice_tones(child_voice)[0].frequency == 0.0
-    assert iter_voice_tones(child_voice)[0].duration == pytest.approx(child_delay_seconds)
-    assert iter_voice_tones(child_voice)[1].frequency == pytest.approx(child_frequency)
-    assert iter_voice_tones(child_voice)[1].duration == pytest.approx(child_duration)
+    assert len(flatten_voice_tones(child_voice)) == 2
+    assert flatten_voice_tones(child_voice)[0].frequency == 0.0
+    assert flatten_voice_tones(child_voice)[0].duration == pytest.approx(child_delay_seconds)
+    assert flatten_voice_tones(child_voice)[1].frequency == pytest.approx(child_frequency)
+    assert flatten_voice_tones(child_voice)[1].duration == pytest.approx(child_duration)
     assert getattr(child_voice, "frost_generation") == expected_generation
     assert getattr(child_voice, "frost_role") == expected_role
 
@@ -194,8 +194,8 @@ def test_build_replayed_event_voices_skips_silent_voice_and_preserves_existing_r
     assert len(replayed_voices) == 1
     assert getattr(replayed_voices[0], "frost_generation") == replay_generation
     assert getattr(replayed_voices[0], "frost_role") == FROST_ROLE_SIDE
-    assert iter_voice_tones(replayed_voices[0])[0].duration == pytest.approx(event_start_time + first_entry_delay)
-    assert iter_voice_tones(replayed_voices[0])[1].frequency == pytest.approx(replayed_frequency)
+    assert flatten_voice_tones(replayed_voices[0])[0].duration == pytest.approx(event_start_time + first_entry_delay)
+    assert flatten_voice_tones(replayed_voices[0])[1].frequency == pytest.approx(replayed_frequency)
 
 
 def test_build_edge_voices_returns_empty_when_no_audible_edge_voices_exist():

@@ -10,7 +10,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import IntegerParam, TransformParamFieldSpec, TransformParamsSpec
 from transforms.basic.delay import delay_tones
@@ -66,7 +66,7 @@ def _copy_voice_retaining_frost_history(voice: Voice) -> Voice:
                 motifs=[
                     Motif(
                         name="<frost_copy>",
-                        tones=copy_tones(iter_voice_tones(voice)),
+                        tones=copy_tones(flatten_voice_tones(voice)),
                     )
                 ]
             )
@@ -106,7 +106,7 @@ def _build_frost_voice(spec: FrostVoiceBuildSpec) -> Voice:
 
 def _score_end_time(score: Score) -> float:
     return max(
-        (sum(tone.duration for tone in iter_voice_tones(voice)) for voice in score.voices),
+        (sum(tone.duration for tone in flatten_voice_tones(voice)) for voice in score.voices),
         default=0.0,
     )
 
@@ -114,7 +114,7 @@ def _score_end_time(score: Score) -> float:
 def _first_audible_tone_with_onset(voice: Voice) -> FrostOnsetTone | None:
     onset_time = 0.0
 
-    for tone in iter_voice_tones(voice):
+    for tone in flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
             return FrostOnsetTone(voice=voice, tone=tone, onset_time=onset_time)
 
@@ -154,7 +154,7 @@ def _first_audible_onset_field(score: Score) -> list[FrostOnsetTone]:
 
 
 def _first_audible_tone(voice: Voice) -> Tone | None:
-    for tone in iter_voice_tones(voice):
+    for tone in flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
             return tone
 

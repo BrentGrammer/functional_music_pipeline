@@ -3,7 +3,7 @@ import pytest
 from composition.parser import parse_composition
 from composition.schema import CompositionDocument
 from score_model.tone import Tone
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from transforms.base import ToneDimension
 from transforms.basic.drift import drift_transform
 from transforms.registry import SCORE_TRANSFORMS
@@ -268,9 +268,9 @@ class TestScoreDriftApplication:
         assert len(score.voices) == 2
 
         expected_high_step = FREQ_A * RATE
-        assert iter_voice_tones(score.voices[0])[0].frequency == pytest.approx(FREQ_A + expected_high_step)
-        assert iter_voice_tones(score.voices[0])[1].frequency == pytest.approx(FREQ_A + (2 * expected_high_step))
+        assert flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(FREQ_A + expected_high_step)
+        assert flatten_voice_tones(score.voices[0])[1].frequency == pytest.approx(FREQ_A + (2 * expected_high_step))
 
         expected_low_step = FREQ_B * RATE
-        assert iter_voice_tones(score.voices[1])[0].frequency == pytest.approx(FREQ_B + expected_low_step)
-        assert iter_voice_tones(score.voices[1])[1].frequency == pytest.approx(FREQ_B + (2 * expected_low_step))
+        assert flatten_voice_tones(score.voices[1])[0].frequency == pytest.approx(FREQ_B + expected_low_step)
+        assert flatten_voice_tones(score.voices[1])[1].frequency == pytest.approx(FREQ_B + (2 * expected_low_step))

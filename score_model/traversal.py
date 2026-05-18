@@ -2,7 +2,7 @@ from score_model.tone import Tone
 from score_model.voice import Voice
 
 
-def iter_voice_tones(voice: Voice) -> list[Tone]:
+def flatten_voice_tones(voice: Voice) -> list[Tone]:
     return [
         tone
         for phrase in voice.phrases

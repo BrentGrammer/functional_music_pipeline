@@ -7,7 +7,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     PhraseScope,
@@ -26,7 +26,7 @@ def apply_to_each_voice(
 ) -> ScorePipelineStep:
     def wrapper(score: Score) -> Score:
         for i, voice in enumerate(score.voices):
-            modified_tones = transform_func(iter_voice_tones(voice), *args, **kwargs)
+            modified_tones = transform_func(flatten_voice_tones(voice), *args, **kwargs)
             score.voices[i] = Voice(
                 phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])]
             )

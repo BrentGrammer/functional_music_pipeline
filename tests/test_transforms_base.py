@@ -5,7 +5,7 @@ from score_model.motif import Motif
 from score_model.score import Score
 from score_model.phrase import Phrase
 from score_model.tone import Tone
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     BooleanParam,
@@ -120,8 +120,8 @@ def test_apply_to_each_voice_updates_every_voice():
     result = pipeline_step(score)
 
     assert result is score
-    assert iter_voice_tones(result.voices[0])[0].duration == pytest.approx(2.0)
-    assert iter_voice_tones(result.voices[1])[0].duration == pytest.approx(1.0)
+    assert flatten_voice_tones(result.voices[0])[0].duration == pytest.approx(2.0)
+    assert flatten_voice_tones(result.voices[1])[0].duration == pytest.approx(1.0)
 
 
 def test_apply_to_each_voice_forwards_keyword_arguments():
@@ -136,8 +136,8 @@ def test_apply_to_each_voice_forwards_keyword_arguments():
     )
     result = pipeline_step(score)
 
-    assert iter_voice_tones(result.voices[0])[0].frequency == pytest.approx(220.0)
-    assert iter_voice_tones(result.voices[1])[0].frequency == pytest.approx(330.0)
+    assert flatten_voice_tones(result.voices[0])[0].frequency == pytest.approx(220.0)
+    assert flatten_voice_tones(result.voices[1])[0].frequency == pytest.approx(330.0)
 
 
 def test_apply_to_each_voice_handles_empty_score():

@@ -1,6 +1,6 @@
 from composition.parser import parse_composition
 from composition.schema import CompositionDocument
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 
 
 class TestAccelerandoParserIntegration:
@@ -34,7 +34,7 @@ class TestAccelerandoParserIntegration:
         }
 
         score = parse_composition(composition)
-        tones = iter_voice_tones(score.voices[0])
+        tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
 
@@ -70,7 +70,7 @@ class TestAccelerandoParserIntegration:
         }
 
         score = parse_composition(composition)
-        tones = iter_voice_tones(score.voices[0])
+        tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
         assert tones[0].duration > tones[2].duration
@@ -103,7 +103,7 @@ class TestAccelerandoParserIntegration:
         }
 
         score = parse_composition(composition)
-        tones = iter_voice_tones(score.voices[0])
+        tones = flatten_voice_tones(score.voices[0])
 
         assert tones[0].frequency == 440
         assert tones[1].frequency == 494
@@ -141,7 +141,7 @@ class TestRitardandoParserIntegration:
         }
 
         score = parse_composition(composition)
-        tones = iter_voice_tones(score.voices[0])
+        tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
 
@@ -177,7 +177,7 @@ class TestRitardandoParserIntegration:
         }
 
         score = parse_composition(composition)
-        tones = iter_voice_tones(score.voices[0])
+        tones = flatten_voice_tones(score.voices[0])
 
         assert len(tones) == 3
         assert tones[0].duration < tones[2].duration
@@ -210,7 +210,7 @@ class TestRitardandoParserIntegration:
         }
 
         score = parse_composition(composition)
-        tones = iter_voice_tones(score.voices[0])
+        tones = flatten_voice_tones(score.voices[0])
 
         assert tones[0].frequency == 440
         assert tones[1].frequency == 494

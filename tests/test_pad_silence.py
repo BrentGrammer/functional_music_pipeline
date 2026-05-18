@@ -4,7 +4,7 @@ from composition.parser import parse_composition, parse_phrase
 from composition.schema import PhraseConfig
 from score_model.tone import Tone
 from transforms.basic.pad_silence import pad_silence_tones
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from transforms.registry import PHRASE_TRANSFORMS
 
 
@@ -160,7 +160,7 @@ def test_parse_composition_applies_pad_silence_between_phrases():
     score = parse_composition(composition_document)
 
     assert len(score.voices) == 1
-    assert [tone.frequency for tone in iter_voice_tones(score.voices[0])] == pytest.approx([subject_frequency, 0, answer_frequency])
-    assert [tone.duration for tone in iter_voice_tones(score.voices[0])] == pytest.approx(
+    assert [tone.frequency for tone in flatten_voice_tones(score.voices[0])] == pytest.approx([subject_frequency, 0, answer_frequency])
+    assert [tone.duration for tone in flatten_voice_tones(score.voices[0])] == pytest.approx(
         [phrase_duration, silence_seconds, phrase_duration]
     )

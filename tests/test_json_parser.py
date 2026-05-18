@@ -11,7 +11,7 @@ from composition.parser import (
 from composition.schema import PhraseConfig
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from score_model.tone import Tone
 from transforms.base import (
     EnumParam,
@@ -690,7 +690,7 @@ class TestScaleTransformParsing:
         score = parse_composition(composition_doc)
 
         assert len(score.voices) == 1
-        assert iter_voice_tones(score.voices[0])[0].frequency == pytest.approx(pedal_tone)
+        assert flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(pedal_tone)
 
     def test_erosion_accepts_optional_dimension(self):
         parsed_motifs = {"seed": [Tone(440, 0.5), Tone(880, 0.5)]}
@@ -781,7 +781,7 @@ def test_parse_composition_multi_motif_phrase_followed_by_phrase_uses_phrase_lev
     }
 
     score = parse_composition(json_data)
-    voice_tones = iter_voice_tones(score.voices[0])
+    voice_tones = flatten_voice_tones(score.voices[0])
 
     assert len(score.voices) == 1
     assert len(voice_tones) == 3
@@ -981,10 +981,10 @@ def test_parse_composition_score_reverse_applies_to_all_voices_without_params():
 
     score = parse_composition(json_data)
 
-    assert [tone.frequency for tone in iter_voice_tones(score.voices[0])] == [660.0, 440.0]
-    assert [tone.duration for tone in iter_voice_tones(score.voices[0])] == [0.25, 0.5]
-    assert [tone.frequency for tone in iter_voice_tones(score.voices[1])] == [990.0, 880.0]
-    assert [tone.duration for tone in iter_voice_tones(score.voices[1])] == [1.0, 0.75]
+    assert [tone.frequency for tone in flatten_voice_tones(score.voices[0])] == [660.0, 440.0]
+    assert [tone.duration for tone in flatten_voice_tones(score.voices[0])] == [0.25, 0.5]
+    assert [tone.frequency for tone in flatten_voice_tones(score.voices[1])] == [990.0, 880.0]
+    assert [tone.duration for tone in flatten_voice_tones(score.voices[1])] == [1.0, 0.75]
 
 def test_parse_composition():
     json_data = {
@@ -1013,8 +1013,8 @@ def test_parse_composition():
 
     assert isinstance(score, Score)
     assert len(score.voices) == 2
-    voice_0_tones = iter_voice_tones(score.voices[0])
-    voice_1_tones = iter_voice_tones(score.voices[1])
+    voice_0_tones = flatten_voice_tones(score.voices[0])
+    voice_1_tones = flatten_voice_tones(score.voices[1])
     assert len(voice_0_tones) == 1
     assert len(voice_1_tones) == 1
 
@@ -1048,7 +1048,7 @@ def test_parse_composition_with_value_score_transform():
     score = parse_composition(json_data)
 
     assert len(score.voices) == 1
-    assert iter_voice_tones(score.voices[0])[0].duration == original_duration * factor
+    assert flatten_voice_tones(score.voices[0])[0].duration == original_duration * factor
 
 def test_parse_composition_score_target_motifs_scope_receives_score_and_params_only():
     captured = {}

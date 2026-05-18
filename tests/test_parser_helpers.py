@@ -9,7 +9,7 @@ from composition.parser import (
 from composition.schema import VoiceConfig
 from typing import cast
 from score_model.tone import Tone
-from score_model.traversal import iter_voice_tones
+from score_model.traversal import flatten_voice_tones
 from transforms.base import (
     PhraseScope,
     ScoreScope,
@@ -53,7 +53,7 @@ def test_parse_voice_uses_first_phrase_as_reference_for_later_relative_phrase_tr
 
     voice, combined_tones = parse_voice(voice_config, parsed_motifs, no_previous_voice_tones)
 
-    assert len(iter_voice_tones(voice)) == 2
+    assert len(flatten_voice_tones(voice)) == 2
     assert len(combined_tones) == 2
     assert voice.phrases[0].motifs[0].tones[0].duration == pytest.approx(seed_duration)
     assert voice.phrases[1].motifs[0].tones[0].duration > seed_duration
@@ -80,7 +80,7 @@ def test_parse_voice_uses_previous_voice_as_reference_when_first_phrase_is_relat
 
     voice, combined_tones = parse_voice(voice_config, parsed_motifs, previous_voice_tones)
 
-    assert len(iter_voice_tones(voice)) == 1
+    assert len(flatten_voice_tones(voice)) == 1
     assert len(combined_tones) == 1
     assert voice.phrases[0].motifs[0].tones[0].duration < seed_duration
 
