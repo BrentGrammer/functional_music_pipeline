@@ -5,6 +5,8 @@ from composition.parser import parse_composition
 from composition.schema import CompositionDocument
 from score_model._migration import _legacy_flatten_voice_tones
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
@@ -15,29 +17,31 @@ from transforms.registry import SCORE_TRANSFORMS
 
 class TestStretto:
     def test_stretto_appends_fixed_spacing_entries_from_motif(self):
-        score = Score([Voice([Tone(880.0, duration=0.25)])])
-        parsed_motifs = {
-            "subject": [Tone(440.0, duration=0.5), Tone(660.0, duration=0.25)],
-        }
+        score = Score(
+            [
+                Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5), Tone(660.0, duration=0.25)])])]),
+                Voice([Phrase([Motif("counter", [Tone(880.0, duration=0.25)])])]),
+            ]
+        )
 
-        result = stretto(score, parsed_motifs, motif="subject", num_times=3, spacing=0.75)
+        result = stretto(score, motif="subject", num_times=3, spacing=0.75)
 
-        assert len(result.voices) == 4
-        assert result.voices[0].tones[0].frequency == pytest.approx(880.0)
+        assert len(result.voices) == 5
+        assert _legacy_flatten_voice_tones(result.voices[1])[0].frequency == pytest.approx(880.0)
 
-        first_entry = result.voices[1].tones
+        first_entry = _legacy_flatten_voice_tones(result.voices[2])
         assert len(first_entry) == 2
         assert first_entry[0].frequency == pytest.approx(440.0)
         assert first_entry[1].frequency == pytest.approx(660.0)
 
-        second_entry = result.voices[2].tones
+        second_entry = _legacy_flatten_voice_tones(result.voices[3])
         silence = make_silence_tone(0.75)
         assert second_entry[0].frequency == pytest.approx(silence.frequency)
         assert second_entry[0].duration == pytest.approx(silence.duration)
         assert second_entry[0].amplitude == pytest.approx(silence.amplitude)
         assert second_entry[1].frequency == pytest.approx(440.0)
 
-        third_entry = result.voices[3].tones
+        third_entry = _legacy_flatten_voice_tones(result.voices[4])
         silence = make_silence_tone(1.5)
         assert third_entry[0].frequency == pytest.approx(silence.frequency)
         assert third_entry[0].duration == pytest.approx(silence.duration)
@@ -45,81 +49,85 @@ class TestStretto:
         assert third_entry[1].frequency == pytest.approx(440.0)
 
     def test_stretto_copies_motif_tones(self):
-        score = Score()
         original_tone = Tone(440.0, duration=0.5, amplitude=0.25)
-        parsed_motifs = {"subject": [original_tone]}
+        score = Score(
+            [
+                Voice([Phrase([Motif("subject", [original_tone])])]),
+            ]
+        )
 
-        result = stretto(score, parsed_motifs, motif="subject", num_times=1, spacing=0.75)
+        result = stretto(score, motif="subject", num_times=1, spacing=0.75)
 
-        assert result.voices[0].tones[0] is not original_tone
-        assert result.voices[0].tones[0].frequency == pytest.approx(original_tone.frequency)
-        assert result.voices[0].tones[0].duration == pytest.approx(original_tone.duration)
-        assert result.voices[0].tones[0].amplitude == pytest.approx(original_tone.amplitude)
+        generated_voice_tones = _legacy_flatten_voice_tones(result.voices[1])
+        assert generated_voice_tones[0] is not original_tone
+        assert generated_voice_tones[0].frequency == pytest.approx(original_tone.frequency)
+        assert generated_voice_tones[0].duration == pytest.approx(original_tone.duration)
+        assert generated_voice_tones[0].amplitude == pytest.approx(original_tone.amplitude)
 
     def test_stretto_rejects_unknown_motif(self):
         with pytest.raises(ValueError, match="not found"):
-            stretto(Score(), {}, motif="missing", num_times=1, spacing=0.75)
+            stretto(Score(), motif="missing", num_times=1, spacing=0.75)
 
     def test_stretto_rejects_num_times_less_than_one(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
         with pytest.raises(ValueError, match="num_times"):
-            stretto(Score(), {"subject": [Tone(440.0)]}, motif="subject", num_times=0, spacing=0.75)
+            stretto(score, motif="subject", num_times=0, spacing=0.75)
 
     def test_stretto_rejects_invalid_spacing(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
         with pytest.raises(ValueError, match="spacing"):
             stretto(
-                Score(),
-                {"subject": [Tone(440.0)]},
+                score,
                 motif="subject",
                 num_times=1,
                 spacing=[],
             )
 
     def test_stretto_rejects_non_positive_spacing(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
         with pytest.raises(ValueError, match="spacing"):
             stretto(
-                Score(),
-                {"subject": [Tone(440.0)]},
+                score,
                 motif="subject",
                 num_times=1,
                 spacing=0,
             )
 
     def test_stretto_uses_named_spacing_values(self):
-        score = Score()
         motif_duration = 0.5
-        parsed_motifs = {"subject": [Tone(440.0, duration=motif_duration)]}
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=motif_duration)])])])])
         golden_ratio_spacing = motif_duration / GOLDEN_RATIO
         feigenbaum_spacing = motif_duration / FEIGENBAUM_DELTA
 
-        result = stretto(score, parsed_motifs, motif="subject", num_times=3, spacing="golden_ratio")
+        result = stretto(score, motif="subject", num_times=3, spacing="golden_ratio")
 
         silence = make_silence_tone(golden_ratio_spacing)
-        assert result.voices[1].tones[0].frequency == pytest.approx(silence.frequency)
-        assert result.voices[1].tones[0].duration == pytest.approx(silence.duration)
-        assert result.voices[1].tones[0].amplitude == pytest.approx(silence.amplitude)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].frequency == pytest.approx(silence.frequency)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].duration == pytest.approx(silence.duration)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].amplitude == pytest.approx(silence.amplitude)
 
         silence = make_silence_tone(golden_ratio_spacing * 2)
-        assert result.voices[2].tones[0].frequency == pytest.approx(silence.frequency)
-        assert result.voices[2].tones[0].duration == pytest.approx(silence.duration)
-        assert result.voices[2].tones[0].amplitude == pytest.approx(silence.amplitude)
+        assert _legacy_flatten_voice_tones(result.voices[3])[0].frequency == pytest.approx(silence.frequency)
+        assert _legacy_flatten_voice_tones(result.voices[3])[0].duration == pytest.approx(silence.duration)
+        assert _legacy_flatten_voice_tones(result.voices[3])[0].amplitude == pytest.approx(silence.amplitude)
 
-        result = stretto(score, parsed_motifs, motif="subject", num_times=3, spacing="feigenbaum_delta")
+        result = stretto(score, motif="subject", num_times=3, spacing="feigenbaum_delta")
 
         silence = make_silence_tone(feigenbaum_spacing)
-        assert result.voices[1].tones[0].frequency == pytest.approx(silence.frequency)
-        assert result.voices[1].tones[0].duration == pytest.approx(silence.duration)
-        assert result.voices[1].tones[0].amplitude == pytest.approx(silence.amplitude)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].frequency == pytest.approx(silence.frequency)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].duration == pytest.approx(silence.duration)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].amplitude == pytest.approx(silence.amplitude)
 
         silence = make_silence_tone(feigenbaum_spacing * 2)
-        assert result.voices[2].tones[0].frequency == pytest.approx(silence.frequency)
-        assert result.voices[2].tones[0].duration == pytest.approx(silence.duration)
-        assert result.voices[2].tones[0].amplitude == pytest.approx(silence.amplitude)
+        assert _legacy_flatten_voice_tones(result.voices[3])[0].frequency == pytest.approx(silence.frequency)
+        assert _legacy_flatten_voice_tones(result.voices[3])[0].duration == pytest.approx(silence.duration)
+        assert _legacy_flatten_voice_tones(result.voices[3])[0].amplitude == pytest.approx(silence.amplitude)
 
     def test_stretto_rejects_unknown_spacing_name(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
         with pytest.raises(ValueError, match="spacing"):
             stretto(
-                Score(),
-                {"subject": [Tone(440.0)]},
+                score,
                 motif="subject",
                 num_times=1,
                 spacing="unknown_ratio",
@@ -127,52 +135,46 @@ class TestStretto:
 
     def test_stretto_rejects_empty_spacing_string(self):
         empty_spacing_name = ""
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
 
         with pytest.raises(ValueError, match="non-empty string"):
             stretto(
-                Score(),
-                {"subject": [Tone(440.0)]},
+                score,
                 motif="subject",
                 num_times=1,
                 spacing=empty_spacing_name,
             )
 
     def test_stretto_golden_ratio_spacing_should_overlap_against_subject_duration(self):
-        score = Score()
-        parsed_motifs = {
-            "subject": [
-                Tone(440.0, duration=0.5),
-                Tone(660.0, duration=0.5),
-            ]
-        }
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5), Tone(660.0, duration=0.5)])])])])
 
-        result = stretto(score, parsed_motifs, motif="subject", num_times=2, spacing="golden_ratio")
+        result = stretto(score, motif="subject", num_times=2, spacing="golden_ratio")
 
-        subject_duration = sum(tone.duration for tone in parsed_motifs["subject"])
+        subject_duration = sum(tone.duration for tone in _legacy_flatten_voice_tones(score.voices[0]))
         expected_overlap_offset = subject_duration / GOLDEN_RATIO
 
-        assert result.voices[0].tones[0].frequency == pytest.approx(440.0)
-        assert result.voices[1].tones[0].frequency == pytest.approx(0)
-        assert result.voices[1].tones[0].duration == pytest.approx(expected_overlap_offset)
+        assert _legacy_flatten_voice_tones(result.voices[0])[0].frequency == pytest.approx(440.0)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].frequency == pytest.approx(0)
+        assert _legacy_flatten_voice_tones(result.voices[2])[0].duration == pytest.approx(expected_overlap_offset)
         assert expected_overlap_offset < subject_duration
 
 
 class TestPedalTone:
     def test_add_pedal_tone_appends_voice(self):
         tones = [Tone(440.0, duration=2.0)]
-        score = Score([Voice(tones)])
+        score = Score([Voice([Phrase([Motif("seed", tones)])])])
         pedal_tone_freq = 339.81
 
         result = add_pedal_tone(score, frequency=pedal_tone_freq)
 
         assert len(result.voices) == len(tones) + 1
-        assert len(result.voices[1].tones) == 1
-        assert result.voices[1].tones[0].frequency == pytest.approx(pedal_tone_freq)
+        assert len(_legacy_flatten_voice_tones(result.voices[1])) == 1
+        assert _legacy_flatten_voice_tones(result.voices[1])[0].frequency == pytest.approx(pedal_tone_freq)
 
     def test_pedal_tone_duration_matches_longest_voice(self):
         score = Score([
-            Voice([Tone(440.0, duration=1.0), Tone(550.0, duration=1.0)]),
-            Voice([Tone(330.0, duration=0.5)]),
+            Voice([Phrase([Motif("v1", [Tone(440.0, duration=1.0), Tone(550.0, duration=1.0)])])]),
+            Voice([Phrase([Motif("v2", [Tone(330.0, duration=0.5)])])]),
         ])
 
         longest_duration = max(
@@ -187,11 +189,11 @@ class TestPedalTone:
         assert _legacy_flatten_voice_tones(pedal_voice)[0].duration == pytest.approx(longest_duration)
 
     def test_pedal_tone_uses_sensible_default_amplitude(self):
-        score = Score([Voice([Tone(440.0, duration=1.0)])])
+        score = Score([Voice([Phrase([Motif("seed", [Tone(440.0, duration=1.0)])])])])
 
         result = add_pedal_tone(score, frequency=130.81)
 
-        assert 0.0 < result.voices[-1].tones[0].amplitude <= 1.0
+        assert 0.0 < _legacy_flatten_voice_tones(result.voices[-1])[0].amplitude <= 1.0
 
     def test_pedal_tone_rejects_non_positive_frequency(self):
         with pytest.raises(ValueError, match="frequency"):
@@ -200,7 +202,7 @@ class TestPedalTone:
     def test_pedal_tone_empty_score_uses_fallback_duration(self):
         result = add_pedal_tone(Score(), frequency=130.81)
 
-        assert result.voices[0].tones[0].duration > 0
+        assert _legacy_flatten_voice_tones(result.voices[0])[0].duration > 0
 
 
 class TestPedalToneRegistration:
@@ -233,8 +235,8 @@ class TestPedalToneComposition:
         score = parse_composition(composition_document)
 
         assert len(score.voices) == 2
-        assert score.voices[1].tones[0].frequency == pytest.approx(130.81)
-        assert score.voices[1].tones[0].duration == pytest.approx(1.0)
+        assert _legacy_flatten_voice_tones(score.voices[1])[0].frequency == pytest.approx(130.81)
+        assert _legacy_flatten_voice_tones(score.voices[1])[0].duration == pytest.approx(1.0)
 
 
 class TestStrettoComposition:
@@ -244,7 +246,9 @@ class TestStrettoComposition:
                 "subject": ["261.63:0.5", "329.63:0.25"],
             },
             "composition": {
-                "voices": [],
+                "voices": [
+                    {"phrases": [{"motifs": ["subject"]}]},
+                ],
                 "score_transforms": [
                     {
                         "name": "stretto",
@@ -260,12 +264,13 @@ class TestStrettoComposition:
 
         score = parse_composition(composition_document)
 
-        assert len(score.voices) == 3
-        assert score.voices[0].tones[0].frequency == pytest.approx(261.63)
-        assert score.voices[1].tones[0].frequency == 0
-        assert score.voices[1].tones[0].duration == pytest.approx((0.5 + 0.25) / GOLDEN_RATIO)
-        assert score.voices[2].tones[0].frequency == 0
-        assert score.voices[2].tones[0].duration == pytest.approx(((0.5 + 0.25) / GOLDEN_RATIO) * 2)
+        assert len(score.voices) == 4
+        assert _legacy_flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(261.63)
+        assert _legacy_flatten_voice_tones(score.voices[1])[0].frequency == pytest.approx(261.63)
+        assert _legacy_flatten_voice_tones(score.voices[2])[0].frequency == 0
+        assert _legacy_flatten_voice_tones(score.voices[2])[0].duration == pytest.approx((0.5 + 0.25) / GOLDEN_RATIO)
+        assert _legacy_flatten_voice_tones(score.voices[3])[0].frequency == 0
+        assert _legacy_flatten_voice_tones(score.voices[3])[0].duration == pytest.approx(((0.5 + 0.25) / GOLDEN_RATIO) * 2)
 
     def test_stretto_rendering_overlaps_voice_onsets(self):
         composition_document: CompositionDocument = {
@@ -276,7 +281,9 @@ class TestStrettoComposition:
                 ],
             },
             "composition": {
-                "voices": [],
+                "voices": [
+                    {"phrases": [{"motifs": ["subject"]}]},
+                ],
                 "score_transforms": [
                     {
                         "name": "stretto",

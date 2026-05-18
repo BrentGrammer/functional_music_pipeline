@@ -1050,12 +1050,12 @@ def test_parse_composition_with_value_score_transform():
     assert len(score.voices) == 1
     assert _legacy_flatten_voice_tones(score.voices[0])[0].duration == original_duration * factor
 
-def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
+def test_parse_composition_score_target_motifs_scope_receives_score_and_params_only():
     captured = {}
 
-    def capture_score_target_motifs_transform(score, parsed_motifs, motif):
+    def capture_score_target_motifs_transform(score, motif):
         captured["motif"] = motif
-        captured["parsed_motifs"] = parsed_motifs
+        captured["score"] = score
         return score
 
     SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
@@ -1090,12 +1090,11 @@ def test_parse_composition_score_target_motifs_scope_receives_parsed_motifs():
         SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
     assert captured["motif"] == "seed"
-    assert captured["parsed_motifs"]["seed"][0].frequency == 440.0
-    assert captured["parsed_motifs"]["seed"][0].duration == 0.5
+    assert isinstance(captured["score"], Score)
 
 
 def test_parse_composition_score_target_motifs_scope_requires_params_object():
-    def noop_score_target_motifs_transform(score, parsed_motifs, motif):
+    def noop_score_target_motifs_transform(score, motif):
         return score
 
     SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(
@@ -1133,7 +1132,7 @@ def test_parse_composition_score_target_motifs_scope_requires_params_object():
 
 
 def test_parse_composition_score_target_motifs_scope_requires_params():
-    def noop_score_target_motifs_transform(score, parsed_motifs, motif):
+    def noop_score_target_motifs_transform(score, motif):
         return score
 
     SCORE_TRANSFORMS["_test_score_with_motifs"] = TransformDefinition(

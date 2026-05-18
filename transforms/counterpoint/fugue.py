@@ -48,22 +48,24 @@ STRETTO_PARAMS_SPEC = TransformParamsSpec(
 
 def stretto(
     score: Score,
-    parsed_motifs: dict[str, list[Tone]],
     motif: str,
     num_times: int,
     spacing: object,
 ) -> Score:
-    if motif not in parsed_motifs:
-        raise ValueError(f"Stretto motif '{motif}' was not found.")
     if num_times < 1:
         raise ValueError("Stretto num_times must be at least 1.")
-    motif_duration = _get_motif_duration(parsed_motifs[motif])
-    entry_spacing = _resolve_stretto_spacing(spacing, motif_duration)
+
+    target_motif_tones = _find_motif_tones_by_name(score, motif)
+    if target_motif_tones is None:
+        raise ValueError(f"Stretto motif '{motif}' was not found in score.")
+
+    target_tones_total_duration = sum(tone.duration for tone in target_motif_tones)
+    entry_spacing = _calculate_entry_spacing(spacing, target_tones_total_duration)
 
     generated_voices = []
     for entry_index in range(num_times):
         offset = entry_spacing * entry_index
-        entry_tones = copy_tones(parsed_motifs[motif])
+        entry_tones = copy_tones(target_motif_tones)
         if offset > 0:
             entry_tones = [make_silence_tone(offset)] + entry_tones
         generated_voices.append(
@@ -95,7 +97,7 @@ def add_pedal_tone(
     )
 
 
-def _resolve_stretto_spacing(spacing: object, motif_duration: float) -> float:
+def _calculate_entry_spacing(spacing: object, target_tones_total_duration: float) -> float:
     if isinstance(spacing, (int, float)):
         if spacing <= 0:
             raise ValueError("Stretto spacing must be greater than 0 when provided.")
@@ -105,7 +107,7 @@ def _resolve_stretto_spacing(spacing: object, motif_duration: float) -> float:
         if not spacing:
             raise ValueError("Stretto spacing must be a non-empty string when provided.")
         try:
-            return motif_duration / NAMED_STRETTO_SPACINGS[spacing]
+            return target_tones_total_duration / NAMED_STRETTO_SPACINGS[spacing]
         except KeyError as exc:
             raise ValueError(
                 "Stretto spacing must be 'golden_ratio', 'feigenbaum_delta', or a positive number."
@@ -114,5 +116,10 @@ def _resolve_stretto_spacing(spacing: object, motif_duration: float) -> float:
     raise ValueError("Stretto spacing must be a string or number when provided.")
 
 
-def _get_motif_duration(tones: list[Tone]) -> float:
-    return sum(tone.duration for tone in tones)
+def _find_motif_tones_by_name(score: Score, motif_name: str) -> list[Tone] | None:
+    for voice in score.voices:
+        for phrase in voice.phrases:
+            for motif in phrase.motifs:
+                if motif.name == motif_name:
+                    return motif.tones
+    return None
