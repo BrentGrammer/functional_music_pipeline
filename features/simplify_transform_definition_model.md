@@ -219,6 +219,8 @@ The plan is decomposed into small steps. Each step changes one well-defined thin
 - **(low)** — mechanical or narrowly-scoped change a lower-powered model can perform safely with the instructions given.
 - **(high)** — involves semantic change, design judgment, or coordinated edits across files that benefit from a stronger model even with precise instructions.
 
+NOTE ON TESTING: during the migration it is okay if tests break. do not add legacy functions generally unless you have to to make the migration easier. Backwards compatibility is not a concern. This is a personal application that is private with no users except myself.
+
 ### Standing Rules for the Implementing Model
 
 - Do not modify `compositions/**/*.json` or any transform public names in this refactor unless a step explicitly says to.
