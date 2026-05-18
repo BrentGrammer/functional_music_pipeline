@@ -1,4 +1,5 @@
 from score_model.math_constants import FEIGENBAUM_DELTA as FEIGENBAUM_RATIO
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
@@ -105,7 +106,7 @@ def score_feigenbaum_sequence(score: Score, dimension: ToneDimension | str = Ton
     new_voices = []
     for i, voice in enumerate(score.voices):
         scale_factor = 1.0 / (FEIGENBAUM_RATIO ** i)
-        new_tones = scale_transform(voice.tones, dim, scale_factor)
+        new_tones = scale_transform(_legacy_flatten_voice_tones(voice), dim, scale_factor)
         new_voices.append(Voice(new_tones))
 
     return Score(new_voices)

@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TypeAlias
 
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.pitch_utils import CENTS_PER_OCTAVE
 from score_model.score import Score
 from score_model.tone import Tone
@@ -57,7 +58,7 @@ class FrostEventBuildSpec:
 
 
 def _copy_voice_retaining_frost_history(voice: Voice) -> Voice:
-    copied_voice = Voice(copy_tones(voice.tones))
+    copied_voice = Voice(copy_tones(_legacy_flatten_voice_tones(voice)))
     setattr(copied_voice, "frost_generation", getattr(voice, "frost_generation", 0))
     setattr(copied_voice, "frost_role", getattr(voice, "frost_role", FROST_ROLE_CENTER))
     return copied_voice
@@ -82,13 +83,16 @@ def _build_frost_voice(spec: FrostVoiceBuildSpec) -> Voice:
     return child_voice
 
 def _score_end_time(score: Score) -> float:
-    return max((sum(tone.duration for tone in voice.tones) for voice in score.voices), default=0.0)
+    return max(
+        (sum(tone.duration for tone in _legacy_flatten_voice_tones(voice)) for voice in score.voices),
+        default=0.0,
+    )
 
 
 def _first_audible_tone_with_onset(voice: Voice) -> FrostOnsetTone | None:
     onset_time = 0.0
 
-    for tone in voice.tones:
+    for tone in _legacy_flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
             return FrostOnsetTone(voice=voice, tone=tone, onset_time=onset_time)
 
@@ -128,7 +132,7 @@ def _first_audible_onset_field(score: Score) -> list[FrostOnsetTone]:
 
 
 def _first_audible_tone(voice: Voice) -> Tone | None:
-    for tone in voice.tones:
+    for tone in _legacy_flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
             return tone
 

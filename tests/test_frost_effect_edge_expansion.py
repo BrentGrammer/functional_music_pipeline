@@ -3,6 +3,7 @@ import random
 
 import pytest
 
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
@@ -29,7 +30,7 @@ CENTS_PER_OCTAVE = 1200.0
 
 
 def _first_audible_frequency(voice: Voice) -> float | None:
-    for tone in voice.tones:
+    for tone in _legacy_flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
             return tone.frequency
 
@@ -60,14 +61,15 @@ def _event_voices(score: Score, event_number: int) -> list[Voice]:
 
 
 def _voice_start_time(voice: Voice) -> float:
-    if voice.tones and voice.tones[0].frequency == 0:
-        return voice.tones[0].duration
+    voice_tones = _legacy_flatten_voice_tones(voice)
+    if voice_tones and voice_tones[0].frequency == 0:
+        return voice_tones[0].duration
 
     return 0.0
 
 
 def _voice_end_time(voice: Voice) -> float:
-    return sum(tone.duration for tone in voice.tones)
+    return sum(tone.duration for tone in _legacy_flatten_voice_tones(voice))
 
 
 def _event_relative_start_times_by_frequency(score: Score, event_number: int) -> dict[float, float]:

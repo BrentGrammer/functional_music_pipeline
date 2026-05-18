@@ -1,6 +1,7 @@
 import pytest
 
 from composition.parser import parse_composition, parse_motifs
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.score import Score
 
 
@@ -116,7 +117,7 @@ class TestGeologicalExampleComposition:
 
         # The motif "c_major_arpeggio" has 4 tones, so each voice should have 4 tones.
         for voice in score.voices:
-            assert len(voice.tones) == 4
+            assert len(_legacy_flatten_voice_tones(voice)) == 4
 
     def test_parsing_is_deterministic(self):
         # Stochastic transforms are seeded, so repeated parsing of the same
@@ -161,7 +162,7 @@ class TestGeologicalExampleComposition:
 
         # All Voices: Verify score-level amplitude transform and general amplitude invariants
         for i, voice in enumerate(score.voices):
-            for j, transformed_tone in enumerate(voice.tones):
+            for j, transformed_tone in enumerate(_legacy_flatten_voice_tones(voice)):
                 # Check invariant: amplitude must be in valid range
                 assert 0.0 <= transformed_tone.amplitude <= 1.0
 

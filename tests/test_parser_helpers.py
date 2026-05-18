@@ -7,6 +7,7 @@ from composition.parser import (
     parse_voice,
 )
 from composition.schema import VoiceConfig
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.tone import Tone
 from transforms.base import (
     ScoreScope,
@@ -50,10 +51,10 @@ def test_parse_voice_uses_first_phrase_as_reference_for_later_relative_phrase_tr
 
     voice, combined_tones = parse_voice(voice_config, parsed_motifs, no_previous_voice_tones)
 
-    assert len(voice.tones) == 2
+    assert len(_legacy_flatten_voice_tones(voice)) == 2
     assert len(combined_tones) == 2
-    assert voice.tones[0].duration == pytest.approx(seed_duration)
-    assert voice.tones[1].duration > seed_duration
+    assert _legacy_flatten_voice_tones(voice)[0].duration == pytest.approx(seed_duration)
+    assert _legacy_flatten_voice_tones(voice)[1].duration > seed_duration
 
 
 def test_parse_voice_uses_previous_voice_as_reference_when_first_phrase_is_relative():
@@ -77,9 +78,9 @@ def test_parse_voice_uses_previous_voice_as_reference_when_first_phrase_is_relat
 
     voice, combined_tones = parse_voice(voice_config, parsed_motifs, previous_voice_tones)
 
-    assert len(voice.tones) == 1
+    assert len(_legacy_flatten_voice_tones(voice)) == 1
     assert len(combined_tones) == 1
-    assert voice.tones[0].duration < seed_duration
+    assert _legacy_flatten_voice_tones(voice)[0].duration < seed_duration
 
 
 def test_apply_phrase_transform_spec_rejects_non_phrase_scope_descriptor():

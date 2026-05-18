@@ -3,6 +3,7 @@ import pytest
 
 from composition.parser import parse_composition
 from composition.schema import CompositionDocument
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
 from score_model.tone import Tone
@@ -175,7 +176,7 @@ class TestPedalTone:
         ])
 
         longest_duration = max(
-            sum(tone.duration for tone in voice.tones)
+            sum(tone.duration for tone in _legacy_flatten_voice_tones(voice))
             for voice in score.voices
         )
 
@@ -183,7 +184,7 @@ class TestPedalTone:
 
         # The pedal tone is always appended as the last voice.
         pedal_voice = result.voices[-1]
-        assert pedal_voice.tones[0].duration == pytest.approx(longest_duration)
+        assert _legacy_flatten_voice_tones(pedal_voice)[0].duration == pytest.approx(longest_duration)
 
     def test_pedal_tone_uses_sensible_default_amplitude(self):
         score = Score([Voice([Tone(440.0, duration=1.0)])])
@@ -292,7 +293,7 @@ class TestStrettoComposition:
         score = parse_composition(composition_document)
         voice_waveforms = []
         for voice in score.voices:
-            tone_waveforms = [tone.generate_tone() for tone in voice]
+            tone_waveforms = [tone.generate_tone() for tone in _legacy_flatten_voice_tones(voice)]
             if tone_waveforms:
                 voice_waveforms.append(np.concatenate(tone_waveforms))
             else:

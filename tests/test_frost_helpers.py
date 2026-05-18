@@ -2,6 +2,7 @@ import random
 
 import pytest
 
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
@@ -34,8 +35,9 @@ from transforms.geological.frost_effect import (
 
 
 def _voice_start_time(voice: Voice) -> float:
-    if voice.tones and voice.tones[0].frequency == 0:
-        return voice.tones[0].duration
+    voice_tones = _legacy_flatten_voice_tones(voice)
+    if voice_tones and voice_tones[0].frequency == 0:
+        return voice_tones[0].duration
 
     return 0.0
 
@@ -52,9 +54,9 @@ def test_copy_voice_retaining_frost_history_preserves_metadata_and_copies_tones(
     copied_voice = _copy_voice_retaining_frost_history(source_voice)
 
     assert copied_voice is not source_voice
-    assert copied_voice.tones is not source_voice.tones
-    assert copied_voice.tones[0] is not source_voice.tones[0]
-    assert copied_voice.tones[0].frequency == pytest.approx(source_frequency)
+    assert _legacy_flatten_voice_tones(copied_voice) is not _legacy_flatten_voice_tones(source_voice)
+    assert _legacy_flatten_voice_tones(copied_voice)[0] is not _legacy_flatten_voice_tones(source_voice)[0]
+    assert _legacy_flatten_voice_tones(copied_voice)[0].frequency == pytest.approx(source_frequency)
     assert getattr(copied_voice, "frost_generation") == expected_generation
     assert getattr(copied_voice, "frost_role") == expected_role
 
@@ -75,11 +77,11 @@ def test_build_frost_voice_applies_delay_and_metadata():
 
     child_voice = _build_frost_voice(spec)
 
-    assert len(child_voice.tones) == 2
-    assert child_voice.tones[0].frequency == 0.0
-    assert child_voice.tones[0].duration == pytest.approx(child_delay_seconds)
-    assert child_voice.tones[1].frequency == pytest.approx(child_frequency)
-    assert child_voice.tones[1].duration == pytest.approx(child_duration)
+    assert len(_legacy_flatten_voice_tones(child_voice)) == 2
+    assert _legacy_flatten_voice_tones(child_voice)[0].frequency == 0.0
+    assert _legacy_flatten_voice_tones(child_voice)[0].duration == pytest.approx(child_delay_seconds)
+    assert _legacy_flatten_voice_tones(child_voice)[1].frequency == pytest.approx(child_frequency)
+    assert _legacy_flatten_voice_tones(child_voice)[1].duration == pytest.approx(child_duration)
     assert getattr(child_voice, "frost_generation") == expected_generation
     assert getattr(child_voice, "frost_role") == expected_role
 

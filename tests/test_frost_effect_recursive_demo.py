@@ -1,6 +1,7 @@
 import pytest
 
 from composition.parser import parse_composition
+from score_model._migration import _legacy_flatten_voice_tones
 from score_model.score import Score
 from transforms.geological.frost_effect import (
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
@@ -12,14 +13,15 @@ from transforms.geological.frost_effect import (
 
 
 def _voice_start_time(voice):
-    if voice.tones and voice.tones[0].frequency == 0:
-        return voice.tones[0].duration
+    voice_tones = _legacy_flatten_voice_tones(voice)
+    if voice_tones and voice_tones[0].frequency == 0:
+        return voice_tones[0].duration
 
     return 0.0
 
 
 def _voice_end_time(voice):
-    return sum(tone.duration for tone in voice.tones)
+    return sum(tone.duration for tone in _legacy_flatten_voice_tones(voice))
 
 
 def _voices_with_role(voices, role):
@@ -112,10 +114,10 @@ def test_frost_cluster_demo_grows_by_audible_events():
     expected_fourth_event_voice_count = 11
 
     assert len(score.voices) == expected_total_voice_count
-    assert len(score.voices[0].tones) == 1
-    assert len(score.voices[1].tones) == 1
-    assert len(score.voices[2].tones) == 1
-    seed_frequency = score.voices[0].tones[0].frequency
+    assert len(_legacy_flatten_voice_tones(score.voices[0])) == 1
+    assert len(_legacy_flatten_voice_tones(score.voices[1])) == 1
+    assert len(_legacy_flatten_voice_tones(score.voices[2])) == 1
+    seed_frequency = _legacy_flatten_voice_tones(score.voices[0])[0].frequency
     assert seed_frequency == pytest.approx(330.0)
 
     source_event_voices = score.voices[0:3]
@@ -130,11 +132,11 @@ def test_frost_cluster_demo_grows_by_audible_events():
     assert len(third_event_voices) == expected_third_event_voice_count
     assert len(fourth_event_voices) == expected_fourth_event_voice_count
 
-    source_event_frequencies = {voice.tones[0].frequency for voice in source_event_voices}
-    first_event_frequencies = {voice.tones[1].frequency for voice in first_event_voices}
-    second_event_frequencies = {voice.tones[1].frequency for voice in second_event_voices}
-    third_event_frequencies = {voice.tones[1].frequency for voice in third_event_voices}
-    fourth_event_frequencies = {voice.tones[1].frequency for voice in fourth_event_voices}
+    source_event_frequencies = {_legacy_flatten_voice_tones(voice)[0].frequency for voice in source_event_voices}
+    first_event_frequencies = {_legacy_flatten_voice_tones(voice)[1].frequency for voice in first_event_voices}
+    second_event_frequencies = {_legacy_flatten_voice_tones(voice)[1].frequency for voice in second_event_voices}
+    third_event_frequencies = {_legacy_flatten_voice_tones(voice)[1].frequency for voice in third_event_voices}
+    fourth_event_frequencies = {_legacy_flatten_voice_tones(voice)[1].frequency for voice in fourth_event_voices}
 
     assert sorted(source_event_frequencies) == [
         pytest.approx(330.0),
