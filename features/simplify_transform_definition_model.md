@@ -57,7 +57,7 @@ The important split is:
 - `TransformRequest` is local authoring data from the JSON: a transform name plus supplied params. It does not replace `TransformParamsSpec`; the full parameter contract stays on the transform definition. A request does not encode its target scope; `PhraseTransformRequest` and `ScoreTransformRequest` do that.
 - `PhraseTransformRequest` and `ScoreTransformRequest` are parsed placement-aware requests. They keep transform application flat and predictable without storing authoring metadata on `Score`, `Voice`, `Phrase`, `Motif`, or `Tone`.
 - `PreparedTransform` is a temporary execution adapter. It combines a parsed request, its transform definition, and any stored placement into one callable shape that is ready for `apply_transform_requests` to validate and apply.
-- `ScorePlan` is the parsed authoring recipe. It preserves phrase transform requests in parse order and score transform requests in parse order.
+- `ScorePlan` is the parsed authoring plan. It contains the resolved materials needed to build the initial `Score` plus the transform requests to apply afterward.
 - `Score`, `Voice`, `Phrase`, `Motif`, and `Tone` remain musical data only. They do not store transform requests.
 
 With the hierarchy in place, phrase transforms apply to the active phrase through an explicit `PhraseTransformContext`. The parsed `PhraseTransformRequest` stores the request's `voice_index` and `phrase_index`; `prepare_phrase_transform` uses those coordinates to create one `PreparedTransform.apply(score)` callable that, at execution time, builds `PhraseTransformContext(score=score, voice_index=voice_index, phrase_index=phrase_index)`. The phrase transform definition receives that context, so the active phrase is available as `context.phrase`, neighboring phrases are reachable through `context.score.voices[context.voice_index].phrases`, and phrases in other voices are reachable through `context.score.voices`.
@@ -168,12 +168,12 @@ Cross-reference failures (e.g. "motif name not found in score") are runtime reso
 
 Transforms return new objects. No in-place mutation of `Score`, `Voice`, `Phrase`, or `Motif`. Today's `each_voice` adapter (which mutates `score.voices[i]`) is replaced by a new-`Score`-returning version.
 
-Because `Motif` and `Tone` contain mutable Python objects (`list[Tone]` and tone instances), score construction must avoid shared mutable state. `ScorePlan.motifs` is the parsed motif definition table, and `PhrasePlan.motifs` is a resolved construction plan; `build_score(score_plan)` must create fresh `Motif` instances for each phrase and fresh `Tone` instances for each motif's tones. If the same motif name is used more than once, each use gets its own `Motif` and `Tone` instances with the same frequency and duration values.
+Because `Motif` and `Tone` contain mutable Python objects (`list[Tone]` and tone instances), score construction must avoid shared mutable state. `ScorePlan.motifs` is the parsed motif definition table, and `PhrasePlan.motifs` is the resolved motif sequence for a phrase; `build_score(score_plan)` must create fresh `Motif` instances for each phrase and fresh `Tone` instances for each motif's tones. If the same motif name is used more than once, each use gets its own `Motif` and `Tone` instances with the same frequency and duration values.
 
 
 ## Parser Shape
 
-`composition/parser.py` does not implement transform execution. It parses composition JSON into a `Score` model plus a `ScorePlan` that preserves transform placement as a recipe or change set, then delegates to the transform application module.
+`composition/parser.py` does not implement transform execution. It parses composition JSON into a `Score` model plus a `ScorePlan` that preserves transform placement and the resolved materials needed to build the initial score, then delegates to the transform application module.
 
 That includes shape validation, tone-string parsing (`"440:0.5"` → `Tone`), top-level motif parsing, motif-name resolution inside phrases, motif/phrase/voice/score construction, and preserving transform requests in the score plan where they were declared.
 
@@ -325,11 +325,11 @@ Done signal: focused transform-function tests and `uv run pytest tests` pass. `m
 
 **Step 6 (high): Move phrase transform application timing.**
 
-This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly (inside the parser's voice loop). After this step, the parser builds a pure `Score` model plus a `ScorePlan` recipe with the transforms to apply to it, and phrase transforms run in a separate traversal after the `Score` is fully built. Behavior must be preserved exactly.
+This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly (inside the parser's voice loop). After this step, the parser builds a pure `Score` model plus a `ScorePlan` with the transforms to apply to it, and phrase transforms run in a separate traversal after the `Score` is fully built. Behavior must be preserved exactly.
 
 The change has four parts that move together:
 
-1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring recipe with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy where each `PhrasePlan` stores the resolved ordered `list[Motif]`, and flat request lists for phrase-level and score-level transforms.
+1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring plan with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy where each `PhrasePlan` stores the resolved ordered `list[Motif]`, and flat request lists for phrase-level and score-level transforms.
 2. **Parse-time placement preservation.** As the parser walks JSON, it converts each transform object into a `TransformRequest`. Phrase requests are appended to `ScorePlan.phrase_transform_requests` as `PhraseTransformRequest`s with their `voice_index` and `phrase_index`; score requests are appended to `ScorePlan.score_transform_requests` as `ScoreTransformRequest`s.
 3. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
 4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` assembles `PreparedTransform`s from `score_plan.phrase_transform_requests` and `score_plan.score_transform_requests`. Every prepared transform is executed with the same shape: validate params, apply, and return the next `Score`.
