@@ -17,7 +17,6 @@ from score_model.tone_utils import copy_tones
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
-    PhraseScope,
     PhraseTransformContext,
     PhraseTransformDefinition,
     ScorePipelineStep,
@@ -94,58 +93,31 @@ def parse_transform_spec(
 
 
 def _apply_phrase_transform_spec(
-    descriptor: TransformDefinition[PhraseScope] | PhraseTransformDefinition,
+    descriptor: TransformDefinition | PhraseTransformDefinition,
     phrase_tones: list[Tone],
     transform_params: Mapping[str, object],
     reference_tones: list[Tone] | None,
 ) -> list[Tone]:
+    # The descriptor must either be a new PhraseTransformDefinition or a legacy
+    # TransformDefinition. For new PhraseTransformDefinition entries, call the
+    # explicit transform API which receives a PhraseTransformContext and returns
+    # a Phrase. Legacy TransformDefinition entries should be migrated; if any
+    # remain, treat them as errors here to encourage completing migration steps.
     descriptor.validate_params(transform_params)
 
     if isinstance(descriptor, PhraseTransformDefinition):
-        reference_phrase = Phrase(
-            motifs=[
-                Motif(
-                    name="<parsed>",
-                    tones=copy_tones(reference_tones or []),
-                )
-            ]
-        )
-        current_phrase = Phrase(
-            motifs=[
-                Motif(
-                    name="<parsed>",
-                    tones=copy_tones(phrase_tones),
-                )
-            ]
-        )
+        # Build a minimal context where the reference phrase is voice[0].phrases[0]
+        # and the current phrase is voice[0].phrases[1]. This mirrors the prior
+        # behavior that presented two-phrase contexts to the transform.
+        reference_phrase = Phrase(motifs=[Motif(name="<parsed>", tones=copy_tones(reference_tones or []))])
+        current_phrase = Phrase(motifs=[Motif(name="<parsed>", tones=copy_tones(phrase_tones))])
         transformed_phrase = descriptor.transform(
-            PhraseTransformContext(
-                score=Score(
-                    voices=[
-                        Voice(
-                            phrases=[
-                                reference_phrase,
-                                current_phrase,
-                            ]
-                        )
-                    ]
-                ),
-                voice_index=0,
-                phrase_index=1,
-            ),
+            PhraseTransformContext(score=Score(voices=[Voice(phrases=[reference_phrase, current_phrase])]), voice_index=0, phrase_index=1),
             transform_params,
         )
         return [tone for motif in transformed_phrase.motifs for tone in motif.tones]
 
-    if descriptor.scope is PhraseScope.OWN_PHRASE:
-        own_phrase_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
-        return own_phrase_transform(phrase_tones, **transform_params)
-
-    if descriptor.scope is PhraseScope.PHRASE_RELATIVE:
-        phrase_reference_tones = reference_tones if reference_tones else []
-        phrase_relative_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
-        return phrase_relative_transform(phrase_tones, phrase_reference_tones, **transform_params)
-
+    # Legacy TransformDefinition-based descriptors are no longer supported here.
     raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
 
 

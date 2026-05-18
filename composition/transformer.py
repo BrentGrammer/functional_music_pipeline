@@ -14,7 +14,6 @@ from score_model.tone_utils import copy_tones
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
-    PhraseScope,
     PhraseTransformContext,
     PhraseTransformDefinition,
     ScoreScope,
@@ -62,29 +61,13 @@ def prepare_phrase_transform(request: PhraseTransformRequest) -> PreparedTransfo
         target_phrase = context.phrase
         phrase_tones = [tone for motif in target_phrase.motifs for tone in motif.tones]
 
+        # PHRASE_TRANSFORMS now contains only PhraseTransformDefinition instances.
+        # Call the explicit phrase-transform API which receives a PhraseTransformContext
+        # and returns a new Phrase. Legacy scope-based branching has been removed.
         if isinstance(descriptor, PhraseTransformDefinition):
             transformed_phrase = descriptor.transform(context, transform_params)
-        elif descriptor.scope is PhraseScope.OWN_PHRASE:
-            own_phrase_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
-            new_tones = own_phrase_transform(phrase_tones, **transform_params)
-            transformed_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=new_tones)])
-        elif descriptor.scope is PhraseScope.PHRASE_RELATIVE:
-            reference_tones: list[Tone] = []
-            if request.phrase_index > 0:
-                current_voice = score.voices[request.voice_index]
-                for p_idx in range(request.phrase_index):
-                    phrase = current_voice.phrases[p_idx]
-                    reference_tones.extend(tone for motif in phrase.motifs for tone in motif.tones)
-            elif request.voice_index > 0:
-                prev_voice = score.voices[request.voice_index - 1]
-                for phrase in prev_voice.phrases:
-                    reference_tones.extend(tone for motif in phrase.motifs for tone in motif.tones)
-
-            phrase_relative_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
-            new_tones = phrase_relative_transform(phrase_tones, reference_tones, **transform_params)
-            transformed_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=new_tones)])
         else:
-            raise ValueError(f"Unknown phrase scope {descriptor.scope}")
+            raise ValueError(f"Transform '{transform_name}' is not a phrase transform.")
 
         new_voices = []
         for v_idx, voice in enumerate(score.voices):
