@@ -18,6 +18,8 @@ from transforms.base import (
     PhraseTransformDefinition,
     ScoreScope,
     ToneSequence,
+    TransformDefinition,
+    ScoreTransformDefinition,
 )
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
@@ -98,23 +100,32 @@ def prepare_score_transform(request: ScoreTransformRequest) -> PreparedTransform
     descriptor.validate_params(transform_params)
 
     def prepared_transform(score: Score) -> Score:
-        if descriptor.scope is ScoreScope.TARGET_MOTIFS:
-            score_transform = cast(Callable[..., Score], descriptor.transform_func)
-            return score_transform(score, **transform_params)
+        # New-style ScoreTransformDefinition: call directly with (score, params).
+        if isinstance(descriptor, ScoreTransformDefinition):
+            return descriptor.transform(score, transform_params)
 
-        if descriptor.scope is ScoreScope.SCORE_AWARE:
-            score_transform = cast(Callable[..., Score], descriptor.transform_func)
-            return score_transform(score, **transform_params)
+        # Legacy TransformDefinition path (still supported for non-each-voice entries
+        # that haven't been migrated yet).
+        if isinstance(descriptor, TransformDefinition):
+            if descriptor.scope is ScoreScope.TARGET_MOTIFS:
+                score_transform = cast(Callable[..., Score], descriptor.transform_func)
+                return score_transform(score, **transform_params)
 
-        if descriptor.scope is ScoreScope.EACH_VOICE:
-            each_voice_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
-            new_voices = []
-            for voice in score.voices:
-                modified_tones = each_voice_transform(flatten_voice_tones(voice), **transform_params)
-                new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])]))
-            return Score(voices=new_voices)
+            if descriptor.scope is ScoreScope.SCORE_AWARE:
+                score_transform = cast(Callable[..., Score], descriptor.transform_func)
+                return score_transform(score, **transform_params)
 
-        raise ValueError(f"Unknown score scope {descriptor.scope}")
+            if descriptor.scope is ScoreScope.EACH_VOICE:
+                each_voice_transform = cast(Callable[..., ToneSequence], descriptor.transform_func)
+                new_voices = []
+                for voice in score.voices:
+                    modified_tones = each_voice_transform(flatten_voice_tones(voice), **transform_params)
+                    new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=modified_tones)])]))
+                return Score(voices=new_voices)
+
+            raise ValueError(f"Unknown score scope {descriptor.scope}")
+
+        raise ValueError(f"Transform '{transform_name}' is not a score transform.")
 
     return prepared_transform
 

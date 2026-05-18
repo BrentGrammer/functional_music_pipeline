@@ -182,6 +182,10 @@ class ScoreTransformDefinition:
     name: str
     params_spec: TransformParamsSpec
     transform: Callable[[Score, Mapping[str, object]], Score]
+    # Backwards-compatibility: expose `scope` during the staged migration so
+    # registry consumers and tests that still expect a `scope` attribute do
+    # not break. This field is removed in Step 10.
+    scope: ScoreScope | None = None
 
     def validate_params(self, params: Mapping[str, object]) -> None:
         validate_transform_params(self.params_spec, self.name, params)
