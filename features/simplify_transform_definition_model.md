@@ -434,7 +434,7 @@ Constraints:
 - Phrase transforms still use the old `TransformDefinition[PhraseScope]` and the old phrase-side branching code. Only WHEN they run changes, not HOW.
 - Do not touch `transforms/registry.py` or transform implementations.
 
-Verification: every existing composition must render identically. Add a focused regression test that exercises phrase-relative ordering — a 2-voice composition where voice 1's phrase 2 has a phrase-relative transform (reference is phrase 1 of voice 1), and voice 2's phrase 1 has a phrase-relative transform (reference is the whole of voice 1 after its transforms) — and assert the resulting tones match expected values consistent with current behavior.
+Verification: every existing composition must render identically, but do not add a golden-file or hash-based regression test for that. Add a focused observable-behavior test for `parse_composition` that exercises phrase-relative ordering: a 2-voice composition where the first voice's second phrase has a phrase-relative transform that references the first phrase, and the second voice's first phrase has a phrase-relative transform that references the whole first voice after its transforms. Assert the resulting `Score` tone values directly, using expected values that express the intended behavior: phrase transforms apply in document order, and phrase-relative transforms see earlier transformed phrases and earlier completed voices.
 
 Done signal: `uv run pytest tests` passes. `mypy .` passes.
 
