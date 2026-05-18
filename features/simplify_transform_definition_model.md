@@ -411,18 +411,24 @@ Done signal: focused application tests and `uv run pytest tests` pass. `mypy .` 
 
 **Step 6d (high): Switch `parse_composition` to the new parse/build/apply flow.**
 
-This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly (inside the parser's voice loop). After this step, the parser builds a pure `Score` model plus a `ScorePlan` with the transforms to apply to it, and phrase transforms run in a separate traversal after the `Score` is fully built. Behavior must be preserved exactly.
+This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly inside the parser loop. After this step, `parse_composition` becomes a thin orchestrator that:
 
-This step changes *when* phrase transforms execute and where transform placement is stored. Today phrase transforms run during voice assembly (inside the parser's voice loop). After this step, the parser builds a pure `Score` model plus a `ScorePlan` with the transforms to apply to it, and phrase transforms run in a separate traversal after the `Score` is fully built. Behavior must be preserved exactly.
+```python
+score_plan = parse_score_plan(composition_json)
+score = build_score(score_plan)
+return apply_transform_requests(score, score_plan)
+```
+
+The parser still owns JSON validation and parsing. `composition/transformation.py` owns transform preparation and execution.
 
 The change has four parts that move together:
 
-1. **Add score-plan storage.** Build `ScorePlan` as the parsed authoring plan with `motifs` for the top-level JSON `motifs` table parsed into named `Motif` objects, `voices` for the `VoicePlan` / `PhrasePlan` hierarchy where each `PhrasePlan` stores the resolved ordered `list[Motif]`, and flat request lists for phrase-level and score-level transforms.
-2. **Parse-time placement preservation.** As the parser walks JSON, it converts each transform object into a `TransformRequest`. Phrase requests are appended to `ScorePlan.phrase_transform_requests` as `PhraseTransformRequest`s with their `voice_index` and `phrase_index`; score requests are appended to `ScorePlan.score_transform_requests` as `ScoreTransformRequest`s.
-3. **Score build without transforms.** The parser builds the full `Score` with all phrases populated from their motifs, but with no phrase transforms applied.
-4. **Sequential transform application.** After the `Score` is built, `apply_transform_requests(score, score_plan)` assembles `PreparedTransform`s from `score_plan.phrase_transform_requests` and `score_plan.score_transform_requests`. Every prepared transform is executed with the same shape: validate params, apply, and return the next `Score`.
+1. **Build the parsed plan.** `parse_score_plan` produces `ScorePlan` with the top-level `motifs` table parsed into named `Motif` objects, `voices` built as `VoicePlan` / `PhrasePlan` hierarchy with resolved ordered `list[Motif]`, and flat request lists for phrase-level and score-level transforms.
+2. **Preserve placement while parsing.** As the parser walks JSON, it converts each transform object into a `TransformRequest`. Phrase requests are appended to `ScorePlan.phrase_transform_requests` as `PhraseTransformRequest`s with their `voice_index` and `phrase_index`; score requests are appended to `ScorePlan.score_transform_requests` as `ScoreTransformRequest`s.
+3. **Build score without transforms.** `build_score(score_plan)` constructs a pure `Score` from the plan only. It creates fresh `Motif` and `Tone` instances for each phrase use and applies no transforms.
+4. **Apply transforms in one pass.** `apply_transform_requests(score, score_plan)` assembles prepared transforms internally from `score_plan.phrase_transform_requests` and `score_plan.score_transform_requests`, then applies them in order. Every prepared transform follows the same shape: validate params, apply, and return the next `Score`.
 
-Ordering rule: preserve the current parser execution order. Collect phrase transform requests by walking the JSON as nested loops: voices from first to last, phrases within each voice from first to last, and transforms within each phrase from first to last. Apply those phrase requests in that collected order. After all phrase requests have been applied, apply `score_transforms` from first to last as they appear in the top-level JSON. This preserves phrase-relative behavior, where later phrase transforms can depend on earlier transformed phrases or earlier completed voices. Do not reorder or parallelize.
+Ordering rule: preserve the current parser execution order. Collect phrase transform requests by walking the JSON as nested loops: voices from first to last, phrases within each voice from first to last, and transforms within each phrase from first to last. `apply_transform_requests(score, score_plan)` must apply those phrase requests in that collected order, then apply `score_transforms` from first to last as they appear in the top-level JSON. This preserves phrase-relative behavior, where later phrase transforms can depend on earlier transformed phrases or earlier completed voices. Do not reorder or parallelize.
 
 Constraints:
 - Phrase transforms still use the old `TransformDefinition[PhraseScope]` and the old phrase-side branching code. Only WHEN they run changes, not HOW.
