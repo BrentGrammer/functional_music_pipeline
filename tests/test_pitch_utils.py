@@ -4,7 +4,7 @@ from score_model.pitch_utils import (
     cents_to_frequency,
     frequency_to_cents,
     frequency_to_semitones,
-    semitones_to_frequency,
+    transpose_frequency_by_semitones,
 )
 
 
@@ -18,16 +18,16 @@ def test_cents_to_frequency():
     assert cents_to_frequency(A4, 100.0) == pytest.approx(440.0 * (2 ** (1 / 12)))
 
 
-def test_semitones_to_frequency():
+def test_transpose_frequency_by_semitones():
     A4 = 440.0
     # +12 semitones is one octave up
-    assert semitones_to_frequency(A4, 12.0) == pytest.approx(880.0)
+    assert transpose_frequency_by_semitones(A4, 12.0) == pytest.approx(880.0)
     # -12 semitones is one octave down
-    assert semitones_to_frequency(A4, -12.0) == pytest.approx(220.0)
+    assert transpose_frequency_by_semitones(A4, -12.0) == pytest.approx(220.0)
     # +1 semitone is a semitone
-    assert semitones_to_frequency(A4, 1.0) == pytest.approx(440.0 * (2 ** (1 / 12)))
+    assert transpose_frequency_by_semitones(A4, 1.0) == pytest.approx(440.0 * (2 ** (1 / 12)))
     # +0.5 semitone is a quarter tone
-    assert semitones_to_frequency(A4, 0.5) == pytest.approx(440.0 * (2 ** (0.5 / 12)))
+    assert transpose_frequency_by_semitones(A4, 0.5) == pytest.approx(440.0 * (2 ** (0.5 / 12)))
 
 
 def test_frequency_to_cents():
@@ -52,7 +52,7 @@ def test_rejects_nonpositive_frequencies():
     with pytest.raises(ValueError):
         cents_to_frequency(0, 100)
     with pytest.raises(ValueError):
-        semitones_to_frequency(-1, 1)
+        transpose_frequency_by_semitones(-1, 1)
     with pytest.raises(ValueError):
         frequency_to_cents(0, 440)
     with pytest.raises(ValueError):

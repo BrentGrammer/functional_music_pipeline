@@ -12,8 +12,8 @@ def cents_to_frequency(reference_frequency: float, cents: float) -> float:
     return reference_frequency * (2 ** (cents / CENTS_PER_OCTAVE))
 
 
-def semitones_to_frequency(reference_frequency: float, semitones: float) -> float:
-    """Calculates the frequency that is a specific number of semitones away from a reference frequency."""
+def transpose_frequency_by_semitones(reference_frequency: float, semitones: float) -> float:
+    """Transposes a reference frequency by the requested number of semitones."""
     if reference_frequency <= 0:
         raise ValueError("Reference frequency must be greater than zero.")
     return reference_frequency * (2 ** (semitones / SEMITONES_PER_OCTAVE))

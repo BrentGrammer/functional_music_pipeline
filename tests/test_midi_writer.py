@@ -14,7 +14,7 @@ from midi_rendering.midi_writer import (
 )
 from score_model.motif import Motif
 from score_model.phrase import Phrase
-from score_model.pitch_utils import cents_to_frequency, semitones_to_frequency
+from score_model.pitch_utils import cents_to_frequency, transpose_frequency_by_semitones
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
@@ -58,7 +58,7 @@ def test_frequency_to_midi_note_rounds_to_nearest_note():
     EXPECTED_CENTS_SHARP = 38.91
 
     # B-flat 4 is exactly 1 semitone above A4 (440 Hz)
-    B_FLAT_4_FREQUENCY = semitones_to_frequency(440.0, 1.0)
+    B_FLAT_4_FREQUENCY = transpose_frequency_by_semitones(440.0, 1.0)
     B_FLAT_4_MIDI_NOTE = 70
 
     pitch_sharp = frequency_to_midi_note(FREQUENCY_SLIGHTLY_SHARP_OF_A4)

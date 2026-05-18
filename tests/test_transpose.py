@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from score_model.pitch_utils import semitones_to_frequency
+from score_model.pitch_utils import transpose_frequency_by_semitones
 from score_model.tone import Tone
 from transforms.basic.transpose import transpose_tones
 
@@ -35,7 +35,7 @@ class TestTransposeTones:
         # This test verifies that a fractional transpose produces a frequency
         # that is genuinely between the standard 12-TET semitones.
         A4 = 440.0
-        A_SHARP_4 = semitones_to_frequency(A4, 1)
+        A_SHARP_4 = transpose_frequency_by_semitones(A4, 1)
 
         tones = [Tone(A4)]
 
@@ -43,7 +43,7 @@ class TestTransposeTones:
         result = transpose_tones(tones, 0.5)
 
         # 1. Check that the frequency is correct
-        expected_freq = semitones_to_frequency(A4, 0.5)
+        expected_freq = transpose_frequency_by_semitones(A4, 0.5)
         assert result[0].frequency == pytest.approx(expected_freq)
 
         # 2. Check that the frequency is NOT the original note
