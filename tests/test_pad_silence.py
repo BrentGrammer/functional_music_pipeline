@@ -1,7 +1,7 @@
 import pytest
 
 from composition.parser import generate_score_plan
-from composition.schema import PhraseConfig
+from composition.schema import PhraseConfigInput
 from composition.transformer import transform_score
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -99,7 +99,7 @@ def test_parse_phrase_applies_pad_silence():
     subject_duration = 0.5
     silence_seconds = 0.3
     parsed_motifs = {"subject": [Tone(subject_frequency, duration=subject_duration)]}
-    phrase_config: PhraseConfig = {
+    phrase_config: PhraseConfigInput = {
         "motifs": ["subject"],
         "transforms": [{"name": "pad_silence", "params": {"seconds": silence_seconds, "position": "end"}}],
     }
@@ -136,7 +136,7 @@ def test_parse_phrase_pad_silence_requires_missing_required_fields():
     for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
         incomplete_params = valid_params.copy()
         incomplete_params.pop(required_field)
-        phrase_config: PhraseConfig = {
+        phrase_config: PhraseConfigInput = {
             "motifs": ["subject"],
             "transforms": [{"name": "pad_silence", "params": incomplete_params}],
         }

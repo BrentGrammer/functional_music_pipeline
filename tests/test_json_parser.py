@@ -4,7 +4,7 @@ from composition.parser import (
     generate_score_plan,
     parse_motifs,
 )
-from composition.schema import PhraseConfig
+from composition.schema import PhraseConfigInput
 from composition.transformer import transform_score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
@@ -170,7 +170,7 @@ def test_parse_phrase_single_motif_from_motifs_list():
         "seed_a": [Tone(440, 0.5), Tone(880, 0.5)]
     }
 
-    phrase_dict: PhraseConfig = {
+    phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a"],
         "transforms": [{"name": "reverse"}]
     }
@@ -187,7 +187,7 @@ def test_parse_phrase_multiple_motifs():
         "seed_b": [Tone(880, 0.25), Tone(523.25, 0.75)]
     }
 
-    phrase_dict: PhraseConfig = {
+    phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a", "seed_b"]
     }
 
@@ -207,7 +207,7 @@ def test_parse_phrase_reverse_applies_after_grouping_motifs():
         "seed_b": [Tone(880, 0.75)]
     }
 
-    phrase_dict: PhraseConfig = {
+    phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a", "seed_b"],
         "transforms": [{"name": "reverse"}]
     }
@@ -224,7 +224,7 @@ def test_parse_phrase_scale_applies_to_all_grouped_motifs():
         "seed_b": [Tone(880, 0.25), Tone(523.25, 0.75)]
     }
 
-    phrase_dict: PhraseConfig = {
+    phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a", "seed_b"],
         "transforms": [{"name": "scale", "params": {"dimension": "duration", "factor": 2.0}}]
     }
@@ -245,7 +245,7 @@ def test_parse_phrase_delay_applies_to_all_grouped_motifs():
     DELAY_SECONDS = 1.8
 
     parsed_motifs = {"seed_a": [Tone(ORIGINAL_FREQUENCY, ORIGINAL_DURATION)]}
-    phrase_dict: PhraseConfig = {
+    phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a"],
         "transforms": [{"name": "delay", "params": {"seconds": DELAY_SECONDS}}],
     }
@@ -265,7 +265,7 @@ class TestScaleTransformParsing:
         parsed_motifs = {"seed_a": [Tone(440, original_duration)]}
 
         factor = 0.5
-        phrase_dict: PhraseConfig = {
+        phrase_dict: PhraseConfigInput = {
             "motifs": ["seed_a"],
             "transforms": [{"name": "scale", "params": {"dimension": "duration", "factor": factor}}],
         }
@@ -739,7 +739,7 @@ def test_parse_phrase_with_reference_transform():
     }
     reference_tones = [Tone(110, 1.0)]
 
-    phrase_dict: PhraseConfig = {
+    phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a"],
         "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
@@ -756,7 +756,7 @@ def test_parse_phrase_reference_transform_uses_total_grouped_phrase_duration():
     }
     reference_tones = [Tone(110, 2.0)]
 
-    phrase_dict: PhraseConfig = {
+    phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a", "seed_b"],
         "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
@@ -916,7 +916,7 @@ def test_parse_phrase_transform_must_be_string_or_object():
 
 def test_parse_phrase_unknown_transform():
     parsed_motifs = {"seed_a": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": [{"name": "unknown_transform"}]}
+    phrase_dict: PhraseConfigInput = {"motifs": ["seed_a"], "transforms": [{"name": "unknown_transform"}]}
 
     with pytest.raises(ValueError):
         render_phrase_from_config(phrase_dict, parsed_motifs)
@@ -924,7 +924,7 @@ def test_parse_phrase_unknown_transform():
 
 def test_parse_phrase_requires_params_object_when_transform_params_are_missing():
     parsed_motifs = {"seed": [Tone(440)]}
-    phrase_dict: PhraseConfig = {"motifs": ["seed"], "transforms": [{"name": "scale"}]}
+    phrase_dict: PhraseConfigInput = {"motifs": ["seed"], "transforms": [{"name": "scale"}]}
 
     with pytest.raises(ValueError):
         render_phrase_from_config(phrase_dict, parsed_motifs)

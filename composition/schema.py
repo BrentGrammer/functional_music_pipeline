@@ -10,13 +10,19 @@ class TransformConfig(TypedDict):
     name: str
     params: dict[str, object]
 
-class PhraseConfig(TypedDict):
+
+class PhraseConfigInput(TypedDict, total=False):
     motifs: list[str]
     transforms: NotRequired[list[TransformConfigInput]]
 
 
+class PhraseConfig(TypedDict):
+    motifs: list[str]
+    transforms: list[TransformConfig]
+
+
 class VoiceConfig(TypedDict):
-    phrases: list[PhraseConfig]
+    phrases: list[PhraseConfigInput]
 
 
 class CompositionConfig(TypedDict, total=False):
