@@ -3,11 +3,7 @@ import pytest
 from composition.parser import (
     _create_voice_plans_from_document,
     _extract_composition_sections,
-    _extract_phrase_transform_requests,
-    _extract_requests_from_phrase,
-    _extract_requests_from_voice,
     _validate_composition_structure,
-    _validate_and_extract_motifs,
     generate_score_plan,
 )
 from composition.schema import CompositionDocument
@@ -272,12 +268,53 @@ def test_validate_composition_structure_rejects_non_object():
         _validate_composition_structure("not-an-object")  # type: ignore[arg-type]
 
 
+def test_validate_composition_structure_rejects_missing_composition():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": ["440"]},
+            }
+        )
+
+
+def test_validate_composition_structure_rejects_missing_voices():
+    composition_document: CompositionDocument = {
+        "motifs": {"seed": ["440"]},
+        "composition": {"score_transforms": [{"name": "reverse"}]},
+    }
+
+    validated_document = _validate_composition_structure(composition_document)
+
+    assert validated_document["composition"]["voices"] == []
+
+
+def test_validate_composition_structure_rejects_empty_composition():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": ["440"]},
+                "composition": {},
+            }
+        )
+
+
+def test_validate_composition_structure_allows_empty_voices():
+    composition_document: CompositionDocument = {
+        "motifs": {"seed": ["440"]},
+        "composition": {"voices": []},
+    }
+
+    validated_document = _validate_composition_structure(composition_document)
+
+    assert validated_document["composition"]["voices"] == []
+
+
 def test_validate_composition_structure_rejects_non_string_motif_definition_name():
     with pytest.raises(ValueError):
         _validate_composition_structure(
             {
                 "motifs": {1: ["440"]},
-                "composition": {"voices": []},
+                "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
             }
         )
 
@@ -287,7 +324,7 @@ def test_validate_composition_structure_rejects_non_list_motif_definition_value(
         _validate_composition_structure(
             {
                 "motifs": {"seed": "440"},
-                "composition": {"voices": []},
+                "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
             }
         )
 
@@ -297,7 +334,7 @@ def test_validate_composition_structure_rejects_non_string_tone_entry():
         _validate_composition_structure(
             {
                 "motifs": {"seed": [440]},
-                "composition": {"voices": []},
+                "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
             }
         )
 
@@ -307,7 +344,7 @@ def test_validate_composition_structure_rejects_empty_tone_string():
         _validate_composition_structure(
             {
                 "motifs": {"seed": [""]},
-                "composition": {"voices": []},
+                "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
             }
         )
 

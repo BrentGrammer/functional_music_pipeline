@@ -91,13 +91,16 @@ def _validate_composition_structure(
             if not tone_string:
                 raise ValueError(f"Motif '{motif_name}' tone entries must be non-empty strings.")
 
-    composition_config = composition_document.get("composition", {})
+    composition_config = composition_document.get("composition")
     if not isinstance(composition_config, dict):
         raise ValueError("Composition 'composition' must be an object.")
+    if not composition_config:
+        raise ValueError("Composition 'composition' must not be empty.")
 
     voice_configs = composition_config.get("voices", [])
     if not isinstance(voice_configs, list):
         raise ValueError("Composition 'voices' must be a list.")
+    composition_config["voices"] = voice_configs
     for voice_config in voice_configs:
         if not isinstance(voice_config, dict):
             raise ValueError("Composition 'voices' entries must be objects.")
