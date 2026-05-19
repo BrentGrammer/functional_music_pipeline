@@ -1,4 +1,4 @@
-from composition.schema import CompositionDocument
+from composition.schema import CompositionDocument, TransformConfig, VoiceConfig
 from composition.score_plan import (
     PhrasePlan,
     PhraseTransformRequest,
@@ -177,7 +177,7 @@ def _validate_composition_structure(
 
 def _extract_composition_sections(
     composition_document: CompositionDocument,
-) -> tuple[dict[str, list[str]], list[object], list[object]]:
+) -> tuple[dict[str, list[str]], list[VoiceConfig], list[TransformConfig]]:
     """
     Extracts key sections from the composition document.
     Assumes the structure has already been validated.
