@@ -126,10 +126,26 @@ def _validate_composition_structure(
             motif_names = phrase_config.get("motifs")
             if not isinstance(motif_names, list):
                 raise ValueError("Phrase 'motifs' must be a list.")
+            for motif_name in motif_names:
+                if not isinstance(motif_name, str):
+                    raise ValueError("Phrase 'motifs' entries must be strings.")
+                if not motif_name:
+                    raise ValueError("Phrase 'motifs' entries must be non-empty strings.")
 
             transform_configs = phrase_config.get("transforms", [])
             if not isinstance(transform_configs, list):
                 raise ValueError("Phrase 'transforms' must be a list.")
+            for transform_config in transform_configs:
+                if not isinstance(transform_config, dict):
+                    raise ValueError("Phrase 'transforms' entries must be objects.")
+
+                transform_name = transform_config.get("name")
+                if not isinstance(transform_name, str):
+                    raise ValueError("Transform 'name' must be a string.")
+
+                transform_params = transform_config.get("params", {})
+                if not isinstance(transform_params, dict):
+                    raise ValueError("Transform 'params' must be an object.")
 
     score_transform_specs = composition_config.get("score_transforms", [])
     if not isinstance(score_transform_specs, list):
@@ -137,6 +153,14 @@ def _validate_composition_structure(
     for score_transform_spec in score_transform_specs:
         if not isinstance(score_transform_spec, dict):
             raise ValueError("Composition 'score_transforms' entries must be objects.")
+
+        transform_name = score_transform_spec.get("name")
+        if not isinstance(transform_name, str):
+            raise ValueError("Transform 'name' must be a string.")
+
+        transform_params = score_transform_spec.get("params", {})
+        if not isinstance(transform_params, dict):
+            raise ValueError("Transform 'params' must be an object.")
 
     return composition_document
 
