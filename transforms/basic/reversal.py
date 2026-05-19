@@ -15,12 +15,14 @@ def reverse_tones(tones: ToneSequence) -> ToneSequence:
 
 
 def reverse_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    # `params` is required by the shared transform adapter signature; reverse has no configurable params.
     phrase_tones = flatten_phrase_tones(context.phrase)
     reversed_tones = reverse_tones(phrase_tones)
     return Phrase(motifs=[Motif(name="<transformed>", tones=reversed_tones)])
 
 
 def reverse_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    # `params` is required by the shared transform adapter signature; reverse has no configurable params.
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
