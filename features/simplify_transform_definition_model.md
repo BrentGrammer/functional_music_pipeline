@@ -596,6 +596,7 @@ This rejects the previous public transform-definition options based on loose coo
 
 - `apply_to_each_voice` in the parser.
 - `_apply_phrase_transform_spec`, `_apply_score_transform_spec`, `_apply_phrase_transform_specs` in the parser.
+
 - All parser-side scope branching (`if scope is PhraseScope.OWN_PHRASE`, etc.).
 - `parsed_motifs` threading through score transforms.
 - `reference_tones` computation in the parser.
