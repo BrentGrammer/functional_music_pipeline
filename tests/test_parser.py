@@ -265,7 +265,7 @@ def test_validate_composition_structure_defaults_missing_score_transforms():
 
 def test_validate_composition_structure_rejects_non_object():
     with pytest.raises(ValueError):
-        _validate_composition_structure("not-an-object")  # type: ignore[arg-type]
+        _validate_composition_structure("not-an-object")
 
 
 def test_validate_composition_structure_rejects_missing_motifs():
