@@ -82,7 +82,7 @@ def test_prepare_score_transform_applies_each_voice_transform():
     assert len(new_score.voices) == 2
 
     for voice in new_score.voices:
-        assert voice.phrases[0].motifs[0].name == "<each_voice>"
+        assert voice.phrases[0].motifs[0].name == "<transformed>"
 
 
 def test_transform_score_builds_score_and_applies_transform_requests():
