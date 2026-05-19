@@ -123,6 +123,7 @@ def _validate_composition_structure(
             transform_configs = phrase_config.get("transforms", [])
             if not isinstance(transform_configs, list):
                 raise ValueError("Phrase 'transforms' must be a list.")
+            phrase_config["transforms"] = transform_configs
             for transform_config in transform_configs:
                 if not isinstance(transform_config, dict):
                     raise ValueError("Phrase 'transforms' entries must be objects.")
@@ -174,7 +175,7 @@ def _extract_requests_from_phrase(
     voice_index: int,
     phrase_index: int,
 ) -> list[PhraseTransformRequest]:
-    transform_specs = phrase_config.get("transforms", [])
+    transform_specs = phrase_config["transforms"]
 
     def build_request(spec: object) -> PhraseTransformRequest:
         name, params = parse_transform_spec(spec, TransformLevel.PHRASE)
