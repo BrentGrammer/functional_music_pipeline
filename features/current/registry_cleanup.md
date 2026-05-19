@@ -212,7 +212,6 @@ Expected final registry shape:
 - Do not replace synthetic motif names like `"<transformed>"`, `"<each_voice>"`, or `"<feigenbaum>"` in this pass.
 - Do not redesign `Motif.name`; that is a separate cleanup.
 
-
 ## Further cleanup after done
 
 This is repeated in a lot of the adapter transforms:
@@ -229,6 +228,37 @@ Should this be extracted? look at the fucntions and see if there are common elem
 
 - del params in one of the transforms is a smell. check on that (left a todo item)
 
-- look at feigenbaum.py - that shape in the adapter is cleaner than other score transforms. Should we adopt that style to the other transforms?
-
 - Consider package facades via `__init__.py` if the registry imports start getting too deep. Python does not auto-use `index.js`-style files, but a package can re-export selected adapters so `registry.py` can import from `transforms.basic`, `transforms.complexity`, `transforms.geological`, and `transforms.proportion` instead of reaching into every submodule directly. Keep those facades thin to avoid hiding too much.
+
+## Match feigenbaum loop style in other adapters
+
+look at feigenbaum.py - that shape in the adapter is cleaner than other score transforms. Should we adopt that style to the other transforms?
+Refactor the score adapters that build deeply nested Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(...) expressions into the cleaner Feigenbaum-style
+loop shape. This is a readability-only cleanup: no behavior, validation, transform calls, motif names, or public APIs change.
+
+## Key Changes
+
+- Update each applicable score adapter to:
+  - validate params exactly as it does today;
+  - initialize new_voices = [];
+  - loop over score.voices;
+  - compute voice_tones = flatten_voice_tones(voice);
+  - compute new_tones = existing_transform(...);
+  - append Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=new_tones)])]);
+  - return Score(voices=new_voices).
+- Apply this only to adapters currently using the deeply nested one-expression shape, including delay_score_transform and invert_score_transform.
+- Do not add a shared wrapping helper in this pass.
+- Do not alter score_feigenbaum_sequence; it already has the desired shape and keeps its existing "<feigenbaum>" motif name.
+
+## Test Plan
+
+- I will do this manually or ask you to help. Stop at this step and wait for my instructions.
+- Run a focused smoke check or existing relevant tests after the refactor:
+  - uv run pytest tests/test_transformation.py tests/test_json_parser.py
+  - Include specific transform tests where available, such as transpose/scale/drift/repeat.
+- Also run rg -n "name=\"<each_voice>\"" transforms to review the remaining adapter shapes after cleanup.
+
+## Assumptions
+
+- The goal is readability only, not reducing all wrapping repetition with a new helper.
+- Existing synthetic motif names like "<each_voice>" stay unchanged.
