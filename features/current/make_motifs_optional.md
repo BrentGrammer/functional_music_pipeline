@@ -1,4 +1,6 @@
-Under that model, this is a much better fit and it is not a major refactor.
+# Making Motifs in the JSON doc input optional
+
+Users should optionally be able to provide a named list of motifs, but they can also directly inline motif strings (`frequency:duration`) into phrases. This allows the user to add adhoc motifs inline as well as reference named motifs in the composition.
 
 The key distinction is:
 
