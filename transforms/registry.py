@@ -15,7 +15,7 @@ from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_transform
 from transforms.basic.inversion import INVERT_PARAMS_SPEC, invert_tones
 from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_tones
-from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_tones
+from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform, reverse_tones
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
 from transforms.complexity.cellular_automata import (
@@ -53,14 +53,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "reverse": PhraseTransformDefinition(
         name="reverse",
         params_spec=REVERSE_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=reverse_tones([tone for motif in context.phrase.motifs for tone in motif.tones]),
-                )
-            ]
-        ),
+        transform=reverse_phrase_transform,
     ),
     "golden_ratio": PhraseTransformDefinition(
         name="golden_ratio",
@@ -433,7 +426,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     ),
 }
 
-SCORE_TRANSFORMS: dict[str, object] = {
+SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
     "feigenbaum_sequence": ScoreTransformDefinition(
         name="feigenbaum_sequence",
         params_spec=FEIGENBAUM_PARAMS_SPEC,
@@ -442,12 +435,7 @@ SCORE_TRANSFORMS: dict[str, object] = {
     "reverse": ScoreTransformDefinition(
         name="reverse",
         params_spec=REVERSE_PARAMS_SPEC,
-        transform=lambda score, params: Score(
-            voices=[
-                Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=reverse_tones(flatten_voice_tones(voice)))])])
-                for voice in score.voices
-            ]
-        ),
+        transform=reverse_score_transform,
     ),
     "golden_ratio": ScoreTransformDefinition(
         name="golden_ratio",
