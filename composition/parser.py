@@ -172,10 +172,7 @@ def _extract_requests_from_phrase(
     voice_index: int,
     phrase_index: int,
 ) -> list[PhraseTransformRequest]:
-    transform_specs = [
-        TransformConfig(name=spec["name"], params=spec["params"])
-        for spec in phrase_config["transforms"]
-    ]
+    transform_specs = phrase_config["transforms"]
 
     def build_request(spec: TransformConfig) -> PhraseTransformRequest:
         return PhraseTransformRequest(
