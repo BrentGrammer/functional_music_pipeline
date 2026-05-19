@@ -6,7 +6,7 @@ from transforms.base import (
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_phrase_transform, delay_score_transform
 from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_phrase_transform, drift_score_transform
 from transforms.basic.inversion import INVERT_PARAMS_SPEC, invert_phrase_transform, invert_score_transform
-from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_phrase_transform
+from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_phrase_transform, pad_silence_score_transform
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_phrase_transform, repeat_score_transform
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_phrase_transform, scale_score_transform
@@ -182,6 +182,11 @@ SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
         name="scale",
         params_spec=SCALE_PARAMS_SPEC,
         transform=scale_score_transform,
+    ),
+    "pad_silence": ScoreTransformDefinition(
+        name="pad_silence",
+        params_spec=PAD_SILENCE_PARAMS_SPEC,
+        transform=pad_silence_score_transform,
     ),
     "delay": ScoreTransformDefinition(
         name="delay",
