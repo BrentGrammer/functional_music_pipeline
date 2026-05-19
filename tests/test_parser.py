@@ -237,7 +237,13 @@ def test_validate_composition_structure_returns_validated_document():
 
     validated_document = _validate_composition_document(composition_document)
 
-    assert validated_document == composition_document
+    assert validated_document == {
+        "motifs": {"seed": ["440"]},
+        "composition": {
+            "voices": [{"phrases": [{"motifs": ["seed"], "transforms": []}]}],
+            "score_transforms": [{"name": "reverse", "params": {}}],
+        },
+    }
 
 
 def test_validate_composition_structure_defaults_missing_phrase_transforms():
