@@ -121,29 +121,17 @@ def _validate_composition_structure(
 
 
 def _extract_composition_sections(
-    composition_document: object,
+    composition_document: CompositionDocument,
 ) -> tuple[dict[str, list[str]], list[object], list[object]]:
     """
     Extracts key sections from the composition document.
     Assumes the structure has already been validated.
     """
-    _validate_composition_structure(composition_document)
-
     motifs_section = composition_document.get("motifs", {})
     composition_config = composition_document.get("composition", {})
 
-    if not isinstance(motifs_section, dict):
-        raise ValueError("Composition 'motifs' must be an object mapping motif names to tone lists.")
-    if not isinstance(composition_config, dict):
-        raise ValueError("Composition 'composition' must be an object.")
-
     voices_section = composition_config.get("voices", [])
     score_transforms_section = composition_config.get("score_transforms", [])
-
-    if not isinstance(voices_section, list):
-        raise ValueError("Composition 'voices' must be a list.")
-    if not isinstance(score_transforms_section, list):
-        raise ValueError("Composition 'score_transforms' must be a list.")
 
     return motifs_section, voices_section, score_transforms_section
 
