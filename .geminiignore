@@ -34,6 +34,7 @@ htmlcov/
 .cline/
 .codex/
 opencode.json
+.clineignore
 
 # Serena MCP
 # Keep .serena/project*.yml and .serena/memories/ visible.
