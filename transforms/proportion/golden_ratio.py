@@ -1,5 +1,7 @@
 from collections.abc import Mapping
 
+from collections.abc import Mapping
+
 from score_model.math_constants import GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -35,6 +37,19 @@ def golden_ratio_transform(tones: ToneSequence, dimension: ToneDimension | str =
     return scale_transform(tones, dimension, 1 / GOLDEN_RATIO)
 
 
+def _previous_phrase_tones(context: PhraseTransformContext) -> list:
+    if context.phrase_index > 0:
+        return [
+            tone
+            for phrase in context.score.voices[context.voice_index].phrases[:context.phrase_index]
+            for motif in phrase.motifs
+            for tone in motif.tones
+        ]
+    if context.voice_index > 0:
+        return flatten_voice_tones(context.score.voices[context.voice_index - 1])
+    return []
+
+
 def golden_ratio_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
     dimension = params.get("dimension", ToneDimension.DURATION)
     if not isinstance(dimension, (str, ToneDimension)):
@@ -50,18 +65,7 @@ def phrase_golden_ratio_shrink_transform(
     params: Mapping[str, object],
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
-
-    if context.phrase_index > 0:
-        previous_tones = [
-            tone
-            for phrase in context.score.voices[context.voice_index].phrases[:context.phrase_index]
-            for motif in phrase.motifs
-            for tone in motif.tones
-        ]
-    elif context.voice_index > 0:
-        previous_tones = flatten_voice_tones(context.score.voices[context.voice_index - 1])
-    else:
-        previous_tones = []
+    previous_tones = _previous_phrase_tones(context)
 
     dimension = params.get("dimension", ToneDimension.DURATION)
     if not isinstance(dimension, (str, ToneDimension)):
@@ -76,18 +80,7 @@ def phrase_golden_ratio_grow_transform(
     params: Mapping[str, object],
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
-
-    if context.phrase_index > 0:
-        previous_tones = [
-            tone
-            for phrase in context.score.voices[context.voice_index].phrases[:context.phrase_index]
-            for motif in phrase.motifs
-            for tone in motif.tones
-        ]
-    elif context.voice_index > 0:
-        previous_tones = flatten_voice_tones(context.score.voices[context.voice_index - 1])
-    else:
-        previous_tones = []
+    previous_tones = _previous_phrase_tones(context)
 
     dimension = params.get("dimension", ToneDimension.DURATION)
     if not isinstance(dimension, (str, ToneDimension)):
