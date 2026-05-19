@@ -2,6 +2,7 @@ from composition.schema import (
     CompositionConfig,
     CompositionDocument,
     CompositionDocumentInput,
+    MotifsConfigInput,
     PhraseConfig,
     TransformConfig,
     VoiceConfig,
@@ -29,7 +30,7 @@ def _parse_tone_string(tone_string: str) -> Tone:
     return Tone(float(normalized_tone_string))
 
 
-def parse_motifs(motif_definitions: dict[str, list[str]]) -> dict[str, list[Tone]]:
+def parse_motifs(motif_definitions: MotifsConfigInput) -> dict[str, list[Tone]]:
     parsed_motifs: dict[str, list[Tone]] = {}
 
     for motif_name, tone_strings in motif_definitions.items():

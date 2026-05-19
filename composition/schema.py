@@ -1,4 +1,7 @@
-from typing import NotRequired, TypedDict
+from typing import NotRequired, TypeAlias, TypedDict
+
+
+MotifsConfigInput: TypeAlias = dict[str, list[str]]
 
 
 class TransformConfigInput(TypedDict, total=False):
@@ -40,10 +43,10 @@ class CompositionConfig(TypedDict):
 
 
 class CompositionDocumentInput(TypedDict, total=False):
-    motifs: dict[str, list[str]]
+    motifs: MotifsConfigInput
     composition: CompositionConfigInput
 
 
 class CompositionDocument(TypedDict):
-    motifs: dict[str, list[str]]
+    motifs: MotifsConfigInput
     composition: CompositionConfig

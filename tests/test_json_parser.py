@@ -4,7 +4,7 @@ from composition.parser import (
     generate_score_plan,
     parse_motifs,
 )
-from composition.schema import PhraseConfigInput
+from composition.schema import MotifsConfigInput, PhraseConfigInput
 from composition.transformer import transform_score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
@@ -20,8 +20,12 @@ from transforms.base import (
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
 
-def render_phrase_from_config(phrase_config: object, parsed_motifs: dict[str, list[Tone]], reference_tones: list[Tone] | None = None) -> list[Tone]:
-    motifs_section: dict[str, list[str]] = {
+def render_phrase_from_config(
+    phrase_config: PhraseConfigInput,
+    parsed_motifs: dict[str, list[Tone]],
+    reference_tones: list[Tone] | None = None,
+) -> list[Tone]:
+    motifs_section: MotifsConfigInput = {
         name: [f"{tone.frequency}:{tone.duration}" for tone in tones]
         for name, tones in parsed_motifs.items()
     }

@@ -1,7 +1,7 @@
 import pytest
 
 from composition.parser import generate_score_plan
-from composition.schema import PhraseConfigInput
+from composition.schema import MotifsConfigInput, PhraseConfigInput
 from composition.transformer import transform_score
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -14,8 +14,11 @@ from transforms.basic.pad_silence import pad_silence_phrase_transform, pad_silen
 from transforms.registry import PHRASE_TRANSFORMS
 
 
-def render_phrase_from_config(phrase_config: object, parsed_motifs: dict[str, list[Tone]]) -> list[Tone]:
-    motifs_section: dict[str, list[str]] = {
+def render_phrase_from_config(
+    phrase_config: PhraseConfigInput,
+    parsed_motifs: dict[str, list[Tone]],
+) -> list[Tone]:
+    motifs_section: MotifsConfigInput = {
         name: [f"{tone.frequency}:{tone.duration}" for tone in tones]
         for name, tones in parsed_motifs.items()
     }
