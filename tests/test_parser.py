@@ -6,6 +6,7 @@ from composition.parser import (
     _extract_phrase_transform_requests,
     _extract_requests_from_phrase,
     _extract_requests_from_voice,
+    _validate_composition_structure,
     _validate_and_extract_motifs,
     generate_score_plan,
 )
@@ -233,6 +234,25 @@ class TestRitardandoParserIntegration:
 def test_validate_and_extract_motifs_rejects_non_dict_phrase_config():
     with pytest.raises(ValueError):
         _validate_and_extract_motifs(["not", "a", "dict"])
+
+
+def test_validate_composition_structure_returns_validated_document():
+    composition_document: CompositionDocument = {
+        "motifs": {"seed": ["440"]},
+        "composition": {
+            "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+            "score_transforms": [{"name": "reverse"}],
+        },
+    }
+
+    validated_document = _validate_composition_structure(composition_document)
+
+    assert validated_document == composition_document
+
+
+def test_validate_composition_structure_rejects_non_object():
+    with pytest.raises(ValueError):
+        _validate_composition_structure("not-an-object")  # type: ignore[arg-type]
 
 
 def test_extract_composition_sections_returns_expected_sections():

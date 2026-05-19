@@ -1,5 +1,3 @@
-from typing import cast
-
 from composition.schema import CompositionDocument
 from composition.score_plan import (
     PhrasePlan,
@@ -93,7 +91,7 @@ def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
 
 def _validate_composition_structure(
     composition_document: object,
-) -> None:
+) -> CompositionDocument:
     """
     Validates the structure of the composition document.
 
@@ -118,6 +116,8 @@ def _validate_composition_structure(
     score_transform_specs = composition_config.get("score_transforms", [])
     if not isinstance(score_transform_specs, list):
         raise ValueError("Composition 'score_transforms' must be a list.")
+
+    return composition_document
 
 
 def _extract_composition_sections(
@@ -215,11 +215,9 @@ def _create_voice_plans_from_document(voices_section: object, plan_motifs: dict[
     return voice_plans
 
 
-def generate_score_plan(composition_document: object) -> ScorePlan:
-    _validate_composition_structure(composition_document)
-
-    typed_document = cast(CompositionDocument, composition_document)
-    motifs_section, voices_section, score_transforms_section = _extract_composition_sections(typed_document)
+def generate_score_plan(document: object) -> ScorePlan:
+    composition_document = _validate_composition_structure(document)
+    motifs_section, voices_section, score_transforms_section = _extract_composition_sections(composition_document)
 
     motifs = parse_motifs(motifs_section)
     plan_motifs = {name: Motif(name=name, tones=copy_tones(tones)) for name, tones in motifs.items()}
