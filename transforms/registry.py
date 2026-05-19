@@ -48,8 +48,8 @@ from transforms.proportion.golden_ratio import (
     phrase_golden_ratio_grow,
     phrase_golden_ratio_shrink,
 )
-from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_transform
-from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_transform
+from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_phrase_transform, accelerando_transform
+from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_phrase_transform, ritardando_transform
 
 PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "reverse": PhraseTransformDefinition(
@@ -230,34 +230,12 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "accelerando": PhraseTransformDefinition(
         name="accelerando",
         params_spec=ACCELERANDO_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=accelerando_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        strength=cast(str | float, params.get("strength", "medium")),
-                        jaggedness=cast(str | float, params.get("jaggedness", "none")),
-                    ),
-                )
-            ]
-        ),
+        transform=accelerando_phrase_transform,
     ),
     "ritardando": PhraseTransformDefinition(
         name="ritardando",
         params_spec=RITARDANDO_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=ritardando_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        strength=cast(str | float, params.get("strength", "medium")),
-                        jaggedness=cast(str | float, params.get("jaggedness", "none")),
-                    ),
-                )
-            ]
-        ),
+        transform=ritardando_phrase_transform,
     ),
     "weierstrass": PhraseTransformDefinition(
         name="weierstrass",

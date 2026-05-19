@@ -1,6 +1,10 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 import random
 
-from transforms.base import ToneSequence
+from transforms.base import PhraseTransformContext, ToneSequence
 from transforms.tempo._common import (
     apply_duration_multipliers,
     build_tempo_change_params_spec,
@@ -55,3 +59,21 @@ def ritardando_transform(
     ]
 
     return apply_duration_multipliers(tones, combined_multipliers)
+
+
+def ritardando_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    strength = params.get("strength", "medium")
+    if isinstance(strength, bool) or not isinstance(strength, (str, float)):
+        raise ValueError("Param 'strength' must be a string or float.")
+
+    jaggedness = params.get("jaggedness", "none")
+    if isinstance(jaggedness, bool) or not isinstance(jaggedness, (str, float)):
+        raise ValueError("Param 'jaggedness' must be a string or float.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    transformed_tones = ritardando_transform(phrase_tones, strength=strength, jaggedness=jaggedness)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
