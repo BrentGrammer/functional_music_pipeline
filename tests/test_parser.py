@@ -256,6 +256,17 @@ def test_validate_composition_structure_defaults_missing_phrase_transforms():
     assert validated_document["composition"]["voices"][0]["phrases"][0]["transforms"] == []
 
 
+def test_validate_composition_structure_defaults_missing_score_transforms():
+    composition_document: CompositionDocument = {
+        "motifs": {"seed": ["440"]},
+        "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
+    }
+
+    validated_document = _validate_composition_structure(composition_document)
+
+    assert validated_document["composition"]["score_transforms"] == []
+
+
 def test_validate_composition_structure_rejects_non_object():
     with pytest.raises(ValueError):
         _validate_composition_structure("not-an-object")  # type: ignore[arg-type]

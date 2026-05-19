@@ -139,6 +139,7 @@ def _validate_composition_structure(
     score_transform_specs = composition_config.get("score_transforms", [])
     if not isinstance(score_transform_specs, list):
         raise ValueError("Composition 'score_transforms' must be a list.")
+    composition_config["score_transforms"] = score_transform_specs
     for score_transform_spec in score_transform_specs:
         if not isinstance(score_transform_spec, dict):
             raise ValueError("Composition 'score_transforms' entries must be objects.")
@@ -165,7 +166,7 @@ def _extract_composition_sections(
     composition_config = composition_document.get("composition", {})
 
     voices_section = composition_config.get("voices", [])
-    score_transforms_section = composition_config.get("score_transforms", [])
+    score_transforms_section = composition_config["score_transforms"]
 
     return motifs_section, voices_section, score_transforms_section
 
