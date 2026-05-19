@@ -14,7 +14,7 @@ from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_phrase_transform, de
 from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_transform
 from transforms.basic.inversion import INVERT_PARAMS_SPEC, invert_phrase_transform, invert_tones
 from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
-from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_tones
+from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_phrase_transform, repeat_tones
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_phrase_transform, transpose_tones
@@ -135,17 +135,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "repeat": PhraseTransformDefinition(
         name="repeat",
         params_spec=REPEAT_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=repeat_tones(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        count=cast(int, params["count"]),
-                    ),
-                )
-            ]
-        ),
+        transform=repeat_phrase_transform,
     ),
     "erosion": PhraseTransformDefinition(
         name="erosion",
