@@ -1,4 +1,5 @@
 import math
+from collections.abc import Mapping
 import random
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -408,3 +409,10 @@ def frost_effect(score: Score, iterations: int = 1) -> Score:
         result = _apply_frost_iteration(result)
 
     return result
+
+
+def frost_effect_score_transform_adapter(score: Score, params: Mapping[str, object]) -> Score:
+    iterations = params.get("iterations", 1)
+    if isinstance(iterations, bool) or not isinstance(iterations, int):
+        raise ValueError("frost_effect iterations must be a positive integer.")
+    return frost_effect(score, iterations=iterations)

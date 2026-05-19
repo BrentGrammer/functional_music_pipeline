@@ -32,7 +32,7 @@ from transforms.counterpoint.fugue import (
     stretto_score_transform_adapter,
 )
 from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_phrase_transform
-from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
+from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect_score_transform_adapter
 from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform, terraced_drift_phrase_transform
 from transforms.proportion.feigenbaum import (
     FEIGENBAUM_PARAMS_SPEC,
@@ -447,16 +447,16 @@ SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
     "add_pedal_tone": ScoreTransformDefinition(
         name="add_pedal_tone",
         params_spec=ADD_PEDAL_TONE_PARAMS_SPEC,
-        transform=lambda score, params: add_pedal_tone_score_transform(score, params),
+        transform=add_pedal_tone_score_transform,
     ),
     "stretto": ScoreTransformDefinition(
         name="stretto",
         params_spec=STRETTO_PARAMS_SPEC,
-        transform=lambda score, params: stretto_score_transform_adapter(score, params),
+        transform=stretto_score_transform_adapter,
     ),
     "frost_effect": ScoreTransformDefinition(
         name="frost_effect",
         params_spec=FROST_EFFECT_PARAMS_SPEC,
-        transform=lambda score, params: frost_effect(score, **params),
+        transform=frost_effect_score_transform_adapter,
     ),
 }
