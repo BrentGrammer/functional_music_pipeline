@@ -30,12 +30,13 @@ from transforms.counterpoint.fugue import (
     add_pedal_tone_score_transform,
     stretto_score_transform_adapter,
 )
-from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_transform
+from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_phrase_transform
 from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
 from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform
 from transforms.proportion.feigenbaum import (
     FEIGENBAUM_PARAMS_SPEC,
     feigenbaum_sequence,
+    feigenbaum_sequence_phrase_transform,
     phrase_feigenbaum_grow,
     phrase_feigenbaum_shrink,
     score_feigenbaum_sequence,
@@ -43,6 +44,7 @@ from transforms.proportion.feigenbaum import (
 from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
     golden_ratio_transform,
+    golden_ratio_phrase_transform,
     phrase_golden_ratio_grow,
     phrase_golden_ratio_shrink,
 )
@@ -58,17 +60,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "golden_ratio": PhraseTransformDefinition(
         name="golden_ratio",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=golden_ratio_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params.get("dimension", ToneDimension.DURATION)),
-                    ),
-                )
-            ]
-        ),
+        transform=golden_ratio_phrase_transform,
     ),
     "invert": PhraseTransformDefinition(
         name="invert",
@@ -78,17 +70,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "feigenbaum_sequence": PhraseTransformDefinition(
         name="feigenbaum_sequence",
         params_spec=FEIGENBAUM_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=feigenbaum_sequence(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params.get("dimension", ToneDimension.DURATION)),
-                    ),
-                )
-            ]
-        ),
+        transform=feigenbaum_sequence_phrase_transform,
     ),
     "transpose": PhraseTransformDefinition(
         name="transpose",
@@ -140,17 +122,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "erosion": PhraseTransformDefinition(
         name="erosion",
         params_spec=EROSION_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=erosion_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params.get("dimension", ToneDimension.DURATION)),
-                    ),
-                )
-            ]
-        ),
+        transform=erosion_phrase_transform,
     ),
     "drift": PhraseTransformDefinition(
         name="drift",

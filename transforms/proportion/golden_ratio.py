@@ -1,6 +1,11 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.math_constants import GOLDEN_RATIO
 from transforms.base import (
     EnumParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -25,6 +30,20 @@ def _cumulative_dimension(tones: ToneSequence, dim: ToneDimension) -> float:
 
 def golden_ratio_transform(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION) -> ToneSequence:
     return scale_transform(tones, dimension, 1 / GOLDEN_RATIO)
+
+
+def golden_ratio_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Golden ratio dimension must be a string or ToneDimension.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    transformed_tones = golden_ratio_transform(phrase_tones, dimension=dimension)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
 def phrase_golden_ratio_shrink(

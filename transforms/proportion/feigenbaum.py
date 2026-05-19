@@ -60,6 +60,20 @@ def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension | str = To
     return new_tones
 
 
+def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Feigenbaum sequence dimension must be a string or ToneDimension.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    transformed_tones = feigenbaum_sequence(phrase_tones, dimension=dimension)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
+
+
 def phrase_feigenbaum_shrink(
     tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION
 ) -> ToneSequence:
