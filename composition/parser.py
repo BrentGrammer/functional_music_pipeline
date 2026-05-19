@@ -207,15 +207,15 @@ def _create_voice_plans_from_document(
     Parses voice and phrase configurations, resolving motif references
     to the corresponding Motif instances defined in the score plan.
     """
-    voice_plans = []
+    voice_plans: list[VoicePlan] = []
 
     for voice_config in voices_section:
         phrase_configs = voice_config["phrases"]
 
-        phrase_plans = []
+        phrase_plans: list[PhrasePlan] = []
         for phrase_config in phrase_configs:
             motif_names = phrase_config["motifs"]
-            phrase_plan_motifs = []
+            phrase_plan_motifs: list[Motif] = []
             for name in motif_names:
                 if name not in plan_motifs:
                     raise ValueError(f"Motif '{name}' not found in parsed motifs.")
