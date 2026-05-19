@@ -6,8 +6,14 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from score_model.motif import Motif
+from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.tone import Tone
-from transforms.basic.delay import delay_tones
+from score_model.voice import Voice
+from transforms.base import PhraseTransformContext
+from transforms.basic.delay import delay_phrase_transform, delay_score_transform, delay_tones
+from transforms.basic.pad_silence import pad_silence_phrase_transform, pad_silence_score_transform, pad_silence_tones
 
 
 def test_delay_zero():
@@ -68,3 +74,77 @@ def test_delay_empty_list():
     assert len(result) == 1
     assert result[0].frequency == 0
     assert result[0].duration == pytest.approx(0.5)
+
+
+def test_delay_tones_matches_pad_silence_start():
+    '''delay is just a convenience wrapper that uses pad silence transform'''
+    tones = [Tone(440.0, duration=0.5, amplitude=0.3), Tone(523.25, duration=0.3, amplitude=0.7)]
+
+    delayed_tones = delay_tones(tones, seconds=0.2)
+    padded_tones = pad_silence_tones(tones, seconds=0.2, position="start")
+
+    assert len(delayed_tones) == len(padded_tones)
+    for delayed_tone, padded_tone in zip(delayed_tones, padded_tones):
+        assert delayed_tone.frequency == pytest.approx(padded_tone.frequency)
+        assert delayed_tone.duration == pytest.approx(padded_tone.duration)
+        assert delayed_tone.amplitude == pytest.approx(padded_tone.amplitude)
+
+
+def test_delay_phrase_transform_matches_pad_silence_start():
+    score = Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="phrase-target",
+                                tones=[Tone(440.0, duration=0.5), Tone(523.25, duration=0.3)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+    delayed_phrase = delay_phrase_transform(context, {"seconds": 0.2})
+    padded_phrase = pad_silence_phrase_transform(context, {"seconds": 0.2, "position": "start"})
+
+    assert len(delayed_phrase.motifs) == len(padded_phrase.motifs)
+    assert len(delayed_phrase.motifs[0].tones) == len(padded_phrase.motifs[0].tones)
+    for delayed_tone, padded_tone in zip(delayed_phrase.motifs[0].tones, padded_phrase.motifs[0].tones):
+        assert delayed_tone.frequency == pytest.approx(padded_tone.frequency)
+        assert delayed_tone.duration == pytest.approx(padded_tone.duration)
+        assert delayed_tone.amplitude == pytest.approx(padded_tone.amplitude)
+
+
+def test_delay_score_transform_matches_pad_silence_start():
+    score = Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="voice-a", tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.25)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="voice-b", tones=[Tone(440.0, duration=1.0)])])
+                ]
+            ),
+        ]
+    )
+
+    delayed_score = delay_score_transform(score, {"seconds": 0.2})
+    padded_score = pad_silence_score_transform(score, {"seconds": 0.2, "position": "start"})
+
+    assert len(delayed_score.voices) == len(padded_score.voices)
+    for delayed_voice, padded_voice in zip(delayed_score.voices, padded_score.voices):
+        delayed_tones = delayed_voice.phrases[0].motifs[0].tones
+        padded_tones = padded_voice.phrases[0].motifs[0].tones
+        assert len(delayed_tones) == len(padded_tones)
+        for delayed_tone, padded_tone in zip(delayed_tones, padded_tones):
+            assert delayed_tone.frequency == pytest.approx(padded_tone.frequency)
+            assert delayed_tone.duration == pytest.approx(padded_tone.duration)
+            assert delayed_tone.amplitude == pytest.approx(padded_tone.amplitude)

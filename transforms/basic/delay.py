@@ -1,9 +1,9 @@
 from collections.abc import Mapping
 
-from score_model.score import Score
 from score_model.phrase import Phrase
-from transforms.basic.pad_silence import pad_silence_phrase_transform, pad_silence_score_transform, pad_silence_tones
+from score_model.score import Score
 from transforms.base import FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.basic.pad_silence import pad_silence_phrase_transform, pad_silence_score_transform, pad_silence_tones
 
 DELAY_PARAMS_SPEC = TransformParamsSpec(
     fields={
