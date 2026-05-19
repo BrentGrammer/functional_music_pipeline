@@ -230,3 +230,5 @@ Should this be extracted? look at the fucntions and see if there are common elem
 - del params in one of the transforms is a smell. check on that (left a todo item)
 
 - look at feigenbaum.py - that shape in the adapter is cleaner than other score transforms. Should we adopt that style to the other transforms?
+
+- Consider package facades via `__init__.py` if the registry imports start getting too deep. Python does not auto-use `index.js`-style files, but a package can re-export selected adapters so `registry.py` can import from `transforms.basic`, `transforms.complexity`, `transforms.geological`, and `transforms.proportion` instead of reaching into every submodule directly. Keep those facades thin to avoid hiding too much.
