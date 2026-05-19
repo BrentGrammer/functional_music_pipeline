@@ -165,10 +165,10 @@ def _extract_composition_sections(
     Extracts key sections from the composition document.
     Assumes the structure has already been validated.
     """
-    motifs_section = composition_document.get("motifs", {})
-    composition_config = composition_document.get("composition", {})
+    motifs_section = composition_document["motifs"]
+    composition_config = composition_document["composition"]
 
-    voices_section = composition_config.get("voices", [])
+    voices_section = composition_config["voices"]
     score_transforms_section = composition_config["score_transforms"]
 
     return motifs_section, voices_section, score_transforms_section
