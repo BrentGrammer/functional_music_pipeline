@@ -1,4 +1,9 @@
-from composition.schema import CompositionDocument, PhraseConfig, TransformConfig, VoiceConfig
+from composition.schema import (
+    CompositionDocument,
+    PhraseConfig,
+    TransformConfig,
+    VoiceConfig,
+)
 from composition.score_plan import (
     PhrasePlan,
     PhraseTransformRequest,
@@ -136,7 +141,10 @@ def _extract_composition_sections(
     composition_config = composition_document["composition"]
 
     voices_section = composition_config["voices"]
-    score_transforms_section = composition_config["score_transforms"]
+    score_transforms_section = [
+        TransformConfig(name=spec["name"], params=spec["params"])
+        for spec in composition_config["score_transforms"]
+    ]
 
     return motifs_section, voices_section, score_transforms_section
 
@@ -146,7 +154,10 @@ def _extract_requests_from_phrase(
     voice_index: int,
     phrase_index: int,
 ) -> list[PhraseTransformRequest]:
-    transform_specs = phrase_config["transforms"]
+    transform_specs = [
+        TransformConfig(name=spec["name"], params=spec["params"])
+        for spec in phrase_config["transforms"]
+    ]
 
     def build_request(spec: TransformConfig) -> PhraseTransformRequest:
         return PhraseTransformRequest(
