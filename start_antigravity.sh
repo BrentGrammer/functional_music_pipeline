@@ -96,64 +96,12 @@ cat <<'EOF'
 
 Inside the sandbox, install Antigravity if needed:
 
-  sudo apt update
-  sudo apt install -y curl gnupg ca-certificates
-
-  sudo mkdir -p /etc/apt/keyrings
-
-  curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-    sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
-
-  echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-    sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
-
-  sudo apt update
-  sudo apt install -y antigravity
-
-Check Antigravity command:
-
-  command -v agy || command -v antigravity
+    sudo apt update && sudo apt upgrade -y
+    curl -fsSL https://antigravity.google/cli/install.sh | bash
 
 Start Antigravity:
 
   agy
-
-or:
-
-  antigravity
-
-Optional Serena MCP setup inside the sandbox:
-
-  command -v uvx || curl -LsSf https://astral.sh/uv/install.sh | sh
-  export PATH="$HOME/.local/bin:$PATH"
-
-  mkdir -p ~/.serena
-  cat > ~/.serena/serena_config.yml <<'SERENAEOF'
-web_dashboard: false
-web_dashboard_open_on_launch: false
-SERENAEOF
-
-  mkdir -p ~/.gemini/antigravity
-  cat > ~/.gemini/antigravity/mcp_config.json <<'MCPEOF'
-{
-  "mcpServers": {
-    "serena": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "."
-      ],
-      "trust": false
-    }
-  }
-}
-MCPEOF
 
 EOF
 
