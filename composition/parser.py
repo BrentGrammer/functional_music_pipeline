@@ -162,47 +162,6 @@ def parse_phrase(
     return _apply_phrase_transform_specs(phrase_tones, transform_specs, reference_tones)
 
 
-def parse_voice(
-    voice_config: object,
-    parsed_motifs: dict[str, list[Tone]],
-    previous_voice_tones: list[Tone],
-) -> tuple[Voice, list[Tone]]:
-    if not isinstance(voice_config, dict):
-        raise ValueError("Each voice must be an object.")
-
-    phrase_configs = voice_config.get("phrases", [])
-    if not isinstance(phrase_configs, list):
-        raise ValueError("Voice 'phrases' must be a list.")
-
-    parsed_phrases: list[Phrase] = []
-    combined_tones: list[Tone] = []
-    for phrase_config in phrase_configs:
-        motif_names = _validate_and_extract_motifs(phrase_config)
-        transform_specs = phrase_config.get("transforms", [])
-        if not isinstance(transform_specs, list):
-            raise ValueError("Phrase 'transforms' must be a list.")
-
-        if transform_specs:
-            reference_tones = combined_tones if combined_tones else previous_voice_tones
-            phrase_tones = parse_phrase(phrase_config, parsed_motifs, reference_tones)
-            parsed_phrase = Phrase(motifs=[Motif(name="<transformed>", tones=phrase_tones)])
-        else:
-            phrase_motifs: list[Motif] = []
-            for motif_name in motif_names:
-                if motif_name not in parsed_motifs:
-                    raise ValueError(f"Motif '{motif_name}' not found in parsed motifs.")
-
-                phrase_motifs.append(Motif(name=motif_name, tones=copy_tones(parsed_motifs[motif_name])))
-
-            parsed_phrase = Phrase(motifs=phrase_motifs)
-            phrase_tones = [tone for motif in phrase_motifs for tone in motif.tones]
-
-        parsed_phrases.append(parsed_phrase)
-        combined_tones.extend(phrase_tones)
-
-    return Voice(phrases=parsed_phrases), combined_tones
-
-
 def _validate_composition_structure(
     composition_document: object,
 ) -> None:
@@ -239,24 +198,26 @@ def _extract_composition_sections(
     Extracts key sections from the composition document.
     Assumes the structure has already been validated.
     """
+    _validate_composition_structure(composition_document)
+
     if not isinstance(composition_document, dict):
-        return {}, [], []
+        raise ValueError("Composition document must be an object.")
 
     motifs_section = composition_document.get("motifs", {})
-    if not isinstance(motifs_section, dict):
-        motifs_section = {}
-
     composition_config = composition_document.get("composition", {})
+
+    if not isinstance(motifs_section, dict):
+        raise ValueError("Composition 'motifs' must be an object mapping motif names to tone lists.")
     if not isinstance(composition_config, dict):
-        composition_config = {}
+        raise ValueError("Composition 'composition' must be an object.")
 
     voices_section = composition_config.get("voices", [])
-    if not isinstance(voices_section, list):
-        voices_section = []
-
     score_transforms_section = composition_config.get("score_transforms", [])
+
+    if not isinstance(voices_section, list):
+        raise ValueError("Composition 'voices' must be a list.")
     if not isinstance(score_transforms_section, list):
-        score_transforms_section = []
+        raise ValueError("Composition 'score_transforms' must be a list.")
 
     return motifs_section, voices_section, score_transforms_section
 
