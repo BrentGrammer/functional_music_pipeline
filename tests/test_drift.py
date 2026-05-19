@@ -1,7 +1,7 @@
 import pytest
 
 from composition.parser import generate_score_plan
-from composition.schema import CompositionDocument
+from composition.schema import CompositionDocumentInput
 from composition.transformer import transform_score
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -252,7 +252,7 @@ class TestScoreDriftApplication:
         FREQ_A = 440.0
         FREQ_B = 220.0
 
-        composition_document: CompositionDocument = {
+        composition_document: CompositionDocumentInput = {
             "motifs": {
                 "high": [f"{FREQ_A}:0.3", f"{FREQ_A}:0.3"],
                 "low": [f"{FREQ_B}:0.3", f"{FREQ_B}:0.3"],

@@ -29,11 +29,21 @@ class VoiceConfig(TypedDict):
     phrases: list[PhraseConfig]
 
 
-class CompositionConfig(TypedDict, total=False):
+class CompositionConfigInput(TypedDict, total=False):
     voices: list[VoiceConfigInput]
     score_transforms: list[TransformConfigInput]
 
 
-class CompositionDocument(TypedDict, total=False):
+class CompositionConfig(TypedDict):
+    voices: list[VoiceConfig]
+    score_transforms: list[TransformConfig]
+
+
+class CompositionDocumentInput(TypedDict, total=False):
+    motifs: dict[str, list[str]]
+    composition: CompositionConfigInput
+
+
+class CompositionDocument(TypedDict):
     motifs: dict[str, list[str]]
     composition: CompositionConfig

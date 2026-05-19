@@ -1,5 +1,5 @@
 from composition.parser import generate_score_plan
-from composition.schema import CompositionDocument
+from composition.schema import CompositionDocumentInput
 from composition.score_plan import (
     PhrasePlan,
     PhraseTransformRequest,
@@ -49,7 +49,7 @@ def test_score_plan_preserves_planning_metadata():
 
 
 def test_parse_score_plan_resolves_motifs_and_preserves_structure():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {
             "m1": ["440.0:1.0"],
         },
@@ -92,7 +92,7 @@ def test_parse_score_plan_resolves_motifs_and_preserves_structure():
 
 
 def test_parse_score_plan_collects_phrase_transform_requests():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {
             "m1": ["440.0:1.0"],
         },
@@ -149,7 +149,7 @@ def test_parse_score_plan_collects_phrase_transform_requests():
 
 
 def test_build_score_creates_fresh_instances_for_repeated_references():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {
             "m1": ["440.0:1.0"],
         },

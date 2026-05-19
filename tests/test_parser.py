@@ -6,7 +6,7 @@ from composition.parser import (
     _validate_composition_structure,
     generate_score_plan,
 )
-from composition.schema import CompositionDocument
+from composition.schema import CompositionDocumentInput
 from composition.transformer import transform_score
 from score_model.motif import Motif
 from score_model.tone import Tone
@@ -17,7 +17,7 @@ class TestAccelerandoParserIntegration:
     """Tests that accelerando can be invoked from composition JSON."""
 
     def test_accelerando_with_preset_params(self):
-        composition: CompositionDocument = {
+        composition: CompositionDocumentInput = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -53,7 +53,7 @@ class TestAccelerandoParserIntegration:
         assert tones[1].duration > tones[2].duration
 
     def test_accelerando_with_numeric_params(self):
-        composition: CompositionDocument = {
+        composition: CompositionDocumentInput = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -86,7 +86,7 @@ class TestAccelerandoParserIntegration:
         assert tones[0].duration > tones[2].duration
 
     def test_accelerando_preserves_frequencies(self):
-        composition: CompositionDocument = {
+        composition: CompositionDocumentInput = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -124,7 +124,7 @@ class TestRitardandoParserIntegration:
     """Tests that ritardando can be invoked from composition JSON."""
 
     def test_ritardando_with_preset_params(self):
-        composition: CompositionDocument = {
+        composition: CompositionDocumentInput = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -160,7 +160,7 @@ class TestRitardandoParserIntegration:
         assert tones[1].duration < tones[2].duration
 
     def test_ritardando_with_numeric_params(self):
-        composition: CompositionDocument = {
+        composition: CompositionDocumentInput = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -193,7 +193,7 @@ class TestRitardandoParserIntegration:
         assert tones[0].duration < tones[2].duration
 
     def test_ritardando_preserves_frequencies(self):
-        composition: CompositionDocument = {
+        composition: CompositionDocumentInput = {
             "motifs": {
                 "theme": ["440:0.5", "494:0.5", "523:0.5"]
             },
@@ -228,7 +228,7 @@ class TestRitardandoParserIntegration:
 
 
 def test_validate_composition_structure_returns_validated_document():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {
             "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -242,7 +242,7 @@ def test_validate_composition_structure_returns_validated_document():
 
 
 def test_validate_composition_structure_defaults_missing_phrase_transforms():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
     }
@@ -253,7 +253,7 @@ def test_validate_composition_structure_defaults_missing_phrase_transforms():
 
 
 def test_validate_composition_structure_defaults_missing_score_transforms():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
     }
@@ -287,7 +287,7 @@ def test_validate_composition_structure_rejects_missing_composition():
 
 
 def test_validate_composition_structure_rejects_missing_voices():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"score_transforms": [{"name": "reverse"}]},
     }
@@ -308,7 +308,7 @@ def test_validate_composition_structure_rejects_empty_composition():
 
 
 def test_validate_composition_structure_allows_empty_voices():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"voices": []},
     }
@@ -534,7 +534,7 @@ def test_create_voice_plans_rejects_unknown_motif_name():
         )
 
 def test_extract_composition_sections_returns_normalized_transforms_sections_when_not_provided():
-    composition_document: CompositionDocument = {
+    composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
     }

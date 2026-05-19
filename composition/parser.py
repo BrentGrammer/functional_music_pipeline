@@ -1,4 +1,5 @@
 from composition.schema import (
+    CompositionConfig,
     CompositionDocument,
     PhraseConfig,
     TransformConfig,
@@ -67,18 +68,19 @@ def _validate_composition_structure(
     if not composition_config:
         raise ValueError("Composition 'composition' must not be empty.")
 
-    voice_configs = composition_config.get("voices", [])
-    if not isinstance(voice_configs, list):
+    voice_config_inputs = composition_config.get("voices", [])
+    if not isinstance(voice_config_inputs, list):
         raise ValueError("Composition 'voices' must be a list.")
-    composition_config["voices"] = voice_configs
-    for voice_config in voice_configs:
+    validated_voices = []
+    for voice_config in voice_config_inputs:
         if not isinstance(voice_config, dict):
             raise ValueError("Composition 'voices' entries must be objects.")
 
-        phrase_configs = voice_config.get("phrases")
-        if not isinstance(phrase_configs, list):
+        phrase_config_inputs = voice_config.get("phrases")
+        if not isinstance(phrase_config_inputs, list):
             raise ValueError("Voice 'phrases' must be a list.")
-        for phrase_config in phrase_configs:
+        validated_phrases = []
+        for phrase_config in phrase_config_inputs:
             if not isinstance(phrase_config, dict):
                 raise ValueError("Voice 'phrases' entries must be objects.")
 
@@ -93,11 +95,11 @@ def _validate_composition_structure(
                 if not motif_name:
                     raise ValueError("Phrase 'motifs' entries must be non-empty strings.")
 
-            transform_configs = phrase_config.get("transforms", [])
-            if not isinstance(transform_configs, list):
+            transform_config_inputs = phrase_config.get("transforms", [])
+            if not isinstance(transform_config_inputs, list):
                 raise ValueError("Phrase 'transforms' must be a list.")
-            phrase_config["transforms"] = transform_configs
-            for transform_config in transform_configs:
+            validated_transforms = []
+            for transform_config in transform_config_inputs:
                 if not isinstance(transform_config, dict):
                     raise ValueError("Phrase 'transforms' entries must be objects.")
 
@@ -108,13 +110,21 @@ def _validate_composition_structure(
                 transform_params = transform_config.get("params", {})
                 if not isinstance(transform_params, dict):
                     raise ValueError("Transform 'params' must be an object.")
-                transform_config["params"] = transform_params
+                validated_transforms.append(
+                    TransformConfig(name=transform_name, params=transform_params)
+                )
 
-    score_transform_specs = composition_config.get("score_transforms", [])
-    if not isinstance(score_transform_specs, list):
+            validated_phrases.append(
+                PhraseConfig(motifs=motif_names, transforms=validated_transforms)
+            )
+
+        validated_voices.append(VoiceConfig(phrases=validated_phrases))
+
+    score_transform_inputs = composition_config.get("score_transforms", [])
+    if not isinstance(score_transform_inputs, list):
         raise ValueError("Composition 'score_transforms' must be a list.")
-    composition_config["score_transforms"] = score_transform_specs
-    for score_transform_spec in score_transform_specs:
+    validated_score_transforms = []
+    for score_transform_spec in score_transform_inputs:
         if not isinstance(score_transform_spec, dict):
             raise ValueError("Composition 'score_transforms' entries must be objects.")
 
@@ -125,9 +135,19 @@ def _validate_composition_structure(
         transform_params = score_transform_spec.get("params", {})
         if not isinstance(transform_params, dict):
             raise ValueError("Transform 'params' must be an object.")
-        score_transform_spec["params"] = transform_params
+        validated_score_transforms.append(
+            TransformConfig(name=transform_name, params=transform_params)
+        )
 
-    return composition_document
+    validated_composition = CompositionConfig(
+        voices=validated_voices,
+        score_transforms=validated_score_transforms,
+    )
+
+    return CompositionDocument(
+        motifs=motif_definitions,
+        composition=validated_composition,
+    )
 
 
 def _extract_composition_sections(
@@ -140,25 +160,8 @@ def _extract_composition_sections(
     motifs_section = composition_document["motifs"]
     composition_config = composition_document["composition"]
 
-    voices_section = [
-        VoiceConfig(
-            phrases=[
-                PhraseConfig(
-                    motifs=phrase_config["motifs"],
-                    transforms=[
-                        TransformConfig(name=spec["name"], params=spec["params"])
-                        for spec in phrase_config["transforms"]
-                    ],
-                )
-                for phrase_config in voice_config["phrases"]
-            ]
-        )
-        for voice_config in composition_config["voices"]
-    ]
-    score_transforms_section = [
-        TransformConfig(name=spec["name"], params=spec["params"])
-        for spec in composition_config["score_transforms"]
-    ]
+    voices_section = composition_config["voices"]
+    score_transforms_section = composition_config["score_transforms"]
 
     return motifs_section, voices_section, score_transforms_section
 
