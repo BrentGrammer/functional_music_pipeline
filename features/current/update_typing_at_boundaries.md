@@ -121,3 +121,53 @@ The goal is not just to make tests simpler. The goal is to make the parser archi
   - rename the current schema types to \*Input
   - introduce the internal trusted \*Config / CompositionDocument names
   - have \_validate_composition_structure() return the internal trusted document type
+
+## Handoff for where to pick back up:
+
+Current State
+
+- Tests are green.
+- The parser boundary has been mostly split into \*Input vs internal types.
+- Runtime validation/normalization is happening at the boundary.
+- mypy is still noisy and should be cleaned up after the migration is fully propagated.
+
+Remaining Steps
+
+1. Remove any remaining redundant internal typed-dict rebuilding.
+   - Audit composition/parser.py for places still reconstructing PhraseConfig, VoiceConfig, or TransformConfig after boundary normalization.
+   - Keep only one normalization point.
+2. Review whether parse_motifs() should stay as-is or be folded into the boundary step.
+   - Decide if motif parsing belongs as a separate “raw strings -> domain tones” step or if it should be merged into a more explicit parsing seam.
+   - Likely keep it separate unless there is obvious duplication.
+3. Decide whether CompositionDocument and CompositionConfig should remain the internal parser types, or whether some remaining tests/helpers still need more
+   \*Input propagation.
+   - This is mostly a consistency audit now.
+4. Propagate \*Input annotations through any remaining raw document builders in tests.
+   - Especially helper functions in tests that assemble raw composition dicts.
+   - Goal: raw JSON-ish data always uses \*Input; internal parser data always uses non-Input.
+5. Audit the parser for any remaining fallback-style access that contradicts the trusted internal contract.
+   - For example any lingering .get(..., default) on internal types where the field is now guaranteed.
+   - Remove only if the boundary contract already guarantees the field.
+6. Run and fix mypy.
+   - After the schema migration is fully settled, clean up the type fallout.
+   - This should include:
+     - stale type: ignore
+     - mismatched test annotations
+     - any remaining return-type or TypedDict incompatibilities
+     - unrelated mypy issues only if they block a clean run
+7. Final cleanup pass on naming and dead code.
+   - Remove any now-unused imports, old aliases, or helper comments.
+   - Check for any confusing names left over from the migration.
+
+Likely First Next Step
+
+- Start with a parser audit for redundant rebuilding/conversion and leftover .get() usage in trusted internal code.
+- That should be the smallest safe next move before tackling mypy.
+
+Handoff Summary
+
+- Direction remains: validate and normalize once at the boundary, trust internally.
+- Raw types use \*Input.
+- Internal parser types use non-Input.
+- Domain objects (Motif, Tone, etc.) remain the next layer after parser normalization.
+- Do not introduce new behavior while finishing the migration; prioritize consistency and type cleanup.
