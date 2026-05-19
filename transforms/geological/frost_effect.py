@@ -1,7 +1,6 @@
 import math
-from collections.abc import Mapping
 import random
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import TypeAlias
 

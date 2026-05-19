@@ -9,8 +9,8 @@ from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
-    PhraseTransformContext,
     IntegerParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,

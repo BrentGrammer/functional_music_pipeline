@@ -1,9 +1,8 @@
+import random
 from collections.abc import Mapping
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
-import random
-
 from transforms.base import PhraseTransformContext, ToneSequence
 from transforms.tempo._common import (
     apply_duration_multipliers,

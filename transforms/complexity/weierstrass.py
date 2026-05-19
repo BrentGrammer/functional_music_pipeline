@@ -1,6 +1,6 @@
 import math
-from collections.abc import Mapping
 import random
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
