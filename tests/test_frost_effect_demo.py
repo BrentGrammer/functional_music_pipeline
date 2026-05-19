@@ -1,6 +1,7 @@
 import pytest
 
 from composition.parser import generate_score_plan
+from composition.schema import CompositionDocumentInput
 from composition.transformer import transform_score
 from score_model.score import Score
 from score_model.traversal import flatten_voice_tones
@@ -75,7 +76,7 @@ def _assert_event_follows(previous_event_voices, event_voices):
     assert event_start_time >= previous_event_end_time
 
 
-def _build_single_seed_frost_composition() -> dict:
+def _build_single_seed_frost_composition() -> CompositionDocumentInput:
     return {
         "description": "A frost demo that starts from a single seed tone and renders three frost events.",
         "motifs": {

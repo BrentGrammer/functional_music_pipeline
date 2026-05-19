@@ -1,5 +1,5 @@
+from collections.abc import Mapping
 from typing import NotRequired, TypeAlias, TypedDict
-
 
 MotifsConfigInput: TypeAlias = dict[str, list[str]]
 
@@ -7,12 +7,12 @@ MotifsConfigInput: TypeAlias = dict[str, list[str]]
 class TransformConfigInput(TypedDict, total=False):
     comment: str
     name: str
-    params: dict[str, object]
+    params: Mapping[str, object]
 
 
 class TransformConfig(TypedDict):
     name: str
-    params: dict[str, object]
+    params: Mapping[str, object]
 
 
 class PhraseConfigInput(TypedDict, total=False):

@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 import pytest
 
 from composition.score_plan import TransformRequest
@@ -140,9 +142,9 @@ def test_validate_transform_params_accepts_enum_field_case_insensitively():
 
 
 def test_validate_transform_params_runs_custom_validator():
-    recorded_params: list[dict[str, object]] = []
+    recorded_params: list[Mapping[str, object]] = []
 
-    def validator(params: dict[str, object]) -> None:
+    def validator(params: Mapping[str, object]) -> None:
         recorded_params.append(params)
 
     params_spec = TransformParamsSpec(

@@ -15,14 +15,14 @@ from transforms.registry import PHRASE_TRANSFORMS
 
 
 def render_phrase_from_config(
-    phrase_config: PhraseConfigInput,
+    phrase_config: object,
     parsed_motifs: dict[str, list[Tone]],
 ) -> list[Tone]:
     motifs_section: MotifsConfigInput = {
         name: [f"{tone.frequency}:{tone.duration}" for tone in tones]
         for name, tones in parsed_motifs.items()
     }
-    composition_document = {
+    composition_document: object = {
         "motifs": motifs_section,
         "composition": {"voices": [{"phrases": [phrase_config]}]},
     }

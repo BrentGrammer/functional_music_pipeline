@@ -1,12 +1,13 @@
 import pytest
 
 from composition.parser import generate_score_plan, parse_motifs
+from composition.schema import CompositionDocumentInput
 from composition.transformer import transform_score
 from score_model.score import Score
 from score_model.traversal import flatten_voice_tones
 
 
-def _build_geological_example_composition() -> dict:
+def _build_geological_example_composition() -> CompositionDocumentInput:
     return {
         "description": (
             "A showcase of the stochastic profile transforms. Each voice plays the same C major arpeggio, "

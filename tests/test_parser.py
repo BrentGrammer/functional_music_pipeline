@@ -5,7 +5,7 @@ from composition.parser import (
     _validate_composition_document,
     generate_score_plan,
 )
-from composition.schema import CompositionDocumentInput
+from composition.schema import CompositionDocumentInput, TransformConfig
 from composition.transformer import transform_score
 from score_model.motif import Motif
 from score_model.tone import Tone
@@ -237,8 +237,8 @@ def test_validate_composition_document_returns_validated_document():
 
     validated_document = _validate_composition_document(composition_document)
 
-    default_for_missing_transforms = []
-    default_for_missing_params = {}
+    default_for_missing_transforms: list[TransformConfig] = []
+    default_for_missing_params: dict[str, object] = {}
 
     assert validated_document == {
         "motifs": {"seed": ["440"]},
@@ -521,6 +521,6 @@ def test_validate_composition_document_rejects_score_transform_with_non_object_p
 def test_create_voice_plans_rejects_unknown_motif_name():
     with pytest.raises(ValueError):
         _create_voice_plans_from_document(
-            voices_section=[{"phrases": [{"motifs": ["unknown"]}]}],
+            voices_section=[{"phrases": [{"motifs": ["unknown"], "transforms": []}]}],
             plan_motifs={"known": Motif(name="known", tones=[Tone(440.0)])},
         )

@@ -4,7 +4,7 @@ from composition.parser import (
     generate_score_plan,
     parse_motifs,
 )
-from composition.schema import MotifsConfigInput, PhraseConfigInput
+from composition.schema import CompositionDocumentInput, MotifsConfigInput, PhraseConfigInput
 from composition.transformer import transform_score
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.score import Score
@@ -21,7 +21,7 @@ from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
 
 def render_phrase_from_config(
-    phrase_config: PhraseConfigInput,
+    phrase_config: object,
     parsed_motifs: dict[str, list[Tone]],
     reference_tones: list[Tone] | None = None,
 ) -> list[Tone]:
@@ -30,13 +30,13 @@ def render_phrase_from_config(
         for name, tones in parsed_motifs.items()
     }
 
-    composition_voices: list[dict[str, object]] = []
+    composition_voices: list[object] = []
     if reference_tones is not None:
         motifs_section["__reference__"] = [f"{tone.frequency}:{tone.duration}" for tone in reference_tones]
         composition_voices.append({"phrases": [{"motifs": ["__reference__"]}]})
     composition_voices.append({"phrases": [phrase_config]})
 
-    composition_doc = {
+    composition_doc: object = {
         "motifs": motifs_section,
         "composition": {"voices": composition_voices},
     }
@@ -344,7 +344,7 @@ class TestScaleTransformParsing:
 
     def test_score_scale_with_numeric_param_raises_error(self):
         # Ensures the score-level 'scale' transform enforces explicit parameterization.
-        composition_doc = {
+        composition_doc: object = {
             "motifs": {"seed": ["440"]},
             "composition": {
                 "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -361,7 +361,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -395,7 +395,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -469,7 +469,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -503,7 +503,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -569,7 +569,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -609,7 +609,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -654,7 +654,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {"seed": ["440"]},
                 "composition": {
                     "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -673,7 +673,7 @@ class TestScaleTransformParsing:
         for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
             incomplete_params = valid_params.copy()
             incomplete_params.pop(required_field)
-            composition_doc = {
+            composition_doc: CompositionDocumentInput = {
                 "motifs": {},
                 "composition": {
                     "voices": [],
@@ -687,7 +687,7 @@ class TestScaleTransformParsing:
     def test_add_pedal_tone_applies_from_composition_json(self):
         pedal_tone = 330.1
         
-        composition_doc = {
+        composition_doc: CompositionDocumentInput = {
             "motifs": {},
             "composition": {
                 "voices": [],
@@ -775,7 +775,7 @@ def test_parse_phrase_reference_transform_uses_total_grouped_phrase_duration():
     assert result[1].duration == pytest.approx(expected_total_duration / 2.0)
 
 def test_generate_score_plan_multi_motif_phrase_followed_by_phrase_uses_phrase_level_reference():
-    json_data = {
+    json_data: CompositionDocumentInput = {
         "motifs": {
             "seed_a": ["440:0.5"],
             "seed_b": ["660:0.5"],
@@ -810,7 +810,7 @@ def test_generate_score_plan_multi_motif_phrase_followed_by_phrase_uses_phrase_l
 
 
 def test_generate_score_plan_phrase_relative_transforms_use_document_order():
-    json_data = {
+    json_data: CompositionDocumentInput = {
         "motifs": {
             "anchor": ["440:1.0"],
             "response": ["550:1.0"],
@@ -942,35 +942,42 @@ def test_parse_phrase_requires_params_object_when_transform_params_are_missing()
 
 
 def test_generate_score_plan_requires_document_object():
+    invalid_document: object = []
     with pytest.raises(ValueError):
-        transform_score(generate_score_plan([]))
+        transform_score(generate_score_plan(invalid_document))
 
 def test_generate_score_plan_requires_motifs_object():
+    invalid_document: object = {"motifs": [], "composition": {}}
     with pytest.raises(ValueError):
-        transform_score(generate_score_plan({"motifs": [], "composition": {}}))
+        transform_score(generate_score_plan(invalid_document))
 
 def test_generate_score_plan_requires_composition_object():
+    invalid_document: object = {"motifs": {}, "composition": []}
     with pytest.raises(ValueError):
-        transform_score(generate_score_plan({"motifs": {}, "composition": []}))
+        transform_score(generate_score_plan(invalid_document))
 
 def test_generate_score_plan_requires_voices_list():
+    invalid_document: object = {"motifs": {}, "composition": {"voices": {}}}
     with pytest.raises(ValueError):
-        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": {}}}))
+        transform_score(generate_score_plan(invalid_document))
 
 def test_generate_score_plan_requires_voice_objects():
+    invalid_document: object = {"motifs": {}, "composition": {"voices": ["voice_a"]}}
     with pytest.raises(ValueError):
-        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": ["voice_a"]}}))
+        transform_score(generate_score_plan(invalid_document))
 
 def test_generate_score_plan_requires_phrases_list():
+    invalid_document: object = {"motifs": {}, "composition": {"voices": [{"phrases": {}}]}}
     with pytest.raises(ValueError):
-        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": [{"phrases": {}}]}}))
+        transform_score(generate_score_plan(invalid_document))
 
 def test_generate_score_plan_score_transforms_must_be_list():
+    invalid_document: object = {"motifs": {}, "composition": {"voices": [], "score_transforms": {}}}
     with pytest.raises(ValueError):
-        transform_score(generate_score_plan({"motifs": {}, "composition": {"voices": [], "score_transforms": {}}}))
+        transform_score(generate_score_plan(invalid_document))
 
 def test_generate_score_plan_score_transform_object_requires_name():
-    json_data = {
+    json_data: object = {
         "motifs": {},
         "composition": {
             "voices": [],
@@ -982,7 +989,7 @@ def test_generate_score_plan_score_transform_object_requires_name():
         transform_score(generate_score_plan(json_data))
 
 def test_generate_score_plan_unknown_score_transform():
-    json_data = {
+    json_data: CompositionDocumentInput = {
         "motifs": {},
         "composition": {
             "voices": [],
@@ -995,7 +1002,7 @@ def test_generate_score_plan_unknown_score_transform():
 
 
 def test_generate_score_plan_rejects_phrase_transform_in_score_transforms():
-    json_data = {
+    json_data: CompositionDocumentInput = {
         "motifs": {"seed": ["440:0.5", "660:0.5"]},
         "composition": {
             "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -1019,7 +1026,7 @@ def test_parse_phrase_rejects_score_transform_in_phrase_transforms():
 
 
 def test_generate_score_plan_score_reverse_applies_to_all_voices_without_params():
-    json_data = {
+    json_data: CompositionDocumentInput = {
         "motifs": {
             "voice_a": ["440:0.5", "660:0.25"],
             "voice_b": ["880:0.75", "990:1.0"],
@@ -1041,7 +1048,7 @@ def test_generate_score_plan_score_reverse_applies_to_all_voices_without_params(
     assert [tone.duration for tone in flatten_voice_tones(score.voices[1])] == [1.0, 0.75]
 
 def test_generate_score_plan_full_score_path():
-    json_data = {
+    json_data: CompositionDocumentInput = {
         "motifs": {
             "seed_a": ["440:0.5"],
             "seed_b": ["880:0.5"]
@@ -1081,7 +1088,7 @@ def test_generate_score_plan_full_score_path():
 def test_generate_score_plan_with_value_score_transform():
     factor = 2.0
     original_duration = 0.5
-    json_data = {
+    json_data: CompositionDocumentInput = {
         "motifs": {
             "seed": [f"440:{original_duration}"]
         },
@@ -1125,19 +1132,20 @@ def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params
         transform=lambda score, params: capture_score_target_motifs_transform(score, params["motif"]),
     )
     try:
+        valid_document: CompositionDocumentInput = {
+            "motifs": {"seed": ["440:0.5"]},
+            "composition": {
+                "voices": [],
+                "score_transforms": [
+                    {
+                        "name": "_test_score_with_motifs",
+                        "params": {"motif": "seed"},
+                    }
+                ],
+            },
+        }
         transform_score(generate_score_plan(
-            {
-                "motifs": {"seed": ["440:0.5"]},
-                "composition": {
-                    "voices": [],
-                    "score_transforms": [
-                        {
-                            "name": "_test_score_with_motifs",
-                            "params": {"motif": "seed"},
-                        }
-                    ],
-                },
-            }
+            valid_document
         ))
     finally:
         SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
@@ -1164,21 +1172,20 @@ def test_generate_score_plan_score_target_motifs_scope_requires_params_object():
     )
     try:
         invalid_raw_scalar_param = 1.0
+        invalid_document: object = {
+            "motifs": {"seed": ["440:0.5"]},
+            "composition": {
+                "voices": [],
+                "score_transforms": [
+                    {
+                        "name": "_test_score_with_motifs",
+                        "params": invalid_raw_scalar_param,
+                    }
+                ],
+            },
+        }
         with pytest.raises(ValueError):
-            transform_score(generate_score_plan(
-                {
-                    "motifs": {"seed": ["440:0.5"]},
-                    "composition": {
-                        "voices": [],
-                        "score_transforms": [
-                            {
-                                "name": "_test_score_with_motifs",
-                                "params": invalid_raw_scalar_param,
-                            }
-                        ],
-                    },
-                }
-            ))
+            transform_score(generate_score_plan(invalid_document))
     finally:
         SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
@@ -1225,7 +1232,7 @@ def test_stretto_with_missing_required_fields_raises_error():
     for required_field in (f for f, s in descriptor.params_spec.fields.items() if s.required):
         incomplete_params = valid_params.copy()
         incomplete_params.pop(required_field)
-        composition_doc = {
+        composition_doc: CompositionDocumentInput = {
             "motifs": {"subject": ["440:0.5"]},
             "composition": {
                 "voices": [],

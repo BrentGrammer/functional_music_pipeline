@@ -1,7 +1,6 @@
 from composition.schema import (
     CompositionConfig,
     CompositionDocument,
-    CompositionDocumentInput,
     MotifsConfigInput,
     PhraseConfig,
     TransformConfig,
@@ -39,7 +38,7 @@ def parse_motifs(motif_definitions: MotifsConfigInput) -> dict[str, list[Tone]]:
     return parsed_motifs
 
 def _validate_composition_document(
-    composition_document: CompositionDocumentInput,
+    composition_document: object,
 ) -> CompositionDocument:
     """
     Validates the structure of the composition document.
@@ -227,7 +226,7 @@ def _create_voice_plans_from_document(
     return voice_plans
 
 
-def generate_score_plan(document: CompositionDocumentInput) -> ScorePlan:
+def generate_score_plan(document: object) -> ScorePlan:
     composition_document = _validate_composition_document(document)
     motifs_section = composition_document["motifs"]
     composition_config = composition_document["composition"]
