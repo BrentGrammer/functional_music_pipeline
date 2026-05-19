@@ -34,4 +34,6 @@ Use Serena before broad manual searching when the task asks things like:
 - refactor safely
 - find references or definitions
 
+Use Serena's symbolic tools for codebase exploration and symbol-level edits: finding definitions/references, understanding file structure, inserting code near symbols, and replacing function/class bodies. Use normal file editing for simple text/config/docs edits or when Serena cannot identify the relevant symbol. Before making architecture-level changes, use Serena to locate affected symbols and references, then edit through Serena where the change is symbol-scoped.
+
 Do not use Serena for simple one-file edits when the relevant file is already known.
