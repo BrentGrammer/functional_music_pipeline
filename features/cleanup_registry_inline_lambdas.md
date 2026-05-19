@@ -18,7 +18,7 @@ PHRASE_TRANSFORMS = {
         name="reverse",
         params_spec=REVERSE_PARAMS_SPEC,
         transform=lambda context, params: Phrase(
-            motifs=[Motif(name="<transformed>", tones=reverse_tones([... for ...]))]
+            motifs=[Motif(name="", tones=reverse_tones([... for ...]))]
         ),
     ),
     ...
@@ -49,11 +49,131 @@ The adapter functions (`reverse_phrase_transform`, etc.) live in the same module
 - The registry does not own adaptation logic.
 - Standing rule from the parent refactor: no new helper functions unless the same logic is needed in 3+ call sites.
 
+## Reference Implementations
+
+Every adapter function follows one of these exact patterns. The implementing model should use these as templates — copy the structure, swap in the raw function name and params.
+
+### Phrase adapter — no params
+
+```python
+def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    del params
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    result = invert_tones(phrase_tones)
+    return Phrase(motifs=[Motif(name="", tones=result)])
+```
+
+### Phrase adapter — with params (required float + required string)
+
+```python
+def pad_silence_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    seconds = params["seconds"]
+    if isinstance(seconds, bool) or not isinstance(seconds, (int, float)):
+        raise ValueError("Param 'seconds' must be a float.")
+    position = params["position"]
+    if not isinstance(position, str):
+        raise ValueError("Param 'position' must be a string.")
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    result = pad_silence_tones(phrase_tones, seconds=float(seconds), position=position)
+    return Phrase(motifs=[Motif(name="", tones=result)])
+```
+
+### Phrase adapter — with optional dimension param
+
+```python
+def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    result = feigenbaum_sequence(phrase_tones, dimension=dimension)
+    return Phrase(motifs=[Motif(name="", tones=result)])
+```
+
+### Phrase adapter — phrase-relative (HIGH complexity)
+
+```python
+def phrase_feigenbaum_shrink_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
+
+    current_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+
+    if context.phrase_index > 0:
+        reference_phrases = context.score.voices[context.voice_index].phrases[:context.phrase_index]
+    elif context.voice_index > 0:
+        reference_phrases = context.score.voices[context.voice_index - 1].phrases
+    else:
+        reference_phrases = []
+
+    reference_tones = [
+        tone
+        for phrase in reference_phrases
+        for motif in phrase.motifs
+        for tone in motif.tones
+    ]
+
+    result = phrase_feigenbaum_shrink(current_tones, reference_tones, dimension=dimension)
+    return Phrase(motifs=[Motif(name="", tones=result)])
+```
+
+### Score adapter — each-voice with params
+
+```python
+def scale_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    dimension = params["dimension"]
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
+    factor = params["factor"]
+    if isinstance(factor, bool) or not isinstance(factor, (int, float)):
+        raise ValueError("Param 'factor' must be a float.")
+
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        result = scale_transform(voice_tones, dimension=dimension, factor=float(factor))
+        new_voices.append(
+            Voice(phrases=[Phrase(motifs=[Motif(name="", tones=result)])])
+        )
+    return Score(voices=new_voices)
+```
+
+### Score adapter — delegates to another function
+
+```python
+def frost_effect_score_adapter(score: Score, params: Mapping[str, object]) -> Score:
+    iterations = params.get("iterations", 1)
+    if isinstance(iterations, bool) or not isinstance(iterations, int):
+        raise ValueError("Param 'iterations' must be an integer.")
+    return frost_effect(score, iterations=iterations)
+```
+
+---
+
 ## Implementation Plan
 
 Each step changes one well-defined thing, leaves the codebase in a working state, and has a clear "done" signal.
 
-All steps are tagged **(low)** — they are mechanical extractions of existing logic into named functions with `isinstance`-based parameter narrowing.
+Tags:
+- **(low)** — mechanical extraction using a reference template. Copy, adapt, wire.
+- **(high)** — involves nested logic or coordinated edits. See reference implementation for exact code.
 
 ---
 
@@ -72,7 +192,7 @@ Two adapter functions already exist but the registry uses inline lambdas instead
 - `reverse_phrase_transform` in `transforms/basic/reversal.py`
 - `reverse_score_transform` in `transforms/basic/reversal.py`
 
-Update the phrase registry `"reverse"` entry to use `transform=reverse_phrase_transform`.  
+Update the phrase registry `"reverse"` entry to use `transform=reverse_phrase_transform`.
 Update the score registry `"reverse"` entry to use `transform=reverse_score_transform`.
 
 Add the import of these two functions to the registry.
@@ -81,17 +201,24 @@ Done signal: `uv run pytest tests/test_json_parser.py tests/test_transformation.
 
 ---
 
-### Step 3 (low): Extract no-param own-phrase adapters
+### Step 3a (low): Extract `invert` phrase adapter
 
-These phrase transforms take no parameters. Each gets one named adapter function in its own module. The adapter: reads tones from `context.phrase`, calls the raw function, wraps in `Phrase(motifs=[Motif(name="<transformed>", tones=result)])`.
+Add `invert_phrase_transform` to `transforms/basic/inversion.py`. Follow the **Phrase adapter — no params** reference template. The raw function is `invert_tones`.
+Import `Mapping` from `collections.abc`, `PhraseTransformContext` from `transforms.base`, `Motif` from `score_model.motif`, `Phrase` from `score_model.phrase`.
 
-| Registry key | Raw function | Module to add adapter |
-|---|---|---|
-| `invert` | `invert_tones` | `transforms/basic/inversion.py` |
-| `feigenbaum_sequence` | `feigenbaum_sequence` | `transforms/proportion/feigenbaum.py` |
-| `erosion` | `erosion_transform` | `transforms/geological/erosion.py` |
+Update the phrase registry entry and imports.
 
-For `feigenbaum_sequence` and `erosion`, the raw function has an optional `dimension` parameter. The adapter reads it from `params` with an `isinstance` check and a default of `ToneDimension.DURATION`.
+Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
+
+---
+
+### Step 3b (low): Extract `feigenbaum_sequence` and `erosion` phrase adapters
+
+Add `feigenbaum_sequence_phrase_transform` to `transforms/proportion/feigenbaum.py`. Follow the **Phrase adapter — with optional dimension param** reference template. The raw function is `feigenbaum_sequence`.
+
+Add `erosion_phrase_transform` to `transforms/geological/erosion.py`. Same reference template. The raw function is `erosion_transform`.
+
+Both use `params.get("dimension", ToneDimension.DURATION)` and narrow with `isinstance(value, (str, ToneDimension))`.
 
 Update the registry entries and imports.
 
@@ -99,53 +226,96 @@ Done signal: `uv run pytest tests/test_json_parser.py tests/test_proportion_feig
 
 ---
 
-### Step 4 (low): Extract single-required-param own-phrase adapters
+### Step 4 (low): Extract single-required-param phrase adapters
 
-These phrase transforms take exactly one required parameter. Each gets a named adapter that reads the param from `params`, narrows with `isinstance`, and passes it to the raw function.
+Three transforms, one param each. Follow the **Phrase adapter — with params** reference template, adapted for single-param access.
 
-| Registry key | Param | Type | Module |
+| Registry key | Param | Narrowing | Module |
 |---|---|---|---|
-| `transpose` | `semitones` | `float` | `transforms/basic/transpose.py` |
-| `delay` | `seconds` | `float` | `transforms/basic/delay.py` |
-| `repeat` | `count` | `int` | `transforms/basic/repeat.py` |
+| `transpose` | `semitones` | `isinstance(v, bool) or not isinstance(v, (int, float))` | `transforms/basic/transpose.py` |
+| `delay` | `seconds` | same as above | `transforms/basic/delay.py` |
+| `repeat` | `count` | `isinstance(v, bool) or not isinstance(v, int)` | `transforms/basic/repeat.py` |
+
+Naming: `{key}_phrase_transform`.
+
+Update the registry entries and imports.
 
 Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
 
 ---
 
-### Step 5 (low): Extract two-param own-phrase adapters
+### Step 5a (low): Extract `scale`, `drift`, `pad_silence` phrase adapters
 
-| Registry key | Params | Types | Module |
-|---|---|---|---|
-| `scale` | `dimension`, `factor` | `ToneDimension \| str`, `float` | `transforms/basic/scale.py` |
-| `drift` | `dimension`, `rate` | `ToneDimension \| str`, `float` | `transforms/basic/drift.py` |
-| `pad_silence` | `seconds`, `position` | `float`, `str` | `transforms/basic/pad_silence.py` |
-| `weierstrass` | `dimension`, `intensity` | `ToneDimension \| str`, `str` | `transforms/complexity/weierstrass.py` |
-| `terraced_drift` | `dimension`, `max_step_change_pct` | `ToneDimension \| str`, `int` | `transforms/geological/terraced_drift.py` |
-| `golden_ratio` | `dimension` (optional) | `ToneDimension \| str` | `transforms/proportion/golden_ratio.py` |
+Follow the **Phrase adapter — with params** reference template. Two required params each.
 
-`golden_ratio` has only one optional param — group it here since its raw function takes `(tones, dimension)`.
+| Registry key | Params | Module |
+|---|---|---|
+| `scale` | `dimension` (`ToneDimension | str`), `factor` (`float`) | `transforms/basic/scale.py` |
+| `drift` | `dimension` (`ToneDimension | str`), `rate` (`float`) | `transforms/basic/drift.py` |
+| `pad_silence` | `seconds` (`float`), `position` (`str`) | `transforms/basic/pad_silence.py` |
 
-For `accelerando` and `ritardando` (two optional params with defaults: `strength` and `jaggedness`, both `str | float`), add adapters in `transforms/tempo/accelerando.py` and `transforms/tempo/ritardando.py`.
+Update the registry entries and imports.
 
 Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
 
 ---
 
-### Step 6 (low): Extract multi-param own-phrase adapters
+### Step 5b (low): Extract `golden_ratio`, `weierstrass`, `terraced_drift` phrase adapters
 
-| Registry key | Params | Types | Module |
-|---|---|---|---|
-| `cellular_automata` | `dimension`, `rule`, `generations`, `max_deviation` | `ToneDimension \| str`, `int`, `int`, `float` | `transforms/complexity/cellular_automata.py` |
-| `random_drop` | `dimension`, `max_drop_pct`, `drop_frequency_pct` | `ToneDimension \| str`, `int`, `int` | `transforms/complexity/random_drop.py` |
+| Registry key | Params | Module |
+|---|---|---|
+| `golden_ratio` | `dimension` (optional, `ToneDimension | str`, default `ToneDimension.DURATION`) | `transforms/proportion/golden_ratio.py` |
+| `weierstrass` | `dimension` (`ToneDimension | str`), `intensity` (`str`) | `transforms/complexity/weierstrass.py` |
+| `terraced_drift` | `dimension` (`ToneDimension | str`), `max_step_change_pct` (`int`) | `transforms/geological/terraced_drift.py` |
+
+`golden_ratio` uses `params.get(...)` narrowing (see optional-dimension template). The other two use `params[...]` (required).
+
+Update the registry entries and imports.
 
 Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
 
 ---
 
-### Step 7 (low): Extract phrase-relative adapters
+### Step 5c (low): Extract `accelerando` and `ritardando` phrase adapters
 
-These transforms access neighboring phrases through `context.score` / `context.voice_index` / `context.phrase_index`. The adaptation logic (computing reference tones) is currently duplicated across four inline lambdas. Extract it once into each module.
+These have two optional `str | float` params with string defaults. Narrow each with `isinstance(value, (str, float))`.
+
+| Registry key | Params (both `str | float`) | Defaults | Module |
+|---|---|---|---|---|
+| `accelerando` | `strength`, `jaggedness` | `"medium"`, `"none"` | `transforms/tempo/accelerando.py` |
+| `ritardando` | `strength`, `jaggedness` | `"medium"`, `"none"` | `transforms/tempo/ritardando.py` |
+
+```python
+strength = params.get("strength", "medium")
+if not isinstance(strength, (str, float)):
+    raise ValueError("Param 'strength' must be a string or float.")
+# same for jaggedness
+```
+
+Update the registry entries and imports.
+
+Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
+
+---
+
+### Step 6 (low): Extract multi-param phrase adapters
+
+| Registry key | Params | Module |
+|---|---|---|
+| `cellular_automata` | `dimension` (`ToneDimension | str`), `rule` (`int`), `generations` (`int`), `max_deviation` (`float`) | `transforms/complexity/cellular_automata.py` |
+| `random_drop` | `dimension` (`ToneDimension | str`), `max_drop_pct` (`int`), `drop_frequency_pct` (`int`) | `transforms/complexity/random_drop.py` |
+
+Same pattern as two-param adapters, just more params. Follow the reference template.
+
+Update the registry entries and imports.
+
+Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
+
+---
+
+### Step 7 (high): Extract phrase-relative adapters
+
+These transforms compute reference tones from neighboring phrases. Use the **Phrase adapter — phrase-relative** reference template exactly. Copy it, change the raw function call, and update the module.
 
 | Registry key | Raw function | Module |
 |---|---|---|
@@ -154,38 +324,66 @@ These transforms access neighboring phrases through `context.score` / `context.v
 | `phrase_golden_ratio_shrink` | `phrase_golden_ratio_shrink` | `transforms/proportion/golden_ratio.py` |
 | `phrase_golden_ratio_grow` | `phrase_golden_ratio_grow` | `transforms/proportion/golden_ratio.py` |
 
-Each adapter:
-1. Reads current phrase tones from `context.phrase`.
-2. Derives reference tones from earlier phrases in the same voice, or the previous voice, or empty list.
-3. Reads optional `dimension` from `params` with `isinstance` check and default.
-4. Calls the raw function.
-5. Wraps in `Phrase(motifs=[Motif(name="<transformed>", tones=result)])`.
+All four use the same reference-tone derivation logic. The only difference is which raw function is called.
+
+Do not extract the reference-tone derivation into a shared helper — inline it in each adapter per the standing "no new helpers unless 3+ call sites" rule (these are 4 call sites spread across 2 modules, which is borderline; default to inlining).
+
+Update the registry entries and imports.
 
 Done signal: `uv run pytest tests/test_json_parser.py tests/test_proportion_feigenbaum.py tests/test_proportion_golden_ratio.py` passes. `uv run mypy .` passes.
 
 ---
 
-### Step 8 (low): Extract score each-voice adapters
+### Step 8a (low): Extract basic module score each-voice adapters
 
-Every each-voice score transform follows the same pattern: iterate `score.voices`, read `flatten_voice_tones(voice)`, call raw function with narrowed params, wrap each voice. Extract each into a named function in the raw transform's module.
-
-These are the score-registry entries that currently use inline lambdas iterating voices:
+Follow the **Score adapter — each-voice with params** reference template.
 
 | Registry key | Module |
 |---|---|
-| `golden_ratio` | `transforms/proportion/golden_ratio.py` |
 | `invert` | `transforms/basic/inversion.py` |
 | `transpose` | `transforms/basic/transpose.py` |
 | `scale` | `transforms/basic/scale.py` |
 | `delay` | `transforms/basic/delay.py` |
 | `repeat` | `transforms/basic/repeat.py` |
 | `drift` | `transforms/basic/drift.py` |
+
+`invert` has no params — simplify the template by removing param narrowing (`del params` instead).
+The other five use the full template with their respective params.
+
+Naming: `{key}_score_transform`.
+
+Update the registry entries and imports.
+
+Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
+
+---
+
+### Step 8b (low): Extract complexity module score each-voice adapters
+
+| Registry key | Module |
+|---|---|
 | `weierstrass` | `transforms/complexity/weierstrass.py` |
-| `terraced_drift` | `transforms/geological/terraced_drift.py` |
 | `cellular_automata` | `transforms/complexity/cellular_automata.py` |
 | `random_drop` | `transforms/complexity/random_drop.py` |
 
-Each adapter follows `(Score, Mapping[str, object]) -> Score`, narrows params with `isinstance`, iterates voices, and returns a new `Score`. `reverse_score_transform` in `reversal.py` is the reference implementation.
+Same reference template. `cellular_automata` and `random_drop` have more params — follow the multi-param phrase pattern applied to the score template.
+
+Update the registry entries and imports.
+
+Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
+
+---
+
+### Step 8c (low): Extract geological module score each-voice adapters
+
+| Registry key | Module |
+|---|---|
+| `golden_ratio` | `transforms/proportion/golden_ratio.py` |
+| `terraced_drift` | `transforms/geological/terraced_drift.py` |
+
+`golden_ratio` uses optional `dimension` (default `ToneDimension.DURATION`). `terraced_drift` has required params.
+
+Update the registry entries and imports.
 
 Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` passes.
 
@@ -193,10 +391,12 @@ Done signal: `uv run pytest tests/test_json_parser.py` passes. `uv run mypy .` p
 
 ### Step 9 (low): Create adapters for `feigenbaum_sequence` and `frost_effect` score transforms
 
-These two score entries currently unpack params with `**params` directly into the raw function. Replace with proper adapter functions that narrow params with `isinstance`.
+These two score entries currently unpack params with `**params` directly into the raw function. Replace with proper adapter functions.
 
-- `score_feigenbaum_sequence_adapter` → `transforms/proportion/feigenbaum.py` (reads optional `dimension` param)
-- `frost_effect_score_adapter` → `transforms/geological/frost_effect.py` (reads optional `iterations` param)
+| Registry key | Adapter name | Module | Template |
+|---|---|---|---|
+| `feigenbaum_sequence` | `score_feigenbaum_sequence_adapter` | `transforms/proportion/feigenbaum.py` | Optional-dimension pattern (default `ToneDimension.DURATION`) |
+| `frost_effect` | `frost_effect_score_adapter` | `transforms/geological/frost_effect.py` | **Score adapter — delegates to another function** reference template |
 
 Update registry entries and imports.
 
@@ -212,6 +412,38 @@ Done signal: `uv run pytest tests/test_json_parser.py tests/test_frost_effect_de
 - Run `uv run pytest tests` — full suite must pass.
 
 Done signal: all of the above clean.
+
+---
+
+### Step 11 (low): Replace angle-bracket synthetic Motif names with empty string
+
+The codebase uses angle-bracket strings (`"<transformed>"`, `"<each_voice>"`, `"<parsed>"`, `"<frost_copy>"`, `"<frost>"`, `"<feigenbaum>"`, `"<pedal>"`) as `Motif.name` values for motifs that are generated by transforms rather than defined by the user. These names carry no information — they exist solely because `Motif` requires a `name` field.
+
+Replace all synthetic motif names with `""` (empty string). The empty string is honest: it means "this motif has no user-assigned name."
+
+**Mechanical replacement — no design judgment needed:**
+
+| Current name | Replace with |
+|---|---|
+| `"<transformed>"` | `""` |
+| `"<each_voice>"` | `""` |
+| `"<parsed>"` | `""` |
+| `"<frost_copy>"` | `""` |
+| `"<frost>"` | `""` |
+| `"<feigenbaum>"` | `""` |
+| `"<pedal>"` | `""` |
+
+Step-by-step:
+
+1. Search: `rg -l 'name="<' transforms/ composition/ --type py` to find affected files.
+2. In each file, replace every `name="<...>"` with `name=""`.
+3. Search: `rg '"<(transformed|each_voice|parsed|frost_copy|frost|feigenbaum|pedal)>"' tests/ --type py` to find test assertions.
+4. Replace each test assertion string `"<...>"` with `""`.
+5. Run `uv run pytest tests` — full suite must pass.
+6. Run `uv run mypy .` — must pass.
+7. Run `rg 'name="<' transforms/ composition/ tests/ --type py` — should return zero results.
+
+Done signal: zero angle-bracket motif names in production code or tests. Full suite green. `mypy .` green.
 
 ---
 
@@ -250,3 +482,60 @@ SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
 ```
 
 Each transform module owns its adapter function. The registry is a clean wiring layer — no lambdas, no `cast`, no inline logic.
+
+## Open Item: Synthetic Motif Names
+
+### The Problem
+
+Transforms produce `Motif` objects to hold their output tones. These motifs have no meaningful name — they are not authored in JSON and are never referenced by name. But `Motif.name` is currently typed as `str` (required), which forces the code to invent fake values.
+
+The codebase currently uses angle-bracket strings: `"<transformed>"`, `"<each_voice>"`, `"<parsed>"`, `"<frost_copy>"`, `"<frost>"`, `"<feigenbaum>"`, `"<pedal>"`. These exist only to satisfy the type checker. No code branches on them. They are noise.
+
+### What `Motif.name` Is Actually Used For
+
+In production code, `Motif.name` is read in exactly two places:
+
+1. **`build_score`** in `composition/transformer.py` — copies `plan_motif.name` (a real user-authored name) onto the new motif.
+2. **`find_motif_by_name`** in `transforms/counterpoint/fugue.py` — used by `stretto` to look up a target motif by name in the score hierarchy.
+
+That's it. Both are for user-authored motifs where the name actually matters.
+
+### Public API Reality
+
+In the JSON composition format, every motif is authored with a name in the top-level `motifs` block, and phrases reference those names:
+
+```json
+"motifs": { "seed": ["440:0.5"] },
+"phrases": [{ "motifs": ["seed"] }]
+```
+
+Phrases cannot contain raw tone strings. They always reference named motifs. So at the authoring level, motifs always have names.
+
+But transform-generated motifs are never authored, never appear in JSON, and are never referenced by name. They are internal containers for tone sequences.
+
+### Options Considered
+
+**Option A: Replace angle brackets with empty string `""`**
+- Replaces one fake value with another. `""` is still a magic value pretending to mean "no name."
+- Smell: the type system says name is required, but the value says it isn't.
+
+**Option B: Make `Motif.name` optional — `str | None = None`**
+- Authoring: `build_score` always passes `name=plan_motif.name` (a real string).
+- Transforms: adapters create `Motif(tones=result)` without a name.
+- `find_motif_by_name`: `None == "some_name"` is `False`, so synthetic motifs are naturally skipped.
+- Honest at the type level: a motif may or may not have a name.
+
+**Option C: Drop `name` from `Motif` entirely**
+- Keep the name→Motif mapping in `ScorePlan.motifs: dict[str, Motif]`.
+- `stretto` would need an alternative lookup mechanism (e.g., a name index on `Score` or traversal of `ScorePlan`).
+- Cleaner separation but larger change.
+
+**Option D: Separate authored and synthetic types**
+- Two classes (e.g., `NamedMotif` and `AnonymousMotif`).
+- Adds complexity. `Phrase.motifs` would need a union type. Minimal benefit.
+
+### Current Direction
+
+Step 11 currently proposes replacing angle brackets with `""`. This is intentionally mechanical and non-disruptive so the registry cleanup can proceed independently.
+
+The real fix — making `name` optional on `Motif` — is recorded here as a follow-up item. It is small (one line change to the constructor signature, plus test assertion updates) and eliminates the fake-value problem entirely without adding new types. It should be addressed after the registry cleanup lands.
