@@ -73,7 +73,7 @@ def _validate_composition_document(
     voice_config_inputs = composition_config.get("voices", [])
     if not isinstance(voice_config_inputs, list):
         raise ValueError("Composition 'voices' must be a list.")
-    validated_voices = []
+    validated_voices: list[VoiceConfig] = []
     for voice_config in voice_config_inputs:
         if not isinstance(voice_config, dict):
             raise ValueError("Composition 'voices' entries must be objects.")
@@ -81,7 +81,7 @@ def _validate_composition_document(
         phrase_config_inputs = voice_config.get("phrases")
         if not isinstance(phrase_config_inputs, list):
             raise ValueError("Voice 'phrases' must be a list.")
-        validated_phrases = []
+        validated_phrases: list[PhraseConfig] = []
         for phrase_config in phrase_config_inputs:
             if not isinstance(phrase_config, dict):
                 raise ValueError("Voice 'phrases' entries must be objects.")
@@ -100,7 +100,7 @@ def _validate_composition_document(
             transform_config_inputs = phrase_config.get("transforms", [])
             if not isinstance(transform_config_inputs, list):
                 raise ValueError("Phrase 'transforms' must be a list.")
-            validated_transforms = []
+            validated_transforms: list[TransformConfig] = []
             for transform_config in transform_config_inputs:
                 if not isinstance(transform_config, dict):
                     raise ValueError("Phrase 'transforms' entries must be objects.")
@@ -125,7 +125,7 @@ def _validate_composition_document(
     score_transform_inputs = composition_config.get("score_transforms", [])
     if not isinstance(score_transform_inputs, list):
         raise ValueError("Composition 'score_transforms' must be a list.")
-    validated_score_transforms = []
+    validated_score_transforms: list[TransformConfig] = []
     for score_transform_spec in score_transform_inputs:
         if not isinstance(score_transform_spec, dict):
             raise ValueError("Composition 'score_transforms' entries must be objects.")
