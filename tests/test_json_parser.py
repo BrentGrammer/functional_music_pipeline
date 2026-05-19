@@ -165,19 +165,6 @@ def test_parse_motifs():
     assert len(result["seed_b"]) == 1
     assert result["seed_b"][0].frequency == 523.25
 
-def test_parse_motifs_requires_object_mapping():
-    with pytest.raises(ValueError):
-        parse_motifs(["440"])
-
-def test_parse_motifs_requires_list_values():
-    with pytest.raises(ValueError):
-        parse_motifs({"seed_a": "440"})
-
-
-def test_parse_motifs_requires_string_keys():
-    with pytest.raises(ValueError):
-        parse_motifs({1: ["440"]})
-
 def test_parse_phrase_single_motif_from_motifs_list():
     parsed_motifs = {
         "seed_a": [Tone(440, 0.5), Tone(880, 0.5)]

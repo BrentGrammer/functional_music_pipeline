@@ -22,24 +22,11 @@ def _parse_tone_string(tone_string: str) -> Tone:
     return Tone(float(normalized_tone_string))
 
 
-def _parse_motif_definition(motif_name: object, tone_strings: object) -> tuple[str, list[Tone]]:
-    if not isinstance(motif_name, str):
-        raise ValueError("Motif names must be strings.")
-    if not isinstance(tone_strings, list):
-        raise ValueError(f"Motif '{motif_name}' must map to a list of tone strings.")
-
-    return motif_name, [_parse_tone_string(tone_string) for tone_string in tone_strings]
-
-
-def parse_motifs(motif_definitions: object) -> dict[str, list[Tone]]:
-    if not isinstance(motif_definitions, dict):
-        raise ValueError("Composition 'motifs' must be an object mapping motif names to tone lists.")
-
+def parse_motifs(motif_definitions: dict[str, list[str]]) -> dict[str, list[Tone]]:
     parsed_motifs: dict[str, list[Tone]] = {}
 
     for motif_name, tone_strings in motif_definitions.items():
-        parsed_motif_name, motif_tones = _parse_motif_definition(motif_name, tone_strings)
-        parsed_motifs[parsed_motif_name] = motif_tones
+        parsed_motifs[motif_name] = [_parse_tone_string(tone_string) for tone_string in tone_strings]
 
     return parsed_motifs
 
