@@ -3,6 +3,7 @@ import pytest
 from composition.parser import (
     _create_voice_plans_from_document,
     _extract_composition_sections,
+    _extract_phrase_transform_requests,
     _extract_requests_from_phrase,
     _extract_requests_from_voice,
     _validate_and_extract_motifs,
@@ -286,4 +287,90 @@ def test_extract_composition_sections_rejects_non_object_composition_field():
                 "motifs": {"seed": ["440"]},
                 "composition": "not-an-object",
             }
+        )
+
+
+def test_extract_composition_sections_rejects_invalid_motifs_after_initial_validation():
+    class FlakyDocument(dict):
+        def __init__(self):
+            super().__init__()
+            self._motifs_call_count = 0
+            self._composition: object = {"voices": [], "score_transforms": []}
+
+        def get(self, key, default=None):
+            if key == "motifs":
+                self._motifs_call_count += 1
+                return {} if self._motifs_call_count == 1 else "not-a-dict"
+            if key == "composition":
+                return self._composition
+            return super().get(key, default)
+
+    with pytest.raises(ValueError):
+        _extract_composition_sections(FlakyDocument())
+
+
+def test_extract_composition_sections_rejects_invalid_composition_after_initial_validation():
+    class FlakyDocument(dict):
+        def __init__(self):
+            super().__init__()
+            self._composition_call_count = 0
+
+        def get(self, key, default=None):
+            if key == "motifs":
+                return {}
+            if key == "composition":
+                self._composition_call_count += 1
+                return {"voices": [], "score_transforms": []} if self._composition_call_count == 1 else "bad"
+            return super().get(key, default)
+
+    with pytest.raises(ValueError):
+        _extract_composition_sections(FlakyDocument())
+
+
+def test_extract_composition_sections_rejects_invalid_voices_after_initial_validation():
+    class FlakyComposition(dict):
+        def __init__(self):
+            super().__init__()
+            self._voices_call_count = 0
+
+        def get(self, key, default=None):
+            if key == "voices":
+                self._voices_call_count += 1
+                return [] if self._voices_call_count == 1 else "not-a-list"
+            if key == "score_transforms":
+                return []
+            return super().get(key, default)
+
+    with pytest.raises(ValueError):
+        _extract_composition_sections({"motifs": {}, "composition": FlakyComposition()})
+
+
+def test_extract_composition_sections_rejects_invalid_score_transforms_after_initial_validation():
+    class FlakyComposition(dict):
+        def __init__(self):
+            super().__init__()
+            self._score_transforms_call_count = 0
+
+        def get(self, key, default=None):
+            if key == "voices":
+                return []
+            if key == "score_transforms":
+                self._score_transforms_call_count += 1
+                return [] if self._score_transforms_call_count == 1 else "not-a-list"
+            return super().get(key, default)
+
+    with pytest.raises(ValueError):
+        _extract_composition_sections({"motifs": {}, "composition": FlakyComposition()})
+
+
+def test_extract_phrase_transform_requests_rejects_non_list_voices_section():
+    with pytest.raises(ValueError):
+        _extract_phrase_transform_requests({})
+
+
+def test_create_voice_plans_rejects_non_list_voices_section():
+    with pytest.raises(ValueError):
+        _create_voice_plans_from_document(
+            voices_section={},
+            plan_motifs={"seed": Motif(name="seed", tones=[Tone(440.0)])},
         )

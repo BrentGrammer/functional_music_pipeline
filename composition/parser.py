@@ -129,9 +129,6 @@ def _extract_composition_sections(
     """
     _validate_composition_structure(composition_document)
 
-    if not isinstance(composition_document, dict):
-        raise ValueError("Composition document must be an object.")
-
     motifs_section = composition_document.get("motifs", {})
     composition_config = composition_document.get("composition", {})
 
@@ -232,9 +229,6 @@ def _create_voice_plans_from_document(voices_section: object, plan_motifs: dict[
 
 def generate_score_plan(composition_document: object) -> ScorePlan:
     _validate_composition_structure(composition_document)
-
-    if not isinstance(composition_document, dict):
-        raise ValueError("Composition document must be an object.")
 
     typed_document = cast(CompositionDocument, composition_document)
     motifs_section, voices_section, score_transforms_section = _extract_composition_sections(typed_document)
