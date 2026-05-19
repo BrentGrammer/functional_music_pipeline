@@ -2,3 +2,5 @@
 omit =
     tests/*
     */tests/*
+    */__init__.py
+skip_empty = true
