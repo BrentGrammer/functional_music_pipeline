@@ -21,8 +21,9 @@ from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_phrase_t
 from transforms.complexity.cellular_automata import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
     apply_cellular_automata_transform,
+    cellular_automata_phrase_transform,
 )
-from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform
+from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform, random_drop_phrase_transform
 from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform, weierstrass_phrase_transform
 from transforms.counterpoint.fugue import (
     ADD_PEDAL_TONE_PARAMS_SPEC,
@@ -150,37 +151,12 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "cellular_automata": PhraseTransformDefinition(
         name="cellular_automata",
         params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=apply_cellular_automata_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params["dimension"]),
-                        rule=cast(int, params["rule"]),
-                        generations=cast(int, params["generations"]),
-                        max_deviation=cast(float, params["max_deviation"]),
-                    ),
-                )
-            ]
-        ),
+        transform=cellular_automata_phrase_transform,
     ),
     "random_drop": PhraseTransformDefinition(
         name="random_drop",
         params_spec=RANDOM_DROP_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=apply_random_drop_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params["dimension"]),
-                        max_drop_pct=cast(int, params["max_drop_pct"]),
-                        drop_frequency_pct=cast(int, params["drop_frequency_pct"]),
-                    ),
-                )
-            ]
-        ),
+        transform=random_drop_phrase_transform,
     ),
 }
 

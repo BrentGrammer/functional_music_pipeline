@@ -1,7 +1,12 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from transforms.base import (
     EnumParam,
     FloatParam,
     IntegerParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -109,3 +114,36 @@ def apply_cellular_automata_transform(
     profile = [DEAD if cell == 0 else LIVE for cell in final_state]
 
     return _modulate_tone_dimension(tones, profile, resolved_dimension, max_deviation)
+
+
+def cellular_automata_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Cellular automata dimension must be a string or ToneDimension.")
+
+    rule = params["rule"]
+    if not isinstance(rule, int) or isinstance(rule, bool):
+        raise ValueError("Cellular automata rule must be an integer.")
+
+    generations = params["generations"]
+    if not isinstance(generations, int) or isinstance(generations, bool):
+        raise ValueError("Cellular automata generations must be an integer.")
+
+    max_deviation = params["max_deviation"]
+    if not isinstance(max_deviation, (int, float)) or isinstance(max_deviation, bool):
+        raise ValueError("Cellular automata max_deviation must be a float.")
+
+    transformed_tones = apply_cellular_automata_transform(
+        phrase_tones,
+        dimension=dimension,
+        rule=rule,
+        generations=generations,
+        max_deviation=float(max_deviation),
+    )
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])

@@ -1,9 +1,14 @@
+from collections.abc import Mapping
+
 import random
 from dataclasses import dataclass
 
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from transforms.base import (
     EnumParam,
     IntegerParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -72,3 +77,31 @@ def apply_random_drop_transform(
         dimension,
         max_deviation,
     )
+
+
+def random_drop_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Random drop dimension must be a string or ToneDimension.")
+
+    max_drop_pct = params["max_drop_pct"]
+    if not isinstance(max_drop_pct, int) or isinstance(max_drop_pct, bool):
+        raise ValueError("Random drop max_drop_pct must be an integer.")
+
+    drop_frequency_pct = params["drop_frequency_pct"]
+    if not isinstance(drop_frequency_pct, int) or isinstance(drop_frequency_pct, bool):
+        raise ValueError("Random drop drop_frequency_pct must be an integer.")
+
+    transformed_tones = apply_random_drop_transform(
+        phrase_tones,
+        dimension=dimension,
+        max_drop_pct=max_drop_pct,
+        drop_frequency_pct=drop_frequency_pct,
+    )
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
