@@ -5,6 +5,7 @@ MotifsConfigInput: TypeAlias = dict[str, list[str]]
 
 
 class TransformConfigInput(TypedDict, total=False):
+    comment: str
     name: str
     params: dict[str, object]
 
@@ -15,6 +16,7 @@ class TransformConfig(TypedDict):
 
 
 class PhraseConfigInput(TypedDict, total=False):
+    comment: str
     motifs: list[str]
     transforms: NotRequired[list[TransformConfigInput]]
 
@@ -24,7 +26,9 @@ class PhraseConfig(TypedDict):
     transforms: list[TransformConfig]
 
 
-class VoiceConfigInput(TypedDict):
+class VoiceConfigInput(TypedDict, total=False):
+    comment: str
+    name: str
     phrases: list[PhraseConfigInput]
 
 
@@ -43,6 +47,7 @@ class CompositionConfig(TypedDict):
 
 
 class CompositionDocumentInput(TypedDict, total=False):
+    description: str
     motifs: MotifsConfigInput
     composition: CompositionConfigInput
 
