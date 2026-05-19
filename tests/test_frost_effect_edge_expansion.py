@@ -1,4 +1,5 @@
 import math
+
 import pytest
 
 from score_model.motif import Motif
@@ -13,14 +14,10 @@ from transforms.geological.frost_effect import (
     FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS,
-    FROST_ROLE_CENTER,
-    FROST_ROLE_SIDE,
-    _build_replayed_event_voices,
     _cents_to_frequency_ratio,
     _find_frost_edge_voices,
-    _first_audible_onset_field,
-    _first_audible_onset_time,
-    _first_audible_tone_with_onset,
+    _first_audible_start_time_voices,
+    _first_audible_tone_with_start_time,
     _jitter_frequency_down_within_bounds,
     _jitter_frequency_up_within_bounds,
     frost_effect,
@@ -91,34 +88,7 @@ def _find_event_voice_by_frequency(score: Score, event_number: int, frequency: f
     return matching_voice
 
 
-def _event_voices_with_role(score: Score, event_number: int, role: str) -> list[Voice]:
-    return [
-        voice
-        for voice in _event_voices(score, event_number)
-        if getattr(voice, "frost_role", FROST_ROLE_CENTER) == role
-    ]
-
-
-def _assert_event_has_controlled_edge_stagger(score: Score, event_number: int) -> None:
-    center_voices = _event_voices_with_role(score, event_number, FROST_ROLE_CENTER)
-    side_voices = _event_voices_with_role(score, event_number, FROST_ROLE_SIDE)
-    center_start_times = sorted(_voice_start_time(voice) for voice in center_voices)
-    side_start_times = sorted(_voice_start_time(voice) for voice in side_voices)
-
-    assert len(center_start_times) == len(center_voices)
-    assert len(set(center_start_times)) == len(center_start_times)
-    assert len(side_start_times) == 2
-
-    if len(center_voices) == 1:
-        side_separation = side_start_times[1] - side_start_times[0]
-
-        assert side_separation >= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS
-        assert side_separation <= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS
-    else:
-        assert side_start_times[0] - center_start_times[0] >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
-
-
-def _assert_new_edges_have_controlled_stagger(
+def _assert_event_has_controlled_edge_stagger(
     score: Score,
     previous_event_frequencies: list[float],
     event_number: int,
@@ -145,7 +115,13 @@ def _assert_new_edges_have_controlled_stagger(
     assert len(new_edge_start_times) == 2
 
     assert new_edge_start_times[0] >= replayed_start_times[-1]
+    assert new_edge_start_times[0] - replayed_start_times[0] >= FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
 
+    if len(previous_event_frequencies) == 1:
+        side_separation = new_edge_start_times[1] - new_edge_start_times[0]
+
+        assert side_separation >= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS
+        assert side_separation <= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS
 
 def _cents_between(lower_frequency: float, upper_frequency: float) -> float:
     """
@@ -203,13 +179,12 @@ def test_first_frost_event_delays_only_new_edge_tones_within_controlled_bounds()
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=1)
 
     source_event_end_time = max(_voice_end_time(voice) for voice in _event_voices(score, 0))
-    center_voices = _event_voices_with_role(score, 1, FROST_ROLE_CENTER)
+    first_event_frequencies = _event_frequencies(score, 1)
+    replayed_voice = _find_event_voice_by_frequency(score, 1, 440.0)
 
-    assert len(center_voices) == 1
-    assert len(_event_voices_with_role(score, 1, FROST_ROLE_SIDE)) == 2
-    assert min(_voice_start_time(voice) for voice in center_voices) >= source_event_end_time
-    assert _first_audible_frequency(center_voices[0]) == pytest.approx(440.0)
-    _assert_event_has_controlled_edge_stagger(score, 1)
+    assert len(first_event_frequencies) == 3
+    assert _voice_start_time(replayed_voice) >= source_event_end_time
+    _assert_event_has_controlled_edge_stagger(score, [440.0], 1)
 
 
 def test_first_frost_event_expands_cluster_as_one_staggered_event():
@@ -225,8 +200,6 @@ def test_first_frost_event_expands_cluster_as_one_staggered_event():
     )
 
     source_event_end_time = max(_voice_end_time(voice) for voice in _event_voices(score, 0))
-    center_voices = _event_voices_with_role(score, 1, FROST_ROLE_CENTER)
-    side_voices = _event_voices_with_role(score, 1, FROST_ROLE_SIDE)
     source_frequencies = _event_frequencies(score, 0)
     first_frost_frequencies = _event_frequencies(score, 1)
     new_frequencies = _find_frequencies_added_to_next_event(
@@ -243,10 +216,8 @@ def test_first_frost_event_expands_cluster_as_one_staggered_event():
     assert len(new_frequencies) == 2
     assert sum(frequency < 330.0 for frequency in new_frequencies) == 1
     assert sum(frequency > 550.0 for frequency in new_frequencies) == 1
-    assert len(center_voices) == 3
-    assert len(side_voices) == 2
-    assert len({_voice_start_time(voice) for voice in center_voices}) == len(center_voices)
-    assert min(_voice_start_time(voice) for voice in center_voices) >= source_event_end_time
+    assert min(_event_start_times(score, 1)) >= source_event_end_time
+    _assert_event_has_controlled_edge_stagger(score, source_frequencies, 1)
 
 
 def test_second_frost_event_replays_previous_event_and_staggers_new_edges():
@@ -266,7 +237,7 @@ def test_second_frost_event_replays_previous_event_and_staggers_new_edges():
     assert sum(frequency < min(first_frost_event_frequencies) for frequency in new_frequencies) == 1
     assert sum(frequency > max(first_frost_event_frequencies) for frequency in new_frequencies) == 1
     assert min(_event_start_times(score, 2)) >= first_frost_event_end_time
-    _assert_new_edges_have_controlled_stagger(score, first_frost_event_frequencies, 2)
+    _assert_event_has_controlled_edge_stagger(score, first_frost_event_frequencies, 2)
 
 
 def test_cluster_frost_events_replay_previous_event_and_add_two_edges():
@@ -302,10 +273,7 @@ def test_cluster_frost_events_replay_previous_event_and_add_two_edges():
         assert len(new_frequencies) == 2
         assert sum(frequency < min(previous_event_frequencies) for frequency in new_frequencies) == 1
         assert sum(frequency > max(previous_event_frequencies) for frequency in new_frequencies) == 1
-        if event_number == 1:
-            _assert_event_has_controlled_edge_stagger(score, event_number)
-        else:
-            _assert_new_edges_have_controlled_stagger(score, previous_event_frequencies, event_number)
+        _assert_event_has_controlled_edge_stagger(score, previous_event_frequencies, event_number)
 
         previous_event_frequencies = current_event_frequencies
 
@@ -332,21 +300,18 @@ def test_repeated_frost_calls_continue_audible_event_sequence():
         assert len(new_frequencies) == 2
         assert sum(frequency < min(previous_event_frequencies) for frequency in new_frequencies) == 1
         assert sum(frequency > max(previous_event_frequencies) for frequency in new_frequencies) == 1
-        if event_number == 1:
-            _assert_event_has_controlled_edge_stagger(score, event_number)
-        else:
-            _assert_new_edges_have_controlled_stagger(score, previous_event_frequencies, event_number)
+        _assert_event_has_controlled_edge_stagger(score, previous_event_frequencies, event_number)
 
 
-def test_first_audible_tone_with_onset_returns_single_seed_at_zero():
+def test_first_audible_tone_with_start_time_returns_single_seed_at_zero():
     voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
 
-    onset_tone = _first_audible_tone_with_onset(voice)
+    start_tone = _first_audible_tone_with_start_time(voice)
 
-    assert onset_tone is not None
-    assert onset_tone.voice is voice
-    assert onset_tone.tone.frequency == pytest.approx(440.0)
-    assert onset_tone.onset_time == pytest.approx(0.0)
+    assert start_tone is not None
+    tone, start_time = start_tone
+    assert tone.frequency == pytest.approx(440.0)
+    assert start_time == pytest.approx(0.0)
 
 
 def test_voice_start_time_uses_leading_silence_duration():
@@ -356,7 +321,7 @@ def test_voice_start_time_uses_leading_silence_duration():
     assert _voice_start_time(voice) == pytest.approx(leading_silence_duration)
 
 
-def test_first_audible_onset_field_collects_simultaneous_cluster_voices():
+def test_first_audible_start_time_voices_collect_simultaneous_cluster_voices():
     score = Score(
         [
             Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
@@ -365,17 +330,17 @@ def test_first_audible_onset_field_collects_simultaneous_cluster_voices():
         ]
     )
 
-    onset_field = _first_audible_onset_field(score)
+    start_time_voices = _first_audible_start_time_voices(score)
 
-    assert _first_audible_onset_time(score) == pytest.approx(0.0)
-    assert [onset_tone.tone.frequency for onset_tone in onset_field] == [
+    assert [_voice_start_time(voice) for voice in start_time_voices] == [pytest.approx(0.0)] * 3
+    assert [_first_audible_frequency(voice) for voice in start_time_voices] == [
         pytest.approx(330.0),
         pytest.approx(440.0),
         pytest.approx(550.0),
     ]
 
 
-def test_first_audible_onset_field_excludes_later_delayed_voice():
+def test_first_audible_start_time_voices_exclude_later_delayed_voice():
     score = Score(
         [
             Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
@@ -383,14 +348,14 @@ def test_first_audible_onset_field_excludes_later_delayed_voice():
         ]
     )
 
-    onset_field = _first_audible_onset_field(score)
+    start_time_voices = _first_audible_start_time_voices(score)
 
-    assert [onset_tone.tone.frequency for onset_tone in onset_field] == [
+    assert [_first_audible_frequency(voice) for voice in start_time_voices] == [
         pytest.approx(330.0),
     ]
 
 
-def test_first_audible_onset_field_skips_voice_with_no_audible_tone():
+def test_first_audible_start_time_voices_skip_voice_with_no_audible_tone():
     audible_frequency = 330.0
     score = Score(
         [
@@ -399,14 +364,14 @@ def test_first_audible_onset_field_skips_voice_with_no_audible_tone():
         ]
     )
 
-    onset_field = _first_audible_onset_field(score)
+    start_time_voices = _first_audible_start_time_voices(score)
 
-    assert [onset_tone.tone.frequency for onset_tone in onset_field] == [
+    assert [_first_audible_frequency(voice) for voice in start_time_voices] == [
         pytest.approx(audible_frequency),
     ]
 
 
-def test_first_audible_onset_field_uses_first_tone_of_melodic_line():
+def test_first_audible_start_time_voices_use_first_tone_of_melodic_line():
     score = Score(
         [
             Voice(
@@ -428,9 +393,9 @@ def test_first_audible_onset_field_uses_first_tone_of_melodic_line():
         ]
     )
 
-    onset_field = _first_audible_onset_field(score)
+    start_time_voices = _first_audible_start_time_voices(score)
 
-    assert [onset_tone.tone.frequency for onset_tone in onset_field] == [
+    assert [_first_audible_frequency(voice) for voice in start_time_voices] == [
         pytest.approx(330.0),
     ]
 
@@ -631,24 +596,6 @@ def test_first_frost_event_uses_earliest_onset_not_later_delayed_voice():
     assert min(first_event_frequencies) < 330.0
     assert max(first_event_frequencies) > 330.0
 
-
-def test_build_replayed_event_voices_generates_entry_delays_when_not_provided():
-    source_frequency = 440.0
-    event_start = 1.0
-    source_voice = Voice([Phrase([Motif("<test>", [Tone(source_frequency, duration=1.0)])])])
-
-    replayed_voices = _build_replayed_event_voices(
-        [source_voice],
-        event_start=event_start,
-        generation=2,
-        preserve_existing_roles=False,
-    )
-
-    assert len(replayed_voices) == 1
-    assert flatten_voice_tones(replayed_voices[0])[1].frequency == pytest.approx(source_frequency)
-    assert _voice_start_time(replayed_voices[0]) >= event_start + FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS
-
-
 def test_multi_voice_input_keeps_growing_linearly_across_multiple_events():
     seed_frequency_cluster = [
         Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
@@ -685,10 +632,7 @@ def test_frost_effect_schedules_each_frost_event_after_previous_event():
         current_event_frequencies = _event_frequencies(score, generation)
 
         assert current_event_start_time >= previous_event_end_time
-        if generation == 1:
-            _assert_event_has_controlled_edge_stagger(score, generation)
-        else:
-            _assert_new_edges_have_controlled_stagger(score, previous_event_frequencies, generation)
+        _assert_event_has_controlled_edge_stagger(score, previous_event_frequencies, generation)
 
         new_frequencies = _find_frequencies_added_to_next_event(
             previous_event_frequencies,

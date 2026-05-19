@@ -1,4 +1,5 @@
 import random
+from unittest.mock import patch
 
 import pytest
 
@@ -13,20 +14,8 @@ from transforms.geological.frost_effect import (
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS,
-    FROST_ROLE_CENTER,
-    FROST_ROLE_SIDE,
-    FrostEventBuildSpec,
-    FrostVoiceBuildSpec,
-    _advance_edge_delay,
     _apply_frost_iteration,
-    _build_edge_voices,
-    _build_frost_edge_expansions,
     _build_frost_voice,
-    _build_initial_frost_event_voices,
-    _build_later_frost_event_voices,
-    _build_pending_edge_expansions,
-    _build_replay_entry_delays,
-    _build_replayed_event_voices,
     _copy_voice_retaining_frost_history,
     _find_frost_edge_voices,
     _first_audible_tone,
@@ -42,73 +31,48 @@ def _voice_start_time(voice: Voice) -> float:
     voice_tones = flatten_voice_tones(voice)
     if voice_tones and voice_tones[0].frequency == 0:
         return voice_tones[0].duration
-
     return 0.0
 
 
-def test_copy_voice_retaining_frost_history_preserves_metadata_and_copies_tones():
-    source_frequency = 440.0
-    source_duration = 1.0
-    source_voice = Voice([Phrase([Motif("<test>", [Tone(source_frequency, duration=source_duration)])])])
-    expected_generation = 3
-    expected_role = FROST_ROLE_SIDE
-    setattr(source_voice, "frost_generation", expected_generation)
-    setattr(source_voice, "frost_role", expected_role)
+def test_copy_voice_retaining_frost_history_preserves_generation_and_copies_tones():
+    source_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+    setattr(source_voice, "frost_generation", 3)
 
     copied_voice = _copy_voice_retaining_frost_history(source_voice)
 
     assert copied_voice is not source_voice
     assert flatten_voice_tones(copied_voice) is not flatten_voice_tones(source_voice)
     assert flatten_voice_tones(copied_voice)[0] is not flatten_voice_tones(source_voice)[0]
-    assert flatten_voice_tones(copied_voice)[0].frequency == pytest.approx(source_frequency)
-    assert getattr(copied_voice, "frost_generation") == expected_generation
-    assert getattr(copied_voice, "frost_role") == expected_role
+    assert flatten_voice_tones(copied_voice)[0].frequency == pytest.approx(440.0)
+    assert getattr(copied_voice, "frost_generation") == 3
 
 
-def test_build_frost_voice_applies_delay_and_metadata():
-    child_frequency = 660.0
-    child_duration = 0.5
-    child_delay_seconds = 0.25
-    expected_generation = 2
-    expected_role = FROST_ROLE_CENTER
-    spec = FrostVoiceBuildSpec(
-        tone=Tone(440.0, duration=child_duration, amplitude=0.7),
-        delay_seconds=child_delay_seconds,
-        generation=expected_generation,
-        frequency=child_frequency,
-        role=expected_role,
+def test_build_frost_voice_applies_delay_and_generation():
+    child_voice = _build_frost_voice(
+        tone=Tone(440.0, duration=0.5, amplitude=0.7),
+        delay_seconds=0.25,
+        generation=2,
+        frequency=660.0,
     )
-
-    child_voice = _build_frost_voice(spec)
 
     assert len(flatten_voice_tones(child_voice)) == 2
     assert flatten_voice_tones(child_voice)[0].frequency == 0.0
-    assert flatten_voice_tones(child_voice)[0].duration == pytest.approx(child_delay_seconds)
-    assert flatten_voice_tones(child_voice)[1].frequency == pytest.approx(child_frequency)
-    assert flatten_voice_tones(child_voice)[1].duration == pytest.approx(child_duration)
-    assert getattr(child_voice, "frost_generation") == expected_generation
-    assert getattr(child_voice, "frost_role") == expected_role
-
-
-def test_voice_start_time_returns_zero_for_undelayed_voice():
-    undelayed_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
-
-    assert _voice_start_time(undelayed_voice) == pytest.approx(0.0)
+    assert flatten_voice_tones(child_voice)[0].duration == pytest.approx(0.25)
+    assert flatten_voice_tones(child_voice)[1].frequency == pytest.approx(660.0)
+    assert flatten_voice_tones(child_voice)[1].duration == pytest.approx(0.5)
+    assert getattr(child_voice, "frost_generation") == 2
 
 
 def test_score_end_time_uses_longest_voice_and_handles_empty_score():
-    shorter_voice_duration = 1.5
-    longer_voice_duration = 2.25
     score = Score(
         [
-            Voice([Phrase([Motif("<test>", [Tone(440.0, duration=shorter_voice_duration)])])]),
+            Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.5)])])]),
             Voice([Phrase([Motif("<test>", [Tone(660.0, duration=1.0), Tone(660.0, duration=1.25)])])]),
         ]
     )
-    empty_score = Score()
 
-    assert _score_end_time(score) == pytest.approx(longer_voice_duration)
-    assert _score_end_time(empty_score) == pytest.approx(0.0)
+    assert _score_end_time(score) == pytest.approx(2.25)
+    assert _score_end_time(Score()) == pytest.approx(0.0)
 
 
 def test_first_audible_tone_returns_none_for_silent_voice():
@@ -117,166 +81,101 @@ def test_first_audible_tone_returns_none_for_silent_voice():
     assert _first_audible_tone(silent_voice) is None
 
 
-def test_find_frost_edge_voice_selection_returns_lower_and_upper_edge_voices_for_single_audible_voice():
-    frequency = 440.0
-    only_voice = Voice([Phrase([Motif("<test>", [Tone(frequency, duration=1.0)])])])
+def test_find_frost_edge_voices_returns_lowest_and_highest_audible_voice():
+    lower_voice = Voice([Phrase([Motif("<test>", [Tone(418.0, duration=1.0)])])])
+    center_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+    upper_voice = Voice([Phrase([Motif("<test>", [Tone(481.0, duration=1.0)])])])
 
-    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([only_voice])
+    found_lower, found_upper = _find_frost_edge_voices([center_voice, upper_voice, lower_voice])
 
-    assert lower_edge_voice is not None
-    assert upper_edge_voice is not None
-    assert lower_edge_voice is only_voice
-    assert upper_edge_voice is only_voice
-
-
-def test_build_pending_edge_expansions_creates_lower_and_upper_expansions_for_single_audible_voice():
-    original_frequency = 440.0
-    only_voice = Voice([Phrase([Motif("<test>", [Tone(original_frequency, duration=1.0)])])])
-
-    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([only_voice])
-    pending_edge_expansions = _build_frost_edge_expansions(lower_edge_voice, upper_edge_voice)
-
-    assert len(pending_edge_expansions) == 2
-    assert lower_edge_voice is not None
-    assert upper_edge_voice is not None
-
-    lower_pending_expansion = pending_edge_expansions[0]
-    upper_pending_expansion = pending_edge_expansions[1]
-
-    assert lower_pending_expansion.voice is lower_edge_voice
-    assert upper_pending_expansion.voice is upper_edge_voice
-
-    base_tone_for_lower_expansion = lower_pending_expansion.tone.frequency
-    base_tone_for_upper_expansion = upper_pending_expansion.tone.frequency
-
-    assert base_tone_for_lower_expansion == pytest.approx(original_frequency)
-    assert base_tone_for_upper_expansion == pytest.approx(original_frequency)
-
-    lower_child_frequency = lower_pending_expansion.adjust_frequency(original_frequency)
-    upper_child_frequency = upper_pending_expansion.adjust_frequency(original_frequency)
-
-    assert lower_child_frequency < original_frequency
-    assert upper_child_frequency > original_frequency
+    assert found_lower is lower_voice
+    assert found_upper is upper_voice
 
 
-def test_build_pending_edge_expansions_uses_edge_voice_selection_for_single_audible_voice():
-    frequency = 440.0
-    only_voice = Voice([Phrase([Motif("<test>", [Tone(frequency, duration=1.0)])])])
+def test_find_frost_edge_voices_returns_none_when_no_audible_voices_exist():
+    found_lower, found_upper = _find_frost_edge_voices(
+        [
+            Voice([]),
+            Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0)])])]),
+            Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0, amplitude=0.0)])])]),
+        ]
+    )
 
-    pending_edge_expansions = _build_pending_edge_expansions([only_voice])
-
-    assert len(pending_edge_expansions) == 2
-    assert pending_edge_expansions[0].voice is only_voice
-    assert pending_edge_expansions[1].voice is only_voice
+    assert found_lower is None
+    assert found_upper is None
 
 
 def test_random_stagger_helpers_stay_within_declared_bounds():
-    random_seed = 0
-    random.seed(random_seed)
+    random.seed(0)
 
     edge_stagger_seconds = _random_edge_stagger_seconds()
     single_seed_separation_seconds = _random_single_seed_edge_separation_seconds()
 
     assert FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS <= edge_stagger_seconds <= FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS
-    assert (
-        FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS
-        <= single_seed_separation_seconds
-        <= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS
-    )
+    assert FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS <= single_seed_separation_seconds <= FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS
 
 
-def test_build_replay_entry_delays_returns_empty_for_non_positive_voice_count():
-    assert _build_replay_entry_delays(0) == []
-    assert _build_replay_entry_delays(-1) == []
+def test_apply_frost_iteration_returns_no_new_voices_when_source_event_has_no_audible_tones():
+    silent_source_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0)])])])
+
+    result = _apply_frost_iteration(Score([silent_source_voice]))
+
+    assert len(result.voices) == 1
+    assert flatten_voice_tones(result.voices[0])[0].frequency == pytest.approx(0.0)
 
 
-def test_advance_edge_delay_uses_base_delay_for_first_edge_and_callback_for_later_edges():
-    base_event_delay = 1.5
-    first_edge_extra_delay = 0.3
-    later_edge_extra_delay = 0.2
-
-    original_random_edge_stagger_seconds = _advance_edge_delay.__globals__["_random_edge_stagger_seconds"]
-    try:
-        _advance_edge_delay.__globals__["_random_edge_stagger_seconds"] = lambda: first_edge_extra_delay
-
-        first_edge_delay = _advance_edge_delay(
-            previous_edge_delay=None,
-            edge_base_delay=base_event_delay,
-            next_delay=lambda: later_edge_extra_delay,
-        )
-        later_edge_delay = _advance_edge_delay(
-            previous_edge_delay=first_edge_delay,
-            edge_base_delay=base_event_delay,
-            next_delay=lambda: later_edge_extra_delay,
-        )
-    finally:
-        _advance_edge_delay.__globals__["_random_edge_stagger_seconds"] = original_random_edge_stagger_seconds
-
-    assert first_edge_delay == pytest.approx(base_event_delay + first_edge_extra_delay)
-    assert later_edge_delay == pytest.approx(first_edge_delay + later_edge_extra_delay)
-
-
-def test_build_replayed_event_voices_skips_silent_voice_and_preserves_existing_role_when_requested():
-    event_start_time = 2.0
-    replay_generation = 4
-    first_entry_delay = 0.1
-    second_entry_delay = 0.3
-    replayed_frequency = 440.0
-    audible_voice = Voice([Phrase([Motif("<test>", [Tone(replayed_frequency, duration=1.0)])])])
-    setattr(audible_voice, "frost_role", FROST_ROLE_SIDE)
-    silent_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0)])])])
-
-    replayed_voices = _build_replayed_event_voices(
-        [audible_voice, silent_voice],
-        event_start=event_start_time,
-        generation=replay_generation,
-        preserve_existing_roles=True,
-        entry_delays=[first_entry_delay, second_entry_delay],
-    )
-
-    assert len(replayed_voices) == 1
-    assert getattr(replayed_voices[0], "frost_generation") == replay_generation
-    assert getattr(replayed_voices[0], "frost_role") == FROST_ROLE_SIDE
-    assert flatten_voice_tones(replayed_voices[0])[0].duration == pytest.approx(event_start_time + first_entry_delay)
-    assert flatten_voice_tones(replayed_voices[0])[1].frequency == pytest.approx(replayed_frequency)
-
-
-def test_build_edge_voices_returns_empty_when_no_audible_edge_voices_exist():
-    event_spec = FrostEventBuildSpec(
-        source_voices=[Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0)])])])],
-        event_start=1.0,
-        generation=1,
-        preserve_existing_roles=False,
-        single_seed_event=False,
-    )
-
-    assert _build_edge_voices(event_spec, edge_base_delay=0.5) == []
-
-
-def test_build_initial_and_later_frost_event_voices_return_empty_when_no_audible_sources_exist():
+def test_apply_frost_iteration_returns_no_new_voices_when_latest_generation_is_silent():
     silent_source_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0)])])])
     setattr(silent_source_voice, "frost_generation", 2)
-    score = Score([silent_source_voice])
-    event_start_time = 1.0
 
-    assert _build_initial_frost_event_voices(score, event_start=event_start_time) == []
-    assert _build_later_frost_event_voices(score, latest_generation=2, event_start=event_start_time) == []
+    result = _apply_frost_iteration(Score([silent_source_voice]))
+
+    assert len(result.voices) == 1
+    assert getattr(result.voices[0], "frost_generation") == 2
 
 
-def test_apply_frost_iteration_preserves_original_metadata_on_copied_source_voices():
+def test_apply_frost_iteration_replays_source_voice_after_score_end():
     source_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
-    expected_generation = 2
-    expected_role = FROST_ROLE_SIDE
-    setattr(source_voice, "frost_generation", expected_generation)
-    setattr(source_voice, "frost_role", expected_role)
-    score = Score([source_voice])
 
-    result = _apply_frost_iteration(score)
+    result = _apply_frost_iteration(Score([source_voice]))
+    replayed_voice = result.voices[1]
 
-    copied_source_voice = result.voices[0]
-    assert copied_source_voice is not source_voice
-    assert getattr(copied_source_voice, "frost_generation") == expected_generation
-    assert getattr(copied_source_voice, "frost_role") == expected_role
+    assert len(result.voices) == 4
+    assert flatten_voice_tones(replayed_voice)[1].frequency == pytest.approx(440.0)
+    assert _voice_start_time(replayed_voice) >= 1.0
+
+
+def test_apply_frost_iteration_skips_replay_when_source_voice_lacks_audible_tone_during_iteration():
+    source_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+    audible_tone = Tone(440.0, duration=1.0)
+
+    with patch("transforms.geological.frost_effect._first_audible_start_time_voices", return_value=[source_voice]):
+        with patch("transforms.geological.frost_effect._find_frost_edge_voices", return_value=(source_voice, source_voice)):
+            with patch(
+                "transforms.geological.frost_effect._first_audible_tone",
+                side_effect=[None, audible_tone, audible_tone],
+            ):
+                result = _apply_frost_iteration(Score([source_voice]))
+
+    assert len(result.voices) == 3
+
+
+def test_apply_frost_iteration_raises_when_edge_voices_are_missing_despite_audible_sources():
+    source_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+
+    with patch("transforms.geological.frost_effect._find_frost_edge_voices", return_value=(None, None)):
+        with pytest.raises(RuntimeError, match="expected audible edge voices"):
+            _apply_frost_iteration(Score([source_voice]))
+
+
+def test_apply_frost_iteration_raises_when_edge_voice_lacks_audible_tone():
+    source_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+    audible_tone = Tone(440.0, duration=1.0)
+
+    with patch("transforms.geological.frost_effect._find_frost_edge_voices", return_value=(source_voice, source_voice)):
+        with patch("transforms.geological.frost_effect._first_audible_tone", side_effect=[audible_tone, None]):
+            with pytest.raises(RuntimeError, match="did not contain an audible tone"):
+                _apply_frost_iteration(Score([source_voice]))
 
 
 def test_frost_effect_score_transform_adapter_rejects_non_integer_iterations():

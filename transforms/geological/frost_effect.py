@@ -1,8 +1,6 @@
 import math
 import random
-from collections.abc import Callable, Mapping
-from dataclasses import dataclass
-from typing import TypeAlias
+from collections.abc import Mapping
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -15,15 +13,12 @@ from score_model.voice import Voice
 from transforms.base import IntegerParam, TransformParamFieldSpec, TransformParamsSpec
 from transforms.basic.delay import delay_tones
 
-FrostPendingEdgeExpansion: TypeAlias = tuple[Voice, Callable[[float], float]]
 FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS = 25.0
 FROST_EFFECT_MAXIMUM_OUTWARD_MOVEMENT_CENTS = 115.0
 FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS = 0.28
 FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS = 0.55
 FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS = 0.18
 FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS = 0.32
-FROST_ROLE_CENTER = "center"
-FROST_ROLE_SIDE = "side"
 
 FROST_EFFECT_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -32,31 +27,6 @@ FROST_EFFECT_PARAMS_SPEC = TransformParamsSpec(
         )
     }
 )
-
-
-@dataclass(frozen=True)
-class FrostOnsetTone:
-    voice: Voice
-    tone: Tone
-    onset_time: float
-
-
-@dataclass(frozen=True)
-class FrostVoiceBuildSpec:
-    tone: Tone
-    delay_seconds: float
-    generation: int
-    frequency: float
-    role: str
-
-
-@dataclass(frozen=True)
-class FrostEventBuildSpec:
-    source_voices: list[Voice]
-    event_start: float
-    generation: int
-    preserve_existing_roles: bool
-    single_seed_event: bool
 
 
 def _copy_voice_retaining_frost_history(voice: Voice) -> Voice:
@@ -73,11 +43,15 @@ def _copy_voice_retaining_frost_history(voice: Voice) -> Voice:
         ]
     )
     setattr(copied_voice, "frost_generation", getattr(voice, "frost_generation", 0))
-    setattr(copied_voice, "frost_role", getattr(voice, "frost_role", FROST_ROLE_CENTER))
     return copied_voice
 
 
-def _build_frost_voice(spec: FrostVoiceBuildSpec) -> Voice:
+def _build_frost_voice(
+    tone: Tone,
+    delay_seconds: float,
+    generation: int,
+    frequency: float,
+) -> Voice:
     child_voice = Voice(
         phrases=[
             Phrase(
@@ -87,22 +61,22 @@ def _build_frost_voice(spec: FrostVoiceBuildSpec) -> Voice:
                         tones=delay_tones(
                             [
                                 Tone(
-                                    frequency=spec.frequency,
-                                    duration=spec.tone.duration,
-                                    sample_rate=spec.tone.sample_rate,
-                                    amplitude=spec.tone.amplitude,
+                                    frequency=frequency,
+                                    duration=tone.duration,
+                                    sample_rate=tone.sample_rate,
+                                    amplitude=tone.amplitude,
                                 )
                             ],
-                            spec.delay_seconds,
+                            delay_seconds,
                         ),
                     )
                 ]
             )
         ]
     )
-    setattr(child_voice, "frost_generation", spec.generation)
-    setattr(child_voice, "frost_role", spec.role)
+    setattr(child_voice, "frost_generation", generation)
     return child_voice
+
 
 def _score_end_time(score: Score) -> float:
     return max(
@@ -111,46 +85,34 @@ def _score_end_time(score: Score) -> float:
     )
 
 
-def _first_audible_tone_with_onset(voice: Voice) -> FrostOnsetTone | None:
-    onset_time = 0.0
+def _first_audible_tone_with_start_time(voice: Voice) -> tuple[Tone, float] | None:
+    start_time = 0.0
 
     for tone in flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
-            return FrostOnsetTone(voice=voice, tone=tone, onset_time=onset_time)
-
-        onset_time += tone.duration
+            return tone, start_time
+        start_time += tone.duration
 
     return None
 
 
-def _first_audible_onset_time(score: Score) -> float | None:
-    onset_tones = [
-        onset_tone
-        for voice in score.voices
-        if (onset_tone := _first_audible_tone_with_onset(voice)) is not None
-    ]
-
-    if not onset_tones:
-        return None
-
-    return min(onset_tone.onset_time for onset_tone in onset_tones)
-
-
-def _first_audible_onset_field(score: Score) -> list[FrostOnsetTone]:
-    first_onset_time = _first_audible_onset_time(score)
-    if first_onset_time is None:
-        return []
-
-    onset_field: list[FrostOnsetTone] = []
+def _first_audible_start_time_voices(score: Score) -> list[Voice]:
+    earliest_start_time: float | None = None
+    earliest_voices: list[Voice] = []
 
     for voice in score.voices:
-        onset_tone = _first_audible_tone_with_onset(voice)
-        if onset_tone is None:
+        start_tone = _first_audible_tone_with_start_time(voice)
+        if start_tone is None:
             continue
-        if math.isclose(onset_tone.onset_time, first_onset_time):
-            onset_field.append(onset_tone)
 
-    return onset_field
+        _, start_time = start_tone
+        if earliest_start_time is None or start_time < earliest_start_time:
+            earliest_start_time = start_time
+            earliest_voices = [voice]
+        elif math.isclose(start_time, earliest_start_time):
+            earliest_voices.append(voice)
+
+    return earliest_voices
 
 
 def _first_audible_tone(voice: Voice) -> Tone | None:
@@ -161,23 +123,28 @@ def _first_audible_tone(voice: Voice) -> Tone | None:
     return None
 
 
-def _first_audible_frequency(voice: Voice) -> float | None:
-    tone = _first_audible_tone(voice)
-    if tone is None:
-        return None
-
-    return tone.frequency
-
-
 def _find_frost_edge_voices(voices: list[Voice]) -> tuple[Voice | None, Voice | None]:
-    audible_voices = [voice for voice in voices if _first_audible_frequency(voice) is not None]
+    lowest_voice: Voice | None = None
+    highest_voice: Voice | None = None
+    lowest_frequency: float | None = None
+    highest_frequency: float | None = None
 
-    if not audible_voices:
+    for voice in voices:
+        tone = _first_audible_tone(voice)
+        if tone is None:
+            continue
+
+        if lowest_frequency is None or tone.frequency < lowest_frequency:
+            lowest_frequency = tone.frequency
+            lowest_voice = voice
+        if highest_frequency is None or tone.frequency > highest_frequency:
+            highest_frequency = tone.frequency
+            highest_voice = voice
+
+    if lowest_voice is None or highest_voice is None:
         return None, None
 
-    lower_edge_voice = min(audible_voices, key=lambda voice: _first_audible_frequency(voice) or 0.0)
-    upper_edge_voice = max(audible_voices, key=lambda voice: _first_audible_frequency(voice) or 0.0)
-    return lower_edge_voice, upper_edge_voice
+    return lowest_voice, highest_voice
 
 
 def _cents_to_frequency_ratio(cents: float) -> float:
@@ -192,29 +159,11 @@ def _random_outward_cents() -> float:
 
 
 def _jitter_frequency_down_within_bounds(frequency: float) -> float:
-    """
-    Shift a frequency downward by a random bounded interval.
-    """
     return max(1.0, frequency / _cents_to_frequency_ratio(_random_outward_cents()))
 
 
 def _jitter_frequency_up_within_bounds(frequency: float) -> float:
-    """
-    Shift a frequency upward by a random bounded interval.
-    """
     return frequency * _cents_to_frequency_ratio(_random_outward_cents())
-
-
-def _build_pending_edge_expansions(voices: list[Voice]) -> list[FrostPendingEdgeExpansion]:
-    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices(voices)
-    pending_edge_expansions: list[FrostPendingEdgeExpansion] = []
-
-    if lower_edge_voice is not None:
-        pending_edge_expansions.append((lower_edge_voice, _jitter_frequency_down_within_bounds))
-    if upper_edge_voice is not None:
-        pending_edge_expansions.append((upper_edge_voice, _jitter_frequency_up_within_bounds))
-
-    return pending_edge_expansions
 
 
 def _random_edge_stagger_seconds() -> float:
@@ -231,151 +180,6 @@ def _random_single_seed_edge_separation_seconds() -> float:
     )
 
 
-def _build_replay_entry_delays(voice_count: int) -> list[float]:
-    if voice_count <= 0:
-        return []
-
-    entry_delays: list[float] = []
-    current_delay = _random_edge_stagger_seconds()
-
-    for index in range(voice_count):
-        if index > 0:
-            current_delay += _random_edge_stagger_seconds()
-        entry_delays.append(current_delay)
-
-    return entry_delays
-
-
-def _advance_edge_delay(
-    previous_edge_delay: float | None,
-    edge_base_delay: float,
-    next_delay: Callable[[], float],
-) -> float:
-    if previous_edge_delay is None:
-        return edge_base_delay + _random_edge_stagger_seconds()
-
-    return previous_edge_delay + next_delay()
-
-
-def _build_replayed_event_voices(
-    voices: list[Voice],
-    event_start: float,
-    generation: int,
-    preserve_existing_roles: bool,
-    entry_delays: list[float] | None = None,
-) -> list[Voice]:
-    replayed_voices: list[Voice] = []
-    if entry_delays is None:
-        entry_delays = _build_replay_entry_delays(len(voices))
-
-    for voice, entry_delay in zip(voices, entry_delays):
-        tone = _first_audible_tone(voice)
-        if tone is None:
-            continue
-
-        replayed_voices.append(
-            _build_frost_voice(
-                FrostVoiceBuildSpec(
-                    tone=tone,
-                    delay_seconds=event_start + entry_delay,
-                    generation=generation,
-                    frequency=tone.frequency,
-                    role=getattr(voice, "frost_role", FROST_ROLE_CENTER)
-                    if preserve_existing_roles
-                    else FROST_ROLE_CENTER,
-                )
-            )
-        )
-
-    return replayed_voices
-
-
-def _build_edge_voices(
-    spec: FrostEventBuildSpec,
-    edge_base_delay: float,
-) -> list[Voice]:
-    pending_edge_expansions = _build_pending_edge_expansions(spec.source_voices)
-    random.shuffle(pending_edge_expansions)
-    next_edge_delay = (
-        _random_single_seed_edge_separation_seconds
-        if spec.single_seed_event
-        else _random_edge_stagger_seconds
-    )
-
-    edge_voices: list[Voice] = []
-    previous_edge_delay: float | None = None
-
-    for voice, build_child_frequency in pending_edge_expansions:
-        tone = _first_audible_tone(voice)
-        if tone is None:
-            continue
-
-        edge_delay = _advance_edge_delay(previous_edge_delay, edge_base_delay, next_edge_delay)
-        previous_edge_delay = edge_delay
-
-        edge_voices.append(
-            _build_frost_voice(
-                FrostVoiceBuildSpec(
-                    tone=tone,
-                    delay_seconds=spec.event_start + edge_delay,
-                    generation=spec.generation,
-                    frequency=build_child_frequency(tone.frequency),
-                    role=FROST_ROLE_SIDE,
-                )
-            )
-        )
-
-    return edge_voices
-
-
-def _build_frost_event_voices(
-    spec: FrostEventBuildSpec,
-) -> list[Voice]:
-    replay_entry_delays = _build_replay_entry_delays(len(spec.source_voices))
-    replayed_voices = _build_replayed_event_voices(
-        spec.source_voices,
-        spec.event_start,
-        spec.generation,
-        preserve_existing_roles=spec.preserve_existing_roles,
-        entry_delays=replay_entry_delays,
-    )
-    edge_voices = _build_edge_voices(
-        spec,
-        edge_base_delay=max(replay_entry_delays, default=0.0),
-    )
-    return replayed_voices + edge_voices
-
-
-def _build_initial_frost_event_voices(score: Score, event_start: float) -> list[Voice]:
-    source_voices = [onset_tone.voice for onset_tone in _first_audible_onset_field(score)]
-    return _build_frost_event_voices(
-        FrostEventBuildSpec(
-            source_voices=source_voices,
-            event_start=event_start,
-            generation=1,
-            preserve_existing_roles=False,
-            single_seed_event=len(source_voices) == 1,
-        )
-    )
-
-
-def _build_later_frost_event_voices(score: Score, latest_generation: int, event_start: float) -> list[Voice]:
-    latest_voices = [
-        voice
-        for voice in score.voices
-        if getattr(voice, "frost_generation", 0) == latest_generation and _first_audible_tone(voice) is not None
-    ]
-    return _build_frost_event_voices(
-        FrostEventBuildSpec(
-            source_voices=latest_voices,
-            event_start=event_start,
-            generation=latest_generation + 1,
-            preserve_existing_roles=True,
-            single_seed_event=False,
-        )
-    )
-
-
 def _apply_frost_iteration(score: Score) -> Score:
     """
     Append one audible frost event to a score.
@@ -385,14 +189,84 @@ def _apply_frost_iteration(score: Score) -> Score:
     event_start = _score_end_time(score)
 
     if latest_generation == 0:
-        frosted_voices = _build_initial_frost_event_voices(score, event_start)
+        source_voices = _first_audible_start_time_voices(score)
+        generation = 1
+        use_single_seed_edge_separation = len(source_voices) == 1
     else:
-        frosted_voices = _build_later_frost_event_voices(score, latest_generation, event_start)
+        source_voices = [
+            voice
+            for voice in score.voices
+            if getattr(voice, "frost_generation", 0) == latest_generation and _first_audible_tone(voice) is not None
+        ]
+        generation = latest_generation + 1
+        use_single_seed_edge_separation = False
+
+    if not source_voices:
+        return Score(original_voices)
+
+    frosted_voices: list[Voice] = []
+    replay_delays: list[float] = []
+    current_replay_delay = _random_edge_stagger_seconds()
+
+    for index, voice in enumerate(source_voices):
+        if index > 0:
+            current_replay_delay += _random_edge_stagger_seconds()
+        replay_delays.append(current_replay_delay)
+
+        tone = _first_audible_tone(voice)
+        if tone is None:
+            continue
+
+        frosted_voices.append(
+            _build_frost_voice(
+                tone=tone,
+                delay_seconds=event_start + current_replay_delay,
+                generation=generation,
+                frequency=tone.frequency,
+            )
+        )
+
+    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices(source_voices)
+    if lower_edge_voice is None or upper_edge_voice is None:
+        raise RuntimeError("Frost effect expected audible edge voices when source voices are present.")
+    edge_sources = [
+        (lower_edge_voice, _jitter_frequency_down_within_bounds),
+        (upper_edge_voice, _jitter_frequency_up_within_bounds),
+    ]
+
+    random.shuffle(edge_sources)
+    previous_edge_delay: float | None = None
+    edge_base_delay = max(replay_delays, default=0.0)
+
+    for edge_voice, adjust_frequency in edge_sources:
+        tone = _first_audible_tone(edge_voice)
+        if tone is None:
+            raise RuntimeError("Frost effect edge voice did not contain an audible tone.")
+
+        if previous_edge_delay is None:
+            edge_delay = edge_base_delay + _random_edge_stagger_seconds()
+        else:
+            edge_gap = (
+                _random_single_seed_edge_separation_seconds()
+                if use_single_seed_edge_separation
+                else _random_edge_stagger_seconds()
+            )
+            edge_delay = previous_edge_delay + edge_gap
+        previous_edge_delay = edge_delay
+
+        frosted_voices.append(
+            _build_frost_voice(
+                tone=tone,
+                delay_seconds=event_start + edge_delay,
+                generation=generation,
+                frequency=adjust_frequency(tone.frequency),
+            )
+        )
 
     return Score(original_voices + frosted_voices)
 
 
-def frost_effect(score: Score, iterations: int = 1) -> Score:
+def frost_effect(score: Score, iterations: int = 3) -> Score:
     """
     Score-level frost effect entry point.
 
