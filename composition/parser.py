@@ -112,10 +112,20 @@ def _validate_composition_structure(
     voice_configs = composition_config.get("voices", [])
     if not isinstance(voice_configs, list):
         raise ValueError("Composition 'voices' must be a list.")
+    for voice_config in voice_configs:
+        if not isinstance(voice_config, dict):
+            raise ValueError("Composition 'voices' entries must be objects.")
+
+        phrase_configs = voice_config.get("phrases")
+        if not isinstance(phrase_configs, list):
+            raise ValueError("Voice 'phrases' must be a list.")
 
     score_transform_specs = composition_config.get("score_transforms", [])
     if not isinstance(score_transform_specs, list):
         raise ValueError("Composition 'score_transforms' must be a list.")
+    for score_transform_spec in score_transform_specs:
+        if not isinstance(score_transform_spec, dict):
+            raise ValueError("Composition 'score_transforms' entries must be objects.")
 
     return composition_document
 
