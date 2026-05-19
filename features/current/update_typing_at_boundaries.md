@@ -86,3 +86,38 @@ The goal is not just to make tests simpler. The goal is to make the parser archi
 - score_transforms
   - may be missing, normalized to []
   - empty list allowed
+
+## Plan remaining: Separate input schema types from internal schema
+
+- the domain shape is not actually different in kind
+  - only the guarantees are different
+  - naming a second parallel tree ValidatedX can create duplication and cognitive noise
+
+  A cleaner approach here is usually one of these:
+  1. Keep one schema type layer and make the validator construct values that genuinely satisfy it.
+     - This works best if the schema types describe the post-boundary contract.
+     - Missing optional fields that you normalize should stop being optional if internal code always expects them.
+  2. Split Input vs internal/domain names, not Validated.
+     - Example:
+       - TransformConfigInput
+       - TransformConfig
+     - That is more conventional because it distinguishes external wire format from internal trusted structure.
+
+  For this codebase, I think option 2 is the better fit if you want a split at all.
+
+  So instead of ValidatedPhraseConfig, I’d recommend:
+  - PhraseConfigInput for raw JSON-ish input
+  - PhraseConfig for normalized internal parser use
+
+  Same for:
+  - TransformConfigInput / TransformConfig
+  - CompositionDocumentInput / CompositionDocument
+
+  That keeps the names honest:
+  - one is external input
+  - one is internal trusted shape
+
+  So the next step should be reframed as:
+  - rename the current schema types to \*Input
+  - introduce the internal trusted \*Config / CompositionDocument names
+  - have \_validate_composition_structure() return the internal trusted document type
