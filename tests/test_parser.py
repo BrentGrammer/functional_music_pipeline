@@ -268,6 +268,15 @@ def test_validate_composition_structure_rejects_non_object():
         _validate_composition_structure("not-an-object")  # type: ignore[arg-type]
 
 
+def test_validate_composition_structure_rejects_missing_motifs():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
+            }
+        )
+
+
 def test_validate_composition_structure_rejects_missing_composition():
     with pytest.raises(ValueError):
         _validate_composition_structure(
@@ -524,11 +533,17 @@ def test_create_voice_plans_rejects_unknown_motif_name():
             plan_motifs={"known": Motif(name="known", tones=[Tone(440.0)])},
         )
 
-def test_extract_composition_sections_defaults_missing_sections():
+def test_extract_composition_sections_returns_normalized_transforms_sections_when_not_provided():
+    composition_document: CompositionDocument = {
+        "motifs": {"seed": ["440"]},
+        "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
+    }
+
+    validated_document = _validate_composition_structure(composition_document)
     motifs_section, voices_section, score_transforms_section = _extract_composition_sections(
-        {}
+        validated_document
     )
 
-    assert motifs_section == {}
-    assert voices_section == []
+    assert motifs_section == {"seed": ["440"]}
+    assert voices_section == [{"phrases": [{"motifs": ["seed"], "transforms": []}]}]
     assert score_transforms_section == []

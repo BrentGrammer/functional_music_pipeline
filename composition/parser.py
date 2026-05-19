@@ -77,7 +77,7 @@ def _validate_composition_structure(
     if not isinstance(composition_document, dict):
         raise ValueError("Composition document must be an object.")
 
-    motif_definitions = composition_document.get("motifs", {})
+    motif_definitions = composition_document.get("motifs")
     if not isinstance(motif_definitions, dict):
         raise ValueError("Composition 'motifs' must be an object mapping motif names to tone lists.")
     for motif_name, tone_strings in motif_definitions.items():
