@@ -50,8 +50,6 @@ def erosion_transform(
     elif resolved_dimension == ToneDimension.FREQUENCY:
         return _erode_frequency(tones)
 
-    return list(tones)
-
 
 def erosion_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
     dimension = params.get("dimension", ToneDimension.DURATION)
