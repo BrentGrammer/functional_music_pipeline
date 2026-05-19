@@ -59,7 +59,7 @@ def invert_tones(tones: ToneSequence, dimension: ToneDimension | str = ToneDimen
 
 
 def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    del params
+    del params # TODO: come back to this - this is a smell.
 
     phrase_tones = [
         tone
