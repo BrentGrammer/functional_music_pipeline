@@ -37,7 +37,7 @@ def parse_motifs(motif_definitions: dict[str, list[str]]) -> dict[str, list[Tone
 
     return parsed_motifs
 
-def _validate_composition_structure(
+def _validate_composition_document(
     composition_document: CompositionDocumentInput,
 ) -> CompositionDocument:
     """
@@ -150,23 +150,6 @@ def _validate_composition_structure(
         composition=validated_composition,
     )
 
-
-def _extract_composition_sections(
-    composition_document: CompositionDocument,
-) -> tuple[dict[str, list[str]], list[VoiceConfig], list[TransformConfig]]:
-    """
-    Extracts key sections from the composition document.
-    Assumes the structure has already been validated.
-    """
-    motifs_section = composition_document["motifs"]
-    composition_config = composition_document["composition"]
-
-    voices_section = composition_config["voices"]
-    score_transforms_section = composition_config["score_transforms"]
-
-    return motifs_section, voices_section, score_transforms_section
-
-
 def _extract_phrase_transform_requests(
     phrase_config: PhraseConfig,
     voice_index: int,
@@ -187,7 +170,11 @@ def _extract_phrase_transform_requests(
 def _extract_requests_from_voice(voice_config: VoiceConfig, voice_index: int) -> list[PhraseTransformRequest]:
     phrase_configs = voice_config["phrases"]
 
-    return [request for phrase_index, phrase_config in enumerate(phrase_configs) for request in _extract_phrase_transform_requests(phrase_config, voice_index, phrase_index)]
+    return [
+        request for phrase_index, phrase_config in enumerate(phrase_configs) 
+        for request 
+        in _extract_phrase_transform_requests(phrase_config, voice_index, phrase_index)
+    ]
 
 
 def _extract_phrase_transform_requests(
@@ -229,8 +216,11 @@ def _create_voice_plans_from_document(
 
 
 def generate_score_plan(document: CompositionDocumentInput) -> ScorePlan:
-    composition_document = _validate_composition_structure(document)
-    motifs_section, voices_section, score_transforms_section = _extract_composition_sections(composition_document)
+    composition_document = _validate_composition_document(document)
+    motifs_section = composition_document["motifs"]
+    composition_config = composition_document["composition"]
+    voices_section = composition_config["voices"]
+    score_transforms_section = composition_config["score_transforms"]
 
     motifs = parse_motifs(motifs_section)
     plan_motifs = {name: Motif(name=name, tones=copy_tones(tones)) for name, tones in motifs.items()}
