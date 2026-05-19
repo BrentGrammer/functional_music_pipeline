@@ -15,16 +15,16 @@
         "name": "DemoVoice",
         "phrases": [
           {
-            "comment": "1. Original Melody",
+            "comment": "Original melody.",
             "motifs": ["melody"]
           },
           {
-            "comment": "2. Reverse (Retrograde): Plays the notes in reverse order.",
+            "comment": "Reverse (retrograde): plays the notes in reverse order.",
             "motifs": ["melody"],
             "transforms": [{ "name": "reverse" }]
           },
           {
-            "comment": "3. Transpose: Shifts the pitch up by 7 semitones (a perfect fifth).",
+            "comment": "Transpose: shifts the pitch up by 7 semitones (a perfect fifth).",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -34,7 +34,7 @@
             ]
           },
           {
-            "comment": "4. Scale Duration: Doubles the length of each note (slower).",
+            "comment": "Scale duration: doubles the length of each note for a slower result.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -44,7 +44,7 @@
             ]
           },
           {
-            "comment": "5. Scale Amplitude: Reduces volume to 30%.",
+            "comment": "Scale amplitude: reduces volume to 30%.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -54,7 +54,7 @@
             ]
           },
           {
-            "comment": "6. Delay: Prepends 1.5 seconds of silence before the melody starts. This is the shorthand alias for pad_silence at position start.",
+            "comment": "Delay: prepends 1.5 seconds of silence before the melody starts. This is the shorthand alias for pad_silence at position start.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -64,7 +64,7 @@
             ]
           },
           {
-            "comment": "7. Pad Silence: Adds 1.0 second of silence after the melody. Unlike delay, this also supports padding at the end.",
+            "comment": "Pad silence: adds 1.0 second of silence after the melody. Unlike delay, this also supports padding at the end.",
             "motifs": ["melody"],
             "transforms": [
               {

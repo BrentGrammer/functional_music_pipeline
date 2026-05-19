@@ -6,15 +6,19 @@
   "composition": {
     "voices": [
       {
+        "name": "SubjectVoice",
         "phrases": [
           {
+            "comment": "Subject statement: the motif is heard in its plain form with no transforms.",
             "motifs": ["subject"]
           }
         ]
       },
       {
+        "name": "AnswerVoice",
         "phrases": [
           {
+            "comment": "Answer entry: the same motif is transposed up a fifth and delayed with silence at the start so it enters later like a simple canon.",
             "motifs": ["subject"],
             "transforms": [
               {
@@ -35,8 +39,10 @@
         ]
       },
       {
+        "name": "ReverseVoice",
         "phrases": [
           {
+            "comment": "Reverse entry: the motif enters later again, but this time in reverse order so the imitation is easy to compare against the earlier voices.",
             "motifs": ["subject"],
             "transforms": [
               {

@@ -14,16 +14,16 @@
         "name": "ComparisonVoice",
         "phrases": [
           {
-            "comment": "1. Original",
+            "comment": "Original melody.",
             "motifs": ["melody"]
           },
           {
-            "comment": "2. Reversed (Retrograde)",
+            "comment": "Reversed (retrograde).",
             "motifs": ["melody"],
             "transforms": [{ "name": "reverse" }]
           },
           {
-            "comment": "3. Transposed (+12 semitones)",
+            "comment": "Transposed up by 12 semitones.",
             "motifs": ["melody"],
             "transforms": [
               {

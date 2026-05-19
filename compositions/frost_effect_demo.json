@@ -6,8 +6,10 @@
   "composition": {
     "voices": [
       {
+        "name": "SeedVoice",
         "phrases": [
           {
+            "comment": "Seed phrase: a single tone that frost_effect will expand into a growing multi-voice crystal pattern.",
             "motifs": ["seed"]
           }
         ]
@@ -15,6 +17,7 @@
     ],
     "score_transforms": [
       {
+        "comment": "Applies four frost iterations to the seed so you can hear how each pass spawns additional staggered voices around the original tone.",
         "name": "frost_effect",
         "params": {
           "iterations": 4

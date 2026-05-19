@@ -8,12 +8,15 @@
   "composition": {
     "voices": [
       {
+        "name": "MicrotonalComparisonVoice",
         "phrases": [
           {
+            "comment": "Reference phrase in standard tuning.",
             "motifs": ["scale"],
             "transforms": []
           },
           {
+            "comment": "Semitone transposition: a standard chromatic shift for comparison against the microtonal example.",
             "motifs": ["scale"],
             "transforms": [
               {
@@ -23,10 +26,12 @@
             ]
           },
           {
+            "comment": "Reference phrase repeated so the next example is easy to compare against the original tuning.",
             "motifs": ["scale"],
             "transforms": []
           },
           {
+            "comment": "Microtonal transposition: shifts the same phrase by half a semitone so MIDI export must preserve a non-standard pitch offset.",
             "motifs": ["scale"],
             "transforms": [
               {

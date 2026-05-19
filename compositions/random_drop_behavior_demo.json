@@ -15,11 +15,11 @@
         "name": "RandomDropDemo",
         "phrases": [
           {
-            "comment": "1. Reference: Clean melody",
+            "comment": "Reference: clean melody.",
             "motifs": ["melody"]
           },
           {
-            "comment": "2. Pitch Dips: 50% max drop, 60% frequency.",
+            "comment": "Pitch dips: 50% max drop, 60% frequency.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -33,11 +33,11 @@
             ]
           },
           {
-            "comment": "3. Reference: Clean melody",
+            "comment": "Reference: clean melody.",
             "motifs": ["melody"]
           },
           {
-            "comment": "4. Rhythmic Fragmentation: 90% max drop (shortening), 70% frequency.",
+            "comment": "Rhythmic fragmentation: 90% max drop for shortening, 70% frequency.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -51,11 +51,11 @@
             ]
           },
           {
-            "comment": "5. Reference: Clean melody",
+            "comment": "Reference: clean melody.",
             "motifs": ["melody"]
           },
           {
-            "comment": "6. Volume Gaps: 100% max drop (silence), 50% frequency.",
+            "comment": "Volume gaps: 100% max drop for silence, 50% frequency.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -69,11 +69,11 @@
             ]
           },
           {
-            "comment": "7. Reference: Clean melody",
+            "comment": "Reference: clean melody.",
             "motifs": ["melody"]
           },
           {
-            "comment": "8. Combined Chaos: Frequency + Amplitude drops.",
+            "comment": "Combined chaos: frequency and amplitude drops.",
             "motifs": ["melody"],
             "transforms": [
               {

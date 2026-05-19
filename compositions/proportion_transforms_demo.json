@@ -14,11 +14,11 @@
         "name": "MathVoice",
         "phrases": [
           {
-            "comment": "1. Reference: Simple rhythm of four quarter notes.",
+            "comment": "Reference: simple rhythm of four quarter notes.",
             "motifs": ["melody"]
           },
           {
-            "comment": "2. Golden Ratio (Duration): Scales each note duration by 1/1.618.",
+            "comment": "Golden ratio (duration): scales each note duration by 1/1.618.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -28,7 +28,7 @@
             ]
           },
           {
-            "comment": "3. Feigenbaum Sequence (Frequency): Iteratively reduces pitch based on the Feigenbaum ratio (4.669).",
+            "comment": "Feigenbaum sequence (frequency): iteratively reduces pitch based on the Feigenbaum ratio (4.669).",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -38,7 +38,7 @@
             ]
           },
           {
-            "comment": "4. Phrase Golden Ratio Grow: Scales this phrase's duration to be 1.618x the previous phrase's duration.",
+            "comment": "Phrase golden ratio grow: scales this phrase's duration to be 1.618x the previous phrase's duration.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -48,7 +48,7 @@
             ]
           },
           {
-            "comment": "5. Phrase Golden Ratio Shrink: Scales this phrase's duration to be 1/1.618 of the previous phrase.",
+            "comment": "Phrase golden ratio shrink: scales this phrase's duration to be 1/1.618 of the previous phrase.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -58,7 +58,7 @@
             ]
           },
           {
-            "comment": "6. Phrase Feigenbaum Grow: Scales this phrase's duration to be 4.669x the previous phrase.",
+            "comment": "Phrase Feigenbaum grow: scales this phrase's duration to be 4.669x the previous phrase.",
             "motifs": ["melody"],
             "transforms": [
               {

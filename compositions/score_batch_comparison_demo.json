@@ -10,7 +10,7 @@
         "name": "High",
         "phrases": [
           {
-            "comment": "1. Reference: High voice (block 1)",
+            "comment": "Reference: high voice in the first block.",
             "motifs": ["ascending"],
             "transforms": [{"name": "transpose", "params": {"semitones": 12}}]
           },
@@ -19,7 +19,7 @@
             "motifs": ["silence"]
           },
           {
-            "comment": "2. Transformed: High voice (block 2)",
+            "comment": "Transformed: high voice in the second block.",
             "motifs": ["ascending"],
             "transforms": [
               {"name": "transpose", "params": {"semitones": 12}},
@@ -32,7 +32,7 @@
         "name": "Low",
         "phrases": [
           {
-            "comment": "1. Reference: Low voice (block 1)",
+            "comment": "Reference: low voice in the first block.",
             "motifs": ["ascending"]
           },
           {
@@ -40,7 +40,7 @@
             "motifs": ["silence"]
           },
           {
-            "comment": "2. Transformed: Low voice (block 2)",
+            "comment": "Transformed: low voice in the second block.",
             "motifs": ["ascending"],
             "transforms": [
               {"name": "reverse"}

@@ -22,12 +22,12 @@
     ],
     "score_transforms": [
       {
-        "comment": "1. Add Pedal Tone: Adds a deep C (130.81 Hz) that sustains for the full duration of the score.",
+        "comment": "Add pedal tone: adds a deep C (130.81 Hz) that sustains for the full duration of the score.",
         "name": "add_pedal_tone",
         "params": { "frequency": 130.81 }
       },
       {
-        "comment": "2. Stretto: Overlaps the 'subject' motif with itself 3 times using the Golden Ratio for entry spacing.",
+        "comment": "Stretto: overlaps the 'subject' motif with itself 3 times using the Golden Ratio for entry spacing.",
         "name": "stretto",
         "params": {
           "motif": "subject",
