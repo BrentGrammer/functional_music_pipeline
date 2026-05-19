@@ -118,25 +118,15 @@ def random_drop_score_transform(score: Score, params: Mapping[str, object]) -> S
     if not isinstance(drop_frequency_pct, int) or isinstance(drop_frequency_pct, bool):
         raise ValueError("Random drop drop_frequency_pct must be an integer.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=apply_random_drop_transform(
-                                    flatten_voice_tones(voice),
-                                    dimension=dimension,
-                                    max_drop_pct=max_drop_pct,
-                                    drop_frequency_pct=drop_frequency_pct,
-                                ),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        transformed_tones = apply_random_drop_transform(
+            voice_tones,
+            dimension=dimension,
+            max_drop_pct=max_drop_pct,
+            drop_frequency_pct=drop_frequency_pct,
+        )
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
+
+    return Score(voices=new_voices)

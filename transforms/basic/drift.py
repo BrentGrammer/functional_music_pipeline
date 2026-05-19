@@ -97,27 +97,13 @@ def drift_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     if isinstance(rate, bool) or not isinstance(rate, (int, float)):
         raise ValueError("Param 'rate' must be a float.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=drift_transform(
-                                    flatten_voice_tones(voice),
-                                    dimension=dimension,
-                                    rate=float(rate),
-                                ),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        drifted_tones = drift_transform(voice_tones, dimension=dimension, rate=float(rate))
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=drifted_tones)])]))
+
+    return Score(voices=new_voices)
 
 
 def _drift_frequency(tones: ToneSequence, rate: float) -> ToneSequence:

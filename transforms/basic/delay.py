@@ -43,20 +43,10 @@ def delay_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     if isinstance(seconds, bool) or not isinstance(seconds, (int, float)):
         raise ValueError("Param 'seconds' must be a float.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=delay_tones(flatten_voice_tones(voice), seconds=float(seconds)),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        delayed_tones = delay_tones(voice_tones, seconds=float(seconds))
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=delayed_tones)])]))
+
+    return Score(voices=new_voices)

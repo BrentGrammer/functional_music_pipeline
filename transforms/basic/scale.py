@@ -77,24 +77,10 @@ def scale_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     if isinstance(factor, bool) or not isinstance(factor, (int, float)):
         raise ValueError("Param 'factor' must be a float.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=scale_transform(
-                                    flatten_voice_tones(voice),
-                                    dimension=dimension,
-                                    factor=float(factor),
-                                ),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        scaled_tones = scale_transform(voice_tones, dimension=dimension, factor=float(factor))
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=scaled_tones)])]))
+
+    return Score(voices=new_voices)

@@ -165,26 +165,16 @@ def cellular_automata_score_transform(score: Score, params: Mapping[str, object]
     if not isinstance(max_deviation, (int, float)) or isinstance(max_deviation, bool):
         raise ValueError("Cellular automata max_deviation must be a float.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=apply_cellular_automata_transform(
-                                    flatten_voice_tones(voice),
-                                    dimension=dimension,
-                                    rule=rule,
-                                    generations=generations,
-                                    max_deviation=float(max_deviation),
-                                ),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        transformed_tones = apply_cellular_automata_transform(
+            voice_tones,
+            dimension=dimension,
+            rule=rule,
+            generations=generations,
+            max_deviation=float(max_deviation),
+        )
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
+
+    return Score(voices=new_voices)

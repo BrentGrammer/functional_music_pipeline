@@ -46,23 +46,10 @@ def transpose_score_transform(score: Score, params: Mapping[str, object]) -> Sco
     if isinstance(semitones, bool) or not isinstance(semitones, (int, float)):
         raise ValueError("Param 'semitones' must be a float.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=transpose_tones(
-                                    flatten_voice_tones(voice),
-                                    semitones=float(semitones),
-                                ),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        transposed_tones = transpose_tones(voice_tones, semitones=float(semitones))
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transposed_tones)])]))
+
+    return Score(voices=new_voices)

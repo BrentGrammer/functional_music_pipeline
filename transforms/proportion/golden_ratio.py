@@ -135,20 +135,10 @@ def golden_ratio_score_transform(score: Score, params: Mapping[str, object]) -> 
     if not isinstance(dimension, (str, ToneDimension)):
         raise ValueError("Golden ratio dimension must be a string or ToneDimension.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=golden_ratio_transform(flatten_voice_tones(voice), dimension=dimension),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        transformed_tones = golden_ratio_transform(voice_tones, dimension=dimension)
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
+
+    return Score(voices=new_voices)

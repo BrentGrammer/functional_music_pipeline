@@ -39,20 +39,10 @@ def repeat_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     if isinstance(count, bool) or not isinstance(count, int):
         raise ValueError("Param 'count' must be an integer.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=repeat_tones(flatten_voice_tones(voice), count=int(count)),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        repeated_tones = repeat_tones(voice_tones, count=int(count))
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=repeated_tones)])]))
+
+    return Score(voices=new_voices)

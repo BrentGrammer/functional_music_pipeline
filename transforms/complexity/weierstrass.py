@@ -119,24 +119,14 @@ def weierstrass_score_transform(score: Score, params: Mapping[str, object]) -> S
     if not isinstance(intensity, str):
         raise ValueError("Weierstrass intensity must be a string.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=apply_weierstrass_transform(
-                                    flatten_voice_tones(voice),
-                                    dimension=dimension,
-                                    intensity=intensity,
-                                ),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        transformed_tones = apply_weierstrass_transform(
+            voice_tones,
+            dimension=dimension,
+            intensity=intensity,
+        )
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
+
+    return Score(voices=new_voices)

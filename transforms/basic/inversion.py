@@ -72,20 +72,10 @@ def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str
 def invert_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     del params
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=invert_tones(flatten_voice_tones(voice)),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        inverted_tones = invert_tones(voice_tones)
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=inverted_tones)])]))
+
+    return Score(voices=new_voices)

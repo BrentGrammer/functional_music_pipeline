@@ -109,24 +109,14 @@ def terraced_drift_score_transform(score: Score, params: Mapping[str, object]) -
     if not isinstance(max_step_change_pct, int) or isinstance(max_step_change_pct, bool):
         raise ValueError("Terraced drift max_step_change_pct must be an integer.")
 
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="<each_voice>",
-                                tones=apply_terraced_drift_transform(
-                                    flatten_voice_tones(voice),
-                                    dimension=dimension,
-                                    max_step_change_pct=max_step_change_pct,
-                                ),
-                            )
-                        ]
-                    )
-                ]
-            )
-            for voice in score.voices
-        ]
-    )
+    new_voices = []
+    for voice in score.voices:
+        voice_tones = flatten_voice_tones(voice)
+        transformed_tones = apply_terraced_drift_transform(
+            voice_tones,
+            dimension=dimension,
+            max_step_change_pct=max_step_change_pct,
+        )
+        new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
+
+    return Score(voices=new_voices)
