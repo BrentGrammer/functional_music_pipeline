@@ -6,13 +6,15 @@
 
 ## Testing
 
+You are operating in a sandboxed environment with a python virtual environment. The pytest command is located at `.venv/bin/pytest`. Use that executable to run the tests.
+
 When working on Python tests:
 
 1. Use Serena to inspect the changed symbols and find references.
 2. Run targeted tests first:
-   pytest path/to/test_file.py -q
+   .venv/bin/pytest path/to/test_file.py -q
 3. Run coverage for the touched module:
-   pytest --cov=package.module --cov-report=term-missing -q
+   .venv/bin/pytest --cov=package.module --cov-report=term-missing -q
 4. Use uncovered lines from the coverage output to decide what tests to add.
 5. Use Serena to modify source or tests at the symbol level when possible.
 6. Re-run the targeted tests and coverage.
