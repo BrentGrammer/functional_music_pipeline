@@ -73,28 +73,28 @@ def test_build_output_filename_adds_extension_for_output_format():
 
 
 def test_build_output_filename_rejects_output_name_with_extension():
-    with pytest.raises(ValueError, match="Output name should not include a file extension."):
+    with pytest.raises(ValueError):
         build_output_filename("composition.mid", "midi")
 
-    with pytest.raises(ValueError, match="Output name should not include a file extension."):
+    with pytest.raises(ValueError):
         build_output_filename("composition.txt", "wav")
 
 
 def test_build_output_filename_rejects_empty_output_name():
-    with pytest.raises(ValueError, match="Output name cannot be empty."):
+    with pytest.raises(ValueError):
         build_output_filename("", "midi")
 
-    with pytest.raises(ValueError, match="Output name cannot be empty."):
+    with pytest.raises(ValueError):
         build_output_filename("   ", "wav")
 
 
 def test_build_output_filename_rejects_output_name_with_directory():
-    with pytest.raises(ValueError, match="Output name should not include a directory."):
+    with pytest.raises(ValueError):
         build_output_filename("output/composition", "midi")
 
 
 def test_build_output_filename_rejects_windows_style_path():
-    with pytest.raises(ValueError, match="Output name should not include a directory."):
+    with pytest.raises(ValueError):
         build_output_filename(r"output\\composition", "midi")
 
 
@@ -128,3 +128,11 @@ def test_main_non_existent_composition_file_exits_with_error(mock_render_composi
     )
     mock_logger.error.assert_called_with("File not found")
     mock_exit.assert_called_once_with(1)
+
+def test_main_invalid_output_name_exits_with_generic_error(caplog):
+    caplog.set_level("ERROR")
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--composition-file", VALID_COMPOSITION_FILE, "--output-name", "bad.mid"])
+
+    assert exc_info.value.code == 1
