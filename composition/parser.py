@@ -261,17 +261,6 @@ def _extract_composition_sections(
     return motifs_section, voices_section, score_transforms_section
 
 
-def _build_score_voices(voice_configs: list[object], parsed_motifs: dict[str, list[Tone]]) -> list[Voice]:
-    voices: list[Voice] = []
-    previous_voice_tones: list[Tone] = []
-
-    for voice_config in voice_configs:
-        voice, previous_voice_tones = parse_voice(voice_config, parsed_motifs, previous_voice_tones)
-        voices.append(voice)
-
-    return voices
-
-
 def _extract_requests_from_phrase(phrase_config: object, voice_index: int, phrase_index: int) -> list[PhraseTransformRequest]:
     if not isinstance(phrase_config, dict):
         raise ValueError("Each phrase must be an object.")
