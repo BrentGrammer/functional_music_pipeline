@@ -1,11 +1,8 @@
 import pytest
 
 from composition.parser import (
-    PHRASE_TRANSFORMS,
-    SCORE_TRANSFORMS,
     generate_score_plan,
     parse_motifs,
-    parse_phrase,
     parse_transform_spec,
 )
 from composition.schema import PhraseConfig
@@ -21,6 +18,27 @@ from transforms.base import (
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
+from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
+
+
+def render_phrase_from_config(phrase_config: object, parsed_motifs: dict[str, list[Tone]], reference_tones: list[Tone] | None = None) -> list[Tone]:
+    motifs_section: dict[str, list[str]] = {
+        name: [f"{tone.frequency}:{tone.duration}" for tone in tones]
+        for name, tones in parsed_motifs.items()
+    }
+
+    composition_voices: list[dict[str, object]] = []
+    if reference_tones is not None:
+        motifs_section["__reference__"] = [f"{tone.frequency}:{tone.duration}" for tone in reference_tones]
+        composition_voices.append({"phrases": [{"motifs": ["__reference__"]}]})
+    composition_voices.append({"phrases": [phrase_config]})
+
+    composition_doc = {
+        "motifs": motifs_section,
+        "composition": {"voices": composition_voices},
+    }
+    score = transform_score(generate_score_plan(composition_doc))
+    return flatten_voice_tones(score.voices[-1])
 
 
 def test_stretto_spacing_descriptor_accepts_named_or_float_spacing():
@@ -70,7 +88,7 @@ def test_phrase_transform_params_reject_invalid_basic_types(transform_name, para
     }
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_config, parsed_motifs)
+        render_phrase_from_config(phrase_config, parsed_motifs)
 
 
 def test_phrase_transform_params_reject_unknown_enum_value():
@@ -86,7 +104,7 @@ def test_phrase_transform_params_reject_unknown_enum_value():
     }
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_config, parsed_motifs)
+        render_phrase_from_config(phrase_config, parsed_motifs)
 
 
 @pytest.mark.parametrize(
@@ -105,7 +123,7 @@ def test_union_transform_params_accept_enum_or_float_values(strength):
         ],
     }
 
-    result = parse_phrase(phrase_config, parsed_motifs)
+    result = render_phrase_from_config(phrase_config, parsed_motifs)
 
     assert len(result) == 2
 
@@ -127,7 +145,7 @@ def test_union_transform_params_reject_values_outside_all_branches(strength):
     }
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_config, parsed_motifs)
+        render_phrase_from_config(phrase_config, parsed_motifs)
 
 
 def test_parse_motifs():
@@ -166,7 +184,7 @@ def test_parse_phrase_single_motif_from_motifs_list():
         "transforms": [{"name": "reverse"}]
     }
 
-    result = parse_phrase(phrase_dict, parsed_motifs)
+    result = render_phrase_from_config(phrase_dict, parsed_motifs)
 
     assert len(result) == 2
     assert result[0].frequency == 880.0
@@ -182,7 +200,7 @@ def test_parse_phrase_multiple_motifs():
         "motifs": ["seed_a", "seed_b"]
     }
 
-    result = parse_phrase(phrase_dict, parsed_motifs)
+    result = render_phrase_from_config(phrase_dict, parsed_motifs)
 
     assert len(result) == 3
     assert result[0].frequency == 440.0
@@ -203,7 +221,7 @@ def test_parse_phrase_reverse_applies_after_grouping_motifs():
         "transforms": [{"name": "reverse"}]
     }
 
-    result = parse_phrase(phrase_dict, parsed_motifs)
+    result = render_phrase_from_config(phrase_dict, parsed_motifs)
 
     assert len(result) == 3
     assert [tone.frequency for tone in result] == [880.0, 660.0, 440.0]
@@ -220,7 +238,7 @@ def test_parse_phrase_scale_applies_to_all_grouped_motifs():
         "transforms": [{"name": "scale", "params": {"dimension": "duration", "factor": 2.0}}]
     }
 
-    result = parse_phrase(phrase_dict, parsed_motifs)
+    result = render_phrase_from_config(phrase_dict, parsed_motifs)
 
     assert len(result) == 3
     assert result[0].duration == 1.0
@@ -241,7 +259,7 @@ def test_parse_phrase_delay_applies_to_all_grouped_motifs():
         "transforms": [{"name": "delay", "params": {"seconds": DELAY_SECONDS}}],
     }
 
-    result = parse_phrase(phrase_dict, parsed_motifs)
+    result = render_phrase_from_config(phrase_dict, parsed_motifs)
 
     assert len(result) == EXPECTED_TONE_COUNT_WITH_DELAY
     assert result[0].frequency == pytest.approx(SILENCE_FREQUENCY)
@@ -261,7 +279,7 @@ class TestScaleTransformParsing:
             "transforms": [{"name": "scale", "params": {"dimension": "duration", "factor": factor}}],
         }
 
-        result = parse_phrase(phrase_dict, parsed_motifs)
+        result = render_phrase_from_config(phrase_dict, parsed_motifs)
 
         assert len(result) == 1
         assert result[0].duration == original_duration * factor
@@ -279,7 +297,7 @@ class TestScaleTransformParsing:
                 }
             ],
         }
-        result = parse_phrase(phrase_config, parsed_motifs)
+        result = render_phrase_from_config(phrase_config, parsed_motifs)
         assert len(result) == 1
         assert result[0].frequency == pytest.approx(original_frequency * factor)
         assert result[0].duration == 0.5
@@ -297,7 +315,7 @@ class TestScaleTransformParsing:
                 }
             ],
         }
-        result = parse_phrase(phrase_config, parsed_motifs)
+        result = render_phrase_from_config(phrase_config, parsed_motifs)
         assert len(result) == 1
         assert result[0].amplitude == pytest.approx(original_amplitude * factor)
         assert result[0].frequency == 440.0
@@ -311,7 +329,7 @@ class TestScaleTransformParsing:
             "transforms": [{"name": "scale", "params": 2.0}],
         }
         with pytest.raises(ValueError):
-            parse_phrase(phrase_config, parsed_motifs)
+            render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_scale_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -327,7 +345,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_score_scale_with_numeric_param_raises_error(self):
         # Ensures the score-level 'scale' transform enforces explicit parameterization.
@@ -373,7 +391,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_score_transpose_with_missing_required_fields_raises_error(self):
         descriptor = SCORE_TRANSFORMS["transpose"]
@@ -401,7 +419,7 @@ class TestScaleTransformParsing:
         }
 
         with pytest.raises(ValueError):
-            parse_phrase(phrase_config, parsed_motifs)
+            render_phrase_from_config(phrase_config, parsed_motifs)
 
     @pytest.mark.parametrize(
         ("transform_name", "valid_params"),
@@ -431,7 +449,7 @@ class TestScaleTransformParsing:
         }
 
         with pytest.raises(ValueError):
-            parse_phrase(phrase_config, parsed_motifs)
+            render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_delay_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -447,7 +465,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_score_delay_with_missing_required_fields_raises_error(self):
         descriptor = SCORE_TRANSFORMS["delay"]
@@ -481,7 +499,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_score_repeat_with_missing_required_fields_raises_error(self):
         descriptor = SCORE_TRANSFORMS["repeat"]
@@ -515,7 +533,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_ritardando_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -531,7 +549,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_drift_with_missing_required_fields_raises_error(self):
         parsed_motifs = {"seed": [Tone(440)]}
@@ -547,7 +565,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_score_drift_with_missing_required_fields_raises_error(self):
         descriptor = SCORE_TRANSFORMS["drift"]
@@ -584,7 +602,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError):
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
 
     def test_score_weierstrass_with_missing_required_fields_raises_error(self):
         descriptor = SCORE_TRANSFORMS["weierstrass"]
@@ -626,7 +644,7 @@ class TestScaleTransformParsing:
             }
 
             with pytest.raises(ValueError) as exc_info:
-                parse_phrase(phrase_config, parsed_motifs)
+                render_phrase_from_config(phrase_config, parsed_motifs)
             assert str(exc_info.value)
 
     def test_score_cellular_automata_with_missing_required_fields_raises_error(self):
@@ -699,7 +717,7 @@ class TestScaleTransformParsing:
             "transforms": [{"name": "erosion", "params": {"dimension": "amplitude"}}],
         }
 
-        result = parse_phrase(phrase_config, parsed_motifs)
+        result = render_phrase_from_config(phrase_config, parsed_motifs)
         # Erosion of amplitude should change the amplitude of the second tone.
         assert result[1].amplitude < 1.0
 
@@ -710,7 +728,7 @@ class TestScaleTransformParsing:
             "transforms": [{"name": "golden_ratio", "params": {"dimension": "frequency"}}],
         }
 
-        result = parse_phrase(phrase_config, parsed_motifs)
+        result = render_phrase_from_config(phrase_config, parsed_motifs)
         # golden_ratio on frequency scales frequency by 1/GOLDEN_RATIO
         assert result[0].frequency == pytest.approx(440.0 / GOLDEN_RATIO)
 
@@ -722,7 +740,7 @@ class TestScaleTransformParsing:
         }
 
         with pytest.raises(ValueError):
-            parse_phrase(phrase_config, parsed_motifs)
+            render_phrase_from_config(phrase_config, parsed_motifs)
 
 def test_parse_phrase_with_reference_transform():
     parsed_motifs = {
@@ -735,7 +753,7 @@ def test_parse_phrase_with_reference_transform():
         "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
 
-    result = parse_phrase(phrase_dict, parsed_motifs, reference_tones)
+    result = render_phrase_from_config(phrase_dict, parsed_motifs, reference_tones)
 
     assert len(result) == 1
     assert result[0].duration == pytest.approx(1.0 * GOLDEN_RATIO)
@@ -752,7 +770,7 @@ def test_parse_phrase_reference_transform_uses_total_grouped_phrase_duration():
         "transforms": [{"name": "phrase_golden_ratio_grow"}]
     }
 
-    result = parse_phrase(phrase_dict, parsed_motifs, reference_tones)
+    result = render_phrase_from_config(phrase_dict, parsed_motifs, reference_tones)
 
     assert len(result) == 2
     expected_total_duration = 2.0 * GOLDEN_RATIO
@@ -848,62 +866,62 @@ def test_parse_phrase_missing_motifs():
     phrase_dict = {"transforms": [{"name": "reverse"}]}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_empty_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict: dict[str, object] = {"motifs": []}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_non_list_motifs():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": "seed_a"}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_motifs_entries_must_be_non_empty_strings():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a", ""]}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_unknown_motif():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["missing"]}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_requires_phrase_object():
     parsed_motifs = {"seed_a": [Tone(440)]}
 
     with pytest.raises(ValueError):
-        parse_phrase(["seed_a"], parsed_motifs)
+        render_phrase_from_config(["seed_a"], parsed_motifs)
 
 def test_parse_phrase_transforms_must_be_a_list():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a"], "transforms": "reverse"}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_object_requires_name():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a"], "transforms": [{"params": 2.0}]}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_phrase_transform_must_be_string_or_object():
     parsed_motifs = {"seed_a": [Tone(440)]}
     phrase_dict = {"motifs": ["seed_a"], "transforms": [123]}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 def test_parse_transform_spec_rejects_scalar_params():
     transform_spec = {"name": "transpose", "params": 1.0}
@@ -917,7 +935,7 @@ def test_parse_phrase_unknown_transform():
     phrase_dict: PhraseConfig = {"motifs": ["seed_a"], "transforms": [{"name": "unknown_transform"}]}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 
 def test_parse_phrase_requires_params_object_when_transform_params_are_missing():
@@ -925,7 +943,7 @@ def test_parse_phrase_requires_params_object_when_transform_params_are_missing()
     phrase_dict: PhraseConfig = {"motifs": ["seed"], "transforms": [{"name": "scale"}]}
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_dict, parsed_motifs)
+        render_phrase_from_config(phrase_dict, parsed_motifs)
 
 
 
@@ -1009,7 +1027,7 @@ def test_parse_phrase_rejects_score_transform_in_phrase_transforms():
     }
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_config, parsed_motifs)
+        render_phrase_from_config(phrase_config, parsed_motifs)
 
 
 def test_generate_score_plan_score_reverse_applies_to_all_voices_without_params():

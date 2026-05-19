@@ -1,12 +1,25 @@
 import pytest
 
-from composition.parser import generate_score_plan, parse_phrase
+from composition.parser import generate_score_plan
 from composition.schema import PhraseConfig
 from composition.transformer import transform_score
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from transforms.basic.pad_silence import pad_silence_tones
 from transforms.registry import PHRASE_TRANSFORMS
+
+
+def render_phrase_from_config(phrase_config: object, parsed_motifs: dict[str, list[Tone]]) -> list[Tone]:
+    motifs_section: dict[str, list[str]] = {
+        name: [f"{tone.frequency}:{tone.duration}" for tone in tones]
+        for name, tones in parsed_motifs.items()
+    }
+    composition_document = {
+        "motifs": motifs_section,
+        "composition": {"voices": [{"phrases": [phrase_config]}]},
+    }
+    score = transform_score(generate_score_plan(composition_document))
+    return flatten_voice_tones(score.voices[0])
 
 
 def test_pad_silence_start_prepends_silence():
@@ -86,7 +99,7 @@ def test_parse_phrase_applies_pad_silence():
         "transforms": [{"name": "pad_silence", "params": {"seconds": silence_seconds, "position": "end"}}],
     }
 
-    result = parse_phrase(phrase_config, parsed_motifs)
+    result = render_phrase_from_config(phrase_config, parsed_motifs)
 
     assert len(result) == 2
     assert result[0].frequency == pytest.approx(subject_frequency)
@@ -105,7 +118,7 @@ def test_parse_phrase_pad_silence_requires_dict_params():
     }
 
     with pytest.raises(ValueError):
-        parse_phrase(phrase_config, parsed_motifs)
+        render_phrase_from_config(phrase_config, parsed_motifs)
 
 
 def test_parse_phrase_pad_silence_requires_missing_required_fields():
@@ -124,7 +137,7 @@ def test_parse_phrase_pad_silence_requires_missing_required_fields():
         }
 
         with pytest.raises(ValueError, match="must include"):
-            parse_phrase(phrase_config, parsed_motifs)
+            render_phrase_from_config(phrase_config, parsed_motifs)
 
 
 def test_applies_pad_silence_between_phrases():

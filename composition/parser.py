@@ -1,5 +1,3 @@
-from collections.abc import Mapping
-
 from composition.score_plan import (
     PhrasePlan,
     PhraseTransformRequest,
@@ -9,17 +7,11 @@ from composition.score_plan import (
     VoicePlan,
 )
 from score_model.motif import Motif
-from score_model.phrase import Phrase
-from score_model.score import Score
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
-from score_model.voice import Voice
 from transforms.base import (
-    PhraseTransformContext,
-    PhraseTransformDefinition,
     TransformLevel,
 )
-from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
 
 def _parse_tone_string(tone_string: str) -> Tone:
@@ -72,49 +64,6 @@ def parse_transform_spec(
     return transform_name, transform_params
 
 
-def _apply_phrase_transform_spec(
-    descriptor: PhraseTransformDefinition,
-    phrase_tones: list[Tone],
-    transform_params: Mapping[str, object],
-    reference_tones: list[Tone] | None,
-) -> list[Tone]:
-    descriptor.validate_params(transform_params)
-
-    if isinstance(descriptor, PhraseTransformDefinition):
-        # Build a minimal context where the reference phrase is voice[0].phrases[0]
-        # and the current phrase is voice[0].phrases[1]. This mirrors the prior
-        # behavior that presented two-phrase contexts to the transform.
-        reference_phrase = Phrase(motifs=[Motif(name="<parsed>", tones=copy_tones(reference_tones or []))])
-        current_phrase = Phrase(motifs=[Motif(name="<parsed>", tones=copy_tones(phrase_tones))])
-        transformed_phrase = descriptor.transform(
-            PhraseTransformContext(score=Score(voices=[Voice(phrases=[reference_phrase, current_phrase])]), voice_index=0, phrase_index=1),
-            transform_params,
-        )
-        return [tone for motif in transformed_phrase.motifs for tone in motif.tones]
-
-    raise ValueError(f"Transform '{descriptor.name}' is not a phrase transform.")
-
-
-def _apply_phrase_transform_specs(
-    phrase_tones: list[Tone],
-    transform_specs: list[object],
-    reference_tones: list[Tone] | None,
-) -> list[Tone]:
-    for transform_spec in transform_specs:
-        transform_name, transform_params = parse_transform_spec(transform_spec, TransformLevel.PHRASE)
-
-        if transform_name in PHRASE_TRANSFORMS:
-            descriptor = PHRASE_TRANSFORMS[transform_name]
-        elif transform_name in SCORE_TRANSFORMS:
-            raise ValueError(f"Transform '{transform_name}' is only available as a score transform.")
-        else:
-            raise ValueError(f"Unknown transform '{transform_name}'")
-
-        phrase_tones = _apply_phrase_transform_spec(descriptor, phrase_tones, transform_params, reference_tones)
-
-    return phrase_tones
-
-
 def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
     """
     Validates the phrase config structure and extracts the motif names.
@@ -137,29 +86,6 @@ def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
             raise ValueError("Phrase 'motifs' entries must be non-empty strings.")
 
     return motif_names
-
-
-def parse_phrase(
-    phrase_config: object,
-    parsed_motifs: dict[str, list[Tone]],
-    reference_tones: list[Tone] | None = None,
-) -> list[Tone]:
-    if not isinstance(phrase_config, dict):
-        raise ValueError("Each phrase must be an object.")
-
-    motif_names = _validate_and_extract_motifs(phrase_config)
-    phrase_tones: list[Tone] = []
-
-    for motif_name in motif_names:
-        if motif_name not in parsed_motifs:
-            raise ValueError(f"Motif '{motif_name}' not found in parsed motifs.")
-        phrase_tones.extend(copy_tones(parsed_motifs[motif_name]))
-
-    transform_specs = phrase_config.get("transforms", [])
-    if not isinstance(transform_specs, list):
-        raise ValueError("Phrase 'transforms' must be a list.")
-
-    return _apply_phrase_transform_specs(phrase_tones, transform_specs, reference_tones)
 
 
 def _validate_composition_structure(

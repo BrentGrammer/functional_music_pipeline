@@ -220,7 +220,6 @@ class TestRitardandoParserIntegration:
 import pytest
 
 from composition.parser import (
-    _apply_phrase_transform_spec,
     _create_voice_plans_from_document,
     _extract_composition_sections,
     _extract_requests_from_phrase,
@@ -229,7 +228,6 @@ from composition.parser import (
 )
 from score_model.motif import Motif
 from score_model.tone import Tone
-from transforms.base import ScoreTransformDefinition, TransformParamsSpec
 
 
 def test_validate_and_extract_motifs_rejects_non_dict_phrase_config():
@@ -273,22 +271,6 @@ def test_extract_requests_from_voice_rejects_non_dict_voice():
 def test_extract_requests_from_voice_rejects_non_list_phrases_field():
     with pytest.raises(ValueError):
         _extract_requests_from_voice({"phrases": {}}, voice_index=0)
-
-
-def test_apply_phrase_transform_spec_rejects_non_phrase_transform_definition():
-    non_phrase_definition = ScoreTransformDefinition(
-        name="not_phrase",
-        params_spec=TransformParamsSpec(),
-        transform=lambda score, params: score,
-    )
-
-    with pytest.raises(ValueError):
-        _apply_phrase_transform_spec(
-            non_phrase_definition,
-            phrase_tones=[Tone(440.0)],
-            transform_params={},
-            reference_tones=[],
-        )
 
 
 def test_create_voice_plans_rejects_unknown_motif_name():
