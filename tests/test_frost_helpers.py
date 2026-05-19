@@ -20,6 +20,7 @@ from transforms.geological.frost_effect import (
     _advance_edge_delay,
     _apply_frost_iteration,
     _build_edge_voices,
+    _build_frost_edge_expansions,
     _build_frost_voice,
     _build_initial_frost_event_voices,
     _build_later_frost_event_voices,
@@ -27,12 +28,13 @@ from transforms.geological.frost_effect import (
     _build_replay_entry_delays,
     _build_replayed_event_voices,
     _copy_voice_retaining_frost_history,
-    _first_audible_frequency,
+    _find_frost_edge_voices,
     _first_audible_tone,
     _random_edge_stagger_seconds,
     _random_single_seed_edge_separation_seconds,
     _score_end_time,
     frost_effect,
+    frost_effect_score_transform_adapter,
 )
 
 
@@ -109,22 +111,63 @@ def test_score_end_time_uses_longest_voice_and_handles_empty_score():
     assert _score_end_time(empty_score) == pytest.approx(0.0)
 
 
-def test_first_audible_tone_and_frequency_return_none_for_silent_voice():
+def test_first_audible_tone_returns_none_for_silent_voice():
     silent_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0), Tone(440.0, duration=1.0, amplitude=0.0)])])])
 
     assert _first_audible_tone(silent_voice) is None
-    assert _first_audible_frequency(silent_voice) is None
 
 
-def test_build_pending_edge_expansions_returns_down_and_up_for_single_audible_voice():
-    only_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+def test_find_frost_edge_voice_selection_returns_lower_and_upper_edge_voices_for_single_audible_voice():
+    frequency = 440.0
+    only_voice = Voice([Phrase([Motif("<test>", [Tone(frequency, duration=1.0)])])])
+
+    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([only_voice])
+
+    assert lower_edge_voice is not None
+    assert upper_edge_voice is not None
+    assert lower_edge_voice is only_voice
+    assert upper_edge_voice is only_voice
+
+
+def test_build_pending_edge_expansions_creates_lower_and_upper_expansions_for_single_audible_voice():
+    original_frequency = 440.0
+    only_voice = Voice([Phrase([Motif("<test>", [Tone(original_frequency, duration=1.0)])])])
+
+    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([only_voice])
+    pending_edge_expansions = _build_frost_edge_expansions(lower_edge_voice, upper_edge_voice)
+
+    assert len(pending_edge_expansions) == 2
+    assert lower_edge_voice is not None
+    assert upper_edge_voice is not None
+
+    lower_pending_expansion = pending_edge_expansions[0]
+    upper_pending_expansion = pending_edge_expansions[1]
+
+    assert lower_pending_expansion.voice is lower_edge_voice
+    assert upper_pending_expansion.voice is upper_edge_voice
+
+    base_tone_for_lower_expansion = lower_pending_expansion.tone.frequency
+    base_tone_for_upper_expansion = upper_pending_expansion.tone.frequency
+
+    assert base_tone_for_lower_expansion == pytest.approx(original_frequency)
+    assert base_tone_for_upper_expansion == pytest.approx(original_frequency)
+
+    lower_child_frequency = lower_pending_expansion.adjust_frequency(original_frequency)
+    upper_child_frequency = upper_pending_expansion.adjust_frequency(original_frequency)
+
+    assert lower_child_frequency < original_frequency
+    assert upper_child_frequency > original_frequency
+
+
+def test_build_pending_edge_expansions_uses_edge_voice_selection_for_single_audible_voice():
+    frequency = 440.0
+    only_voice = Voice([Phrase([Motif("<test>", [Tone(frequency, duration=1.0)])])])
 
     pending_edge_expansions = _build_pending_edge_expansions([only_voice])
 
     assert len(pending_edge_expansions) == 2
-    assert pending_edge_expansions[0][0] is only_voice
-    assert pending_edge_expansions[1][0] is only_voice
-    assert pending_edge_expansions[0][1] is not pending_edge_expansions[1][1]
+    assert pending_edge_expansions[0].voice is only_voice
+    assert pending_edge_expansions[1].voice is only_voice
 
 
 def test_random_stagger_helpers_stay_within_declared_bounds():
@@ -234,6 +277,22 @@ def test_apply_frost_iteration_preserves_original_metadata_on_copied_source_voic
     assert copied_source_voice is not source_voice
     assert getattr(copied_source_voice, "frost_generation") == expected_generation
     assert getattr(copied_source_voice, "frost_role") == expected_role
+
+
+def test_frost_effect_score_transform_adapter_rejects_non_integer_iterations():
+    seed_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
+
+    with pytest.raises(ValueError):
+        frost_effect_score_transform_adapter(seed_score, {"iterations": True})
+
+
+def test_frost_effect_score_transform_adapter_applies_default_iteration_count_of_3():
+    seed_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
+
+    result = frost_effect_score_transform_adapter(seed_score, {})
+
+    assert result != seed_score
+    assert len(result.voices) == len(seed_score.voices) + 3
 
 
 @pytest.mark.parametrize("invalid_iterations", [True, False, 0, -1, 1.5, "2"])

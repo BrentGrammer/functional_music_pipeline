@@ -1,6 +1,4 @@
 import math
-import random
-
 import pytest
 
 from score_model.motif import Motif
@@ -30,7 +28,7 @@ from transforms.geological.frost_effect import (
 
 CENTS_PER_OCTAVE = 1200.0
 
-
+#### TEST HELPERS #####
 def _first_audible_frequency(voice: Voice) -> float | None:
     for tone in flatten_voice_tones(voice):
         if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
@@ -72,21 +70,6 @@ def _voice_start_time(voice: Voice) -> float:
 
 def _voice_end_time(voice: Voice) -> float:
     return sum(tone.duration for tone in flatten_voice_tones(voice))
-
-
-def _event_relative_start_times_by_frequency(score: Score, event_number: int) -> dict[float, float]:
-    event_voices = _event_voices(score, event_number)
-    event_start_time = min(_voice_start_time(voice) for voice in event_voices)
-
-    relative_start_times: dict[float, float] = {}
-    for voice in event_voices:
-        frequency = _first_audible_frequency(voice)
-        if frequency is None:
-            continue
-
-        relative_start_times[frequency] = _voice_start_time(voice) - event_start_time
-
-    return relative_start_times
 
 
 def _event_start_times(score: Score, event_number: int) -> list[float]:
@@ -197,7 +180,7 @@ def _find_frequencies_added_to_next_event(
         unmatched_frequencies.pop(matching_index)
 
     return unmatched_frequencies
-
+####### END TEST HELPERS ########
 
 def test_cents_to_frequency_ratio_converts_octaves_and_unisons():
     assert _cents_to_frequency_ratio(0.0) == pytest.approx(1.0)
@@ -205,9 +188,7 @@ def test_cents_to_frequency_ratio_converts_octaves_and_unisons():
     assert _cents_to_frequency_ratio(-1200.0) == pytest.approx(0.5)
 
 
-def test_frost_generations_map_to_audible_event_numbers():
-    random.seed(0)
-
+def test_frost_generations_map_to_audible_event_count():
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=2)
 
     assert _event_frequencies(score, 0) == [pytest.approx(440.0)]
@@ -219,8 +200,6 @@ def test_frost_generations_map_to_audible_event_numbers():
 
 
 def test_first_frost_event_delays_only_new_edge_tones_within_controlled_bounds():
-    random.seed(0)
-
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=1)
 
     source_event_end_time = max(_voice_end_time(voice) for voice in _event_voices(score, 0))
@@ -234,8 +213,6 @@ def test_first_frost_event_delays_only_new_edge_tones_within_controlled_bounds()
 
 
 def test_first_frost_event_expands_cluster_as_one_staggered_event():
-    random.seed(0)
-
     score = frost_effect(
         Score(
             [
@@ -273,8 +250,6 @@ def test_first_frost_event_expands_cluster_as_one_staggered_event():
 
 
 def test_second_frost_event_replays_previous_event_and_staggers_new_edges():
-    random.seed(0)
-
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=2)
 
     first_frost_event_frequencies = _event_frequencies(score, 1)
@@ -295,7 +270,6 @@ def test_second_frost_event_replays_previous_event_and_staggers_new_edges():
 
 
 def test_cluster_frost_events_replay_previous_event_and_add_two_edges():
-    random.seed(0)
     requested_iterations = 3
 
     score = frost_effect(
@@ -337,8 +311,6 @@ def test_cluster_frost_events_replay_previous_event_and_add_two_edges():
 
 
 def test_repeated_frost_calls_continue_audible_event_sequence():
-    random.seed(0)
-
     score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
     score = frost_effect(score, iterations=1)
     score = frost_effect(score, iterations=1)
@@ -464,8 +436,6 @@ def test_first_audible_onset_field_uses_first_tone_of_melodic_line():
 
 
 def test_jitter_frequency_down_within_bounds_moves_down_by_bounded_cents():
-    random.seed(0)
-
     child_frequency = _jitter_frequency_down_within_bounds(440.0)
     outward_cents = _cents_between(child_frequency, 440.0)
 
@@ -475,8 +445,6 @@ def test_jitter_frequency_down_within_bounds_moves_down_by_bounded_cents():
 
 
 def test_jitter_frequency_up_within_bounds_moves_up_by_bounded_cents():
-    random.seed(0)
-
     child_frequency = _jitter_frequency_up_within_bounds(440.0)
     outward_cents = _cents_between(440.0, child_frequency)
 
@@ -486,41 +454,54 @@ def test_jitter_frequency_up_within_bounds_moves_up_by_bounded_cents():
 
 
 def test_find_frost_edge_voices_identifies_lowest_and_highest_voice_in_any_order():
+    upper_frequency = 481.0
+    lower_frequency = 418.0
     center_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
-    upper_voice = Voice([Phrase([Motif("<test>", [Tone(481.0, duration=1.0)])])])
-    lower_voice = Voice([Phrase([Motif("<test>", [Tone(418.0, duration=1.0)])])])
+    upper_voice = Voice([Phrase([Motif("<test>", [Tone(upper_frequency, duration=1.0)])])])
+    lower_voice = Voice([Phrase([Motif("<test>", [Tone(lower_frequency, duration=1.0)])])])
 
-    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices(
-        [center_voice, upper_voice, lower_voice]
-    )
+    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([center_voice, upper_voice, lower_voice])
 
+    assert lower_edge_voice is not None
+    assert upper_edge_voice is not None
     assert lower_edge_voice is lower_voice
     assert upper_edge_voice is upper_voice
 
 
 def test_find_frost_edge_voices_ignores_silent_voices():
-    silent_low_voice = Voice([Phrase([Motif("<test>", [Tone(10.0, duration=1.0, amplitude=0.0)])])])
-    silent_high_voice = Voice([Phrase([Motif("<test>", [Tone(4000.0, duration=1.0, amplitude=0.0)])])])
-    lower_voice = Voice([Phrase([Motif("<test>", [Tone(430.0, duration=1.0)])])])
-    upper_voice = Voice([Phrase([Motif("<test>", [Tone(450.0, duration=1.0)])])])
+    silence = 0.0
+    silent_low_voice = Voice([Phrase([Motif("<test>", [Tone(10.0, duration=1.0, amplitude=silence)])])])
+    silent_high_voice = Voice([Phrase([Motif("<test>", [Tone(4000.0, duration=1.0, amplitude=silence)])])])
+    lower_voice = Voice([Phrase([Motif("<test>", [Tone(430.0, duration=1.0, amplitude=silence + 1.0)])])])
+    upper_voice = Voice([Phrase([Motif("<test>", [Tone(450.0, duration=1.0, amplitude=silence + 1.0)])])])
 
-    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices(
-        [silent_low_voice, upper_voice, silent_high_voice, lower_voice]
-    )
+    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([silent_low_voice, upper_voice, silent_high_voice, lower_voice])
 
+    assert lower_edge_voice is not None
+    assert upper_edge_voice is not None
     assert lower_edge_voice is lower_voice
     assert upper_edge_voice is upper_voice
 
 
 def test_find_frost_edge_voices_uses_first_audible_tone_in_delayed_voice():
-    delayed_lower_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=0.25), Tone(410.0, duration=1.0)])])])
-    delayed_upper_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=0.50), Tone(470.0, duration=1.0)])])])
-    center_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+    lower_voice_silence_duration = 0.25
+    lower_voice_first_audible_frequency = 410.0
+    upper_voice_silence_duration = 0.50
+    upper_voice_first_audible_frequency = 470.0
+    center_voice_frequency = 440.0
 
-    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices(
-        [center_voice, delayed_upper_voice, delayed_lower_voice]
+    delayed_lower_voice = Voice(
+        [Phrase([Motif("<test>", [Tone(0.0, duration=lower_voice_silence_duration), Tone(lower_voice_first_audible_frequency, duration=1.0)])])]
     )
+    delayed_upper_voice = Voice(
+        [Phrase([Motif("<test>", [Tone(0.0, duration=upper_voice_silence_duration), Tone(upper_voice_first_audible_frequency, duration=1.0)])])]
+    )
+    center_voice = Voice([Phrase([Motif("<test>", [Tone(center_voice_frequency, duration=1.0)])])])
 
+    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([center_voice, delayed_upper_voice, delayed_lower_voice])
+
+    assert lower_edge_voice is not None
+    assert upper_edge_voice is not None
     assert lower_edge_voice is delayed_lower_voice
     assert upper_edge_voice is delayed_upper_voice
 
@@ -539,17 +520,18 @@ def test_find_frost_edge_voices_returns_none_edges_when_no_audible_voices_exist(
 
 
 def test_find_frost_edge_voices_returns_same_voice_for_single_audible_voice():
-    only_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
+    frequency = 440.0
+    voice = Voice([Phrase([Motif("<test>", [Tone(frequency, duration=1.0)])])])
 
-    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([only_voice])
+    lower_edge_voice, upper_edge_voice = _find_frost_edge_voices([voice])
 
-    assert lower_edge_voice is only_voice
-    assert upper_edge_voice is only_voice
+    assert lower_edge_voice is not None
+    assert upper_edge_voice is not None
+    assert lower_edge_voice is voice
+    assert upper_edge_voice is voice
 
 
 def test_frost_effect_iterations_grow_linearly_by_event():
-    random.seed(0)
-
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=3)
 
     assert len(_event_frequencies(score, 0)) == 1
@@ -559,8 +541,6 @@ def test_frost_effect_iterations_grow_linearly_by_event():
 
 
 def test_first_frost_event_edge_children_respect_per_edge_cent_bounds():
-    random.seed(0)
-
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=1)
     first_event_frequencies = _event_frequencies(score, 1)
     lower_frequency = min(first_event_frequencies)
@@ -576,7 +556,6 @@ def test_first_frost_event_edge_children_respect_per_edge_cent_bounds():
 
 
 def test_multi_voice_input_is_treated_as_one_frost_field():
-    random.seed(0)
     seed_frequency_cluster =  [
         Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
         Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
@@ -604,7 +583,6 @@ def test_multi_voice_input_is_treated_as_one_frost_field():
 
 
 def test_first_frost_event_expands_multi_voice_onset_cluster_as_one_field():
-    random.seed(0)
     score = frost_effect(
         Score(
             [
@@ -635,7 +613,6 @@ def test_first_frost_event_expands_multi_voice_onset_cluster_as_one_field():
 
 
 def test_first_frost_event_uses_earliest_onset_not_later_delayed_voice():
-    random.seed(0)
     score = frost_effect(
         Score(
             [
@@ -673,7 +650,6 @@ def test_build_replayed_event_voices_generates_entry_delays_when_not_provided():
 
 
 def test_multi_voice_input_keeps_growing_linearly_across_multiple_events():
-    random.seed(0)
     seed_frequency_cluster = [
         Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
         Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
@@ -695,7 +671,6 @@ def test_multi_voice_input_keeps_growing_linearly_across_multiple_events():
 
 
 def test_frost_effect_schedules_each_frost_event_after_previous_event():
-    random.seed(0)
     requested_iterations = 3
     expected_new_edge_tones_per_iteration = 2
 
@@ -724,8 +699,6 @@ def test_frost_effect_schedules_each_frost_event_after_previous_event():
 
 
 def test_frost_effect_extends_only_the_current_pitch_edges():
-    random.seed(0)
-
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=3)
     previous_frequencies = _event_frequencies(score, 0)
 
@@ -739,8 +712,6 @@ def test_frost_effect_extends_only_the_current_pitch_edges():
 
 
 def test_frost_effect_replays_previous_event_and_adds_two_edge_tones():
-    random.seed(0)
-
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=3)
     previous_frequencies = _event_frequencies(score, 0)
 
@@ -756,8 +727,6 @@ def test_frost_effect_replays_previous_event_and_adds_two_edge_tones():
 
 
 def test_frost_effect_edge_children_move_within_bounded_cent_range():
-    random.seed(0)
-
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=3)
     previous_frequencies = _event_frequencies(score, 0)
 
