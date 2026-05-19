@@ -25,10 +25,7 @@ __pycache__/
 htmlcov/
 
 # Virtualenv: do not include installed packages in Gemini context/tools
-.venv/lib/
-.venv/lib64/
-.venv/include/
-.venv/share/
+.venv/
 
 # Local AI/tool state
 .cline/
