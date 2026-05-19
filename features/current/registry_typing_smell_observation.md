@@ -45,5 +45,10 @@ Possible directions to explore later:
 
 ## Status
 
-This note is intentionally not a solution plan.
-It records the smell so we can recognize the underlying problem before deciding how to redesign it.
+The registry-specific part of this smell has been addressed for the current cleanup pass.
+
+`transforms/registry.py` now acts as registry wiring: it maps transform names to definitions, params specs, and named adapter functions owned by transform modules. It no longer contains inline lambdas, `cast` calls, or local parameter-narrowing helpers.
+
+The broader type-model issue is still open. Transform adapters still accept JSON-shaped `Mapping[str, object]` params and narrow those params locally before calling typed transform functions. That is cleaner than doing adaptation in the registry, but it is not the larger redesign described above.
+
+Future work, if needed, is to revisit whether transform params should become typed parameter objects or another stronger boundary type instead of raw mappings.
