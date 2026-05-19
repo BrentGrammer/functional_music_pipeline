@@ -226,7 +226,7 @@ class TestRitardandoParserIntegration:
         assert tones[2].frequency == 523
 
 
-def test_validate_composition_structure_returns_validated_document():
+def test_validate_composition_document_returns_validated_document():
     composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {
@@ -237,16 +237,19 @@ def test_validate_composition_structure_returns_validated_document():
 
     validated_document = _validate_composition_document(composition_document)
 
+    default_for_missing_transforms = []
+    default_for_missing_params = {}
+
     assert validated_document == {
         "motifs": {"seed": ["440"]},
         "composition": {
-            "voices": [{"phrases": [{"motifs": ["seed"], "transforms": []}]}],
-            "score_transforms": [{"name": "reverse", "params": {}}],
+            "voices": [{"phrases": [{"motifs": ["seed"], "transforms": default_for_missing_transforms}]}],
+            "score_transforms": [{"name": "reverse", "params": default_for_missing_params}],
         },
     }
 
 
-def test_validate_composition_structure_defaults_missing_phrase_transforms():
+def test_validate_composition_document_defaults_missing_phrase_transforms():
     composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
@@ -257,7 +260,7 @@ def test_validate_composition_structure_defaults_missing_phrase_transforms():
     assert validated_document["composition"]["voices"][0]["phrases"][0]["transforms"] == []
 
 
-def test_validate_composition_structure_defaults_missing_score_transforms():
+def test_validate_composition_document_defaults_missing_score_transforms():
     composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"voices": [{"phrases": [{"motifs": ["seed"]}]}]},
@@ -268,12 +271,12 @@ def test_validate_composition_structure_defaults_missing_score_transforms():
     assert validated_document["composition"]["score_transforms"] == []
 
 
-def test_validate_composition_structure_rejects_non_object():
+def test_validate_composition_document_rejects_non_object():
     with pytest.raises(ValueError):
         _validate_composition_document("not-an-object")
 
 
-def test_validate_composition_structure_rejects_missing_motifs():
+def test_validate_composition_document_rejects_missing_motifs():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -282,7 +285,7 @@ def test_validate_composition_structure_rejects_missing_motifs():
         )
 
 
-def test_validate_composition_structure_rejects_missing_composition():
+def test_validate_composition_document_rejects_missing_composition():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -291,7 +294,7 @@ def test_validate_composition_structure_rejects_missing_composition():
         )
 
 
-def test_validate_composition_structure_rejects_missing_voices():
+def test_validate_composition_document_rejects_missing_voices():
     composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"score_transforms": [{"name": "reverse"}]},
@@ -302,7 +305,7 @@ def test_validate_composition_structure_rejects_missing_voices():
     assert validated_document["composition"]["voices"] == []
 
 
-def test_validate_composition_structure_rejects_empty_composition():
+def test_validate_composition_document_rejects_empty_composition():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -312,7 +315,7 @@ def test_validate_composition_structure_rejects_empty_composition():
         )
 
 
-def test_validate_composition_structure_allows_empty_voices():
+def test_validate_composition_document_allows_empty_voices():
     composition_document: CompositionDocumentInput = {
         "motifs": {"seed": ["440"]},
         "composition": {"voices": []},
@@ -323,7 +326,7 @@ def test_validate_composition_structure_allows_empty_voices():
     assert validated_document["composition"]["voices"] == []
 
 
-def test_validate_composition_structure_rejects_non_string_motif_definition_name():
+def test_validate_composition_document_rejects_non_string_motif_definition_name():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -333,7 +336,7 @@ def test_validate_composition_structure_rejects_non_string_motif_definition_name
         )
 
 
-def test_validate_composition_structure_rejects_non_list_motif_definition_value():
+def test_validate_composition_document_rejects_non_list_motif_definition_value():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -343,7 +346,7 @@ def test_validate_composition_structure_rejects_non_list_motif_definition_value(
         )
 
 
-def test_validate_composition_structure_rejects_non_string_tone_entry():
+def test_validate_composition_document_rejects_non_string_tone_entry():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -353,7 +356,7 @@ def test_validate_composition_structure_rejects_non_string_tone_entry():
         )
 
 
-def test_validate_composition_structure_rejects_empty_tone_string():
+def test_validate_composition_document_rejects_empty_tone_string():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -363,7 +366,7 @@ def test_validate_composition_structure_rejects_empty_tone_string():
         )
 
 
-def test_validate_composition_structure_rejects_non_object_voice_entry():
+def test_validate_composition_document_rejects_non_object_voice_entry():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -373,7 +376,7 @@ def test_validate_composition_structure_rejects_non_object_voice_entry():
         )
 
 
-def test_validate_composition_structure_rejects_voice_with_non_list_phrases():
+def test_validate_composition_document_rejects_voice_with_non_list_phrases():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -383,7 +386,7 @@ def test_validate_composition_structure_rejects_voice_with_non_list_phrases():
         )
 
 
-def test_validate_composition_structure_rejects_non_object_phrase_entry():
+def test_validate_composition_document_rejects_non_object_phrase_entry():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -393,7 +396,7 @@ def test_validate_composition_structure_rejects_non_object_phrase_entry():
         )
 
 
-def test_validate_composition_structure_rejects_phrase_with_non_list_motifs():
+def test_validate_composition_document_rejects_phrase_with_non_list_motifs():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -403,7 +406,7 @@ def test_validate_composition_structure_rejects_phrase_with_non_list_motifs():
         )
 
 
-def test_validate_composition_structure_rejects_phrase_with_empty_motifs_list():
+def test_validate_composition_document_rejects_phrase_with_empty_motifs_list():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -413,7 +416,7 @@ def test_validate_composition_structure_rejects_phrase_with_empty_motifs_list():
         )
 
 
-def test_validate_composition_structure_rejects_phrase_with_non_string_motif_entry():
+def test_validate_composition_document_rejects_phrase_with_non_string_motif_entry():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -423,7 +426,7 @@ def test_validate_composition_structure_rejects_phrase_with_non_string_motif_ent
         )
 
 
-def test_validate_composition_structure_rejects_phrase_with_empty_motif_name():
+def test_validate_composition_document_rejects_phrase_with_empty_motif_name():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -433,7 +436,7 @@ def test_validate_composition_structure_rejects_phrase_with_empty_motif_name():
         )
 
 
-def test_validate_composition_structure_rejects_phrase_with_non_list_transforms():
+def test_validate_composition_document_rejects_phrase_with_non_list_transforms():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -443,7 +446,7 @@ def test_validate_composition_structure_rejects_phrase_with_non_list_transforms(
         )
 
 
-def test_validate_composition_structure_rejects_phrase_transform_without_name():
+def test_validate_composition_document_rejects_phrase_transform_without_name():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -453,7 +456,7 @@ def test_validate_composition_structure_rejects_phrase_transform_without_name():
         )
 
 
-def test_validate_composition_structure_rejects_phrase_transform_with_non_string_name():
+def test_validate_composition_document_rejects_phrase_transform_with_non_string_name():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -463,7 +466,7 @@ def test_validate_composition_structure_rejects_phrase_transform_with_non_string
         )
 
 
-def test_validate_composition_structure_rejects_phrase_transform_with_non_object_params():
+def test_validate_composition_document_rejects_phrase_transform_with_non_object_params():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -475,7 +478,7 @@ def test_validate_composition_structure_rejects_phrase_transform_with_non_object
         )
 
 
-def test_validate_composition_structure_rejects_non_object_score_transform_entry():
+def test_validate_composition_document_rejects_non_object_score_transform_entry():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -485,7 +488,7 @@ def test_validate_composition_structure_rejects_non_object_score_transform_entry
         )
 
 
-def test_validate_composition_structure_rejects_score_transform_without_name():
+def test_validate_composition_document_rejects_score_transform_without_name():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -495,7 +498,7 @@ def test_validate_composition_structure_rejects_score_transform_without_name():
         )
 
 
-def test_validate_composition_structure_rejects_score_transform_with_non_string_name():
+def test_validate_composition_document_rejects_score_transform_with_non_string_name():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
@@ -505,7 +508,7 @@ def test_validate_composition_structure_rejects_score_transform_with_non_string_
         )
 
 
-def test_validate_composition_structure_rejects_score_transform_with_non_object_params():
+def test_validate_composition_document_rejects_score_transform_with_non_object_params():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {
