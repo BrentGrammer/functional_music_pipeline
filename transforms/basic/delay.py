@@ -2,7 +2,10 @@ from collections.abc import Mapping
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.tone_utils import make_silence_tone
+from score_model.traversal import flatten_voice_tones
+from score_model.voice import Voice
 from transforms.base import FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 DELAY_PARAMS_SPEC = TransformParamsSpec(
@@ -37,3 +40,27 @@ def delay_phrase_transform(context: PhraseTransformContext, params: Mapping[str,
     ]
     delayed_tones = delay_tones(phrase_tones, seconds=float(seconds))
     return Phrase(motifs=[Motif(name="<transformed>", tones=delayed_tones)])
+
+
+def delay_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    seconds = params["seconds"]
+    if isinstance(seconds, bool) or not isinstance(seconds, (int, float)):
+        raise ValueError("Param 'seconds' must be a float.")
+
+    return Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="<each_voice>",
+                                tones=delay_tones(flatten_voice_tones(voice), seconds=float(seconds)),
+                            )
+                        ]
+                    )
+                ]
+            )
+            for voice in score.voices
+        ]
+    )
