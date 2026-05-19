@@ -1,7 +1,12 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.tone import Tone
 from transforms.base import (
     EnumParam,
     FloatParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -44,3 +49,21 @@ def scale_transform(tones: ToneSequence, dimension: ToneDimension | str, factor:
             result.append(Tone(t.frequency, t.duration, t.sample_rate, new_val))
             
     return result
+
+
+def scale_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params["dimension"]
+    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
+
+    factor = params["factor"]
+    if isinstance(factor, bool) or not isinstance(factor, (int, float)):
+        raise ValueError("Param 'factor' must be a float.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    scaled_tones = scale_transform(phrase_tones, dimension=dimension, factor=float(factor))
+    return Phrase(motifs=[Motif(name="<transformed>", tones=scaled_tones)])

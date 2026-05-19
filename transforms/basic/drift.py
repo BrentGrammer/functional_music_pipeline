@@ -1,7 +1,12 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.tone import Tone
 from transforms.base import (
     EnumParam,
     FloatParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -64,6 +69,24 @@ def drift_transform(
         return _drift_duration(tones, rate)
 
     raise ValueError(f"Unsupported dimension for drift: {resolved_dimension}")
+
+
+def drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params["dimension"]
+    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
+
+    rate = params["rate"]
+    if isinstance(rate, bool) or not isinstance(rate, (int, float)):
+        raise ValueError("Param 'rate' must be a float.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    drifted_tones = drift_transform(phrase_tones, dimension=dimension, rate=float(rate))
+    return Phrase(motifs=[Motif(name="<transformed>", tones=drifted_tones)])
 
 
 def _drift_frequency(tones: ToneSequence, rate: float) -> ToneSequence:

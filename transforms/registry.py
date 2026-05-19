@@ -11,12 +11,12 @@ from transforms.base import (
     ToneDimension,
 )
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_phrase_transform, delay_tones
-from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_transform
+from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_phrase_transform, drift_transform
 from transforms.basic.inversion import INVERT_PARAMS_SPEC, invert_phrase_transform, invert_tones
 from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_phrase_transform, repeat_tones
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform
-from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
+from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_phrase_transform, scale_transform
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_phrase_transform, transpose_tones
 from transforms.complexity.cellular_automata import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
@@ -80,18 +80,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "scale": PhraseTransformDefinition(
         name="scale",
         params_spec=SCALE_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=scale_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params["dimension"]),
-                        factor=cast(float, params["factor"]),
-                    ),
-                )
-            ]
-        ),
+        transform=scale_phrase_transform,
     ),
     "pad_silence": PhraseTransformDefinition(
         name="pad_silence",
@@ -127,18 +116,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "drift": PhraseTransformDefinition(
         name="drift",
         params_spec=DRIFT_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=drift_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params["dimension"]),
-                        rate=cast(float, params["rate"]),
-                    ),
-                )
-            ]
-        ),
+        transform=drift_phrase_transform,
     ),
     "phrase_feigenbaum_shrink": PhraseTransformDefinition(
         name="phrase_feigenbaum_shrink",
