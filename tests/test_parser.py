@@ -231,11 +231,6 @@ class TestRitardandoParserIntegration:
         assert tones[2].frequency == 523
 
 
-def test_validate_and_extract_motifs_rejects_non_dict_phrase_config():
-    with pytest.raises(ValueError):
-        _validate_and_extract_motifs(["not", "a", "dict"])
-
-
 def test_validate_composition_structure_returns_validated_document():
     composition_document: CompositionDocument = {
         "motifs": {"seed": ["440"]},
@@ -331,6 +326,16 @@ def test_validate_composition_structure_rejects_phrase_with_non_list_motifs():
             {
                 "motifs": {"seed": ["440"]},
                 "composition": {"voices": [{"phrases": [{"motifs": "not-a-list"}]}]},
+            }
+        )
+
+
+def test_validate_composition_structure_rejects_phrase_with_empty_motifs_list():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": ["440"]},
+                "composition": {"voices": [{"phrases": [{"motifs": []}]}]},
             }
         )
 

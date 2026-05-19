@@ -65,30 +65,6 @@ def parse_transform_spec(
     return transform_name, transform_params
 
 
-def _validate_and_extract_motifs(phrase_config: object) -> list[str]:
-    """
-    Validates the phrase config structure and extracts the motif names.
-
-    Raises:
-        ValueError: If the structure is invalid or motifs are missing/empty.
-    """
-    if not isinstance(phrase_config, dict):
-        raise ValueError("Each phrase must be an object.")
-
-    if "motifs" not in phrase_config:
-        raise ValueError("Phrase definitions must include 'motifs'.")
-
-    motif_names = phrase_config["motifs"]
-    if not isinstance(motif_names, list) or not motif_names:
-        raise ValueError("Phrase 'motifs' must be a non-empty list.")
-
-    for string_value in motif_names:
-        if not isinstance(string_value, str) or not string_value:
-            raise ValueError("Phrase 'motifs' entries must be non-empty strings.")
-
-    return motif_names
-
-
 def _validate_composition_structure(
     composition_document: object,
 ) -> CompositionDocument:
@@ -136,6 +112,8 @@ def _validate_composition_structure(
             motif_names = phrase_config.get("motifs")
             if not isinstance(motif_names, list):
                 raise ValueError("Phrase 'motifs' must be a list.")
+            if not motif_names:
+                raise ValueError("Phrase 'motifs' must be a non-empty list.")
             for motif_name in motif_names:
                 if not isinstance(motif_name, str):
                     raise ValueError("Phrase 'motifs' entries must be strings.")
@@ -240,7 +218,7 @@ def _create_voice_plans_from_document(
 
         phrase_plans = []
         for phrase_config in phrase_configs:
-            motif_names = _validate_and_extract_motifs(phrase_config)
+            motif_names = phrase_config["motifs"]
             phrase_plan_motifs = []
             for name in motif_names:
                 if name not in plan_motifs:
