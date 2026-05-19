@@ -275,6 +275,36 @@ def test_validate_composition_structure_rejects_voice_with_non_list_phrases():
         )
 
 
+def test_validate_composition_structure_rejects_non_object_phrase_entry():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": ["440"]},
+                "composition": {"voices": [{"phrases": ["not-an-object"]}]},
+            }
+        )
+
+
+def test_validate_composition_structure_rejects_phrase_with_non_list_motifs():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": ["440"]},
+                "composition": {"voices": [{"phrases": [{"motifs": "not-a-list"}]}]},
+            }
+        )
+
+
+def test_validate_composition_structure_rejects_phrase_with_non_list_transforms():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": ["440"]},
+                "composition": {"voices": [{"phrases": [{"motifs": ["seed"], "transforms": {}}]}]},
+            }
+        )
+
+
 def test_validate_composition_structure_rejects_non_object_score_transform_entry():
     with pytest.raises(ValueError):
         _validate_composition_structure(
