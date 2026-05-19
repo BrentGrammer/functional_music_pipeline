@@ -15,7 +15,7 @@ from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_transform
 from transforms.basic.inversion import INVERT_PARAMS_SPEC, invert_tones
 from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_tones
-from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform, reverse_tones
+from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
 from transforms.complexity.cellular_automata import (
