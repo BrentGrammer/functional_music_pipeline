@@ -1,5 +1,9 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.tone_utils import make_silence_tone
-from transforms.base import EnumParam, FloatParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import EnumParam, FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 PAD_SILENCE_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -28,3 +32,21 @@ def pad_silence_tones(tones: ToneSequence, seconds: float, position: str) -> Ton
         return [silent_tone] + tones[:]
 
     return tones[:] + [silent_tone]
+
+
+def pad_silence_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    seconds = params["seconds"]
+    if isinstance(seconds, bool) or not isinstance(seconds, (int, float)):
+        raise ValueError("Param 'seconds' must be a float.")
+
+    position = params["position"]
+    if not isinstance(position, str):
+        raise ValueError("Param 'position' must be a string.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    padded_tones = pad_silence_tones(phrase_tones, seconds=float(seconds), position=position)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=padded_tones)])

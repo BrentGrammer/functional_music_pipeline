@@ -13,7 +13,7 @@ from transforms.base import (
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_phrase_transform, delay_tones
 from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_phrase_transform, drift_transform
 from transforms.basic.inversion import INVERT_PARAMS_SPEC, invert_phrase_transform, invert_tones
-from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
+from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_phrase_transform, pad_silence_tones
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_phrase_transform, repeat_tones
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_phrase_transform, scale_transform
@@ -85,18 +85,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "pad_silence": PhraseTransformDefinition(
         name="pad_silence",
         params_spec=PAD_SILENCE_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=pad_silence_tones(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        seconds=cast(float, params["seconds"]),
-                        position=cast(str, params["position"]),
-                    ),
-                )
-            ]
-        ),
+        transform=pad_silence_phrase_transform,
     ),
     "delay": PhraseTransformDefinition(
         name="delay",
