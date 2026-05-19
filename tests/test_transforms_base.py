@@ -22,7 +22,7 @@ from transforms.base import (
 )
 
 
-def _build_score_with_two_voices() -> Score:
+def _make_test_score_with_two_voices() -> Score:
     first_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
     second_voice = Voice([Phrase([Motif("<test>", [Tone(660.0, duration=0.5)])])])
     return Score([first_voice, second_voice])
@@ -111,7 +111,7 @@ def test_validate_transform_params_rejects_unknown_fields():
 
 
 def test_phrase_transform_context_exposes_current_phrase():
-    score = _build_score_with_two_voices()
+    score = _make_test_score_with_two_voices()
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
     assert context.phrase is score.voices[1].phrases[0]

@@ -22,7 +22,7 @@ from transforms.proportion.golden_ratio import (
 )
 
 
-def _build_score() -> Score:
+def _make_test_score() -> Score:
     return Score(
         voices=[
             Voice(
@@ -41,7 +41,7 @@ def _build_score() -> Score:
 
 
 def test_repeat_phrase_and_score_transform_repeat_observable_output():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     repeated_phrase = repeat_phrase_transform(context, {"count": 2})
@@ -52,7 +52,7 @@ def test_repeat_phrase_and_score_transform_repeat_observable_output():
 
 
 def test_transpose_phrase_and_score_transform_transpose_observable_output():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     transposed_phrase = transpose_phrase_transform(context, {"semitones": 12})
@@ -63,7 +63,7 @@ def test_transpose_phrase_and_score_transform_transpose_observable_output():
 
 
 def test_delay_phrase_and_score_transform_delay_observable_output():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
 
     delayed_phrase = delay_phrase_transform(context, {"seconds": 0.25})
@@ -86,7 +86,7 @@ def test_invert_phrase_and_score_transform_bounds_observable_output():
 
 
 def test_cellular_automata_phrase_and_score_transform_observable_output():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": "duration", "rule": 30, "generations": 2, "max_deviation": 0.3}
 
@@ -98,7 +98,7 @@ def test_cellular_automata_phrase_and_score_transform_observable_output():
 
 
 def test_random_drop_phrase_and_score_transform_observable_output():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"dimension": "amplitude", "max_drop_pct": 20, "drop_frequency_pct": 80}
 
@@ -110,7 +110,7 @@ def test_random_drop_phrase_and_score_transform_observable_output():
 
 
 def test_terraced_drift_phrase_and_score_transform_observable_output():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"dimension": "frequency", "max_step_change_pct": 25}
 
@@ -122,7 +122,7 @@ def test_terraced_drift_phrase_and_score_transform_observable_output():
 
 
 def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
-    score = _build_score()
+    score = _make_test_score()
     first_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     second_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
     cross_voice_context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
@@ -140,7 +140,7 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
 
 
 def test_feigenbaum_phrase_and_score_transform_previous_phrase_paths():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
     seq_phrase = feigenbaum_sequence_phrase_transform(context, {"dimension": "duration"})

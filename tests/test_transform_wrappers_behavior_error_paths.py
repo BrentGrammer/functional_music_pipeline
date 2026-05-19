@@ -17,7 +17,7 @@ from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transfor
 from transforms.proportion.golden_ratio import golden_ratio_score_transform
 
 
-def _build_score() -> Score:
+def _make_test_score() -> Score:
     return Score(
         voices=[
             Voice(
@@ -36,7 +36,7 @@ def _build_score() -> Score:
 
 
 def test_repeat_phrase_transform_rejects_bool_count():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -44,14 +44,14 @@ def test_repeat_phrase_transform_rejects_bool_count():
 
 
 def test_transpose_score_transform_rejects_bool_semitones():
-    score = _build_score()
+    score = _make_test_score()
 
     with pytest.raises(ValueError):
         transpose_score_transform(score, {"semitones": True})
 
 
 def test_delay_score_transform_rejects_bool_seconds():
-    score = _build_score()
+    score = _make_test_score()
 
     with pytest.raises(ValueError):
         delay_score_transform(score, {"seconds": True})
@@ -66,7 +66,7 @@ def test_invert_phrase_transform_rejects_bool_dimension():
 
 
 def test_cellular_automata_transforms_reject_invalid_param_types():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": "duration", "rule": 30, "generations": 2, "max_deviation": 0.3}
 
@@ -78,7 +78,7 @@ def test_cellular_automata_transforms_reject_invalid_param_types():
 
 
 def test_random_drop_transforms_reject_invalid_param_types():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"dimension": "amplitude", "max_drop_pct": 20, "drop_frequency_pct": 80}
 
@@ -90,7 +90,7 @@ def test_random_drop_transforms_reject_invalid_param_types():
 
 
 def test_terraced_drift_transforms_reject_invalid_param_types():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -101,14 +101,14 @@ def test_terraced_drift_transforms_reject_invalid_param_types():
 
 
 def test_golden_ratio_score_transform_rejects_non_dimension_value():
-    score = _build_score()
+    score = _make_test_score()
 
     with pytest.raises(ValueError):
         golden_ratio_score_transform(score, {"dimension": 3})
 
 
 def test_feigenbaum_phrase_transform_rejects_non_dimension_value():
-    score = _build_score()
+    score = _make_test_score()
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
     with pytest.raises(ValueError):
