@@ -11,11 +11,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone_utils import copy_tones
 from score_model.voice import Voice
-from transforms.base import (
-    PhraseTransformContext,
-    PhraseTransformDefinition,
-    ScoreTransformDefinition,
-)
+from transforms.base import PhraseTransformContext
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
 PreparedTransform: TypeAlias = Callable[[Score], Score]
@@ -55,13 +51,7 @@ def prepare_phrase_transform(request: PhraseTransformRequest) -> PreparedTransfo
             phrase_index=request.phrase_index,
         )
 
-        # PHRASE_TRANSFORMS now contains only PhraseTransformDefinition instances.
-        # Call the explicit phrase-transform API which receives a PhraseTransformContext
-        # and returns a new Phrase. Legacy scope-based branching has been removed.
-        if isinstance(descriptor, PhraseTransformDefinition):
-            transformed_phrase = descriptor.transform(context, transform_params)
-        else:
-            raise ValueError(f"Transform '{transform_name}' is not a phrase transform.")
+        transformed_phrase = descriptor.transform(context, transform_params)
 
         new_voices = []
         for v_idx, voice in enumerate(score.voices):
@@ -88,10 +78,6 @@ def prepare_score_transform(request: ScoreTransformRequest) -> PreparedTransform
         raise ValueError(f"Transform '{transform_name}' is only available as a phrase transform.")
     else:
         raise ValueError(f"Unknown score transform '{transform_name}'")
-
-    # Enforce that registry score entries are ScoreTransformDefinition instances.
-    if not isinstance(descriptor, ScoreTransformDefinition):
-        raise ValueError(f"Score transform '{transform_name}' must be a ScoreTransformDefinition.")
 
     descriptor.validate_params(transform_params)
 
