@@ -62,20 +62,24 @@ def invert_tones(tones: ToneSequence, dimension: ToneDimension | str = ToneDimen
 
 
 def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    del params # TODO: come back to this - this is a smell.
+    dimension = params.get("dimension", ToneDimension.FREQUENCY)
+    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     phrase_tones = flatten_phrase_tones(context.phrase)
-    inverted_tones = invert_tones(phrase_tones)
+    inverted_tones = invert_tones(phrase_tones, dimension=dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=inverted_tones)])
 
 
 def invert_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    del params
+    dimension = params.get("dimension", ToneDimension.FREQUENCY)
+    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        inverted_tones = invert_tones(voice_tones)
+        inverted_tones = invert_tones(voice_tones, dimension=dimension)
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=inverted_tones)])]))
 
     return Score(voices=new_voices)
