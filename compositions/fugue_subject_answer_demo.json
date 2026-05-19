@@ -15,7 +15,7 @@
       {
         "phrases": [
           {
-            "comment": "Answer entry: same subject, transposed up a fifth after the subject completes.",
+            "comment": "Answer entry: same subject, transposed up a fifth after the subject completes. Uses delay as the public alias for pad_silence at position start.",
             "motifs": ["subject"],
             "transforms": [
               {

@@ -1,5 +1,5 @@
 {
-  "description": "Demonstrates basic transformations: reverse, transpose, scale, delay, and pad_silence.",
+  "description": "Demonstrates basic transformations: reverse, transpose, scale, delay, and pad_silence. delay is the shorthand alias for pad_silence at the start.",
   "motifs": {
     "melody": [
       "261.63:0.5",
@@ -54,7 +54,7 @@
             ]
           },
           {
-            "comment": "6. Delay: Prepends 1.5 seconds of silence before the melody starts.",
+            "comment": "6. Delay: Prepends 1.5 seconds of silence before the melody starts. This is the shorthand alias for pad_silence at position start.",
             "motifs": ["melody"],
             "transforms": [
               {
@@ -64,7 +64,7 @@
             ]
           },
           {
-            "comment": "7. Pad Silence: Adds 1.0 second of silence after the melody.",
+            "comment": "7. Pad Silence: Adds 1.0 second of silence after the melody. Unlike delay, this also supports padding at the end.",
             "motifs": ["melody"],
             "transforms": [
               {
