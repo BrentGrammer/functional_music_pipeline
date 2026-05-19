@@ -22,9 +22,10 @@ from transforms.complexity.cellular_automata import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
     apply_cellular_automata_transform,
     cellular_automata_phrase_transform,
+    cellular_automata_score_transform,
 )
-from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform, random_drop_phrase_transform
-from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform, weierstrass_phrase_transform
+from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform, random_drop_phrase_transform, random_drop_score_transform
+from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform, weierstrass_phrase_transform, weierstrass_score_transform
 from transforms.counterpoint.fugue import (
     ADD_PEDAL_TONE_PARAMS_SPEC,
     STRETTO_PARAMS_SPEC,
@@ -33,11 +34,12 @@ from transforms.counterpoint.fugue import (
 )
 from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_phrase_transform
 from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect_score_transform_adapter
-from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform, terraced_drift_phrase_transform
+from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform, terraced_drift_phrase_transform, terraced_drift_score_transform
 from transforms.proportion.feigenbaum import (
     FEIGENBAUM_PARAMS_SPEC,
     feigenbaum_sequence,
     feigenbaum_sequence_phrase_transform,
+    feigenbaum_sequence_score_transform,
     phrase_feigenbaum_grow_transform,
     phrase_feigenbaum_shrink_transform,
     score_feigenbaum_sequence,
@@ -46,6 +48,7 @@ from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
     golden_ratio_transform,
     golden_ratio_phrase_transform,
+    golden_ratio_score_transform,
     phrase_golden_ratio_grow_transform,
     phrase_golden_ratio_shrink_transform,
 )
@@ -164,7 +167,7 @@ SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
     "feigenbaum_sequence": ScoreTransformDefinition(
         name="feigenbaum_sequence",
         params_spec=FEIGENBAUM_PARAMS_SPEC,
-        transform=lambda score, params: score_feigenbaum_sequence(score, **params),
+        transform=feigenbaum_sequence_score_transform,
     ),
     "reverse": ScoreTransformDefinition(
         name="reverse",
@@ -174,29 +177,7 @@ SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
     "golden_ratio": ScoreTransformDefinition(
         name="golden_ratio",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform=lambda score, params: Score(
-            voices=[
-                Voice(
-                    phrases=[
-                        Phrase(
-                            motifs=[
-                                Motif(
-                                    name="<each_voice>",
-                                    tones=golden_ratio_transform(
-                                        flatten_voice_tones(voice),
-                                        dimension=cast(
-                                            ToneDimension | str,
-                                            params.get("dimension", ToneDimension.DURATION),
-                                        ),
-                                    ),
-                                )
-                            ]
-                        )
-                    ]
-                )
-                for voice in score.voices
-            ]
-        ),
+        transform=golden_ratio_score_transform,
     ),
     "invert": ScoreTransformDefinition(
         name="invert",
@@ -231,105 +212,22 @@ SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
     "weierstrass": ScoreTransformDefinition(
         name="weierstrass",
         params_spec=WEIERSTRASS_PARAMS_SPEC,
-        transform=lambda score, params: Score(
-            voices=[
-                Voice(
-                    phrases=[
-                        Phrase(
-                            motifs=[
-                                Motif(
-                                    name="<each_voice>",
-                                    tones=apply_weierstrass_transform(
-                                        flatten_voice_tones(voice),
-                                        dimension=cast(ToneDimension | str, params["dimension"]),
-                                        intensity=cast(str, params["intensity"]),
-                                    ),
-                                )
-                            ]
-                        )
-                    ]
-                )
-                for voice in score.voices
-            ]
-        ),
+        transform=weierstrass_score_transform,
     ),
     "terraced_drift": ScoreTransformDefinition(
         name="terraced_drift",
         params_spec=TERRACED_DRIFT_PARAMS_SPEC,
-        transform=lambda score, params: Score(
-            voices=[
-                Voice(
-                    phrases=[
-                        Phrase(
-                            motifs=[
-                                Motif(
-                                    name="<each_voice>",
-                                    tones=apply_terraced_drift_transform(
-                                        flatten_voice_tones(voice),
-                                        dimension=cast(ToneDimension | str, params["dimension"]),
-                                        max_step_change_pct=cast(int, params["max_step_change_pct"]),
-                                    ),
-                                )
-                            ]
-                        )
-                    ]
-                )
-                for voice in score.voices
-            ]
-        ),
+        transform=terraced_drift_score_transform,
     ),
     "cellular_automata": ScoreTransformDefinition(
         name="cellular_automata",
         params_spec=CELLULAR_AUTOMATA_PARAMS_SPEC,
-        transform=lambda score, params: Score(
-            voices=[
-                Voice(
-                    phrases=[
-                        Phrase(
-                            motifs=[
-                                Motif(
-                                    name="<each_voice>",
-                                    tones=apply_cellular_automata_transform(
-                                        flatten_voice_tones(voice),
-                                        dimension=cast(ToneDimension | str, params["dimension"]),
-                                        rule=cast(int, params["rule"]),
-                                        generations=cast(int, params["generations"]),
-                                        max_deviation=cast(float, params["max_deviation"]),
-                                    ),
-                                )
-                            ]
-                        )
-                    ]
-                )
-                for voice in score.voices
-            ]
-        ),
+        transform=cellular_automata_score_transform,
     ),
     "random_drop": ScoreTransformDefinition(
         name="random_drop",
         params_spec=RANDOM_DROP_PARAMS_SPEC,
-        transform=lambda score, params: Score(
-            voices=[
-                Voice(
-                    phrases=[
-                        Phrase(
-                            motifs=[
-                                Motif(
-                                    name="<each_voice>",
-                                    tones=apply_random_drop_transform(
-                                        flatten_voice_tones(voice),
-                                        dimension=cast(ToneDimension | str, params["dimension"]),
-                                        max_drop_pct=cast(int, params["max_drop_pct"]),
-                                        drop_frequency_pct=cast(int, params["drop_frequency_pct"]),
-                                    ),
-                                )
-                            ]
-                        )
-                    ]
-                )
-                for voice in score.voices
-            ]
-        ),
+        transform=random_drop_score_transform,
     ),
     "add_pedal_tone": ScoreTransformDefinition(
         name="add_pedal_tone",

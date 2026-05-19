@@ -193,3 +193,11 @@ def score_feigenbaum_sequence(score: Score, dimension: ToneDimension | str = Ton
         )
 
     return Score(new_voices)
+
+
+def feigenbaum_sequence_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Feigenbaum sequence dimension must be a string or ToneDimension.")
+
+    return score_feigenbaum_sequence(score, dimension=dimension)

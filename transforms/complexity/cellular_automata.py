@@ -2,6 +2,9 @@ from collections.abc import Mapping
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.score import Score
+from score_model.traversal import flatten_voice_tones
+from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
     FloatParam,
@@ -145,5 +148,47 @@ def cellular_automata_phrase_transform(context: PhraseTransformContext, params: 
         rule=rule,
         generations=generations,
         max_deviation=float(max_deviation),
-    )
+    ) 
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
+
+
+def cellular_automata_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Cellular automata dimension must be a string or ToneDimension.")
+
+    rule = params["rule"]
+    if not isinstance(rule, int) or isinstance(rule, bool):
+        raise ValueError("Cellular automata rule must be an integer.")
+
+    generations = params["generations"]
+    if not isinstance(generations, int) or isinstance(generations, bool):
+        raise ValueError("Cellular automata generations must be an integer.")
+
+    max_deviation = params["max_deviation"]
+    if not isinstance(max_deviation, (int, float)) or isinstance(max_deviation, bool):
+        raise ValueError("Cellular automata max_deviation must be a float.")
+
+    return Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="<each_voice>",
+                                tones=apply_cellular_automata_transform(
+                                    flatten_voice_tones(voice),
+                                    dimension=dimension,
+                                    rule=rule,
+                                    generations=generations,
+                                    max_deviation=float(max_deviation),
+                                ),
+                            )
+                        ]
+                    )
+                ]
+            )
+            for voice in score.voices
+        ]
+    )

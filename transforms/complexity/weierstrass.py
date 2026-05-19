@@ -5,6 +5,9 @@ from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.score import Score
+from score_model.traversal import flatten_voice_tones
+from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
     PhraseTransformContext,
@@ -109,3 +112,35 @@ def weierstrass_phrase_transform(context: PhraseTransformContext, params: Mappin
     ]
     transformed_tones = apply_weierstrass_transform(phrase_tones, dimension=dimension, intensity=intensity)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
+
+
+def weierstrass_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    dimension = params["dimension"]
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Weierstrass dimension must be a string or ToneDimension.")
+
+    intensity = params["intensity"]
+    if not isinstance(intensity, str):
+        raise ValueError("Weierstrass intensity must be a string.")
+
+    return Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="<each_voice>",
+                                tones=apply_weierstrass_transform(
+                                    flatten_voice_tones(voice),
+                                    dimension=dimension,
+                                    intensity=intensity,
+                                ),
+                            )
+                        ]
+                    )
+                ]
+            )
+            for voice in score.voices
+        ]
+    )

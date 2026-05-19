@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.score import Score
+from score_model.traversal import flatten_voice_tones
+from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
     PhraseTransformContext,
@@ -99,3 +102,35 @@ def terraced_drift_phrase_transform(context: PhraseTransformContext, params: Map
         max_step_change_pct=max_step_change_pct,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
+
+
+def terraced_drift_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    dimension = params["dimension"]
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Terraced drift dimension must be a string or ToneDimension.")
+
+    max_step_change_pct = params["max_step_change_pct"]
+    if not isinstance(max_step_change_pct, int) or isinstance(max_step_change_pct, bool):
+        raise ValueError("Terraced drift max_step_change_pct must be an integer.")
+
+    return Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="<each_voice>",
+                                tones=apply_terraced_drift_transform(
+                                    flatten_voice_tones(voice),
+                                    dimension=dimension,
+                                    max_step_change_pct=max_step_change_pct,
+                                ),
+                            )
+                        ]
+                    )
+                ]
+            )
+            for voice in score.voices
+        ]
+    )

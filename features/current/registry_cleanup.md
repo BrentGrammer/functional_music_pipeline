@@ -228,3 +228,5 @@ phrase_tones = [
 Should this be extracted? look at the fucntions and see if there are common elements and patterns that shouled be extrascted to helper functions that can be shared.
 
 - del params in one of the transforms is a smell. check on that (left a todo item)
+
+- look at feigenbaum.py - that shape in the adapter is cleaner than other score transforms. Should we adopt that style to the other transforms?

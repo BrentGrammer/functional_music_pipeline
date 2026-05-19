@@ -5,7 +5,9 @@ from collections.abc import Mapping
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.math_constants import GOLDEN_RATIO
+from score_model.score import Score
 from score_model.traversal import flatten_voice_tones
+from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
     PhraseTransformContext,
@@ -147,3 +149,27 @@ def phrase_golden_ratio_grow(
 
     scale_factor = (prev_val * GOLDEN_RATIO) / curr_val
     return scale_transform(tones, dim, scale_factor)
+
+
+def golden_ratio_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Golden ratio dimension must be a string or ToneDimension.")
+
+    return Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="<each_voice>",
+                                tones=golden_ratio_transform(flatten_voice_tones(voice), dimension=dimension),
+                            )
+                        ]
+                    )
+                ]
+            )
+            for voice in score.voices
+        ]
+    )

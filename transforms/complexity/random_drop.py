@@ -5,6 +5,9 @@ from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.score import Score
+from score_model.traversal import flatten_voice_tones
+from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
     IntegerParam,
@@ -105,3 +108,40 @@ def random_drop_phrase_transform(context: PhraseTransformContext, params: Mappin
         drop_frequency_pct=drop_frequency_pct,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
+
+
+def random_drop_score_transform(score: Score, params: Mapping[str, object]) -> Score:
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Random drop dimension must be a string or ToneDimension.")
+
+    max_drop_pct = params["max_drop_pct"]
+    if not isinstance(max_drop_pct, int) or isinstance(max_drop_pct, bool):
+        raise ValueError("Random drop max_drop_pct must be an integer.")
+
+    drop_frequency_pct = params["drop_frequency_pct"]
+    if not isinstance(drop_frequency_pct, int) or isinstance(drop_frequency_pct, bool):
+        raise ValueError("Random drop drop_frequency_pct must be an integer.")
+
+    return Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="<each_voice>",
+                                tones=apply_random_drop_transform(
+                                    flatten_voice_tones(voice),
+                                    dimension=dimension,
+                                    max_drop_pct=max_drop_pct,
+                                    drop_frequency_pct=drop_frequency_pct,
+                                ),
+                            )
+                        ]
+                    )
+                ]
+            )
+            for voice in score.voices
+        ]
+    )
