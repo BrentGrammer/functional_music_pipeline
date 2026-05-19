@@ -104,6 +104,16 @@ def _validate_composition_structure(
     motif_definitions = composition_document.get("motifs", {})
     if not isinstance(motif_definitions, dict):
         raise ValueError("Composition 'motifs' must be an object mapping motif names to tone lists.")
+    for motif_name, tone_strings in motif_definitions.items():
+        if not isinstance(motif_name, str):
+            raise ValueError("Motif names must be strings.")
+        if not isinstance(tone_strings, list):
+            raise ValueError(f"Motif '{motif_name}' must map to a list of tone strings.")
+        for tone_string in tone_strings:
+            if not isinstance(tone_string, str):
+                raise ValueError(f"Motif '{motif_name}' tone entries must be strings.")
+            if not tone_string:
+                raise ValueError(f"Motif '{motif_name}' tone entries must be non-empty strings.")
 
     composition_config = composition_document.get("composition", {})
     if not isinstance(composition_config, dict):

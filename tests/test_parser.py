@@ -255,6 +255,46 @@ def test_validate_composition_structure_rejects_non_object():
         _validate_composition_structure("not-an-object")  # type: ignore[arg-type]
 
 
+def test_validate_composition_structure_rejects_non_string_motif_definition_name():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {1: ["440"]},
+                "composition": {"voices": []},
+            }
+        )
+
+
+def test_validate_composition_structure_rejects_non_list_motif_definition_value():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": "440"},
+                "composition": {"voices": []},
+            }
+        )
+
+
+def test_validate_composition_structure_rejects_non_string_tone_entry():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": [440]},
+                "composition": {"voices": []},
+            }
+        )
+
+
+def test_validate_composition_structure_rejects_empty_tone_string():
+    with pytest.raises(ValueError):
+        _validate_composition_structure(
+            {
+                "motifs": {"seed": [""]},
+                "composition": {"voices": []},
+            }
+        )
+
+
 def test_validate_composition_structure_rejects_non_object_voice_entry():
     with pytest.raises(ValueError):
         _validate_composition_structure(
