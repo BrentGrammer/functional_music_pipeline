@@ -1,11 +1,19 @@
 import pytest
 
 from score_model.math_constants import GOLDEN_RATIO
+from score_model.motif import Motif
+from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.tone import Tone
+from score_model.voice import Voice
+from transforms.base import PhraseTransformContext
 from transforms.proportion.golden_ratio import (
+    golden_ratio_phrase_transform,
     golden_ratio_transform,
     phrase_golden_ratio_grow,
+    phrase_golden_ratio_grow_transform,
     phrase_golden_ratio_shrink,
+    phrase_golden_ratio_shrink_transform,
 )
 
 
@@ -169,3 +177,35 @@ class TestPhraseGoldenRatioGrow:
         actual_total_frequency = sum(tone.frequency for tone in transformed_phrase)
 
         assert actual_total_frequency == pytest.approx(expected_total_frequency)
+
+
+class TestGoldenRatioWrapperErrorPaths:
+    def test_golden_ratio_phrase_transform_rejects_non_dimension_value(self):
+        score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            golden_ratio_phrase_transform(context, {"dimension": 1})
+
+    def test_phrase_golden_ratio_shrink_transform_rejects_non_dimension_value(self):
+        score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            phrase_golden_ratio_shrink_transform(context, {"dimension": []})
+
+    def test_phrase_golden_ratio_grow_transform_rejects_non_dimension_value(self):
+        score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            phrase_golden_ratio_grow_transform(context, {"dimension": object()})
+
+
+class TestGoldenRatioPreviousPhraseFallback:
+    def test_phrase_golden_ratio_grow_transform_without_previous_phrase_raises(self):
+        score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            phrase_golden_ratio_grow_transform(context, {})

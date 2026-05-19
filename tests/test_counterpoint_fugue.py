@@ -242,6 +242,12 @@ class TestAddPedalToneScoreTransform:
         assert flatten_voice_tones(pedal_voice)[0].frequency == pytest.approx(pedal_frequency)
         assert flatten_voice_tones(pedal_voice)[0].duration == pytest.approx(seed_duration)
 
+    def test_add_pedal_tone_score_transform_rejects_non_numeric_frequency(self):
+        score = Score([Voice([Phrase([Motif("seed", [Tone(440.0, duration=1.0)])])])])
+
+        with pytest.raises(TypeError):
+            add_pedal_tone_score_transform(score=score, params={"frequency": "130.81"})
+
 
 class TestStrettoScoreTransform:
     def test_stretto_score_transform_appends_entries(self):
@@ -283,6 +289,30 @@ class TestStrettoScoreTransform:
         assert tones[0].frequency == silence_frequency
         assert tones[0].duration == pytest.approx(spacing)
         assert tones[1].frequency == pytest.approx(subject_frequency)
+
+    def test_stretto_score_transform_rejects_non_string_motif(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
+
+        with pytest.raises(TypeError):
+            stretto_score_transform(score=score, params={"motif": 123, "num_times": 2, "spacing": 0.25})
+
+    def test_stretto_score_transform_rejects_non_integer_num_times(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
+
+        with pytest.raises(TypeError):
+            stretto_score_transform(score=score, params={"motif": "subject", "num_times": 2.3, "spacing": 0.25})
+
+    def test_stretto_score_transform_rejects_invalid_spacing_type(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
+
+        with pytest.raises(TypeError):
+            stretto_score_transform(score=score, params={"motif": "subject", "num_times": 2, "spacing": []})
+
+    def test_stretto_score_transform_rejects_missing_motif_in_score(self):
+        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
+
+        with pytest.raises(ValueError):
+            stretto_score_transform(score=score, params={"motif": "missing", "num_times": 2, "spacing": 0.25})
 
 
 class TestPedalToneRegistration:

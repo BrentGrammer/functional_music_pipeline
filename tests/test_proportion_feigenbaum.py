@@ -10,7 +10,10 @@ from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.proportion.feigenbaum import (
     feigenbaum_sequence,
+    feigenbaum_sequence_phrase_transform,
+    feigenbaum_sequence_score_transform,
     phrase_feigenbaum_grow,
+    phrase_feigenbaum_grow_transform,
     phrase_feigenbaum_shrink,
     phrase_feigenbaum_shrink_transform,
     score_feigenbaum_sequence,
@@ -171,6 +174,13 @@ class TestPhraseFeigenbaumShrink:
             pytest.approx(scaled_total_phrase_duration_based_on_ref_phrase / 2),
         ]
 
+    def test_phrase_feigenbaum_shrink_transform_rejects_invalid_dimension_type(self):
+        score = Score([Voice([Phrase([Motif("only", [Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            phrase_feigenbaum_shrink_transform(context, {"dimension": True})
+
 
 class TestPhraseFeigenbaumGrow:
     def test_relative_scale_on_duration_dimension(self):
@@ -237,6 +247,47 @@ class TestPhraseFeigenbaumGrow:
 
         assert actual_total_frequency == pytest.approx(440.0 * FEIGENBAUM_DELTA)
 
+    def test_phrase_feigenbaum_grow_transform_uses_previous_voice_when_first_phrase(self):
+        score = Score(
+            [
+                Voice([Phrase([Motif("reference", [Tone(440.0, duration=2.0)])])]),
+                Voice([Phrase([Motif("active", [Tone(220.0, duration=1.0), Tone(220.0, duration=1.0)])])]),
+            ]
+        )
+        context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
+
+        result = phrase_feigenbaum_grow_transform(context, {})
+        durations = [tone.duration for tone in result.motifs[0].tones]
+
+        expected_total_duration = 2.0 * FEIGENBAUM_DELTA
+        assert len(durations) == 2
+        assert sum(durations) == pytest.approx(expected_total_duration)
+
+    def test_phrase_feigenbaum_grow_transform_rejects_invalid_dimension_type(self):
+        score = Score([Voice([Phrase([Motif("only", [Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            phrase_feigenbaum_grow_transform(context, {"dimension": []})
+
+
+class TestFeigenbaumSequencePhraseTransform:
+    def test_phrase_transform_scales_duration_with_default_dimension(self):
+        score = Score([Voice([Phrase([Motif("p", [Tone(440.0, duration=FEIGENBAUM_DELTA), Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        result = feigenbaum_sequence_phrase_transform(context, {})
+
+        assert result.motifs[0].tones[0].duration == pytest.approx(FEIGENBAUM_DELTA)
+        assert result.motifs[0].tones[1].duration == pytest.approx(1.0)
+
+    def test_phrase_transform_rejects_invalid_dimension_type(self):
+        score = Score([Voice([Phrase([Motif("p", [Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            feigenbaum_sequence_phrase_transform(context, {"dimension": 5})
+
 
 class TestScoreFeigenbaumSequence:
     def test_score_duration_sequence_scales_each_voice_by_position(self):
@@ -285,3 +336,31 @@ class TestScoreFeigenbaumSequence:
 
         assert first_voice_tones[0].frequency == pytest.approx(440.0)
         assert second_voice_tones[0].frequency == pytest.approx(440.0 / FEIGENBAUM_DELTA)
+
+
+class TestFeigenbaumSequenceScoreTransform:
+    def test_score_transform_uses_default_dimension(self):
+        score = Score(
+            [
+                Voice([Phrase([Motif("v1", [Tone(440.0, duration=1.0)])])]),
+                Voice([Phrase([Motif("v2", [Tone(440.0, duration=1.0)])])]),
+            ]
+        )
+
+        result = feigenbaum_sequence_score_transform(score, {})
+        voice_a = flatten_voice_tones(result.voices[0])
+        voice_b = flatten_voice_tones(result.voices[1])
+
+        assert voice_a[0].duration == pytest.approx(1.0)
+        assert voice_b[0].duration == pytest.approx(1.0 / FEIGENBAUM_DELTA)
+
+    def test_score_transform_rejects_invalid_dimension_type(self):
+        score = Score(
+            [
+                Voice([Phrase([Motif("v1", [Tone(440.0, duration=1.0)])])]),
+                Voice([Phrase([Motif("v2", [Tone(440.0, duration=1.0)])])]),
+            ]
+        )
+
+        with pytest.raises(ValueError):
+            feigenbaum_sequence_score_transform(score, {"dimension": object()})

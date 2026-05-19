@@ -1,8 +1,13 @@
+
 import pytest
 
+from score_model.motif import Motif
+from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.tone import Tone
-from transforms.base import ToneDimension
-from transforms.geological.erosion import erosion_transform
+from score_model.voice import Voice
+from transforms.base import PhraseTransformContext, ToneDimension
+from transforms.geological.erosion import erosion_phrase_transform, erosion_transform
 
 
 class TestErosionDuration:
@@ -201,3 +206,38 @@ class TestErosionFrequency:
         assert result[0].frequency == pytest.approx(FREQ_A)
         assert result[1].frequency == pytest.approx(INTERPOLATED_FREQ)
         assert result[2].frequency == pytest.approx(FREQ_A)
+
+
+def test_erosion_phrase_transform_returns_transformed_phrase():
+    phrase = Phrase([Motif("<test>", [Tone(440.0, 1.0), Tone(880.0, 1.0)])])
+    context = PhraseTransformContext(
+        score=Score([Voice([phrase])]),
+        voice_index=0,
+        phrase_index=0,
+    )
+
+    result = erosion_phrase_transform(context, {"dimension": ToneDimension.DURATION})
+
+    assert len(result.motifs) == 1
+    assert result.motifs[0].name == "<transformed>"
+    assert len(result.motifs[0].tones) == 1
+    assert result.motifs[0].tones[0].frequency == pytest.approx(440.0)
+
+
+def test_erosion_phrase_transform_rejects_non_string_non_dimension_param():
+    phrase = Phrase([Motif("<test>", [Tone(440.0, 1.0)])])
+    context = PhraseTransformContext(
+        score=Score([Voice([phrase])]),
+        voice_index=0,
+        phrase_index=0,
+    )
+
+    with pytest.raises(ValueError, match="must be a string or ToneDimension"):
+        erosion_phrase_transform(context, {"dimension": 123})
+
+
+def test_erosion_transform_rejects_invalid_dimension_value():
+    tones = [Tone(440.0, 1.0), Tone(880.0, 0.5)]
+
+    with pytest.raises(ValueError, match="Invalid dimension"):
+        erosion_transform(tones, dimension="unexpected")

@@ -25,12 +25,6 @@ from transforms.base import (
 )
 
 
-def _make_test_score_with_two_voices() -> Score:
-    first_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
-    second_voice = Voice([Phrase([Motif("<test>", [Tone(660.0, duration=0.5)])])])
-    return Score([first_voice, second_voice])
-
-
 def _scale_duration(
     tones: list[Tone],
     multiplier: float,
@@ -195,7 +189,12 @@ def test_validate_transform_params_combines_union_schema_errors():
 
 
 def test_phrase_transform_context_exposes_current_phrase():
-    score = _make_test_score_with_two_voices()
+    score = Score(
+        [
+            Voice([Phrase([Motif("first-voice", [Tone(440.0, duration=1.0)])])]),
+            Voice([Phrase([Motif("second-voice", [Tone(660.0, duration=0.5)])])]),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
     assert context.phrase is score.voices[1].phrases[0]

@@ -250,7 +250,7 @@ def test_extract_composition_sections_rejects_invalid_shapes():
 
 def test_extract_composition_sections_rejects_non_object():
     with pytest.raises(ValueError):
-        _extract_composition_sections("not-an-object")
+        _extract_composition_sections("not-an-object") # type: ignore[arg-type]
 
 
 def test_extract_requests_from_phrase_rejects_non_dict_phrase():

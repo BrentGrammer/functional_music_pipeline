@@ -20,7 +20,9 @@ from transforms.tempo.accelerando import accelerando_phrase_transform
 from transforms.tempo.ritardando import ritardando_phrase_transform
 
 
-def _make_test_score() -> Score:
+def _make_test_score(*, voices: list[Voice] | None = None) -> Score:
+    if voices is not None:
+        return Score(voices=voices)
     return Score(
         voices=[
             Voice(
@@ -39,7 +41,15 @@ def _make_test_score() -> Score:
 
 
 def test_repeat_phrase_transform_rejects_bool_count():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="repeat-target", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -47,14 +57,30 @@ def test_repeat_phrase_transform_rejects_bool_count():
 
 
 def test_transpose_score_transform_rejects_bool_semitones():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="transpose-target", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            )
+        ]
+    )
 
     with pytest.raises(ValueError):
         transpose_score_transform(score, {"semitones": True})
 
 
 def test_transpose_phrase_transform_rejects_bool_semitones():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="transpose-target", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -62,14 +88,30 @@ def test_transpose_phrase_transform_rejects_bool_semitones():
 
 
 def test_delay_score_transform_rejects_bool_seconds():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="delay-target", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            )
+        ]
+    )
 
     with pytest.raises(ValueError):
         delay_score_transform(score, {"seconds": True})
 
 
 def test_delay_phrase_transform_rejects_bool_seconds():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="delay-target", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -77,7 +119,15 @@ def test_delay_phrase_transform_rejects_bool_seconds():
 
 
 def test_repeat_score_transform_rejects_bool_count():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="repeat-target", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            )
+        ]
+    )
 
     with pytest.raises(ValueError):
         repeat_score_transform(score, {"count": True})
@@ -99,7 +149,27 @@ def test_invert_score_transform_rejects_bool_dimension():
 
 
 def test_cellular_automata_transforms_reject_invalid_param_types():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="automata-target",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": ToneDimension.DURATION, "rule": 30, "generations": 2, "max_deviation": 0.3}
 
@@ -111,7 +181,27 @@ def test_cellular_automata_transforms_reject_invalid_param_types():
 
 
 def test_cellular_automata_transforms_reject_invalid_dimension_type():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="automata-target",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"rule": 30, "generations": 2, "max_deviation": 0.3}
 
@@ -123,7 +213,27 @@ def test_cellular_automata_transforms_reject_invalid_dimension_type():
 
 
 def test_cellular_automata_phrase_transform_rejects_non_integer_generations():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="automata-target",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": ToneDimension.DURATION, "rule": 30, "generations": 2.0, "max_deviation": 0.3}
 
@@ -132,7 +242,27 @@ def test_cellular_automata_phrase_transform_rejects_non_integer_generations():
 
 
 def test_cellular_automata_score_transform_rejects_non_integer_rule():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="automata-target",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     params = {"dimension": ToneDimension.DURATION, "rule": 30.0, "generations": 2, "max_deviation": 0.3}
 
     with pytest.raises(ValueError):
@@ -140,7 +270,27 @@ def test_cellular_automata_score_transform_rejects_non_integer_rule():
 
 
 def test_cellular_automata_transforms_reject_invalid_max_deviation_type():
-    score = _make_test_score()
+    score = Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="automata-target",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": ToneDimension.DURATION, "rule": 30, "generations": 2}
 
@@ -152,7 +302,22 @@ def test_cellular_automata_transforms_reject_invalid_max_deviation_type():
 
 
 def test_random_drop_transforms_reject_invalid_param_types():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="drop-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"dimension": "amplitude", "max_drop_pct": 20, "drop_frequency_pct": 80}
 
@@ -164,7 +329,22 @@ def test_random_drop_transforms_reject_invalid_param_types():
 
 
 def test_random_drop_transforms_reject_invalid_dimension_type():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="drop-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"max_drop_pct": 20, "drop_frequency_pct": 80}
 
@@ -176,7 +356,22 @@ def test_random_drop_transforms_reject_invalid_dimension_type():
 
 
 def test_random_drop_score_transform_rejects_non_integer_max_drop_pct():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="drop-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     params = {"dimension": "amplitude", "max_drop_pct": 20.0, "drop_frequency_pct": 80}
 
     with pytest.raises(ValueError):
@@ -184,7 +379,22 @@ def test_random_drop_score_transform_rejects_non_integer_max_drop_pct():
 
 
 def test_random_drop_phrase_transform_rejects_non_integer_drop_frequency_pct():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="drop-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -195,7 +405,22 @@ def test_random_drop_phrase_transform_rejects_non_integer_drop_frequency_pct():
 
 
 def test_terraced_drift_transforms_reject_invalid_param_types():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="drift-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -212,14 +437,64 @@ def test_terraced_drift_transforms_reject_invalid_param_types():
 
 
 def test_golden_ratio_score_transform_rejects_non_dimension_value():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="first-phrase",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    ),
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="second-phrase",
+                                tones=[Tone(440.0, duration=1.0)],
+                            )
+                        ]
+                    ),
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="cross-voice-phrase",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
 
     with pytest.raises(ValueError):
         golden_ratio_score_transform(score, {"dimension": 3})
 
 
 def test_weierstrass_transforms_reject_invalid_param_types():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="weierstrass-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -236,7 +511,27 @@ def test_weierstrass_transforms_reject_invalid_param_types():
 
 
 def test_feigenbaum_phrase_transform_rejects_non_dimension_value():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="feigenbaum-target",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -244,7 +539,22 @@ def test_feigenbaum_phrase_transform_rejects_non_dimension_value():
 
 
 def test_accelerando_phrase_transform_rejects_invalid_param_types():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="accelerando-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):
@@ -255,7 +565,22 @@ def test_accelerando_phrase_transform_rejects_invalid_param_types():
 
 
 def test_ritardando_phrase_transform_rejects_invalid_param_types():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="ritardando-target",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     with pytest.raises(ValueError):

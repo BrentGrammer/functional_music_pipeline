@@ -1,9 +1,10 @@
 import pytest
 
 from score_model.tone import Tone
-from transforms.complexity.cellular_automata import apply_cellular_automata_transform
+from transforms.base import ToneDimension
+from transforms.complexity.cellular_automata import _derive_initial_state, apply_cellular_automata_transform
 from transforms.complexity.random_drop import apply_random_drop_transform
-from transforms.complexity.weierstrass import apply_weierstrass_transform
+from transforms.complexity.weierstrass import _resolve_intensity, _WeierstrassProfile, apply_weierstrass_transform
 
 
 def _snapshot(tones: list[Tone]) -> list[tuple[float, float, int, float]]:
@@ -41,6 +42,24 @@ def test_weierstrass_with_low_intensity_is_nearly_no_modulation():
 
 def test_weierstrass_returns_empty_for_empty_input():
     assert apply_weierstrass_transform([], dimension="frequency", intensity="medium") == []
+
+
+def test_weierstrass_profile_with_zero_iterations_does_not_modulate_tones():
+    tone_count = 3
+    profile = _WeierstrassProfile(seed=7, amplitude_scaling=0.5, ripples_per_wave=3.0, iterations=0)
+
+    generated_profile = profile.generate(tone_count)
+    no_modulations_per_tone = [0.0 for _ in range(tone_count)]
+
+    assert generated_profile == no_modulations_per_tone
+
+
+def test_weierstrass_resolve_intensity_rejects_non_string_and_unknown_values():
+    with pytest.raises(ValueError, match="must be a string"):
+        _resolve_intensity(1.0)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid intensity"):
+        _resolve_intensity("ultra")
 
 
 def test_cellular_automata_is_deterministic():
@@ -104,11 +123,27 @@ def test_cellular_automata_uniform_input_uses_alternating_fallback():
     assert all(tone.frequency > 0 for tone in result)
 
 
+def test_cellular_automata_rejects_invalid_dimension_in_internal_state_derivation():
+    tones = _build_reference_tones()
+
+    with pytest.raises(ValueError):
+        _derive_initial_state(tones, "invalid") # type: ignore[arg-type]
+
+
+def test_cellular_automata_internal_state_derivation_supports_amplitude_dimension():
+    tones = _build_reference_tones()
+
+    state = _derive_initial_state(tones, ToneDimension.AMPLITUDE)
+
+    assert len(state) == len(tones)
+    assert all(cell in (0, 1) for cell in state)
+
+
 def test_random_drop_is_deterministic():
     tones = _build_reference_tones()
 
-    result_a = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40)
-    result_b = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40)
+    result_a = apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=40)
+    result_b = apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=40)
 
     assert _snapshot(result_a) == _snapshot(result_b)
 
@@ -116,7 +151,7 @@ def test_random_drop_is_deterministic():
 def test_random_drop_only_reduces_target_dimension():
     tones = _build_reference_tones()
 
-    result = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=100)
+    result = apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=100)
 
     for original, transformed in zip(tones, result):
         assert transformed.amplitude <= original.amplitude
@@ -128,8 +163,8 @@ def test_random_drop_higher_frequency_affects_more_tones():
     # A large number of tones makes the probability difference statistically reliable.
     tones = [Tone(frequency=440.0, duration=1.0, amplitude=0.8) for _ in range(100)]
 
-    result_rare = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=10)
-    result_frequent = apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=90)
+    result_rare = apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=10)
+    result_frequent = apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=90)
 
     drops_rare = sum(1 for original, transformed in zip(tones, result_rare) if transformed.amplitude < original.amplitude)
     drops_frequent = sum(1 for original, transformed in zip(tones, result_frequent) if transformed.amplitude < original.amplitude)
@@ -138,24 +173,45 @@ def test_random_drop_higher_frequency_affects_more_tones():
 
 
 def test_random_drop_returns_empty_for_empty_input():
-    assert apply_random_drop_transform([], dimension="amplitude", max_drop_pct=50, drop_frequency_pct=40) == []
+    assert apply_random_drop_transform([], dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=40) == []
 
 
 def test_random_drop_rejects_out_of_range_max_drop_pct():
     tones = _build_reference_tones()
 
     with pytest.raises(ValueError):
-        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=0, drop_frequency_pct=40)
+        apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=0, drop_frequency_pct=40)
     with pytest.raises(ValueError):
-        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=101, drop_frequency_pct=40)
+        apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=101, drop_frequency_pct=40)
 
 
 def test_random_drop_rejects_out_of_range_drop_frequency_pct():
     tones = _build_reference_tones()
 
     with pytest.raises(ValueError):
-        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=0)
+        apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=0)
     with pytest.raises(ValueError):
-        apply_random_drop_transform(tones, dimension="amplitude", max_drop_pct=50, drop_frequency_pct=101)
+        apply_random_drop_transform(tones, dimension=ToneDimension.AMPLITUDE, max_drop_pct=50, drop_frequency_pct=101)
 
 
+def test_random_drop_rejects_non_integer_max_drop_pct():
+    tones = _build_reference_tones()
+
+    with pytest.raises(ValueError):
+        apply_random_drop_transform(
+            tones, dimension=ToneDimension.AMPLITUDE,
+            max_drop_pct=50.0, # type: ignore[arg-type]
+            drop_frequency_pct=40
+        )
+
+
+def test_random_drop_rejects_non_integer_drop_frequency_pct():
+    tones = _build_reference_tones()
+
+    with pytest.raises(ValueError):
+        apply_random_drop_transform(
+            tones,
+            dimension=ToneDimension.AMPLITUDE,
+            max_drop_pct=50,
+            drop_frequency_pct=40.0,  # type: ignore[arg-type]
+        )

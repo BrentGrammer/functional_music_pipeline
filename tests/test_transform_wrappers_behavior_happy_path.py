@@ -23,7 +23,9 @@ from transforms.proportion.golden_ratio import (
 )
 
 
-def _make_test_score() -> Score:
+def _make_test_score(*, voices: list[Voice] | None = None) -> Score:
+    if voices is not None:
+        return Score(voices=voices)
     return Score(
         voices=[
             Voice(
@@ -42,100 +44,334 @@ def _make_test_score() -> Score:
 
 
 def test_repeat_phrase_and_score_transform_repeat_observable_output():
-    score = _make_test_score()
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+    phrase_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
+    phrase_score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="repeat-target",
+                                tones=phrase_tones,
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+    context = PhraseTransformContext(score=phrase_score, voice_index=0, phrase_index=0)
 
-    repeated_phrase = repeat_phrase_transform(context, {"count": 2})
-    assert len(repeated_phrase.motifs[0].tones) == 6
+    phrase_repeat_count = 2
+    repeated_phrase = repeat_phrase_transform(context, {"count": phrase_repeat_count})
+    original_phrase_tone_count_plus_repeats = len(phrase_tones) + (len(phrase_tones) * phrase_repeat_count)
+    assert len(repeated_phrase.motifs[0].tones) == original_phrase_tone_count_plus_repeats
 
-    repeated_score = repeat_score_transform(score, {"count": 1})
-    assert len(repeated_score.voices[0].phrases[0].motifs[0].tones) == 6
+    score_repeat_count = 1
+    score_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="repeat-target",
+                                tones=score_tones,
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+    repeated_score = repeat_score_transform(score, {"count": score_repeat_count})
+
+    original_score_tone_count_plus_repeats = len(score_tones) + (len(score_tones) * score_repeat_count)
+    assert len(repeated_score.voices[0].phrases[0].motifs[0].tones) == original_score_tone_count_plus_repeats
 
 
 def test_transpose_phrase_and_score_transform_transpose_observable_output():
-    score = _make_test_score()
+    phrase_starting_frequency = 220.0
+    phrase_upper_neighbor_frequency = 330.0
+    score_starting_frequency = 550.0
+    score_upper_neighbor_frequency = 660.0
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="phrase-target",
+                                tones=[
+                                    Tone(phrase_starting_frequency, duration=0.5),
+                                    Tone(phrase_upper_neighbor_frequency, duration=0.5),
+                                ],
+                            )
+                        ]
+                    )
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="score-target",
+                                tones=[
+                                    Tone(score_starting_frequency, duration=0.25),
+                                    Tone(score_upper_neighbor_frequency, duration=0.25),
+                                ],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
-    transposed_phrase = transpose_phrase_transform(context, {"semitones": 12})
-    assert transposed_phrase.motifs[0].tones[0].frequency == pytest.approx(440.0)
+    phrase_octave_up = 12
+    transposed_phrase = transpose_phrase_transform(context, {"semitones": phrase_octave_up})
+    expected_phrase_frequency_one_octave_up = phrase_starting_frequency * 2
+    assert transposed_phrase.motifs[0].tones[0].frequency == pytest.approx(expected_phrase_frequency_one_octave_up)
 
-    transposed_score = transpose_score_transform(score, {"semitones": -12.0})
-    assert transposed_score.voices[1].phrases[0].motifs[0].tones[0].frequency == pytest.approx(275.0)
+    score_octave_down = -12.0
+    transposed_score = transpose_score_transform(score, {"semitones": score_octave_down})
+    expected_score_frequency_one_octave_down = score_starting_frequency / 2
+    assert transposed_score.voices[1].phrases[0].motifs[0].tones[0].frequency == pytest.approx(expected_score_frequency_one_octave_down)
 
 
 def test_delay_phrase_and_score_transform_delay_observable_output():
-    score = _make_test_score()
+    score_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
+    phrase_target_tones = [Tone(440.0, duration=1.0)]
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="score-target",
+                                tones=score_target_tones,
+                            )
+                        ]
+                    ),
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="phrase-target",
+                                tones=phrase_target_tones,
+                            )
+                        ]
+                    ),
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
 
-    delayed_phrase = delay_phrase_transform(context, {"seconds": 0.25})
+    phrase_delay_seconds = 0.25
+    delayed_phrase = delay_phrase_transform(context, {"seconds": phrase_delay_seconds})
     assert delayed_phrase.motifs[0].tones[0].frequency == 0
-    assert delayed_phrase.motifs[0].tones[0].duration == pytest.approx(0.25)
+    assert delayed_phrase.motifs[0].tones[0].duration == pytest.approx(phrase_delay_seconds)
 
-    delayed_score = delay_score_transform(score, {"seconds": 0.1})
+    score_delay_seconds = 0.1
+    delayed_score = delay_score_transform(score, {"seconds": score_delay_seconds})
     assert delayed_score.voices[0].phrases[0].motifs[0].tones[0].frequency == 0
 
 
 def test_invert_phrase_and_score_transform_bounds_observable_output():
-    score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="x", tones=[Tone(0.0), Tone(10.0)])])])])
+    starting_frequencies = [0.0, 10.0]
+    score = Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="x", tones=[Tone(starting_frequencies[0]), Tone(starting_frequencies[1])])])
+                ]
+            )
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     inverted_phrase = invert_phrase_transform(context, {"dimension": "frequency"})
     assert inverted_phrase.motifs[0].tones[1].frequency >= 1.0
 
     inverted_score = invert_score_transform(score, {"dimension": ToneDimension.FREQUENCY})
-    assert len(inverted_score.voices[0].phrases[0].motifs[0].tones) == 2
+    assert len(inverted_score.voices[0].phrases[0].motifs[0].tones) == len(starting_frequencies)
 
 
 def test_cellular_automata_phrase_and_score_transform_observable_output():
-    score = _make_test_score()
+    automata_target_tones = [Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)]
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="automata-target",
+                                tones=automata_target_tones,
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": "duration", "rule": 30, "generations": 2, "max_deviation": 0.3}
 
     result_phrase = cellular_automata_phrase_transform(context, params)
-    assert len(result_phrase.motifs[0].tones) == 2
+    assert len(result_phrase.motifs[0].tones) == len(automata_target_tones)
 
     result_score = cellular_automata_score_transform(score, params)
     assert len(result_score.voices) == len(score.voices)
 
 
 def test_random_drop_phrase_and_score_transform_observable_output():
-    score = _make_test_score()
+    drop_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="drop-target",
+                                tones=drop_target_tones,
+                            )
+                        ]
+                    )
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(550.0, duration=0.25)])])
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"dimension": "amplitude", "max_drop_pct": 20, "drop_frequency_pct": 80}
 
     dropped_phrase = random_drop_phrase_transform(context, params)
-    assert len(dropped_phrase.motifs[0].tones) == 2
+    assert len(dropped_phrase.motifs[0].tones) == len(drop_target_tones)
 
     dropped_score = random_drop_score_transform(score, params)
     assert len(dropped_score.voices) == len(score.voices)
 
 
 def test_terraced_drift_phrase_and_score_transform_observable_output():
-    score = _make_test_score()
+    drift_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="drift-target",
+                                tones=drift_target_tones,
+                            )
+                        ]
+                    )
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(550.0, duration=0.25)])])
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"dimension": "frequency", "max_step_change_pct": 25}
 
     drifted_phrase = terraced_drift_phrase_transform(context, params)
-    assert len(drifted_phrase.motifs[0].tones) == 2
+    assert len(drifted_phrase.motifs[0].tones) == len(drift_target_tones)
 
     drifted_score = terraced_drift_score_transform(score, params)
     assert len(drifted_score.voices) == len(score.voices)
 
 
 def test_weierstrass_phrase_and_score_transform_observable_output():
-    score = _make_test_score()
+    weierstrass_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="weierstrass-target",
+                                tones=weierstrass_target_tones,
+                            )
+                        ]
+                    )
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(550.0, duration=0.25)])])
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     params = {"dimension": "frequency", "intensity": "medium"}
 
     transformed_phrase = weierstrass_phrase_transform(context, params)
-    assert len(transformed_phrase.motifs[0].tones) == 2
+    assert len(transformed_phrase.motifs[0].tones) == len(weierstrass_target_tones)
 
     transformed_score = weierstrass_score_transform(score, params)
     assert len(transformed_score.voices) == len(score.voices)
 
 
 def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
-    score = _make_test_score()
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="first-phrase",
+                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                            )
+                        ]
+                    ),
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="second-phrase",
+                                tones=[Tone(440.0, duration=1.0)],
+                            )
+                        ]
+                    ),
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="cross-voice-phrase",
+                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     first_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
     second_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
     cross_voice_context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
@@ -153,11 +389,32 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
 
 
 def test_feigenbaum_phrase_and_score_transform_previous_phrase_paths():
-    score = _make_test_score()
+    feigenbaum_target_tones = [Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)]
+    score = _make_test_score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
+                ]
+            ),
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(
+                                name="feigenbaum-target",
+                                tones=feigenbaum_target_tones,
+                            )
+                        ]
+                    )
+                ]
+            ),
+        ]
+    )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
     seq_phrase = feigenbaum_sequence_phrase_transform(context, {"dimension": "duration"})
-    assert len(seq_phrase.motifs[0].tones) == len(context.phrase.motifs[0].tones)
+    assert len(seq_phrase.motifs[0].tones) == len(feigenbaum_target_tones)
 
     seq_score = feigenbaum_sequence_score_transform(score, {"dimension": "duration"})
     assert len(seq_score.voices) == len(score.voices)

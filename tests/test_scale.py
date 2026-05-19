@@ -124,19 +124,22 @@ class TestScalePhraseTransformErrorPath:
 
 class TestScaleScoreTransformHappyPath:
     def test_score_transform_scales_all_voices(self):
+        first_duration = 1.0
+        second_duration = 2.0
         score = Score(
             voices=[
-                Voice(phrases=[Phrase(motifs=[Motif(name="a", tones=[Tone(440.0, duration=1.0)])])]),
-                Voice(phrases=[Phrase(motifs=[Motif(name="b", tones=[Tone(220.0, duration=2.0)])])]),
+                Voice(phrases=[Phrase(motifs=[Motif(name="a", tones=[Tone(440.0, duration=first_duration)])])]),
+                Voice(phrases=[Phrase(motifs=[Motif(name="b", tones=[Tone(220.0, duration=second_duration)])])]),
             ]
         )
 
-        result = scale_score_transform(score, {"dimension": ToneDimension.DURATION, "factor": 2.0})
+        factor = 2.0
+        result = scale_score_transform(score, {"dimension": ToneDimension.DURATION, "factor": factor})
 
         first = flatten_voice_tones(result.voices[0])
         second = flatten_voice_tones(result.voices[1])
-        assert first[0].duration == pytest.approx(2.0)
-        assert second[0].duration == pytest.approx(4.0)
+        assert first[0].duration == pytest.approx(first_duration * factor)
+        assert second[0].duration == pytest.approx(second_duration * factor)
 
 
 class TestScaleScoreTransformErrorPath:

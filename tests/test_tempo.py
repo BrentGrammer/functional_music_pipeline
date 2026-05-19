@@ -1,6 +1,11 @@
 import pytest
 
+from score_model.motif import Motif
+from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.tone import Tone
+from score_model.voice import Voice
+from transforms.base import PhraseTransformContext
 from transforms.tempo._common import (
     INTENSITY_LEVELS,
     apply_duration_multipliers,
@@ -11,10 +16,12 @@ from transforms.tempo._common import (
 )
 from transforms.tempo.accelerando import (
     _resolve_accelerando_final_duration_multiplier,
+    accelerando_phrase_transform,
     accelerando_transform,
 )
 from transforms.tempo.ritardando import (
     _resolve_ritardando_final_duration_multiplier,
+    ritardando_phrase_transform,
     ritardando_transform,
 )
 
@@ -221,6 +228,16 @@ class TestAccelerandoTransform:
         result = accelerando_transform(tones, strength="high", jaggedness="none")
         assert result[0].duration == 1.0
 
+    def test_phrase_transform_returns_transformed_phrase(self):
+        tones = [Tone(440.0, duration=1.0), Tone(440.0, duration=1.0)]
+        score = Score([Voice([Phrase([Motif("m", tones)])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        result = accelerando_phrase_transform(context, {"strength": "medium", "jaggedness": "none"})
+
+        assert len(result.motifs[0].tones) == len(tones)
+        assert result.motifs[0].tones[1].duration < result.motifs[0].tones[0].duration
+
 
 class TestRitardandoTransform:
     def test_empty_phrase_returns_empty(self):
@@ -266,6 +283,16 @@ class TestRitardandoTransform:
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
         result = ritardando_transform(tones, strength="high", jaggedness="none")
         assert result[0].duration == 1.0
+
+    def test_phrase_transform_returns_transformed_phrase(self):
+        tones = [Tone(440.0, duration=1.0), Tone(440.0, duration=1.0)]
+        score = Score([Voice([Phrase([Motif("m", tones)])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        result = ritardando_phrase_transform(context, {"strength": "medium", "jaggedness": "none"})
+
+        assert len(result.motifs[0].tones) == len(tones)
+        assert result.motifs[0].tones[1].duration > result.motifs[0].tones[0].duration
 
 
 class TestComputeJaggednessWeights:
