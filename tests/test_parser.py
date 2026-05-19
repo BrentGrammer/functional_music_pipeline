@@ -488,8 +488,3 @@ def test_extract_composition_sections_defaults_missing_sections():
     assert motifs_section == {}
     assert voices_section == []
     assert score_transforms_section == []
-
-
-def test_extract_phrase_transform_requests_rejects_non_list_voices_section():
-    with pytest.raises(ValueError):
-        _extract_phrase_transform_requests({})

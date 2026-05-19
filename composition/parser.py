@@ -226,14 +226,12 @@ def _extract_requests_from_voice(voice_config: object, voice_index: int) -> list
 
 
 def _extract_phrase_transform_requests(
-    voices_section: object,
+    voices_section: list[VoiceConfig],
 ) -> list[PhraseTransformRequest]:
     """
     Extracts all phrase transform requests from the voices section,
     preserving their structural location.
     """
-    if not isinstance(voices_section, list):
-        raise ValueError("Composition 'voices' must be a list.")
     return [request for voice_index, voice_config in enumerate(voices_section) for request in _extract_requests_from_voice(voice_config, voice_index)]
 
 
