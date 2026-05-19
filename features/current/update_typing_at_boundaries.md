@@ -68,3 +68,21 @@ The goal is not just to make tests simpler. The goal is to make the parser archi
 - fewer duplicate checks
 - fewer defensive branches against unrealistic pipeline mutation
 - cleaner contracts that match how the application is actually supposed to work
+
+## Final validation plan
+
+- composition
+  - required
+  - empty object forbidden
+- voices
+  - may be missing, normalized to []
+  - empty list allowed
+- phrase motifs
+  - required
+  - empty list forbidden
+- phrase transforms
+  - may be missing, normalized to []
+  - empty list allowed
+- score_transforms
+  - may be missing, normalized to []
+  - empty list allowed
