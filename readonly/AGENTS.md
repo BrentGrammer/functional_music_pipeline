@@ -28,7 +28,7 @@ After using Exa, briefly state what source/version you relied on, then make the 
 
 ### Serena MCP
 
-Use Serena for local codebase understanding, symbol navigation, finding references, and planning refactors if it is available.
+If Serena is installed and available, use Serena for local codebase understanding, symbol navigation, finding references, and planning refactors if it is available.
 Use Serena MCP for local codebase analysis. Do not use Exa or GoogleSearch for codebase analysis related tasks or operations.
 
 First, always activate the project with the `activate_project` tool Serena provides. That is the first thing you should do after reading this file.
