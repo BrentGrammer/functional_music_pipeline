@@ -20,13 +20,11 @@ from score_model.tone_utils import copy_tones
 
 
 def _parse_tone_string(tone_string: str) -> Tone:
-    normalized_tone_string = str(tone_string)
-
-    if ":" in normalized_tone_string:
-        frequency_value, duration_value = normalized_tone_string.split(":", 1)
+    if ":" in tone_string:
+        frequency_value, duration_value = tone_string.split(":", 1)
         return Tone(float(frequency_value), duration=float(duration_value))
 
-    return Tone(float(normalized_tone_string))
+    return Tone(float(tone_string))
 
 
 def parse_motifs(motif_definitions: MotifsConfigInput) -> dict[str, list[Tone]]:
@@ -155,25 +153,25 @@ def _extract_transform_requests_from_phrase(
     voice_index: int,
     phrase_index: int,
 ) -> list[PhraseTransformRequest]:
-    transform_specs = phrase_config["transforms"]
-
-    def build_request(spec: TransformConfig) -> PhraseTransformRequest:
-        return PhraseTransformRequest(
+    return [
+        PhraseTransformRequest(
             voice_index=voice_index,
             phrase_index=phrase_index,
             transform_request=TransformRequest(name=spec["name"], params=spec["params"]),
         )
-
-    return [build_request(spec) for spec in transform_specs]
+        for spec in phrase_config["transforms"]
+    ]
 
 
 def _extract_requests_from_voice(voice_config: VoiceConfig, voice_index: int) -> list[PhraseTransformRequest]:
-    phrase_configs = voice_config["phrases"]
-
     return [
-        request for phrase_index, phrase_config in enumerate(phrase_configs) 
-        for request 
-        in _extract_transform_requests_from_phrase(phrase_config, voice_index, phrase_index)
+        request
+        for phrase_index, phrase_config in enumerate(voice_config["phrases"])
+        for request in _extract_transform_requests_from_phrase(
+            phrase_config,
+            voice_index,
+            phrase_index,
+        )
     ]
 
 
@@ -184,7 +182,11 @@ def _extract_phrase_transform_requests(
     Extracts all phrase transform requests from the voices section,
     preserving their structural location.
     """
-    return [request for voice_index, voice_config in enumerate(voices_section) for request in _extract_requests_from_voice(voice_config, voice_index)]
+    return [
+        request
+        for voice_index, voice_config in enumerate(voices_section)
+        for request in _extract_requests_from_voice(voice_config, voice_index)
+    ]
 
 
 def _create_score_transform_requests(
