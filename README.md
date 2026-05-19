@@ -212,7 +212,9 @@ pytest --cov=. tests
 pytest --cov=. --cov-report=html tests/
 # txt
 pytest --cov=. tests/ > coverage.txt
-# for ai agent to use
+# for ai agent to use (prints in cli)
+pytest --cov=. --cov-report=term-missing -q
+# target a module:
 pytest --cov=<package.module> --cov-report=term-missing -q
 ```
 
