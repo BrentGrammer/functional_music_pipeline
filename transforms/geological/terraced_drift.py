@@ -1,8 +1,12 @@
 import random
+from collections.abc import Mapping
 from dataclasses import dataclass
 
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from transforms.base import (
     EnumParam,
+    PhraseTransformContext,
     IntegerParam,
     ToneDimension,
     ToneSequence,
@@ -73,3 +77,25 @@ def apply_terraced_drift_transform(
         dimension,
         step_size,
     )
+
+
+def terraced_drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params.get("dimension")
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Terraced drift dimension must be a string or ToneDimension.")
+
+    max_step_change_pct = params.get("max_step_change_pct")
+    if not isinstance(max_step_change_pct, int) or isinstance(max_step_change_pct, bool):
+        raise ValueError("Terraced drift max_step_change_pct must be an integer.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    transformed_tones = apply_terraced_drift_transform(
+        phrase_tones,
+        dimension=dimension,
+        max_step_change_pct=max_step_change_pct,
+    )
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])

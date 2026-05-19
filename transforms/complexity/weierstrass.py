@@ -1,9 +1,13 @@
 import math
+from collections.abc import Mapping
 import random
 from dataclasses import dataclass
 
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from transforms.base import (
     EnumParam,
+    PhraseTransformContext,
     ToneDimension,
     ToneSequence,
     TransformParamFieldSpec,
@@ -87,3 +91,21 @@ def apply_weierstrass_transform(
         dimension,
         preset["max_deviation"],
     )
+
+
+def weierstrass_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    dimension = params.get("dimension")
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Weierstrass dimension must be a string or ToneDimension.")
+
+    intensity = params.get("intensity")
+    if not isinstance(intensity, str):
+        raise ValueError("Weierstrass intensity must be a string.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    transformed_tones = apply_weierstrass_transform(phrase_tones, dimension=dimension, intensity=intensity)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])

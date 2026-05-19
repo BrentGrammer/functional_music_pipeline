@@ -23,7 +23,7 @@ from transforms.complexity.cellular_automata import (
     apply_cellular_automata_transform,
 )
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform
-from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform
+from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC, apply_weierstrass_transform, weierstrass_phrase_transform
 from transforms.counterpoint.fugue import (
     ADD_PEDAL_TONE_PARAMS_SPEC,
     STRETTO_PARAMS_SPEC,
@@ -32,7 +32,7 @@ from transforms.counterpoint.fugue import (
 )
 from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_phrase_transform
 from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect
-from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform
+from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, apply_terraced_drift_transform, terraced_drift_phrase_transform
 from transforms.proportion.feigenbaum import (
     FEIGENBAUM_PARAMS_SPEC,
     feigenbaum_sequence,
@@ -140,34 +140,12 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "weierstrass": PhraseTransformDefinition(
         name="weierstrass",
         params_spec=WEIERSTRASS_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=apply_weierstrass_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params["dimension"]),
-                        intensity=cast(str, params["intensity"]),
-                    ),
-                )
-            ]
-        ),
+        transform=weierstrass_phrase_transform,
     ),
     "terraced_drift": PhraseTransformDefinition(
         name="terraced_drift",
         params_spec=TERRACED_DRIFT_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=apply_terraced_drift_transform(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        dimension=cast(ToneDimension | str, params["dimension"]),
-                        max_step_change_pct=cast(int, params["max_step_change_pct"]),
-                    ),
-                )
-            ]
-        ),
+        transform=terraced_drift_phrase_transform,
     ),
     "cellular_automata": PhraseTransformDefinition(
         name="cellular_automata",
