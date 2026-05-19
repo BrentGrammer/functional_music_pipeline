@@ -212,6 +212,8 @@ pytest --cov=. tests
 pytest --cov=. --cov-report=html tests/
 # txt
 pytest --cov=. tests/ > coverage.txt
+# for ai agent to use
+pytest --cov=<package.module> --cov-report=term-missing -q
 ```
 
 #### Cyclomatic Complexity Analysis
@@ -248,6 +250,7 @@ See [Setup for different CLIs](https://github.com/exa-labs/exa-mcp-server)
 #### Serena
 
 - run directly from git without manually installing:
+
   ```json
   // .gemini/settings.json
   "serena": {
@@ -270,5 +273,4 @@ See [Setup for different CLIs](https://github.com/exa-labs/exa-mcp-server)
   ```
 
   ### Docker Sandbox
-
   - remove policies with `sbx policy rm network --id c4164c09-b43e-429e-a528-ceb034d63028` (don't include the local: or prepended string with the id)
