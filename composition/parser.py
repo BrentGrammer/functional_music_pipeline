@@ -237,23 +237,18 @@ def _extract_phrase_transform_requests(
     return [request for voice_index, voice_config in enumerate(voices_section) for request in _extract_requests_from_voice(voice_config, voice_index)]
 
 
-def _create_voice_plans_from_document(voices_section: object, plan_motifs: dict[str, Motif]) -> list[VoicePlan]:
+def _create_voice_plans_from_document(
+    voices_section: list[VoiceConfig],
+    plan_motifs: dict[str, Motif],
+) -> list[VoicePlan]:
     """
     Parses voice and phrase configurations, resolving motif references
     to the corresponding Motif instances defined in the score plan.
     """
     voice_plans = []
 
-    if not isinstance(voices_section, list):
-        raise ValueError("Composition 'voices' must be a list.")
-
     for voice_config in voices_section:
-        if not isinstance(voice_config, dict):
-            raise ValueError("Each voice must be an object.")
-
         phrase_configs = voice_config.get("phrases", [])
-        if not isinstance(phrase_configs, list):
-            raise ValueError("Voice 'phrases' must be a list.")
 
         phrase_plans = []
         for phrase_config in phrase_configs:

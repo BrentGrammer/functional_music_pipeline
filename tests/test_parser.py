@@ -493,11 +493,3 @@ def test_extract_composition_sections_defaults_missing_sections():
 def test_extract_phrase_transform_requests_rejects_non_list_voices_section():
     with pytest.raises(ValueError):
         _extract_phrase_transform_requests({})
-
-
-def test_create_voice_plans_rejects_non_list_voices_section():
-    with pytest.raises(ValueError):
-        _create_voice_plans_from_document(
-            voices_section={},
-            plan_motifs={"seed": Motif(name="seed", tones=[Tone(440.0)])},
-        )
