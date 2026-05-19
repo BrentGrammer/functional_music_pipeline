@@ -37,16 +37,16 @@ from transforms.proportion.feigenbaum import (
     FEIGENBAUM_PARAMS_SPEC,
     feigenbaum_sequence,
     feigenbaum_sequence_phrase_transform,
-    phrase_feigenbaum_grow,
-    phrase_feigenbaum_shrink,
+    phrase_feigenbaum_grow_transform,
+    phrase_feigenbaum_shrink_transform,
     score_feigenbaum_sequence,
 )
 from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
     golden_ratio_transform,
     golden_ratio_phrase_transform,
-    phrase_golden_ratio_grow,
-    phrase_golden_ratio_shrink,
+    phrase_golden_ratio_grow_transform,
+    phrase_golden_ratio_shrink_transform,
 )
 from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_phrase_transform, accelerando_transform
 from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_phrase_transform, ritardando_transform
@@ -110,122 +110,22 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "phrase_feigenbaum_shrink": PhraseTransformDefinition(
         name="phrase_feigenbaum_shrink",
         params_spec=FEIGENBAUM_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=phrase_feigenbaum_shrink(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        [
-                            tone
-                            for phrase in (
-                                context.score.voices[context.voice_index].phrases[: context.phrase_index]
-                                if context.phrase_index > 0
-                                else context.score.voices[context.voice_index - 1].phrases
-                                if context.voice_index > 0
-                                else []
-                            )
-                            for motif in phrase.motifs
-                            for tone in motif.tones
-                        ],
-                        dimension=cast(
-                            ToneDimension | str,
-                            params.get("dimension", ToneDimension.DURATION),
-                        ),
-                    ),
-                )
-            ]
-        ),
+        transform=phrase_feigenbaum_shrink_transform,
     ),
     "phrase_feigenbaum_grow": PhraseTransformDefinition(
         name="phrase_feigenbaum_grow",
         params_spec=FEIGENBAUM_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=phrase_feigenbaum_grow(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        [
-                            tone
-                            for phrase in (
-                                context.score.voices[context.voice_index].phrases[: context.phrase_index]
-                                if context.phrase_index > 0
-                                else context.score.voices[context.voice_index - 1].phrases
-                                if context.voice_index > 0
-                                else []
-                            )
-                            for motif in phrase.motifs
-                            for tone in motif.tones
-                        ],
-                        dimension=cast(
-                            ToneDimension | str,
-                            params.get("dimension", ToneDimension.DURATION),
-                        ),
-                    ),
-                )
-            ]
-        ),
+        transform=phrase_feigenbaum_grow_transform,
     ),
     "phrase_golden_ratio_shrink": PhraseTransformDefinition(
         name="phrase_golden_ratio_shrink",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=phrase_golden_ratio_shrink(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        [
-                            tone
-                            for phrase in (
-                                context.score.voices[context.voice_index].phrases[: context.phrase_index]
-                                if context.phrase_index > 0
-                                else context.score.voices[context.voice_index - 1].phrases
-                                if context.voice_index > 0
-                                else []
-                            )
-                            for motif in phrase.motifs
-                            for tone in motif.tones
-                        ],
-                        dimension=cast(
-                            ToneDimension | str,
-                            params.get("dimension", ToneDimension.DURATION),
-                        ),
-                    ),
-                )
-            ]
-        ),
+        transform=phrase_golden_ratio_shrink_transform,
     ),
     "phrase_golden_ratio_grow": PhraseTransformDefinition(
         name="phrase_golden_ratio_grow",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=phrase_golden_ratio_grow(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        [
-                            tone
-                            for phrase in (
-                                context.score.voices[context.voice_index].phrases[: context.phrase_index]
-                                if context.phrase_index > 0
-                                else context.score.voices[context.voice_index - 1].phrases
-                                if context.voice_index > 0
-                                else []
-                            )
-                            for motif in phrase.motifs
-                            for tone in motif.tones
-                        ],
-                        dimension=cast(
-                            ToneDimension | str,
-                            params.get("dimension", ToneDimension.DURATION),
-                        ),
-                    ),
-                )
-            ]
-        ),
+        transform=phrase_golden_ratio_grow_transform,
     ),
     "accelerando": PhraseTransformDefinition(
         name="accelerando",

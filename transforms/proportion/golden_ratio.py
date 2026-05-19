@@ -1,8 +1,11 @@
 from collections.abc import Mapping
 
+from collections.abc import Mapping
+
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.math_constants import GOLDEN_RATIO
+from score_model.traversal import flatten_voice_tones
 from transforms.base import (
     EnumParam,
     PhraseTransformContext,
@@ -44,6 +47,66 @@ def golden_ratio_phrase_transform(context: PhraseTransformContext, params: Mappi
     ]
     transformed_tones = golden_ratio_transform(phrase_tones, dimension=dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
+
+
+def phrase_golden_ratio_shrink_transform(
+    context: PhraseTransformContext,
+    params: Mapping[str, object],
+) -> Phrase:
+    current_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+
+    if context.phrase_index > 0:
+        previous_tones = [
+            tone
+            for phrase in context.score.voices[context.voice_index].phrases[:context.phrase_index]
+            for motif in phrase.motifs
+            for tone in motif.tones
+        ]
+    elif context.voice_index > 0:
+        previous_tones = flatten_voice_tones(context.score.voices[context.voice_index - 1])
+    else:
+        previous_tones = []
+
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Phrase golden ratio shrink dimension must be a string or ToneDimension.")
+
+    result = phrase_golden_ratio_shrink(current_tones, previous_tones, dimension=dimension)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
+
+
+def phrase_golden_ratio_grow_transform(
+    context: PhraseTransformContext,
+    params: Mapping[str, object],
+) -> Phrase:
+    current_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+
+    if context.phrase_index > 0:
+        previous_tones = [
+            tone
+            for phrase in context.score.voices[context.voice_index].phrases[:context.phrase_index]
+            for motif in phrase.motifs
+            for tone in motif.tones
+        ]
+    elif context.voice_index > 0:
+        previous_tones = flatten_voice_tones(context.score.voices[context.voice_index - 1])
+    else:
+        previous_tones = []
+
+    dimension = params.get("dimension", ToneDimension.DURATION)
+    if not isinstance(dimension, (str, ToneDimension)):
+        raise ValueError("Phrase golden ratio grow dimension must be a string or ToneDimension.")
+
+    result = phrase_golden_ratio_grow(current_tones, previous_tones, dimension=dimension)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
 
 
 def phrase_golden_ratio_shrink(
