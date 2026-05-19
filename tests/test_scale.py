@@ -1,8 +1,13 @@
 import pytest
 
+from score_model.motif import Motif
+from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.tone import Tone
-from transforms.base import ToneDimension
-from transforms.basic.scale import scale_transform
+from score_model.traversal import flatten_voice_tones
+from score_model.voice import Voice
+from transforms.base import PhraseTransformContext, ToneDimension
+from transforms.basic.scale import scale_phrase_transform, scale_score_transform, scale_transform
 
 
 class TestScaleTransform:
@@ -72,3 +77,73 @@ class TestScaleTransform:
         assert result[0].duration == pytest.approx(original_duration)
         assert result[0].sample_rate == original_sample_rate
         assert result[0].amplitude == pytest.approx(original_amplitude)
+
+
+class TestScalePhraseTransformHappyPath:
+    def test_phrase_transform_scales_duration(self):
+        first_duration = 1.0
+        second_duration = 2.0
+        score = Score(
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(name="m", tones=[Tone(440.0, duration=first_duration), Tone(440.0, duration=second_duration)])
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+        
+        factor = 0.5
+        result = scale_phrase_transform(context, {"dimension": ToneDimension.DURATION, "factor": factor})
+
+        tones = result.motifs[0].tones
+        assert tones[0].duration == pytest.approx(first_duration * factor)
+        assert tones[1].duration == pytest.approx(second_duration * factor)
+
+
+class TestScalePhraseTransformErrorPath:
+    def test_phrase_transform_rejects_invalid_dimension_type(self):
+        score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            scale_phrase_transform(context, {"dimension": True, "factor": 2.0})
+
+    def test_phrase_transform_rejects_invalid_factor_type(self):
+        score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            scale_phrase_transform(context, {"dimension": "DURATION", "factor": True})
+
+
+class TestScaleScoreTransformHappyPath:
+    def test_score_transform_scales_all_voices(self):
+        score = Score(
+            voices=[
+                Voice(phrases=[Phrase(motifs=[Motif(name="a", tones=[Tone(440.0, duration=1.0)])])]),
+                Voice(phrases=[Phrase(motifs=[Motif(name="b", tones=[Tone(220.0, duration=2.0)])])]),
+            ]
+        )
+
+        result = scale_score_transform(score, {"dimension": ToneDimension.DURATION, "factor": 2.0})
+
+        first = flatten_voice_tones(result.voices[0])
+        second = flatten_voice_tones(result.voices[1])
+        assert first[0].duration == pytest.approx(2.0)
+        assert second[0].duration == pytest.approx(4.0)
+
+
+class TestScaleScoreTransformErrorPath:
+    def test_score_transform_rejects_invalid_dimension_type(self):
+        with pytest.raises(ValueError):
+            scale_score_transform(Score(voices=[]), {"dimension": None, "factor": 2.0})
+
+    def test_score_transform_rejects_invalid_factor_type(self):
+        with pytest.raises(ValueError):
+            scale_score_transform(Score(voices=[]), {"dimension": "DURATION", "factor": True})

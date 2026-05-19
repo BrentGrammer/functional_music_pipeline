@@ -71,8 +71,6 @@ def drift_transform(
     if resolved_dimension == ToneDimension.DURATION:
         return _drift_duration(tones, rate)
 
-    raise ValueError(f"Unsupported dimension for drift: {resolved_dimension}")
-
 
 def drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
     dimension = params["dimension"]

@@ -3,10 +3,14 @@ import pytest
 from composition.parser import generate_score_plan
 from composition.schema import CompositionDocument
 from composition.transformer import transform_score
+from score_model.motif import Motif
+from score_model.phrase import Phrase
+from score_model.score import Score
 from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
-from transforms.base import ScoreTransformDefinition, ToneDimension
-from transforms.basic.drift import drift_transform
+from score_model.voice import Voice
+from transforms.base import PhraseTransformContext, ScoreTransformDefinition, ToneDimension
+from transforms.basic.drift import drift_phrase_transform, drift_score_transform, drift_transform
 from transforms.registry import SCORE_TRANSFORMS
 
 
@@ -84,7 +88,7 @@ class TestDriftFrequency:
         EXPECTED_FREQ = FREQ_A + (FREQ_A * RATE)
 
         tones = [Tone(FREQ_A, 1.0)]
-        result = drift_transform(tones, dimension="FREQUENCY", rate=RATE)
+        result = drift_transform(tones, dimension=ToneDimension.FREQUENCY, rate=RATE)
 
         assert result[0].frequency == pytest.approx(EXPECTED_FREQ)
 
@@ -259,7 +263,7 @@ class TestScoreDriftApplication:
                     {"phrases": [{"motifs": ["low"]}]},
                 ],
                 "score_transforms": [
-                    {"name": "drift", "params": {"dimension": "FREQUENCY", "rate": RATE}},
+                    {"name": "drift", "params": {"dimension": ToneDimension.FREQUENCY, "rate": RATE}},
                 ],
             },
         }
@@ -275,3 +279,113 @@ class TestScoreDriftApplication:
         expected_low_step = FREQ_B * RATE
         assert flatten_voice_tones(score.voices[1])[0].frequency == pytest.approx(FREQ_B + expected_low_step)
         assert flatten_voice_tones(score.voices[1])[1].frequency == pytest.approx(FREQ_B + (2 * expected_low_step))
+
+
+class TestDriftPhraseTransformHappyPath:
+    def test_phrase_transform_applies_drift(self):
+        original_frequencies = [440.0, 440.0]
+        source_score = Score(
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[
+                                Motif(name="m", tones=[Tone(frequency, 0.5) for frequency in original_frequencies]),
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+        context = PhraseTransformContext(score=source_score, voice_index=0, phrase_index=0)
+
+        rate = 0.1
+        transformed = drift_phrase_transform(context, {"dimension": ToneDimension.FREQUENCY, "rate": rate})
+
+        transformed_tones = transformed.motifs[0].tones
+        base_frequency = original_frequencies[0]
+
+        drifted_frequencies = [
+            frequency + (base_frequency * rate * (index + 1))
+            for index, frequency in enumerate(original_frequencies)
+        ]
+
+        assert transformed_tones[0].frequency == pytest.approx(drifted_frequencies[0])
+        assert transformed_tones[1].frequency == pytest.approx(drifted_frequencies[1])
+
+
+class TestDriftPhraseTransformErrorPath:
+    def test_phrase_transform_rejects_invalid_dimension_type(self):
+        source_score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, 0.5)])])])])
+        context = PhraseTransformContext(score=source_score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            drift_phrase_transform(context, {"dimension": True, "rate": 0.1})
+
+    def test_phrase_transform_rejects_invalid_rate_type(self):
+        source_score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, 0.5)])])])])
+        context = PhraseTransformContext(score=source_score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            drift_phrase_transform(context, {"dimension": ToneDimension.FREQUENCY, "rate": True})
+
+
+class TestDriftScoreTransformHappyPath:
+    def test_score_transform_applies_drift_to_each_voice(self):
+        original_high_frequencies = [440.0, 440.0]
+        original_low_frequencies = [220.0, 220.0]
+        score = Score(
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[Motif(name="high", tones=[Tone(frequency, 0.5) for frequency in original_high_frequencies])]
+                        )
+                    ]
+                ),
+                Voice(
+                    phrases=[
+                        Phrase(
+                            motifs=[Motif(name="low", tones=[Tone(frequency, 0.5) for frequency in original_low_frequencies])]
+                        )
+                    ]
+                ),
+            ]
+        )
+
+        rate = 0.1
+        transformed = drift_score_transform(score, {"dimension": ToneDimension.FREQUENCY, "rate": rate})
+
+        high = flatten_voice_tones(transformed.voices[0])
+        low = flatten_voice_tones(transformed.voices[1])
+
+        high_base_frequency = original_high_frequencies[0]
+        low_base_frequency = original_low_frequencies[0]
+
+        drifted_high_frequencies = [
+            frequency + (high_base_frequency * rate * (index + 1))
+            for index, frequency in enumerate(original_high_frequencies)
+        ]
+        drifted_low_frequencies = [
+            frequency + (low_base_frequency * rate * (index + 1))
+            for index, frequency in enumerate(original_low_frequencies)
+        ]
+
+        assert high[0].frequency == pytest.approx(drifted_high_frequencies[0])
+        assert high[1].frequency == pytest.approx(drifted_high_frequencies[1])
+        assert low[0].frequency == pytest.approx(drifted_low_frequencies[0])
+        assert low[1].frequency == pytest.approx(drifted_low_frequencies[1])
+
+
+class TestDriftScoreTransformErrorPath:
+    def test_score_transform_rejects_invalid_dimension_type(self):
+        score = Score(voices=[])
+
+        with pytest.raises(ValueError):
+            drift_score_transform(score, {"dimension": None, "rate": 0.1})
+
+    def test_score_transform_rejects_invalid_rate_type(self):
+        score = Score(voices=[])
+
+        with pytest.raises(ValueError):
+            drift_score_transform(score, {"dimension": ToneDimension.FREQUENCY, "rate": True})
