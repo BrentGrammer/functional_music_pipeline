@@ -10,9 +10,6 @@ from composition.score_plan import (
 from score_model.motif import Motif
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
-from transforms.base import (
-    TransformLevel,
-)
 
 
 def _parse_tone_string(tone_string: str) -> Tone:
@@ -45,25 +42,6 @@ def parse_motifs(motif_definitions: object) -> dict[str, list[Tone]]:
         parsed_motifs[parsed_motif_name] = motif_tones
 
     return parsed_motifs
-
-
-def parse_transform_spec(
-    transform_spec: object,
-    transform_scope: str,
-) -> tuple[str, dict[str, object]]:
-    if not isinstance(transform_spec, dict):
-        raise ValueError(f"{transform_scope} transforms must be objects with a 'name' field.")
-
-    transform_name = transform_spec.get("name")
-    if not isinstance(transform_name, str) or not transform_name:
-        raise ValueError(f"{transform_scope} transform objects must include a non-empty 'name' string.")
-
-    transform_params = transform_spec.get("params", {})
-    if not isinstance(transform_params, dict):
-        raise ValueError(f"{transform_scope} transform params must be an object with named fields.")
-
-    return transform_name, transform_params
-
 
 def _validate_composition_structure(
     composition_document: object,
@@ -132,12 +110,13 @@ def _validate_composition_structure(
                     raise ValueError("Phrase 'transforms' entries must be objects.")
 
                 transform_name = transform_config.get("name")
-                if not isinstance(transform_name, str):
-                    raise ValueError("Transform 'name' must be a string.")
+                if not isinstance(transform_name, str) or not transform_name:
+                    raise ValueError("Transform 'name' must be a non-empty string.")
 
                 transform_params = transform_config.get("params", {})
                 if not isinstance(transform_params, dict):
                     raise ValueError("Transform 'params' must be an object.")
+                transform_config["params"] = transform_params
 
     score_transform_specs = composition_config.get("score_transforms", [])
     if not isinstance(score_transform_specs, list):
@@ -148,12 +127,13 @@ def _validate_composition_structure(
             raise ValueError("Composition 'score_transforms' entries must be objects.")
 
         transform_name = score_transform_spec.get("name")
-        if not isinstance(transform_name, str):
-            raise ValueError("Transform 'name' must be a string.")
+        if not isinstance(transform_name, str) or not transform_name:
+            raise ValueError("Transform 'name' must be a non-empty string.")
 
         transform_params = score_transform_spec.get("params", {})
         if not isinstance(transform_params, dict):
             raise ValueError("Transform 'params' must be an object.")
+        score_transform_spec["params"] = transform_params
 
     return composition_document
 
@@ -181,12 +161,11 @@ def _extract_requests_from_phrase(
 ) -> list[PhraseTransformRequest]:
     transform_specs = phrase_config["transforms"]
 
-    def build_request(spec: object) -> PhraseTransformRequest:
-        name, params = parse_transform_spec(spec, TransformLevel.PHRASE)
+    def build_request(spec: TransformConfig) -> PhraseTransformRequest:
         return PhraseTransformRequest(
             voice_index=voice_index,
             phrase_index=phrase_index,
-            transform_request=TransformRequest(name=name, params=params),
+            transform_request=TransformRequest(name=spec["name"], params=spec["params"]),
         )
 
     return [build_request(spec) for spec in transform_specs]
@@ -248,8 +227,11 @@ def generate_score_plan(document: object) -> ScorePlan:
 
     score_transform_requests = []
     for spec in score_transforms_section:
-        name, params = parse_transform_spec(spec, TransformLevel.SCORE)
-        score_transform_requests.append(ScoreTransformRequest(transform_request=TransformRequest(name=name, params=params)))
+        score_transform_requests.append(
+            ScoreTransformRequest(
+                transform_request=TransformRequest(name=spec["name"], params=spec["params"])
+            )
+        )
 
     return ScorePlan(
         motifs=plan_motifs,

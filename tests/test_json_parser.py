@@ -3,7 +3,6 @@ import pytest
 from composition.parser import (
     generate_score_plan,
     parse_motifs,
-    parse_transform_spec,
 )
 from composition.schema import PhraseConfig
 from composition.transformer import transform_score
@@ -927,13 +926,6 @@ def test_parse_phrase_transform_must_be_string_or_object():
 
     with pytest.raises(ValueError):
         render_phrase_from_config(phrase_dict, parsed_motifs)
-
-def test_parse_transform_spec_rejects_scalar_params():
-    transform_spec = {"name": "transpose", "params": 1.0}
-
-    with pytest.raises(ValueError):
-        parse_transform_spec(transform_spec, "Phrase")
-
 
 def test_parse_phrase_unknown_transform():
     parsed_motifs = {"seed_a": [Tone(440)]}
