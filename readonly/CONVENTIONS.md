@@ -94,14 +94,11 @@ def test_mix_with_normalization(self):
 ##### Special Note on Helper Functions:
 
 - DO NOT CREATE HELPER FUNCTIONS that do one tiny thing or are one liners. Unless the one line is complicated and hard to understand, these helpers do not add real value and just create indirection and noise.
-- Example of bad helper functions (these do one simple thing which is obvious and easy to understand if inlined and offer no value by wrapping the operation):
+- Example of bad helper function (it does one simple thing which is obvious and easy to understand if inlined and offers no value by wrapping the operation):
 
 ```python
 def _phrase(name: str, *tones: Tone) -> Phrase:
     return Phrase(motifs=[Motif(name=name, tones=list(tones))])
-
-def _score(*voices: list[Phrase]) -> Score:
-    return Score(voices=[Voice(phrases=list(phrases)) for phrases in voices])
 ```
 
 ## 7. Architecture and Design Principles
