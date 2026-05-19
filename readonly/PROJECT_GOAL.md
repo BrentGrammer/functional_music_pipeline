@@ -44,62 +44,10 @@ The music produced by this program should be the emergent property of the algori
 
 ## Design/Architecture
 
-here’s a refined architectural plan that prioritizes a functional pipeline for transforms.
+- The main idea is to create a functional programming style pipeline to send musical ideas to.
+- The main components are meant to be composable. From top to bottom the heirarchy is: Composition > Voices > Phrases > Motifs
+- Motifs are basic building blocks and used to build Phrases. 
+- Phrases are used to build Voices. A composition can have one or more Voices.
+- Phrases are monophonic lines while Voices can be polyphonic and played at the same time.
 
-src/  
-├── main.py # CLI entry point & pipeline orchestration  
-├── core/  
-│ └── tone.py # Tone class (sample_rate internal)  
-├── transforms/  
-│ ├── **init**.py  
-│ ├── base.py # Type hints / callable interface  
-│ ├── duration.py # scale_tone_duration, golden_ratio  
-│ ├── reversal.py # reverse_tones  
-│ └── ... # Future: pitch.py, inversion.py, etc.  
-├── audio_io/  
-│ └── wav_writer.py # save_score_to_wav  
-└── tests/  
- └── test_tone.py
 
-🔁 Functional Pipeline Pattern
-
-Transforms will follow a consistent callable signature:
-
-# transforms/base.py
-
-```python
-from typing import Protocol, List
-from core.tone import Tone
-
-class Transform(Protocol):
- def **call**(self, tones: List[Tone]) -> List[Tone]: ...
-```
-
-Each transform is a pure function that takes a list of tones and returns a modified list:
-
-# transforms/duration.py
-
-def scale_tone_duration(tones: List[Tone], factor: float) -> List[Tone]:  
- return [Tone(t.frequency, t.duration * factor, t.sample_rate) for t in tones]
-
-The pipeline simply chains them:
-
-# main.py
-
-```python
-def run_pipeline(tone_list, transforms: list[Transform]):
- for transform in transforms:
- tone_list = transform(tone_list)
- return tone_list
-```
-
-🎛 CLI Integration
-
-Users describe compositions in a JSON document and invoke the program with:
-
-```shell
-    python main.py --composition-file <path-to-composition.json>
-```
-
-The CLI parser will map --transform flags to imported transform functions, building the list in order before passing it to  
-run_pipeline.

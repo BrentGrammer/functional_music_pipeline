@@ -1,7 +1,10 @@
 # System Instructions
 
 - Do not be verbose. Communicate the most important information in as concise a manner as possible.
+- Read [PROJECT_GOAL.md](./readonly/PROJECT_GOAL.md) for an overview of the purpose and vision of the project.
+- Read [CONVENTIONS.md](./readonly/CONVENTIONS.md) for coding conventions to follow.
 - If this is a python project, then read [PYTHON_INSTRUCTIONS.md](./PYTHON_INSTRUCTIONS.md)
+
 
 ## Restricted Files
 
