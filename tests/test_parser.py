@@ -453,26 +453,6 @@ def test_extract_composition_sections_returns_expected_sections():
     assert score_transforms_section == [{"name": "reverse"}]
 
 
-def test_extract_requests_from_phrase_rejects_non_dict_phrase():
-    with pytest.raises(ValueError):
-        _extract_requests_from_phrase([], voice_index=0, phrase_index=0)
-
-
-def test_extract_requests_from_phrase_rejects_non_list_transforms_field():
-    with pytest.raises(ValueError):
-        _extract_requests_from_phrase({"motifs": ["seed"], "transforms": {}}, voice_index=0, phrase_index=0)
-
-
-def test_extract_requests_from_voice_rejects_non_dict_voice():
-    with pytest.raises(ValueError):
-        _extract_requests_from_voice([], voice_index=0)
-
-
-def test_extract_requests_from_voice_rejects_non_list_phrases_field():
-    with pytest.raises(ValueError):
-        _extract_requests_from_voice({"phrases": {}}, voice_index=0)
-
-
 def test_create_voice_plans_rejects_unknown_motif_name():
     with pytest.raises(ValueError):
         _create_voice_plans_from_document(

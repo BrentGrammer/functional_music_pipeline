@@ -1,4 +1,4 @@
-from composition.schema import CompositionDocument, TransformConfig, VoiceConfig
+from composition.schema import CompositionDocument, PhraseConfig, TransformConfig, VoiceConfig
 from composition.score_plan import (
     PhrasePlan,
     PhraseTransformRequest,
@@ -192,16 +192,11 @@ def _extract_composition_sections(
 
 
 def _extract_requests_from_phrase(
-    phrase_config: object,
+    phrase_config: PhraseConfig,
     voice_index: int,
     phrase_index: int,
 ) -> list[PhraseTransformRequest]:
-    if not isinstance(phrase_config, dict):
-        raise ValueError("Each phrase must be an object.")
-
     transform_specs = phrase_config.get("transforms", [])
-    if not isinstance(transform_specs, list):
-        raise ValueError("Phrase 'transforms' must be a list.")
 
     def build_request(spec: object) -> PhraseTransformRequest:
         name, params = parse_transform_spec(spec, TransformLevel.PHRASE)
@@ -214,13 +209,8 @@ def _extract_requests_from_phrase(
     return [build_request(spec) for spec in transform_specs]
 
 
-def _extract_requests_from_voice(voice_config: object, voice_index: int) -> list[PhraseTransformRequest]:
-    if not isinstance(voice_config, dict):
-        raise ValueError("Each voice must be an object.")
-
+def _extract_requests_from_voice(voice_config: VoiceConfig, voice_index: int) -> list[PhraseTransformRequest]:
     phrase_configs = voice_config.get("phrases", [])
-    if not isinstance(phrase_configs, list):
-        raise ValueError("Voice 'phrases' must be a list.")
 
     return [request for phrase_index, phrase_config in enumerate(phrase_configs) for request in _extract_requests_from_phrase(phrase_config, voice_index, phrase_index)]
 
