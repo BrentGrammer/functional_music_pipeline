@@ -1,3 +1,6 @@
+from typing import cast
+
+from composition.schema import CompositionDocument
 from composition.score_plan import (
     PhrasePlan,
     PhraseTransformRequest,
@@ -119,7 +122,7 @@ def _validate_composition_structure(
 
 def _extract_composition_sections(
     composition_document: object,
-) -> tuple[dict[object, object], list[object], list[object]]:
+) -> tuple[dict[str, list[str]], list[object], list[object]]:
     """
     Extracts key sections from the composition document.
     Assumes the structure has already been validated.
@@ -148,7 +151,11 @@ def _extract_composition_sections(
     return motifs_section, voices_section, score_transforms_section
 
 
-def _extract_requests_from_phrase(phrase_config: object, voice_index: int, phrase_index: int) -> list[PhraseTransformRequest]:
+def _extract_requests_from_phrase(
+    phrase_config: object,
+    voice_index: int,
+    phrase_index: int,
+) -> list[PhraseTransformRequest]:
     if not isinstance(phrase_config, dict):
         raise ValueError("Each phrase must be an object.")
 
@@ -179,21 +186,26 @@ def _extract_requests_from_voice(voice_config: object, voice_index: int) -> list
 
 
 def _extract_phrase_transform_requests(
-    voices_section: list[object],
+    voices_section: object,
 ) -> list[PhraseTransformRequest]:
     """
     Extracts all phrase transform requests from the voices section,
     preserving their structural location.
     """
+    if not isinstance(voices_section, list):
+        raise ValueError("Composition 'voices' must be a list.")
     return [request for voice_index, voice_config in enumerate(voices_section) for request in _extract_requests_from_voice(voice_config, voice_index)]
 
 
-def _create_voice_plans_from_document(voices_section: list[object], plan_motifs: dict[str, Motif]) -> list[VoicePlan]:
+def _create_voice_plans_from_document(voices_section: object, plan_motifs: dict[str, Motif]) -> list[VoicePlan]:
     """
     Parses voice and phrase configurations, resolving motif references
     to the corresponding Motif instances defined in the score plan.
     """
     voice_plans = []
+
+    if not isinstance(voices_section, list):
+        raise ValueError("Composition 'voices' must be a list.")
 
     for voice_config in voices_section:
         if not isinstance(voice_config, dict):
@@ -220,7 +232,12 @@ def _create_voice_plans_from_document(voices_section: list[object], plan_motifs:
 
 def generate_score_plan(composition_document: object) -> ScorePlan:
     _validate_composition_structure(composition_document)
-    motifs_section, voices_section, score_transforms_section = _extract_composition_sections(composition_document)
+
+    if not isinstance(composition_document, dict):
+        raise ValueError("Composition document must be an object.")
+
+    typed_document = cast(CompositionDocument, composition_document)
+    motifs_section, voices_section, score_transforms_section = _extract_composition_sections(typed_document)
 
     motifs = parse_motifs(motifs_section)
     plan_motifs = {name: Motif(name=name, tones=copy_tones(tones)) for name, tones in motifs.items()}

@@ -1,6 +1,17 @@
-from composition.parser import generate_score_plan
+import pytest
+
+from composition.parser import (
+    _create_voice_plans_from_document,
+    _extract_composition_sections,
+    _extract_requests_from_phrase,
+    _extract_requests_from_voice,
+    _validate_and_extract_motifs,
+    generate_score_plan,
+)
 from composition.schema import CompositionDocument
 from composition.transformer import transform_score
+from score_model.motif import Motif
+from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 
 
@@ -216,18 +227,6 @@ class TestRitardandoParserIntegration:
         assert tones[0].frequency == 440
         assert tones[1].frequency == 494
         assert tones[2].frequency == 523
-
-import pytest
-
-from composition.parser import (
-    _create_voice_plans_from_document,
-    _extract_composition_sections,
-    _extract_requests_from_phrase,
-    _extract_requests_from_voice,
-    _validate_and_extract_motifs,
-)
-from score_model.motif import Motif
-from score_model.tone import Tone
 
 
 def test_validate_and_extract_motifs_rejects_non_dict_phrase_config():

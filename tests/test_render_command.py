@@ -8,7 +8,7 @@ from cli.render_command import OUTPUT_DIRECTORY, print_usage_and_exit, render_co
 COMPOSITION_FILE = "compositions/composition_example.json"
 
 
-def test_print_usage_and_exit_raises_with_exit_code_and_prints_usage(capsys):
+def test_print_usage_and_exit_raises_with_exit_code_and_prints_usage(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as exc_info:
         print_usage_and_exit(exit_code=2)
     # TODO: this should not test for specific strings, just that a string is returned
@@ -22,7 +22,7 @@ def test_print_usage_and_exit_raises_with_exit_code_and_prints_usage(capsys):
     "output_format,expected_suffix",
     [("wav", ".wav"), ("midi", ".mid")],
 )
-def test_render_composition_creates_output_file(output_format: str, expected_suffix: str):
+def test_render_composition_creates_output_file(output_format: str, expected_suffix: str) -> None:
     output_basename = f"coverage_{output_format}"
     output_path = Path(OUTPUT_DIRECTORY) / f"{output_basename}{expected_suffix}"
 
