@@ -10,7 +10,7 @@ from transforms.base import (
     ScoreTransformDefinition,
     ToneDimension,
 )
-from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_tones
+from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_phrase_transform, delay_tones
 from transforms.basic.drift import DRIFT_PARAMS_SPEC, drift_transform
 from transforms.basic.inversion import INVERT_PARAMS_SPEC, invert_phrase_transform, invert_tones
 from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_tones
@@ -130,17 +130,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "delay": PhraseTransformDefinition(
         name="delay",
         params_spec=DELAY_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=delay_tones(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        seconds=cast(float, params["seconds"]),
-                    ),
-                )
-            ]
-        ),
+        transform=delay_phrase_transform,
     ),
     "repeat": PhraseTransformDefinition(
         name="repeat",
