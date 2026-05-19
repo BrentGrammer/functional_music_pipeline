@@ -21,12 +21,16 @@ class PhraseConfig(TypedDict):
     transforms: list[TransformConfig]
 
 
-class VoiceConfig(TypedDict):
+class VoiceConfigInput(TypedDict):
     phrases: list[PhraseConfigInput]
 
 
+class VoiceConfig(TypedDict):
+    phrases: list[PhraseConfig]
+
+
 class CompositionConfig(TypedDict, total=False):
-    voices: list[VoiceConfig]
+    voices: list[VoiceConfigInput]
     score_transforms: list[TransformConfigInput]
 
 

@@ -140,7 +140,21 @@ def _extract_composition_sections(
     motifs_section = composition_document["motifs"]
     composition_config = composition_document["composition"]
 
-    voices_section = composition_config["voices"]
+    voices_section = [
+        VoiceConfig(
+            phrases=[
+                PhraseConfig(
+                    motifs=phrase_config["motifs"],
+                    transforms=[
+                        TransformConfig(name=spec["name"], params=spec["params"])
+                        for spec in phrase_config["transforms"]
+                    ],
+                )
+                for phrase_config in voice_config["phrases"]
+            ]
+        )
+        for voice_config in composition_config["voices"]
+    ]
     score_transforms_section = [
         TransformConfig(name=spec["name"], params=spec["params"])
         for spec in composition_config["score_transforms"]
@@ -170,16 +184,7 @@ def _extract_requests_from_phrase(
 
 
 def _extract_requests_from_voice(voice_config: VoiceConfig, voice_index: int) -> list[PhraseTransformRequest]:
-    phrase_configs = [
-        PhraseConfig(
-            motifs=phrase_config["motifs"],
-            transforms=[
-                TransformConfig(name=spec["name"], params=spec["params"])
-                for spec in phrase_config["transforms"]
-            ],
-        )
-        for phrase_config in voice_config["phrases"]
-    ]
+    phrase_configs = voice_config["phrases"]
 
     return [request for phrase_index, phrase_config in enumerate(phrase_configs) for request in _extract_requests_from_phrase(phrase_config, voice_index, phrase_index)]
 
@@ -205,16 +210,7 @@ def _create_voice_plans_from_document(
     voice_plans = []
 
     for voice_config in voices_section:
-        phrase_configs = [
-            PhraseConfig(
-                motifs=phrase_config["motifs"],
-                transforms=[
-                    TransformConfig(name=spec["name"], params=spec["params"])
-                    for spec in phrase_config["transforms"]
-                ],
-            )
-            for phrase_config in voice_config["phrases"]
-        ]
+        phrase_configs = voice_config["phrases"]
 
         phrase_plans = []
         for phrase_config in phrase_configs:
