@@ -14,16 +14,13 @@ def reverse_tones(tones: ToneSequence) -> ToneSequence:
     return tones[::-1]
 
 
-def reverse_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    del params
-
+def reverse_phrase_transform(context: PhraseTransformContext, _: Mapping[str, object]) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
     reversed_tones = reverse_tones(phrase_tones)
     return Phrase(motifs=[Motif(name="<transformed>", tones=reversed_tones)])
 
 
-def reverse_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    del params
+def reverse_score_transform(score: Score, _: Mapping[str, object]) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)

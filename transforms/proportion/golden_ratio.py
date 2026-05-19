@@ -1,7 +1,5 @@
 from collections.abc import Mapping
 
-from collections.abc import Mapping
-
 from score_model.math_constants import GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
