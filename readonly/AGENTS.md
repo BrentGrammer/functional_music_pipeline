@@ -3,6 +3,13 @@
 - Do not be verbose. Communicate the most important information in as concise a manner as possible.
 - If this is a python project, then read [PYTHON_INSTRUCTIONS.md](./PYTHON_INSTRUCTIONS.md)
 
+## Restricted Files
+
+Do not inspect, read, print, summarize, or modify:
+
+- `.env`
+- `.env.*`
+
 ## Usage of MCP tooling
 
 ### Exa MCP
