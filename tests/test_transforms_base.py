@@ -10,10 +10,13 @@ from transforms.base import (
     BooleanParam,
     EnumParam,
     FloatParam,
+    IntegerParam,
+    ParamSchema,
     PhraseTransformContext,
     PhraseTransformDefinition,
     PreparedTransform,
     ScoreTransformDefinition,
+    StringParam,
     ToneDimension,
     TransformParamFieldSpec,
     TransformParamsSpec,
@@ -63,6 +66,11 @@ def test_parse_dimension_rejects_unknown_dimension_with_valid_options_in_message
         parse_dimension(invalid_dimension)
 
 
+def test_param_schema_base_validate_is_abstract():
+    with pytest.raises(NotImplementedError):
+        ParamSchema().validate("value", "field")
+
+
 def test_transform_params_spec_defaults_to_no_fields():
     params_spec = TransformParamsSpec()
 
@@ -108,6 +116,82 @@ def test_validate_transform_params_rejects_unknown_fields():
 
     with pytest.raises(ValueError, match="unknown fields"):
         validate_transform_params(params_spec, "delay", {"seconds": 1.0, "extra": 2.0})
+
+
+def test_validate_transform_params_rejects_missing_required_fields():
+    params_spec = TransformParamsSpec(
+        fields={
+            "seconds": TransformParamFieldSpec(
+                schema=FloatParam(),
+                required=True,
+            )
+        }
+    )
+
+    with pytest.raises(ValueError, match="must include 'seconds'"):
+        validate_transform_params(params_spec, "delay", {})
+
+
+def test_validate_transform_params_accepts_enum_field_case_insensitively():
+    params_spec = TransformParamsSpec(
+        fields={
+            "dimension": TransformParamFieldSpec(
+                schema=EnumParam(allowed_values=("frequency", "duration", "amplitude")),
+                required=True,
+            )
+        }
+    )
+
+    validate_transform_params(params_spec, "erosion", {"dimension": "DURATION"})
+
+
+def test_validate_transform_params_runs_custom_validator():
+    recorded_params: list[dict[str, object]] = []
+
+    def validator(params: dict[str, object]) -> None:
+        recorded_params.append(params)
+
+    params_spec = TransformParamsSpec(
+        fields={
+            "name": TransformParamFieldSpec(
+                schema=StringParam(),
+                required=True,
+            )
+        },
+        validator=validator,
+    )
+
+    validate_transform_params(params_spec, "label", {"name": "intro"})
+
+    assert recorded_params == [{"name": "intro"}]
+
+
+def test_validate_transform_params_surfaces_single_schema_error():
+    params_spec = TransformParamsSpec(
+        fields={
+            "label": TransformParamFieldSpec(
+                schema=StringParam(),
+                required=True,
+            )
+        }
+    )
+
+    with pytest.raises(ValueError, match="must be a string"):
+        validate_transform_params(params_spec, "labeler", {"label": 123})
+
+
+def test_validate_transform_params_combines_union_schema_errors():
+    params_spec = TransformParamsSpec(
+        fields={
+            "mode": TransformParamFieldSpec(
+                schema=(StringParam(), FloatParam()),
+                required=True,
+            )
+        }
+    )
+
+    with pytest.raises(ValueError, match="failed validation: .* OR .*"):
+        validate_transform_params(params_spec, "union_test", {"mode": False})
 
 
 def test_phrase_transform_context_exposes_current_phrase():
@@ -173,6 +257,26 @@ def test_prepared_transform_stores_apply_callable():
 
 def test_boolean_param_accepts_true():
     BooleanParam().validate(True, "test_field")
+
+
+def test_string_param_rejects_non_string():
+    with pytest.raises(ValueError):
+        StringParam().validate(1.0, "test_field")
+
+
+def test_float_param_rejects_boolean():
+    with pytest.raises(ValueError):
+        FloatParam().validate(True, "test_field")
+
+
+def test_integer_param_rejects_float():
+    with pytest.raises(ValueError):
+        IntegerParam().validate(1.5, "test_field")
+
+
+def test_enum_param_rejects_unknown_value():
+    with pytest.raises(ValueError):
+        EnumParam(allowed_values=("low", "medium", "high")).validate("extreme", "test_field")
 
 
 def test_boolean_param_accepts_false():
