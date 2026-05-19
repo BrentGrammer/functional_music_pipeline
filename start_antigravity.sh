@@ -21,6 +21,32 @@ chmod +x ./scripts/start_docker.sh
 code .
 
 
+configure_env() {
+  echo "Configuring privacy/telemetry environment inside sandbox..."
+  # This is idempotent: it replaces any previous block managed by this script.
+  sbx exec -d "$SANDBOX_NAME" bash -c '
+set -euo pipefail
+
+touch /etc/sandbox-persistent.sh
+
+cat >> /etc/sandbox-persistent.sh <<'"'"'EOF'"'"'
+export DO_NOT_TRACK=1
+export SBX_NO_TELEMETRY=1
+export AWS_REGION=us-west-2
+export TERM=xterm-256color
+EOF
+
+for rcfile in "$HOME/.bashrc" "$HOME/.profile"; do
+  if [ -f "$rcfile" ]; then
+    if ! grep "source /etc/sandbox-persistent.sh" "$rcfile"; then
+      echo "source /etc/sandbox-persistent.sh" >> "$rcfile"
+    fi
+  fi
+done
+' || true
+}
+
+
 ###############################################################################
 # Create or reuse sandbox
 ###############################################################################
@@ -32,10 +58,16 @@ else
 
   sbx create shell . --name "$SANDBOX_NAME"
 
-  #############################################################################
-  # Copy npm config into the sandbox
-  #############################################################################
+  configure_env
 
+  # Create the directory so sbx cp's internal tar extraction doesn't crash
+  sbx exec "$SANDBOX_NAME" bash -c "mkdir -p /home/agent/.gemini/antigravity"
+  # install serena
+  sbx exec "$SANDBOX_NAME" bash -c "uv tool install -p 3.13 serena-agent@latest --prerelease=allow"
+  # move mcp settings to sandbox
+  sbx cp .gemini/antigravity/mcp_config.json "$SANDBOX_NAME":/home/agent/.gemini/antigravity-cli/mcp_config.json
+
+  # Copy npm config into the sandbox
   if [ -f ".npmrc" ]; then
     echo "Copying project .npmrc into sandbox..."
     sbx cp ".npmrc" "$SANDBOX_NAME:/home/agent/.npmrc"
@@ -85,6 +117,7 @@ sbx policy allow network "$SANDBOX_NAME" "pypi.org:443"
 sbx policy allow network "$SANDBOX_NAME" "files.pythonhosted.org:443"
 sbx policy allow network "$SANDBOX_NAME" "astral.sh:443"
 sbx policy allow network "$SANDBOX_NAME" "uv.sh:443"
+sbx policy allow network "$SANDBOX_NAME" oraios-software.de:443
 
 echo "✅ Sandbox-specific SBX network policies applied."
 
