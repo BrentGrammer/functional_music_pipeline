@@ -1,6 +1,10 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.pitch_utils import transpose_frequency_by_semitones
 from score_model.tone import Tone
-from transforms.base import FloatParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 TRANSPOSE_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -22,3 +26,17 @@ def transpose_tones(tones: ToneSequence, semitones: float) -> ToneSequence:
         )
         for t in tones
     ]
+
+
+def transpose_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    semitones = params["semitones"]
+    if isinstance(semitones, bool) or not isinstance(semitones, (int, float)):
+        raise ValueError("Param 'semitones' must be a float.")
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    transposed_tones = transpose_tones(phrase_tones, semitones=float(semitones))
+    return Phrase(motifs=[Motif(name="<transformed>", tones=transposed_tones)])

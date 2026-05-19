@@ -17,7 +17,7 @@ from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, pad_silence_to
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC, repeat_tones
 from transforms.basic.reversal import REVERSE_PARAMS_SPEC, reverse_phrase_transform, reverse_score_transform
 from transforms.basic.scale import SCALE_PARAMS_SPEC, scale_transform
-from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_tones
+from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC, transpose_phrase_transform, transpose_tones
 from transforms.complexity.cellular_automata import (
     CELLULAR_AUTOMATA_PARAMS_SPEC,
     apply_cellular_automata_transform,
@@ -93,17 +93,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     "transpose": PhraseTransformDefinition(
         name="transpose",
         params_spec=TRANSPOSE_PARAMS_SPEC,
-        transform=lambda context, params: Phrase(
-            motifs=[
-                Motif(
-                    name="<transformed>",
-                    tones=transpose_tones(
-                        [tone for motif in context.phrase.motifs for tone in motif.tones],
-                        semitones=cast(float, params["semitones"]),
-                    ),
-                )
-            ]
-        ),
+        transform=transpose_phrase_transform,
     ),
     "scale": PhraseTransformDefinition(
         name="scale",
