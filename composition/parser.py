@@ -188,6 +188,17 @@ def _extract_phrase_transform_requests(
     return [request for voice_index, voice_config in enumerate(voices_section) for request in _extract_requests_from_voice(voice_config, voice_index)]
 
 
+def _create_score_transform_requests(
+    score_transforms_section: list[TransformConfig],
+) -> list[ScoreTransformRequest]:
+    return [
+        ScoreTransformRequest(
+            transform_request=TransformRequest(name=spec["name"], params=spec["params"])
+        )
+        for spec in score_transforms_section
+    ]
+
+
 def _create_voice_plans_from_document(
     voices_section: list[VoiceConfig],
     plan_motifs: dict[str, Motif],
@@ -228,14 +239,7 @@ def generate_score_plan(document: CompositionDocumentInput) -> ScorePlan:
 
     voice_plans = _create_voice_plans_from_document(voices_section, plan_motifs)
     phrase_transform_requests = _extract_phrase_transform_requests(voices_section)
-
-    score_transform_requests = []
-    for spec in score_transforms_section:
-        score_transform_requests.append(
-            ScoreTransformRequest(
-                transform_request=TransformRequest(name=spec["name"], params=spec["params"])
-            )
-        )
+    score_transform_requests = _create_score_transform_requests(score_transforms_section)
 
     return ScorePlan(
         motifs=plan_motifs,
