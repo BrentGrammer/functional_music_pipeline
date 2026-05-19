@@ -1,12 +1,9 @@
+from collections.abc import Mapping
+
+from score_model.motif import Motif
+from score_model.phrase import Phrase
 from score_model.tone import Tone
-from transforms.base import (
-    EnumParam,
-    ToneDimension,
-    ToneSequence,
-    TransformParamFieldSpec,
-    TransformParamsSpec,
-    parse_dimension,
-)
+from transforms.base import EnumParam, PhraseTransformContext, ToneDimension, ToneSequence, TransformParamFieldSpec, TransformParamsSpec, parse_dimension
 
 INVERT_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -59,3 +56,15 @@ def invert_tones(tones: ToneSequence, dimension: ToneDimension | str = ToneDimen
         inverted_tones.append(invert_tone(tone, first_tone))
 
     return inverted_tones
+
+
+def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+    del params
+
+    phrase_tones = [
+        tone
+        for motif in context.phrase.motifs
+        for tone in motif.tones
+    ]
+    inverted_tones = invert_tones(phrase_tones)
+    return Phrase(motifs=[Motif(name="<transformed>", tones=inverted_tones)])
