@@ -3,13 +3,11 @@ from dataclasses import dataclass, field
 from enum import StrEnum, auto
 from typing import TypeAlias
 
-from composition.score_plan import TransformRequest
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 
 ToneSequence: TypeAlias = list[Tone]
-ScorePipelineStep: TypeAlias = Callable[[Score], Score]
 TransformParamsValidator: TypeAlias = Callable[[Mapping[str, object]], None]
 
 
@@ -17,11 +15,6 @@ class ToneDimension(StrEnum):
     FREQUENCY = auto()
     DURATION = auto()
     AMPLITUDE = auto()
-
-# Should this be named Scope not "Level"?
-class TransformLevel(StrEnum):
-    PHRASE = "Phrase"
-    SCORE = "Score"
 
 
 def parse_dimension(dim: ToneDimension | str) -> ToneDimension:
@@ -158,10 +151,3 @@ class ScoreTransformDefinition:
 
     def validate_params(self, params: Mapping[str, object]) -> None:
         validate_transform_params(self.params_spec, self.name, params)
-
-
-@dataclass(frozen=True)
-class PreparedTransform:
-    transform_request: TransformRequest
-    transform_definition: PhraseTransformDefinition | ScoreTransformDefinition
-    apply: Callable[[Score], Score]

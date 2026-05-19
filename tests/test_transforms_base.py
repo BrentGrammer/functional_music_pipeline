@@ -2,7 +2,6 @@ from collections.abc import Mapping
 
 import pytest
 
-from composition.score_plan import TransformRequest
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
@@ -16,7 +15,6 @@ from transforms.base import (
     ParamSchema,
     PhraseTransformContext,
     PhraseTransformDefinition,
-    PreparedTransform,
     ScoreTransformDefinition,
     StringParam,
     ToneDimension,
@@ -237,24 +235,6 @@ def test_score_transform_definition_validate_params_delegates_to_shared_validato
     )
     score_definition.validate_params({"seconds": 1.5})
 
-
-def test_prepared_transform_stores_apply_callable():
-    request = TransformRequest(name="delay", params={"seconds": 1.0})
-    score = Score()
-    definition = ScoreTransformDefinition(
-        name="delay",
-        params_spec=TransformParamsSpec(),
-        transform=lambda score, params: score,
-    )
-    prepared = PreparedTransform(
-        transform_request=request,
-        transform_definition=definition,
-        apply=lambda score: score,
-    )
-
-    assert prepared.transform_request is request
-    assert prepared.transform_definition is definition
-    assert prepared.apply(score) is score
 
 def test_boolean_param_accepts_true():
     BooleanParam().validate(True, "test_field")
