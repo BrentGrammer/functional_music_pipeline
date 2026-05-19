@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.tone import Tone
+from score_model.traversal import flatten_phrase_tones
 from transforms.base import (
     EnumParam,
     PhraseTransformContext,
@@ -57,11 +58,7 @@ def erosion_phrase_transform(context: PhraseTransformContext, params: Mapping[st
     if not isinstance(dimension, (str, ToneDimension)):
         raise ValueError("Erosion dimension must be a string or ToneDimension.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = erosion_transform(phrase_tones, dimension=dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 

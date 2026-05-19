@@ -5,7 +5,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
@@ -65,11 +65,7 @@ def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params
     if not isinstance(dimension, (str, ToneDimension)):
         raise ValueError("Feigenbaum sequence dimension must be a string or ToneDimension.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = feigenbaum_sequence(phrase_tones, dimension=dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
@@ -98,11 +94,7 @@ def phrase_feigenbaum_shrink_transform(
     context: PhraseTransformContext,
     params: Mapping[str, object],
 ) -> Phrase:
-    current_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    current_tones = flatten_phrase_tones(context.phrase)
 
     if context.phrase_index > 0:
         previous_tones = [
@@ -128,11 +120,7 @@ def phrase_feigenbaum_grow_transform(
     context: PhraseTransformContext,
     params: Mapping[str, object],
 ) -> Phrase:
-    current_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    current_tones = flatten_phrase_tones(context.phrase)
 
     if context.phrase_index > 0:
         previous_tones = [

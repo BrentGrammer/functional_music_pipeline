@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.tone_utils import make_silence_tone
+from score_model.traversal import flatten_phrase_tones
 from transforms.base import EnumParam, FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 PAD_SILENCE_PARAMS_SPEC = TransformParamsSpec(
@@ -43,10 +44,6 @@ def pad_silence_phrase_transform(context: PhraseTransformContext, params: Mappin
     if not isinstance(position, str):
         raise ValueError("Param 'position' must be a string.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     padded_tones = pad_silence_tones(phrase_tones, seconds=float(seconds), position=position)
     return Phrase(motifs=[Motif(name="<transformed>", tones=padded_tones)])

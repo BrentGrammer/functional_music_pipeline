@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.traversal import flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
@@ -120,11 +120,7 @@ def apply_cellular_automata_transform(
 
 
 def cellular_automata_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
 
     dimension = params.get("dimension", ToneDimension.DURATION)
     if not isinstance(dimension, (str, ToneDimension)):

@@ -4,7 +4,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
@@ -63,11 +63,7 @@ def scale_phrase_transform(context: PhraseTransformContext, params: Mapping[str,
     if isinstance(factor, bool) or not isinstance(factor, (int, float)):
         raise ValueError("Param 'factor' must be a float.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     scaled_tones = scale_transform(phrase_tones, dimension=dimension, factor=float(factor))
     return Phrase(motifs=[Motif(name="<transformed>", tones=scaled_tones)])
 

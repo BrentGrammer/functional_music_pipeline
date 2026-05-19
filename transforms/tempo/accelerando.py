@@ -3,6 +3,7 @@ from collections.abc import Mapping
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.traversal import flatten_phrase_tones
 from transforms.base import PhraseTransformContext, ToneSequence
 from transforms.tempo._common import (
     apply_duration_multipliers,
@@ -67,10 +68,6 @@ def accelerando_phrase_transform(context: PhraseTransformContext, params: Mappin
     if isinstance(jaggedness, bool) or not isinstance(jaggedness, (str, float)):
         raise ValueError("Param 'jaggedness' must be a string or float.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = accelerando_transform(phrase_tones, strength=strength, jaggedness=jaggedness)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])

@@ -4,7 +4,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
@@ -83,11 +83,7 @@ def drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str,
     if isinstance(rate, bool) or not isinstance(rate, (int, float)):
         raise ValueError("Param 'rate' must be a float.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     drifted_tones = drift_transform(phrase_tones, dimension=dimension, rate=float(rate))
     return Phrase(motifs=[Motif(name="<transformed>", tones=drifted_tones)])
 

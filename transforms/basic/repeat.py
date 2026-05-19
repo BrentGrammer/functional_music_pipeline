@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.traversal import flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import IntegerParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
@@ -29,11 +29,7 @@ def repeat_phrase_transform(context: PhraseTransformContext, params: Mapping[str
     if isinstance(count, bool) or not isinstance(count, int):
         raise ValueError("Param 'count' must be an integer.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     repeated_tones = repeat_tones(phrase_tones, count=int(count))
     return Phrase(motifs=[Motif(name="<transformed>", tones=repeated_tones)])
 

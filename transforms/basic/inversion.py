@@ -4,7 +4,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import EnumParam, PhraseTransformContext, ToneDimension, ToneSequence, TransformParamFieldSpec, TransformParamsSpec, parse_dimension
 
@@ -64,11 +64,7 @@ def invert_tones(tones: ToneSequence, dimension: ToneDimension | str = ToneDimen
 def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
     del params # TODO: come back to this - this is a smell.
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     inverted_tones = invert_tones(phrase_tones)
     return Phrase(motifs=[Motif(name="<transformed>", tones=inverted_tones)])
 

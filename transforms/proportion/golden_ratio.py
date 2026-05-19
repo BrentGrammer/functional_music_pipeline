@@ -4,7 +4,7 @@ from score_model.math_constants import GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.traversal import flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     EnumParam,
@@ -40,11 +40,7 @@ def golden_ratio_phrase_transform(context: PhraseTransformContext, params: Mappi
     if not isinstance(dimension, (str, ToneDimension)):
         raise ValueError("Golden ratio dimension must be a string or ToneDimension.")
 
-    phrase_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = golden_ratio_transform(phrase_tones, dimension=dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
@@ -53,11 +49,7 @@ def phrase_golden_ratio_shrink_transform(
     context: PhraseTransformContext,
     params: Mapping[str, object],
 ) -> Phrase:
-    current_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    current_tones = flatten_phrase_tones(context.phrase)
 
     if context.phrase_index > 0:
         previous_tones = [
@@ -83,11 +75,7 @@ def phrase_golden_ratio_grow_transform(
     context: PhraseTransformContext,
     params: Mapping[str, object],
 ) -> Phrase:
-    current_tones = [
-        tone
-        for motif in context.phrase.motifs
-        for tone in motif.tones
-    ]
+    current_tones = flatten_phrase_tones(context.phrase)
 
     if context.phrase_index > 0:
         previous_tones = [
