@@ -167,7 +167,7 @@ def _extract_composition_sections(
     return motifs_section, voices_section, score_transforms_section
 
 
-def _extract_requests_from_phrase(
+def _extract_phrase_transform_requests(
     phrase_config: PhraseConfig,
     voice_index: int,
     phrase_index: int,
@@ -187,7 +187,7 @@ def _extract_requests_from_phrase(
 def _extract_requests_from_voice(voice_config: VoiceConfig, voice_index: int) -> list[PhraseTransformRequest]:
     phrase_configs = voice_config["phrases"]
 
-    return [request for phrase_index, phrase_config in enumerate(phrase_configs) for request in _extract_requests_from_phrase(phrase_config, voice_index, phrase_index)]
+    return [request for phrase_index, phrase_config in enumerate(phrase_configs) for request in _extract_phrase_transform_requests(phrase_config, voice_index, phrase_index)]
 
 
 def _extract_phrase_transform_requests(
