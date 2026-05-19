@@ -17,7 +17,6 @@ from score_model.voice import Voice
 from transforms.base import (
     PhraseTransformContext,
     PhraseTransformDefinition,
-    ScoreTransformDefinition,
     TransformLevel,
 )
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
@@ -271,27 +270,6 @@ def _build_score_voices(voice_configs: list[object], parsed_motifs: dict[str, li
         voices.append(voice)
 
     return voices
-
-
-def _apply_score_transform_spec(
-    score: Score,
-    transform_spec: object,
-) -> Score:
-    transform_name, transform_params = parse_transform_spec(transform_spec, "Score")
-
-    if transform_name in SCORE_TRANSFORMS:
-        descriptor = SCORE_TRANSFORMS[transform_name]
-    elif transform_name in PHRASE_TRANSFORMS:
-        raise ValueError(f"Transform '{transform_name}' is only available as a phrase transform.")
-    else:
-        raise ValueError(f"Unknown score transform '{transform_name}'")
-
-    # Expect SCORE_TRANSFORMS to contain ScoreTransformDefinition instances only.
-    if not isinstance(descriptor, ScoreTransformDefinition):
-        raise ValueError(f"Score transform '{transform_name}' must be a ScoreTransformDefinition.")
-
-    descriptor.validate_params(transform_params)
-    return descriptor.transform(score, transform_params)
 
 
 def _extract_requests_from_phrase(phrase_config: object, voice_index: int, phrase_index: int) -> list[PhraseTransformRequest]:
