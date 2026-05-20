@@ -48,7 +48,7 @@ done
 # Create or reuse sandbox
 ###############################################################################
 
-if sbx ls | grep -q "$SANDBOX_NAME"; then
+if sbx ls | grep "$SANDBOX_NAME"; then
 	echo "✅ Existing sandbox found: $SANDBOX_NAME"
 else
 	echo "🆕 Creating new sandbox: $SANDBOX_NAME"

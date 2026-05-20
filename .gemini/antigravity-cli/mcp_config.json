@@ -6,7 +6,7 @@
       "args": [
         "start-mcp-server",
         "--context",
-        "ide"
+        "antigravity"
       ],
       "env": {
         "SERENA_USAGE_REPORTING": "false"
