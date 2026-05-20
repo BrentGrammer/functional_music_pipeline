@@ -34,7 +34,7 @@
 #    sudo apt upgrade -y
 #
 # 4. Inside the sandbox, install Gemini CLI:
-#    npm install -g @google/gemini-cli --no-scripts --allow-git=none
+#    npm install -g @google/gemini-cli --ignore-scripts --allow-git=none
 #
 # 5. Start Gemini CLI:
 #    gemini
@@ -87,7 +87,7 @@ else
   
   sbx create shell . --name "$SANDBOX_NAME"
 
-  echo "In the sandbox: sudo apt update && sudo apt upgrade -y && npm install -g @google/gemini-cli --no-scripts --allow-git=none"
+  echo "In the sandbox: sudo apt update && sudo apt upgrade -y && npm install -g @google/gemini-cli --ignore-scripts --allow-git=none"
   echo "Then run:"
   echo "  gemini"
 
