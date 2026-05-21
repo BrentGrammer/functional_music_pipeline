@@ -215,6 +215,15 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - If constructing a params dataclass generically with `params_model(**parsed_fields)` causes mypy friction, prefer a small typed factory on `TransformParamsSpec[P]` over distributed per-transform builders.
 - The success condition is that transform modules receive concrete params objects and can pass mypy without local casts or defensive `isinstance` checks.
 
+**Descriptor API decision:**
+
+- The descriptor should expose a public `transform(...)` method, because callers are asking the descriptor to transform a phrase or score.
+- That method should accept raw request params as `Mapping[str, object]`, parse them internally with `params_spec.parse_params(...)`, then apply the typed transformation callable.
+- Do not name this public method `parse_and_apply(...)`; parsing is an implementation detail and should not leak into the caller API.
+- Do not name it `apply(...)`; `transform(...)` better matches the domain language already used by the project.
+- Rename the stored callable field from `transform` to `transformation` so the descriptor can expose a `transform(...)` method without a naming collision.
+- Registry entries should therefore pass `transformation=drift_phrase_transform` and callers should use `descriptor.transform(context, raw_params)` or `descriptor.transform(score, raw_params)`.
+
 ## Files to Change
 
 - `transforms/base.py` — Make param schemas parse typed values; make `TransformParamsSpec`, `PhraseTransformDefinition`, and `ScoreTransformDefinition` generic.
