@@ -14,7 +14,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 
 SCALE_PARAMS_SPEC = TransformParamsSpec(
@@ -31,23 +30,22 @@ SCALE_PARAMS_SPEC = TransformParamsSpec(
 )
 
 
-def scale_transform(tones: ToneSequence, dimension: ToneDimension | str, factor: float) -> ToneSequence:
+def scale_transform(tones: ToneSequence, dimension: ToneDimension, factor: float) -> ToneSequence:
     """
     Scales a specific dimension of a tone sequence by a given factor.
     """
     if not tones:
         return []
 
-    dim = parse_dimension(dimension)
     result = []
     for t in tones:
-        if dim == ToneDimension.FREQUENCY:
+        if dimension == ToneDimension.FREQUENCY:
             new_val = max(1.0, t.frequency * factor)
             result.append(Tone(new_val, t.duration, t.sample_rate, t.amplitude))
-        elif dim == ToneDimension.DURATION:
+        elif dimension == ToneDimension.DURATION:
             new_val = max(0.0, t.duration * factor)
             result.append(Tone(t.frequency, new_val, t.sample_rate, t.amplitude))
-        elif dim == ToneDimension.AMPLITUDE:
+        elif dimension == ToneDimension.AMPLITUDE:
             new_val = max(0.0, min(1.0, t.amplitude * factor))
             result.append(Tone(t.frequency, t.duration, t.sample_rate, new_val))
             
@@ -56,8 +54,6 @@ def scale_transform(tones: ToneSequence, dimension: ToneDimension | str, factor:
 
 def scale_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
     dimension = params["dimension"]
-    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     factor = params["factor"]
     if isinstance(factor, bool) or not isinstance(factor, (int, float)):
@@ -70,8 +66,6 @@ def scale_phrase_transform(context: PhraseTransformContext, params: Mapping[str,
 
 def scale_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     dimension = params["dimension"]
-    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     factor = params["factor"]
     if isinstance(factor, bool) or not isinstance(factor, (int, float)):

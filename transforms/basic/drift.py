@@ -14,7 +14,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 
 DRIFT_PARAMS_SPEC = TransformParamsSpec(
@@ -33,7 +32,7 @@ DRIFT_PARAMS_SPEC = TransformParamsSpec(
 
 def drift_transform(
     tones: ToneSequence,
-    dimension: ToneDimension | str,
+    dimension: ToneDimension,
     rate: float,
 ) -> ToneSequence:
     """
@@ -62,20 +61,16 @@ def drift_transform(
     if not tones:
         return []
 
-    resolved_dimension = parse_dimension(dimension)
-
-    if resolved_dimension == ToneDimension.FREQUENCY:
+    if dimension == ToneDimension.FREQUENCY:
         return _drift_frequency(tones, rate)
-    if resolved_dimension == ToneDimension.AMPLITUDE:
+    if dimension == ToneDimension.AMPLITUDE:
         return _drift_amplitude(tones, rate)
-    if resolved_dimension == ToneDimension.DURATION:
+    if dimension == ToneDimension.DURATION:
         return _drift_duration(tones, rate)
 
 
 def drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
     dimension = params["dimension"]
-    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     rate = params["rate"]
     if isinstance(rate, bool) or not isinstance(rate, (int, float)):
@@ -88,8 +83,6 @@ def drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str,
 
 def drift_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     dimension = params["dimension"]
-    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     rate = params["rate"]
     if isinstance(rate, bool) or not isinstance(rate, (int, float)):

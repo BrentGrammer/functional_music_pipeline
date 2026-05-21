@@ -91,7 +91,7 @@ class TestErosionDuration:
         FREQ_B = 880.0
         
         tones = [Tone(FREQ_A, 1.0), Tone(FREQ_B, 0.5)]
-        result = erosion_transform(tones, dimension="DURATION")
+        result = erosion_transform(tones, dimension=ToneDimension.DURATION)
         assert len(result) == 1
 
 
@@ -232,7 +232,7 @@ def test_erosion_phrase_transform_rejects_non_string_non_dimension_param():
         phrase_index=0,
     )
 
-    with pytest.raises(ValueError, match="must be a string or ToneDimension"):
+    with pytest.raises(ValueError):
         erosion_phrase_transform(context, {"dimension": 123})
 
 

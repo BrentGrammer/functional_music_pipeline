@@ -6,7 +6,7 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import EnumParam, PhraseTransformContext, ToneDimension, ToneSequence, TransformParamFieldSpec, TransformParamsSpec, parse_dimension
+from transforms.base import EnumParam, PhraseTransformContext, ToneDimension, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 INVERT_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -46,14 +46,13 @@ INVERT_TONE_STRATEGIES = {
 }
 
 
-def invert_tones(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.FREQUENCY) -> ToneSequence:
+def invert_tones(tones: ToneSequence, dimension: ToneDimension = ToneDimension.FREQUENCY) -> ToneSequence:
     if len(tones) <= 1:
         return tones[:]
 
-    dim = parse_dimension(dimension)
     first_tone = tones[0]
     inverted_tones = [_copy_tone(first_tone)]
-    invert_tone = INVERT_TONE_STRATEGIES[dim]
+    invert_tone = INVERT_TONE_STRATEGIES[dimension]
 
     for tone in tones[1:]:
         inverted_tones.append(invert_tone(tone, first_tone))
@@ -63,8 +62,6 @@ def invert_tones(tones: ToneSequence, dimension: ToneDimension | str = ToneDimen
 
 def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
     dimension = params.get("dimension", ToneDimension.FREQUENCY)
-    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     phrase_tones = flatten_phrase_tones(context.phrase)
     inverted_tones = invert_tones(phrase_tones, dimension=dimension)
@@ -73,8 +70,6 @@ def invert_phrase_transform(context: PhraseTransformContext, params: Mapping[str
 
 def invert_score_transform(score: Score, params: Mapping[str, object]) -> Score:
     dimension = params.get("dimension", ToneDimension.FREQUENCY)
-    if isinstance(dimension, bool) or not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Param 'dimension' must be a string or ToneDimension.")
 
     new_voices = []
     for voice in score.voices:

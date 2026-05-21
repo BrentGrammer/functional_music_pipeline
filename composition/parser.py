@@ -17,6 +17,7 @@ from composition.score_plan import (
 from score_model.motif import Motif
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
+from transforms.base import parse_dimension
 
 
 def _parse_tone_string(tone_string: str) -> Tone:
@@ -109,6 +110,10 @@ def _validate_composition_document(
                 transform_params = transform_config.get("params", {})
                 if not isinstance(transform_params, dict):
                     raise ValueError("Transform 'params' must be an object.")
+                if "dimension" in transform_params:
+                    transform_params["dimension"] = parse_dimension(
+                        str(transform_params["dimension"])
+                    )
                 validated_transforms.append(
                     TransformConfig(name=transform_name, params=transform_params)
                 )
@@ -134,6 +139,10 @@ def _validate_composition_document(
         transform_params = score_transform_spec.get("params", {})
         if not isinstance(transform_params, dict):
             raise ValueError("Transform 'params' must be an object.")
+        if "dimension" in transform_params:
+            transform_params["dimension"] = parse_dimension(
+                str(transform_params["dimension"])
+            )
         validated_score_transforms.append(
             TransformConfig(name=transform_name, params=transform_params)
         )
