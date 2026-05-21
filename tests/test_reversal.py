@@ -8,7 +8,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
-from transforms.base import PhraseTransformContext
+from transforms.base import NoParams, PhraseTransformContext
 from transforms.basic.reversal import reverse_phrase_transform, reverse_score_transform, reverse_tones
 
 
@@ -52,7 +52,7 @@ class TestReversePhraseTransform:
         )
         context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
-        result = reverse_phrase_transform(context=context, params={})
+        result = reverse_phrase_transform(context=context, params=NoParams())
 
         assert len(result.motifs) == 1
         assert result.motifs[0].name == "<transformed>"
@@ -92,7 +92,7 @@ class TestReverseScoreTransform:
             ]
         )
 
-        result = reverse_score_transform(score=score, params={})
+        result = reverse_score_transform(score=score, params=NoParams())
 
         assert len(result.voices) == 2
 
