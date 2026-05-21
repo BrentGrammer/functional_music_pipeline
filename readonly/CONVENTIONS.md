@@ -71,7 +71,7 @@ def test_mix_with_normalization(self):
 
 ## 6. Code Cleanliness
 
-- Follow good software design principles such as those espoused by Martin Fowler, Kent Beck and Bob Martin.
+- Follow good software design principles such as those espoused by Martin Fowler (consider patterns from his books including Refactoring), Kent Beck (Test Driven Design, Extreme Programming) and Bob Martin (Clean Code, Clean Architecture).
 - Code should be DRY (Do Not Repeat Yourself) where possible and practical. If you need to repeat the same behavior in code more than two or three times, then it should be abstracted into a shared module or function.
 - Code should be easy to read and understand. It should not surprise you if you step through the code. The code should be so sensible that it is boring.
 - Code should be separated in to modules that separate concerns to prevent too much coupling.
@@ -138,3 +138,7 @@ def _phrase(name: str, *tones: Tone) -> Phrase:
 - Always type annotate arguments and return types for functions.
 - Prefer not using Any as a type annotation. If you must use Any, then explain why in a comment.
 - Avoid manual type casting if possible. This indicates a possible code smell. If you need to type cast, then write a comment explaining why.
+
+## 10. Refactors and Migrations
+
+- For large and complex refactors and migrations, do not worry about putting in place temporary patches to prevent breakage. There are no users for this application and backwards compatibility is not a concern. If making a clean break makes the migration simpler and faster, then breaking changes temporarily are fine.
