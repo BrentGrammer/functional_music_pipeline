@@ -1,6 +1,8 @@
 
 from transforms.base import (
     PhraseTransformDefinition,
+    RegisteredPhraseTransform,
+    RegisteredScoreTransform,
     ScoreTransformDefinition,
 )
 from transforms.basic.delay import DELAY_PARAMS_SPEC, delay_phrase_transform, delay_score_transform
@@ -44,7 +46,7 @@ from transforms.proportion.golden_ratio import (
 from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_phrase_transform
 from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_phrase_transform
 
-PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
+PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
     "reverse": PhraseTransformDefinition(
         name="reverse",
         params_spec=REVERSE_PARAMS_SPEC,
@@ -152,7 +154,7 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDefinition] = {
     ),
 }
 
-SCORE_TRANSFORMS: dict[str, ScoreTransformDefinition] = {
+SCORE_TRANSFORMS: dict[str, RegisteredScoreTransform] = {
     "feigenbaum_sequence": ScoreTransformDefinition(
         name="feigenbaum_sequence",
         params_spec=FEIGENBAUM_PARAMS_SPEC,

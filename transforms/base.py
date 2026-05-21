@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field
 from enum import StrEnum, auto
-from typing import Generic, TypeAlias, TypeVar
+from typing import Generic, Protocol, TypeAlias, TypeVar
 
 from score_model.phrase import Phrase
 from score_model.score import Score
@@ -211,3 +211,25 @@ class ScoreTransformDefinition(Generic[ParsedParams]):
     ) -> Score:
         params = self.params_spec.parse_params(raw_params, transform_name=self.name)
         return self.transform_function(score, params)
+
+
+class RegisteredPhraseTransform(Protocol):
+    name: str
+
+    def transform(
+        self,
+        context: PhraseTransformContext,
+        raw_params: Mapping[str, object],
+    ) -> Phrase:
+        ...
+
+
+class RegisteredScoreTransform(Protocol):
+    name: str
+
+    def transform(
+        self,
+        score: Score,
+        raw_params: Mapping[str, object],
+    ) -> Score:
+        ...
