@@ -1,25 +1,25 @@
-from typing import Protocol
-
 from score_model.tone import Tone
 from transforms.base import (
     ToneDimension,
     ToneSequence,
-    parse_dimension,
 )
 
 
-class _GeneratedProfile(Protocol):
-    def generate(self, length: int) -> list[float]: ...
-
-
-def _modulate_tone_dimension(
+def apply_fluctuations(
     tones: ToneSequence,
-    profile: list[float],
+    fluctuations: list[float],
     dimension: ToneDimension,
     max_deviation: float,
 ) -> ToneSequence:
-    result = []
-    for tone, value in zip(tones, profile):
+    """
+    Apply per-tone fluctuation to a single dimension (frequency, duration, or amplitude).
+
+    Each fluctuation value in [-1.0, 1.0] scales the corresponding tone's dimension
+    by ``1.0 + (value * max_deviation)``. This allows transforms to generate a raw
+    list of fluctuation values and apply them directly.
+    """
+    result: list[Tone] = []
+    for tone, value in zip(tones, fluctuations):
         scale = 1.0 + (value * max_deviation)
 
         if dimension == ToneDimension.FREQUENCY:
@@ -30,21 +30,3 @@ def _modulate_tone_dimension(
             result.append(Tone(tone.frequency, tone.duration, tone.sample_rate, max(0.0, min(1.0, tone.amplitude * scale))))
 
     return result
-
-
-def apply_profile(
-    tones: ToneSequence,
-    profile: _GeneratedProfile,
-    dimension: ToneDimension | str,
-    max_deviation: float,
-) -> ToneSequence:
-    if not tones:
-        return []
-
-    resolved_dimension = parse_dimension(dimension)
-    return _modulate_tone_dimension(
-        tones,
-        profile.generate(len(tones)),
-        resolved_dimension,
-        max_deviation,
-    )
