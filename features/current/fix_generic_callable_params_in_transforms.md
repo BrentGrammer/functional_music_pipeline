@@ -117,6 +117,65 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - `composition/transformer.py` — Invoke transforms through `registered_transform.transform(...)` so validation/parsing stays hidden behind the registered transform.
 - `tests/` — Update direct transform calls to pass typed params models where they bypass the registered transform.
 
+## Staged Implementation Plan
+
+### Stage 1: Base infrastructure
+
+- Update `transforms/base.py` with typed parsing primitives:
+  - `ParamSchema[T].parse(...)`
+  - shared frozen `NoParams`
+  - `TransformParamFieldSpec.default`
+  - generic `TransformParamsSpec[P]`
+  - typed `params_factory`
+  - typed custom validators as `Callable[[P], None]`
+- Add `ToneDimensionParam` and make it reuse `parse_dimension(...)`.
+- Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
+- Make `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]` generic.
+- Rename the stored callable field to `transform_function`.
+- Add public definition `transform(...)` methods that parse raw params and call `transform_function(...)`.
+
+### Stage 2: Registry and production wiring
+
+- Update `transforms/registry.py` to:
+  - annotate registries as `dict[str, RegisteredPhraseTransform]` and `dict[str, RegisteredScoreTransform]`
+  - pass `transform_function=...` to each definition
+- Update `composition/transformer.py` to call registered transform `transform(...)`.
+- Keep `composition/parser.py` using `parse_dimension(...)` for raw input normalization.
+
+### Stage 3: Pilot transforms
+
+- Convert a small representative set first:
+  - `reverse` with `NoParams`
+  - `drift` with `DriftParams`
+  - one simple numeric transform such as `repeat` or `scale`
+- Update their direct tests to pass typed params models where they bypass the registered transform.
+- Run targeted tests and mypy after this stage before sweeping the rest of the transform modules.
+
+### Stage 4: Remaining transform modules
+
+- Convert the remaining transforms by category:
+  - basic
+  - tempo
+  - proportion
+  - complexity
+  - geological
+  - counterpoint
+- Move defaults out of transform functions and into `TransformParamFieldSpec.default`.
+- Remove redundant local `isinstance` guards for params that are already parsed by the spec.
+
+### Stage 5: Verification and cleanup
+
+- Add or update tests for:
+  - unknown params
+  - missing required params
+  - defaulted optional params
+  - `ToneDimensionParam`
+  - custom validators running on typed params
+  - registered transform `transform(...)`
+- Run targeted tests first, then coverage for touched modules, then the broader suite.
+- Run mypy and ensure transform modules do not require local casts or `Any`.
+- Check `drift.py` for any transform function that is not used in production code.
+
 ## Status
 
 - [ ] Add typed parsing to `ParamSchema` and `TransformParamsSpec`.
