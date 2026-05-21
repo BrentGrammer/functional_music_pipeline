@@ -6,7 +6,7 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
-from transforms.basic.delay import delay_phrase_transform, delay_score_transform
+from transforms.basic.delay import DELAY_PARAMS_SPEC
 from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC
@@ -56,34 +56,13 @@ def test_transpose_phrase_transform_rejects_bool_semitones():
 
 
 def test_delay_score_transform_rejects_bool_seconds():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="delay-target", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            )
-        ]
-    )
-
     with pytest.raises(ValueError):
-        delay_score_transform(score, {"seconds": True})
+        DELAY_PARAMS_SPEC.parse_params({"seconds": True}, transform_name="delay")
 
 
 def test_delay_phrase_transform_rejects_bool_seconds():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="delay-target", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            )
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-
     with pytest.raises(ValueError):
-        delay_phrase_transform(context, {"seconds": True})
+        DELAY_PARAMS_SPEC.parse_params({"seconds": True}, transform_name="delay")
 
 
 def test_repeat_score_transform_rejects_bool_count():

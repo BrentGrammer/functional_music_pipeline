@@ -9,6 +9,7 @@ from score_model.voice import Voice
 from transforms.base import EnumParam, FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 PAD_SILENCE_PARAMS_SPEC = TransformParamsSpec(
+    params_factory=dict,
     fields={
         "seconds": TransformParamFieldSpec(
             schema=FloatParam(),

@@ -6,7 +6,7 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
-from transforms.basic.delay import delay_phrase_transform, delay_score_transform
+from transforms.basic.delay import DelayParams, delay_phrase_transform, delay_score_transform
 from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
 from transforms.basic.repeat import RepeatParams, repeat_phrase_transform, repeat_score_transform
 from transforms.basic.transpose import TransposeParams, transpose_phrase_transform, transpose_score_transform
@@ -174,12 +174,12 @@ def test_delay_phrase_and_score_transform_delay_observable_output():
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
 
     phrase_delay_seconds = 0.25
-    delayed_phrase = delay_phrase_transform(context, {"seconds": phrase_delay_seconds})
+    delayed_phrase = delay_phrase_transform(context, DelayParams(seconds=phrase_delay_seconds))
     assert delayed_phrase.motifs[0].tones[0].frequency == 0
     assert delayed_phrase.motifs[0].tones[0].duration == pytest.approx(phrase_delay_seconds)
 
     score_delay_seconds = 0.1
-    delayed_score = delay_score_transform(score, {"seconds": score_delay_seconds})
+    delayed_score = delay_score_transform(score, DelayParams(seconds=score_delay_seconds))
     assert delayed_score.voices[0].phrases[0].motifs[0].tones[0].frequency == 0
 
 
