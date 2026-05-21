@@ -93,7 +93,7 @@ class TransformParamFieldSpec:
     schema: ParamSchema | tuple[ParamSchema, ...]
     required: bool = False
     # MISSING lets parse-time code distinguish "no default declared" from an explicit default like None.
-    default: object = MISSING
+    default: object = field(default_factory=lambda: MISSING)
 
 
 @dataclass(frozen=True)
@@ -101,46 +101,70 @@ class TransformParamsSpec:
     fields: dict[str, TransformParamFieldSpec] = field(default_factory=dict)
     validator: TransformParamsValidator | None = None
 
+    def parse_params(
+        self,
+        raw_params: Mapping[str, object],
+        transform_name: str | None = None,
+    ) -> dict[str, object]:
+        transform_description = f"The '{transform_name}' transform params" if transform_name is not None else "Transform params"
 
-def validate_transform_params(
-    params_spec: TransformParamsSpec,
-    name: str,
-    params: Mapping[str, object],
-) -> None:
-    field_specs = params_spec.fields
-    required_fields = tuple(field_name for field_name, field_spec in field_specs.items() if field_spec.required)
+        unknown_fields = tuple(field_name for field_name in raw_params if field_name not in self.fields)
+        if unknown_fields:
+            unknown_fields_description = ", ".join(f"'{field}'" for field in unknown_fields)
+            raise ValueError(f"{transform_description} include unknown fields: {unknown_fields_description}.")
 
-    unknown_fields = tuple(field_name for field_name in params if field_name not in field_specs)
-    if unknown_fields:
-        unknown_fields_description = ", ".join(f"'{field}'" for field in unknown_fields)
-        raise ValueError(f"The '{name}' transform params include unknown fields: {unknown_fields_description}.")
+        missing_fields = tuple(
+            field_name
+            for field_name, field_spec in self.fields.items()
+            if field_spec.required and field_name not in raw_params and field_spec.default is MISSING
+        )
+        if missing_fields:
+            missing_fields_description = ", ".join(f"'{field}'" for field in missing_fields)
+            raise ValueError(f"{transform_description} must include {missing_fields_description}.")
 
-    missing_fields = tuple(field for field in required_fields if field not in params)
-    if missing_fields:
-        missing_fields_description = ", ".join(f"'{field}'" for field in missing_fields)
-        raise ValueError(f"The '{name}' transform params must include {missing_fields_description}.")
+        parsed_params: dict[str, object] = {}
+        for field_name, field_spec in self.fields.items():
+            if field_name in raw_params:
+                parsed_params[field_name] = _parse_transform_param_value(
+                    field_name=field_name,
+                    field_value=raw_params[field_name],
+                    field_spec=field_spec,
+                )
+                continue
 
-    for field_name, field_value in params.items():
-        field_spec = field_specs[field_name]
+            if field_spec.default is not MISSING:
+                parsed_params[field_name] = field_spec.default
 
-        schemas = field_spec.schema if isinstance(field_spec.schema, tuple) else (field_spec.schema,)
-        errors = []
-        is_valid = False
-        for schema in schemas:
-            try:
-                schema.validate(field_value, field_name)
-                is_valid = True
-                break
-            except ValueError as e:
-                errors.append(str(e))
+        if self.validator is not None:
+            self.validator(parsed_params)
 
-        if not is_valid:
-            if len(errors) == 1:
-                raise ValueError(errors[0])
-            raise ValueError(f"Param '{field_name}' failed validation: " + " OR ".join(errors))
+        return parsed_params
 
-    if params_spec.validator is not None:
-        params_spec.validator(params)
+
+def _parse_transform_param_value(
+    field_name: str,
+    field_value: object,
+    field_spec: TransformParamFieldSpec,
+) -> object:
+    """
+    Parse one transform param against its declared schema.
+
+    Most fields use a single schema. Tuple schemas are a small escape hatch for
+    fields that intentionally accept more than one input shape, such as a named
+    preset or a numeric value.
+    """
+    field_schemas = field_spec.schema if isinstance(field_spec.schema, tuple) else (field_spec.schema,)
+    if len(field_schemas) == 1:
+        return field_schemas[0].parse(field_value, field_name)
+
+    errors = []
+    for candidate_schema in field_schemas:
+        try:
+            return candidate_schema.parse(field_value, field_name)
+        except ValueError as e:
+            errors.append(str(e))
+
+    raise ValueError(f"Param '{field_name}' failed validation: " + " OR ".join(errors))
 
 
 @dataclass(frozen=True)
@@ -161,7 +185,7 @@ class PhraseTransformDefinition:
     transform: Callable[[PhraseTransformContext, Mapping[str, object]], Phrase]
 
     def validate_params(self, params: Mapping[str, object]) -> None:
-        validate_transform_params(self.params_spec, self.name, params)
+        self.params_spec.parse_params(params, transform_name=self.name)
 
 
 @dataclass(frozen=True)
@@ -171,4 +195,4 @@ class ScoreTransformDefinition:
     transform: Callable[[Score, Mapping[str, object]], Score]
 
     def validate_params(self, params: Mapping[str, object]) -> None:
-        validate_transform_params(self.params_spec, self.name, params)
+        self.params_spec.parse_params(params, transform_name=self.name)
