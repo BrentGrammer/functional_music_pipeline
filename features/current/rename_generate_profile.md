@@ -1,7 +1,10 @@
 # Rename the generic \_GenerateProfile Protocol
 
 - This is a bad name. it is too generic and not expressive.
-
+- Also, we need to consider whether to drop this approach totally.
+  - There is too much indirection and coupling.
+  - The Profile in modulation module does not know about the profile in terraced_drift which uses `generate` and vice versa. This is poor design.
+  - There probably is a simpler way to refactor the transforms that use the _GenerateProfile or Profiles.
 Target Naming:
 
 ```python
