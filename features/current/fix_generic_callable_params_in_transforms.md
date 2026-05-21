@@ -196,7 +196,7 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - `EnumParam` can remain for string enum-like values such as intensity presets and return normalized `str`.
 - `TransformParamsSpec[P].parse_params(raw_params) -> P` validates unknown/missing fields, parses each field, applies the custom validator if present, then constructs the frozen params dataclass.
 - `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]` should be generic and invoke transforms with `P`, not `Mapping[str, object]`.
-- `composition/transformer.py` should call `descriptor.parse_params(transform_params)` once before building the prepared transform, then close over the typed params.
+- `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]` should expose `transform(...)`, which accepts raw request params, parses them internally, and invokes the stored typed transform function.
 
 **Why this is preferred:**
 
@@ -218,11 +218,11 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 **Descriptor API decision:**
 
 - The descriptor should expose a public `transform(...)` method, because callers are asking the descriptor to transform a phrase or score.
-- That method should accept raw request params as `Mapping[str, object]`, parse them internally with `params_spec.parse_params(...)`, then apply the typed transformation callable.
+- That method should accept raw request params as `Mapping[str, object]`, parse them internally with `params_spec.parse_params(...)`, then call the typed transform function.
 - Do not name this public method `parse_and_apply(...)`; parsing is an implementation detail and should not leak into the caller API.
 - Do not name it `apply(...)`; `transform(...)` better matches the domain language already used by the project.
-- Rename the stored callable field from `transform` to `transformation` so the descriptor can expose a `transform(...)` method without a naming collision.
-- Registry entries should therefore pass `transformation=drift_phrase_transform` and callers should use `descriptor.transform(context, raw_params)` or `descriptor.transform(score, raw_params)`.
+- Rename the stored callable field from `transform` to `transform_function` so the descriptor can expose a `transform(...)` method without a naming collision.
+- Registry entries should therefore pass `transform_function=drift_phrase_transform` and callers should use `descriptor.transform(context, raw_params)` or `descriptor.transform(score, raw_params)`.
 
 ## Files to Change
 
@@ -234,7 +234,7 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - `transforms/basic/delay.py`, `repeat.py`, `reversal.py`, `transpose.py`, `pad_silence.py` — If they have params.
 - `transforms/tempo/*.py` — Same.
 - `transforms/counterpoint/*.py` — Same.
-- `composition/transformer.py` — Parse raw params into typed params once before invoking transforms.
+- `composition/transformer.py` — Invoke transforms through `descriptor.transform(...)` so validation/parsing stays hidden behind the descriptor.
 - `tests/` — Update direct calls to use typed params.
 
 ## Status
