@@ -49,6 +49,7 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - Do not add distributed per-transform builders outside the params spec.
 - Make `TransformParamsSpec[P].parse_params(raw_params) -> P` validate unknown/missing fields, parse raw field values, apply defaults, construct the typed params model, then run the custom validator if present.
 - Field schemas validate and parse raw values. Custom validators should run on typed params as `Callable[[P], None]` so cross-field validation can use concrete attributes without defensive type checks.
+- Keep `base.py` limited to generic transform-boundary parsing infrastructure. Do not let it become a dumping ground for per-transform rules; transform-specific validation belongs in that transform's `TransformParamsSpec`, and transform functions should still receive already-validated typed params.
 
 ### Transform definitions
 
