@@ -1,85 +1,82 @@
-# Rename the generic \_GenerateProfile Protocol
+# Rename and Simplify the \_GenerateProfile / Modulation Modules
 
-- This is a bad name. it is too generic and not expressive.
-- Also, we need to consider whether to drop this approach totally.
-  - There is too much indirection and coupling.
-  - The Profile in modulation module does not know about the profile in terraced_drift which uses `generate` and vice versa. This is poor design.
-  - There probably is a simpler way to refactor the transforms that use the _GenerateProfile or Profiles.
-Target Naming:
+## Problem
 
-```python
-class _ToneDimensionFluctuationProfile(Protocol):
-    def construct_fluctuations(self, how_many: int) -> list[float]: ...
-```
+- `_GeneratedProfile` Protocol is duplicated identically in `transforms/geological/_modulation.py` and `transforms/complexity/_modulation.py`.
+- `_modulate_tone_dimension` and `apply_profile` are also duplicated across both files.
+- The Protocol + profile dataclass + `apply_profile` pattern adds indirection for no benefit: `apply_profile` does nothing except call `profile.generate(len(tones))` and pass the result to `_modulate_tone_dimension`.
+- `cellular_automata.py` already bypasses the profile pattern entirely — it calls `_modulate_tone_dimension` directly with a plain `list[float]`. The other three transforms (terraced_drift, random_drop, weierstrass) should do the same.
+- The name `_GeneratedProfile` is generic and doesn't describe what it actually is: a fluctuation/modulation value builder.
 
-## Considerations
+## Current consumers
 
-- The signature does not match the spirit of the profile
-- The fluctuation profile should construct fluctuations for some number of tones "how many"
-- If the profile is just saying call this method to generate this number of fluctuations, maybe it should not be a profile and simply a callable definition?
+| Transform | Module used | What it calls |
+|---|---|---|
+| `terraced_drift` | `geological/_modulation` | `apply_profile` (via `_TerracedBrownianProfile`) |
+| `random_drop` | `complexity/_modulation` | `apply_profile` (via `_RandomDropProfile`) |
+| `weierstrass` | `complexity/_modulation` | `apply_profile` (via `_WeierstrassProfile`) |
+| `cellular_automata` | `complexity/_modulation` | `_modulate_tone_dimension` directly |
 
-## Revised plan - simpler
+## Plan
 
-then a plain callable may be cleaner.
+### 1. Create `transforms/_modulation.py` — single shared module
 
-Something like:
-
-```python
-from collections.abc import Callable
-
-FluctuationBuilder = Callable[[int], list[float]]
-```
-
-Then:
+Contains one function:
 
 ```python
-def apply_fluctuation_profile(
+def apply_fluctuations(
     tones: ToneSequence,
-    build_fluctuations: FluctuationBuilder,
-    dimension: ToneDimension | str,
+    fluctuations: list[float],
+    dimension: ToneDimension,
     max_deviation: float,
 ) -> ToneSequence:
+```
+
+Renamed from `_modulate_tone_dimension`. Takes a plain `list[float]` directly — no profile object, no Protocol.
+
+### 2. Delete both duplicate `_modulation.py` files
+
+- `transforms/geological/_modulation.py`
+- `transforms/complexity/_modulation.py`
+
+### 3. Update each transform
+
+- **`cellular_automata.py`** — re-point import to `transforms._modulation`, rename call to `apply_fluctuations`.
+- **`terraced_drift.py`** — remove `_TerracedBrownianProfile` dataclass, replace with `_build_terraced_fluctuations(length, step_size, quantize_resolution)` function. Call `apply_fluctuations` directly.
+- **`random_drop.py`** — remove `_RandomDropProfile` dataclass, replace with `_build_random_drop_fluctuations(length, drop_rate)`. Call `apply_fluctuations` directly.
+- **`weierstrass.py`** — remove `_WeierstrassProfile` dataclass, replace with `_build_weierstrass_fluctuations(length, amplitude_scaling, ripples_per_wave, iterations)`. Call `apply_fluctuations` directly.
+
+### 4. Update tests
+
+`test_geological_modulation.py` imports `_TerracedBrownianProfile` directly — update to test `_build_terraced_fluctuations`.
+
+### 5. Verify
+
+Run full test suite, check for any missed imports.
+
+## Before vs After (example: terraced_drift)
+
+**Before:**
+```python
+from transforms.geological._modulation import apply_profile
+
+@dataclass(frozen=True)
+class _TerracedBrownianProfile:
+    seed: int = 42
     ...
-    fluctuations = build_fluctuations(len(tones))
+    def generate(self, length: int) -> list[float]: ...
+
+def apply_terraced_drift_transform(...):
+    return apply_profile(tones, _TerracedBrownianProfile(...), dimension, step_size)
 ```
 
-Usage:
-
+**After:**
 ```python
-profile = _RandomDropFluctuationProfile(seed=42, drop_rate=drop_rate)
+from transforms._modulation import apply_fluctuations
 
-return apply_fluctuation_profile(
-    tones,
-    profile.build_fluctuations,
-    dimension,
-    max_deviation,
-)
+def _build_terraced_fluctuations(length, step_size, quantize_resolution) -> list[float]: ...
+
+def apply_terraced_drift_transform(...):
+    fluctuations = _build_terraced_fluctuations(len(tones), step_size, step_size)
+    return apply_fluctuations(tones, fluctuations, dimension, step_size)
 ```
-
-That may actually clarify the design:
-
-\_RandomDropFluctuationProfile can still exist as a config object.
-But the shared modulation function only needs a fluctuation-building function.
-The protocol may be unnecessary unless you want to standardize profile objects.
-
-Possible type names:
-
-```
-FluctuationBuilder
-FluctuationFactory
-FluctuationGenerator
-```
-
-My pick:
-
-```python
-FluctuationBuilder = Callable[[int], list[float]]
-```
-
-because it pairs nicely with:
-
-```python
-build_fluctuations(how_many)
-```
-
-So yes: if all you need is “give me N fluctuations,” passing a callable is arguably simpler and more honest than a profile protocol.
