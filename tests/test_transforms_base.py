@@ -242,6 +242,37 @@ def test_phrase_transform_definition_validate_params_uses_its_params_spec():
     phrase_definition.validate_params({"seconds": 1.5})
 
 
+def test_phrase_transform_definition_transform_parses_params_before_invoking_transform_function():
+    factor_input = 2
+    expected_factor = 2.0
+    captured_params: list[dict[str, object]] = []
+    score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
+    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+    def transform_function(context: PhraseTransformContext, params: dict[str, object]) -> Phrase:
+        captured_params.append(params)
+        return context.phrase
+
+    phrase_definition = PhraseTransformDefinition(
+        name="phrase_scale",
+        params_spec=TransformParamsSpec(
+            params_factory=dict,
+            fields={
+                "factor": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                )
+            },
+        ),
+        transform_function=transform_function,
+    )
+
+    transformed_phrase = phrase_definition.transform(context, {"factor": factor_input})
+
+    assert transformed_phrase is context.phrase
+    assert captured_params == [{"factor": expected_factor}]
+
+
 def test_score_transform_definition_validate_params_uses_its_params_spec():
     params_spec = TransformParamsSpec(
         params_factory=dict,
@@ -259,6 +290,36 @@ def test_score_transform_definition_validate_params_uses_its_params_spec():
         transform_function=lambda score, params: score,
     )
     score_definition.validate_params({"seconds": 1.5})
+
+
+def test_score_transform_definition_transform_parses_params_before_invoking_transform_function():
+    factor_input = 2
+    expected_factor = 2.0
+    captured_params: list[dict[str, object]] = []
+    score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
+
+    def transform_function(score: Score, params: dict[str, object]) -> Score:
+        captured_params.append(params)
+        return score
+
+    score_definition = ScoreTransformDefinition(
+        name="score_scale",
+        params_spec=TransformParamsSpec(
+            params_factory=dict,
+            fields={
+                "factor": TransformParamFieldSpec(
+                    schema=FloatParam(),
+                    required=True,
+                )
+            },
+        ),
+        transform_function=transform_function,
+    )
+
+    transformed_score = score_definition.transform(score, {"factor": factor_input})
+
+    assert transformed_score is score
+    assert captured_params == [{"factor": expected_factor}]
 
 
 def test_boolean_param_accepts_true():
