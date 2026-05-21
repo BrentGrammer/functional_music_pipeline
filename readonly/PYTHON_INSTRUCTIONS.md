@@ -19,3 +19,10 @@ When working on Python tests:
 5. Use Serena to modify source or tests at the symbol level when possible.
 6. Re-run the targeted tests and coverage.
 7. Only after green targeted tests, run the broader suite.
+8. It is okay if some tests break during a complicated refactor or migration.
+9. Do not use specific string matchers in raise tests. Just assert the right type of exception was raised.
+
+```python
+with pytest.raises(ValueError) # do not add this: match="must include 'seconds'"):
+   params_spec.parse_params({}, transform_name="delay")
+```

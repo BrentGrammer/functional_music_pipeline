@@ -21,7 +21,6 @@ from transforms.base import (
     TransformParamFieldSpec,
     TransformParamsSpec,
     parse_dimension,
-    validate_transform_params,
 )
 
 
@@ -72,6 +71,47 @@ def test_transform_params_spec_defaults_to_no_fields():
     assert params_spec.validator is None
 
 
+def test_transform_params_spec_parse_params_returns_parsed_values():
+    factor_input = 2
+    expected_factor = 2.0
+    intensity_input = "HIGH"
+    expected_intensity = "high"
+
+    params_spec = TransformParamsSpec(
+        fields={
+            "factor": TransformParamFieldSpec(
+                schema=FloatParam(),
+                required=True,
+            ),
+            "intensity": TransformParamFieldSpec(
+                schema=EnumParam(allowed_values=("low", "medium", "high")),
+                required=True,
+            ),
+        }
+    )
+
+    parsed_params = params_spec.parse_params({"factor": factor_input, "intensity": intensity_input})
+
+    assert parsed_params == {"factor": expected_factor, "intensity": expected_intensity}
+
+
+def test_transform_params_spec_parse_params_applies_declared_defaults():
+    default_factor = 1.5
+
+    params_spec = TransformParamsSpec(
+        fields={
+            "factor": TransformParamFieldSpec(
+                schema=FloatParam(),
+                default=default_factor,
+            )
+        }
+    )
+
+    parsed_params = params_spec.parse_params({})
+
+    assert parsed_params == {"factor": default_factor}
+
+
 def test_transform_param_field_spec_preserves_schema():
     field_spec = TransformParamFieldSpec(
         schema=EnumParam(allowed_values=("start", "end")),
@@ -98,7 +138,7 @@ def test_transform_param_field_spec_accepts_union_schemas():
 
 
 
-def test_validate_transform_params_rejects_unknown_fields():
+def test_transform_params_spec_parse_params_rejects_unknown_fields():
     params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
@@ -109,10 +149,10 @@ def test_validate_transform_params_rejects_unknown_fields():
     )
 
     with pytest.raises(ValueError, match="unknown fields"):
-        validate_transform_params(params_spec, "delay", {"seconds": 1.0, "extra": 2.0})
+        params_spec.parse_params({"seconds": 1.0, "extra": 2.0}, transform_name="delay")
 
 
-def test_validate_transform_params_rejects_missing_required_fields():
+def test_transform_params_spec_parse_params_rejects_missing_required_fields():
     params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
@@ -123,10 +163,10 @@ def test_validate_transform_params_rejects_missing_required_fields():
     )
 
     with pytest.raises(ValueError, match="must include 'seconds'"):
-        validate_transform_params(params_spec, "delay", {})
+        params_spec.parse_params({}, transform_name="delay")
 
 
-def test_validate_transform_params_accepts_enum_field_case_insensitively():
+def test_transform_params_spec_parse_params_accepts_enum_field_case_insensitively():
     params_spec = TransformParamsSpec(
         fields={
             "dimension": TransformParamFieldSpec(
@@ -136,10 +176,12 @@ def test_validate_transform_params_accepts_enum_field_case_insensitively():
         }
     )
 
-    validate_transform_params(params_spec, "erosion", {"dimension": "DURATION"})
+    params_spec.parse_params({"dimension": "DURATION"}, transform_name="erosion")
 
 
-def test_validate_transform_params_runs_custom_validator():
+def test_transform_params_spec_parse_params_runs_custom_validator():
+    factor_input = 2
+    expected_factor = 2.0
     recorded_params: list[Mapping[str, object]] = []
 
     def validator(params: Mapping[str, object]) -> None:
@@ -147,20 +189,20 @@ def test_validate_transform_params_runs_custom_validator():
 
     params_spec = TransformParamsSpec(
         fields={
-            "name": TransformParamFieldSpec(
-                schema=StringParam(),
+            "factor": TransformParamFieldSpec(
+                schema=FloatParam(),
                 required=True,
             )
         },
         validator=validator,
     )
 
-    validate_transform_params(params_spec, "label", {"name": "intro"})
+    params_spec.parse_params({"factor": factor_input}, transform_name="scale")
 
-    assert recorded_params == [{"name": "intro"}]
+    assert recorded_params == [{"factor": expected_factor}]
 
 
-def test_validate_transform_params_surfaces_single_schema_error():
+def test_transform_params_spec_parse_params_surfaces_single_schema_error():
     params_spec = TransformParamsSpec(
         fields={
             "label": TransformParamFieldSpec(
@@ -171,13 +213,13 @@ def test_validate_transform_params_surfaces_single_schema_error():
     )
 
     with pytest.raises(ValueError, match="must be a string"):
-        validate_transform_params(params_spec, "labeler", {"label": 123})
+        params_spec.parse_params({"label": 123}, transform_name="labeler")
 
 
-def test_validate_transform_params_combines_union_schema_errors():
+def test_transform_params_spec_parse_params_combines_union_schema_errors():
     params_spec = TransformParamsSpec(
         fields={
-            "mode": TransformParamFieldSpec(
+            "strength": TransformParamFieldSpec(
                 schema=(StringParam(), FloatParam()),
                 required=True,
             )
@@ -185,7 +227,7 @@ def test_validate_transform_params_combines_union_schema_errors():
     )
 
     with pytest.raises(ValueError, match="failed validation: .* OR .*"):
-        validate_transform_params(params_spec, "union_test", {"mode": False})
+        params_spec.parse_params({"strength": False}, transform_name="union_test")
 
 
 def test_phrase_transform_context_exposes_current_phrase():
@@ -200,7 +242,7 @@ def test_phrase_transform_context_exposes_current_phrase():
     assert context.phrase is score.voices[1].phrases[0]
 
 
-def test_phrase_transform_definition_validate_params_delegates_to_shared_validator():
+def test_phrase_transform_definition_validate_params_uses_its_params_spec():
     params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
@@ -218,7 +260,7 @@ def test_phrase_transform_definition_validate_params_delegates_to_shared_validat
     phrase_definition.validate_params({"seconds": 1.5})
 
 
-def test_score_transform_definition_validate_params_delegates_to_shared_validator():
+def test_score_transform_definition_validate_params_uses_its_params_spec():
     params_spec = TransformParamsSpec(
         fields={
             "seconds": TransformParamFieldSpec(
