@@ -21,7 +21,7 @@ if sbx ls | grep "$SANDBOX_NAME"; then
     fi
 else
     echo "!!! WARNING !!! No sandbox $SANDBOX_NAME found!"
-    echo "    After creating/running the sandbox, run 'sbx cp .npmrc "$SANDBOX_NAME":/home/agent/.npmrc' to get .npmrc config moved into it"
+    echo "    After creating/running the sandbox, run 'sbx cp .npmrc ""$SANDBOX_NAME"":/home/agent/.npmrc' to get .npmrc config moved into it"
 fi
 
 

@@ -52,9 +52,9 @@ else
   
   echo "⚙️ Upgrading Node, installing Cline..."
   # to install node and allow cline auth:
-  sbx policy allow network $SANDBOX_NAME nodejs.org:443
-  sbx policy allow network $SANDBOX_NAME api.workos.com:443
-  sbx policy allow network $SANDBOX_NAME api.cline.bot:443
+  sbx policy allow network "$SANDBOX_NAME" nodejs.org:443
+  sbx policy allow network "$SANDBOX_NAME" api.workos.com:443
+  sbx policy allow network "$SANDBOX_NAME" api.cline.bot:443
 
   # CONFIG_JSON='{"mcpServers":{"serena":{"command":"uv","args":["tool","run","--python","3.13","--from","serena-agent@latest","--prerelease=allow","serena","start-mcp-server","--project",".","--context=ide","--open-web-dashboard=false"]},"exa":{"url":"https://mcp.exa.ai/mcp"}}}'
   # && mkdir -p ~/.config/cline ~/.cline/data/settings && echo '$CONFIG_JSON' > ~/.config/cline/mcp.json && echo '$CONFIG_JSON' > ~/.cline/data/settings/cline_mcp_settings.json"

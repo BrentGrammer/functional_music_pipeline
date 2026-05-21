@@ -61,7 +61,6 @@ export OPENCODE_DISABLE_AUTOUPDATE=1
 export DO_NOT_TRACK=1
 export SBX_NO_TELEMETRY=1
 export TERM=xterm-256color
-export ANTHROPIC_DEFAULT_OPUS_MODEL_SUPPORTED_CAPABILITIES=effort,xhigh_effort,max_effort,thinking,adaptive_thinking,interleaved_thinking
 # END opencode privacy flags
 EOF
 ' || true
