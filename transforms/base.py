@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
-from typing import TypeAlias
+from typing import Generic, TypeAlias, TypeVar
 
 from score_model.phrase import Phrase
 from score_model.score import Score
@@ -9,6 +9,7 @@ from score_model.tone import Tone
 
 ToneSequence: TypeAlias = list[Tone]
 TransformParamsValidator: TypeAlias = Callable[[Mapping[str, object]], None]
+ParsedParam = TypeVar("ParsedParam")
 
 
 class ToneDimension(StrEnum):
@@ -26,47 +27,60 @@ def parse_dimension(dim: ToneDimension | str) -> ToneDimension:
         raise ValueError(f"Invalid dimension: {dim}. Must be one of {', '.join(d.value for d in ToneDimension)}")
 
 
-class ParamSchema:
+class ParamSchema(Generic[ParsedParam]):
     """Base class for all parameter shapes/types."""
-    def validate(self, value: object, field_name: str) -> None:
+
+    def parse(self, value: object, field_name: str) -> ParsedParam:
         raise NotImplementedError
 
+    def validate(self, value: object, field_name: str) -> None:
+        self.parse(value, field_name)
+
 
 @dataclass(frozen=True)
-class FloatParam(ParamSchema):
-    def validate(self, value: object, field_name: str) -> None:
+class FloatParam(ParamSchema[float]):
+    def parse(self, value: object, field_name: str) -> float:
         if not isinstance(value, (float, int)) or isinstance(value, bool):
             raise ValueError(f"Param '{field_name}' must be a float.")
+        return float(value)
 
 
 @dataclass(frozen=True)
-class IntegerParam(ParamSchema):
-    def validate(self, value: object, field_name: str) -> None:
+class IntegerParam(ParamSchema[int]):
+    def parse(self, value: object, field_name: str) -> int:
         if not isinstance(value, int) or isinstance(value, bool):
             raise ValueError(f"Param '{field_name}' must be an integer.")
+        return value
 
 
 @dataclass(frozen=True)
-class StringParam(ParamSchema):
-    def validate(self, value: object, field_name: str) -> None:
+class StringParam(ParamSchema[str]):
+    def parse(self, value: object, field_name: str) -> str:
         if not isinstance(value, str):
             raise ValueError(f"Param '{field_name}' must be a string.")
+        return value
 
 
 @dataclass(frozen=True)
-class BooleanParam(ParamSchema):
-    def validate(self, value: object, field_name: str) -> None:
+class BooleanParam(ParamSchema[bool]):
+    def parse(self, value: object, field_name: str) -> bool:
         if not isinstance(value, bool):
             raise ValueError(f"Param '{field_name}' must be a boolean.")
+        return value
 
 
 @dataclass(frozen=True)
-class EnumParam(ParamSchema):
+class EnumParam(ParamSchema[str]):
     allowed_values: tuple[str, ...]
 
-    def validate(self, value: object, field_name: str) -> None:
-        if not isinstance(value, str) or value.lower() not in (v.lower() for v in self.allowed_values):
+    def parse(self, value: object, field_name: str) -> str:
+        if not isinstance(value, str):
             raise ValueError(f"Param '{field_name}' must be one of {self.allowed_values}.")
+        normalized_value = value.lower()
+        normalized_allowed_values = {allowed_value.lower(): allowed_value.lower() for allowed_value in self.allowed_values}
+        if normalized_value not in normalized_allowed_values:
+            raise ValueError(f"Param '{field_name}' must be one of {self.allowed_values}.")
+        return normalized_allowed_values[normalized_value]
 
 
 @dataclass(frozen=True)
