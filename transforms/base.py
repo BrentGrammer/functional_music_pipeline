@@ -84,6 +84,11 @@ class EnumParam(ParamSchema[str]):
 
 
 @dataclass(frozen=True)
+class NoParams:
+    pass
+
+
+@dataclass(frozen=True)
 class TransformParamFieldSpec:
     schema: ParamSchema | tuple[ParamSchema, ...]
     required: bool = False
