@@ -45,3 +45,6 @@ sbx policy allow network -g mcp.exa.ai:443
 sbx policy allow network -g github.com:443
 sbx policy allow network -g api.github.com:443
 sbx policy allow network -g oraios-software.de:443
+
+# for OpenRouter provider access
+sbx policy allow network -g openrouter.ai:443
