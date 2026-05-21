@@ -9,7 +9,7 @@ from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.basic.delay import delay_phrase_transform, delay_score_transform
 from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
 from transforms.basic.repeat import RepeatParams, repeat_phrase_transform, repeat_score_transform
-from transforms.basic.transpose import transpose_phrase_transform, transpose_score_transform
+from transforms.basic.transpose import TransposeParams, transpose_phrase_transform, transpose_score_transform
 from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
 from transforms.complexity.random_drop import random_drop_phrase_transform, random_drop_score_transform
 from transforms.complexity.weierstrass import weierstrass_phrase_transform, weierstrass_score_transform
@@ -134,12 +134,12 @@ def test_transpose_phrase_and_score_transform_transpose_observable_output():
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
     phrase_octave_up = 12
-    transposed_phrase = transpose_phrase_transform(context, {"semitones": phrase_octave_up})
+    transposed_phrase = transpose_phrase_transform(context, TransposeParams(semitones=phrase_octave_up))
     expected_phrase_frequency_one_octave_up = phrase_starting_frequency * 2
     assert transposed_phrase.motifs[0].tones[0].frequency == pytest.approx(expected_phrase_frequency_one_octave_up)
 
     score_octave_down = -12.0
-    transposed_score = transpose_score_transform(score, {"semitones": score_octave_down})
+    transposed_score = transpose_score_transform(score, TransposeParams(semitones=score_octave_down))
     expected_score_frequency_one_octave_down = score_starting_frequency / 2
     assert transposed_score.voices[1].phrases[0].motifs[0].tones[0].frequency == pytest.approx(expected_score_frequency_one_octave_down)
 

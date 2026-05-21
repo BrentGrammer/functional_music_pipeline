@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -9,7 +10,21 @@ from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
-TRANSPOSE_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class TransposeParams:
+    semitones: float
+
+
+def _create_transpose_params(parsed_params: Mapping[str, object]) -> TransposeParams:
+    semitones = parsed_params["semitones"]
+    if isinstance(semitones, bool) or not isinstance(semitones, (float, int)):
+        raise ValueError("Param 'semitones' must be a float.")
+    return TransposeParams(semitones=float(semitones))
+
+
+TRANSPOSE_PARAMS_SPEC = TransformParamsSpec[TransposeParams](
+    params_factory=_create_transpose_params,
     fields={
         "semitones": TransformParamFieldSpec(
             schema=FloatParam(),
@@ -31,25 +46,17 @@ def transpose_tones(tones: ToneSequence, semitones: float) -> ToneSequence:
     ]
 
 
-def transpose_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    semitones = params["semitones"]
-    if isinstance(semitones, bool) or not isinstance(semitones, (int, float)):
-        raise ValueError("Param 'semitones' must be a float.")
-
+def transpose_phrase_transform(context: PhraseTransformContext, params: TransposeParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-    transposed_tones = transpose_tones(phrase_tones, semitones=float(semitones))
+    transposed_tones = transpose_tones(phrase_tones, semitones=params.semitones)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transposed_tones)])
 
 
-def transpose_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    semitones = params["semitones"]
-    if isinstance(semitones, bool) or not isinstance(semitones, (int, float)):
-        raise ValueError("Param 'semitones' must be a float.")
-
+def transpose_score_transform(score: Score, params: TransposeParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        transposed_tones = transpose_tones(voice_tones, semitones=float(semitones))
+        transposed_tones = transpose_tones(voice_tones, semitones=params.semitones)
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transposed_tones)])]))
 
     return Score(voices=new_voices)

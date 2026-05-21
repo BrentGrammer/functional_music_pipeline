@@ -9,7 +9,7 @@ from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.basic.delay import delay_phrase_transform, delay_score_transform
 from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC
-from transforms.basic.transpose import transpose_phrase_transform, transpose_score_transform
+from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC
 from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
 from transforms.complexity.random_drop import random_drop_phrase_transform, random_drop_score_transform
 from transforms.complexity.weierstrass import weierstrass_phrase_transform, weierstrass_score_transform
@@ -46,34 +46,13 @@ def test_repeat_phrase_transform_rejects_bool_count():
 
 
 def test_transpose_score_transform_rejects_bool_semitones():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="transpose-target", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            )
-        ]
-    )
-
     with pytest.raises(ValueError):
-        transpose_score_transform(score, {"semitones": True})
+        TRANSPOSE_PARAMS_SPEC.parse_params({"semitones": True}, transform_name="transpose")
 
 
 def test_transpose_phrase_transform_rejects_bool_semitones():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="transpose-target", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            )
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-
     with pytest.raises(ValueError):
-        transpose_phrase_transform(context, {"semitones": True})
+        TRANSPOSE_PARAMS_SPEC.parse_params({"semitones": True}, transform_name="transpose")
 
 
 def test_delay_score_transform_rejects_bool_seconds():
