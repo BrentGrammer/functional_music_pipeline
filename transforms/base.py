@@ -183,9 +183,6 @@ class PhraseTransformDefinition(Generic[ParsedParams]):
     params_spec: TransformParamsSpec[ParsedParams]
     transform_function: Callable[[PhraseTransformContext, ParsedParams], Phrase]
 
-    def validate_params(self, params: Mapping[str, object]) -> None:
-        self.params_spec.parse_params(params, transform_name=self.name)
-
     def transform(
         self,
         context: PhraseTransformContext,
@@ -200,9 +197,6 @@ class ScoreTransformDefinition(Generic[ParsedParams]):
     name: str
     params_spec: TransformParamsSpec[ParsedParams]
     transform_function: Callable[[Score, ParsedParams], Score]
-
-    def validate_params(self, params: Mapping[str, object]) -> None:
-        self.params_spec.parse_params(params, transform_name=self.name)
 
     def transform(
         self,

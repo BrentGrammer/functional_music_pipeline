@@ -223,25 +223,6 @@ def test_phrase_transform_context_exposes_current_phrase():
     assert context.phrase is score.voices[1].phrases[0]
 
 
-def test_phrase_transform_definition_validate_params_uses_its_params_spec():
-    params_spec = TransformParamsSpec(
-        params_factory=dict,
-        fields={
-            "seconds": TransformParamFieldSpec(
-                schema=FloatParam(),
-                required=True,
-            )
-        }
-    )
-
-    phrase_definition = PhraseTransformDefinition(
-        name="phrase_delay",
-        params_spec=params_spec,
-        transform_function=lambda context, params: context.phrase,
-    )
-    phrase_definition.validate_params({"seconds": 1.5})
-
-
 def test_phrase_transform_definition_transform_parses_params_before_invoking_transform_function():
     factor_input = 2
     expected_factor = 2.0
@@ -271,25 +252,6 @@ def test_phrase_transform_definition_transform_parses_params_before_invoking_tra
 
     assert transformed_phrase is context.phrase
     assert captured_params == [{"factor": expected_factor}]
-
-
-def test_score_transform_definition_validate_params_uses_its_params_spec():
-    params_spec = TransformParamsSpec(
-        params_factory=dict,
-        fields={
-            "seconds": TransformParamFieldSpec(
-                schema=FloatParam(),
-                required=True,
-            )
-        }
-    )
-
-    score_definition = ScoreTransformDefinition(
-        name="score_delay",
-        params_spec=params_spec,
-        transform_function=lambda score, params: score,
-    )
-    score_definition.validate_params({"seconds": 1.5})
 
 
 def test_score_transform_definition_transform_parses_params_before_invoking_transform_function():
