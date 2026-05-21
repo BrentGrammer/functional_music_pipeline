@@ -15,7 +15,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 
 _WEIERSTRASS_INTENSITY_PRESETS = {
@@ -98,7 +97,7 @@ def weierstrass_phrase_transform(context: PhraseTransformContext, params: Mappin
 
     phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = apply_weierstrass_transform(
-        phrase_tones, dimension=parse_dimension(dimension), intensity=intensity
+        phrase_tones, dimension=dimension, intensity=intensity
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
@@ -115,10 +114,9 @@ def weierstrass_score_transform(score: Score, params: Mapping[str, object]) -> S
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        resolved_dimension = parse_dimension(dimension)
         transformed_tones = apply_weierstrass_transform(
             voice_tones,
-            dimension=resolved_dimension,
+            dimension=dimension,
             intensity=intensity,
         )
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))

@@ -11,7 +11,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 
 EROSION_PARAMS_SPEC = TransformParamsSpec(
@@ -25,7 +24,7 @@ EROSION_PARAMS_SPEC = TransformParamsSpec(
 
 def erosion_transform(
     tones: ToneSequence,
-    dimension: ToneDimension | str = ToneDimension.DURATION,
+    dimension: ToneDimension = ToneDimension.DURATION,
 ) -> ToneSequence:
     """
     Mimics geological erosion, gradually wearing down a musical phrase.
@@ -41,13 +40,11 @@ def erosion_transform(
     if not tones:
         return []
 
-    resolved_dimension = parse_dimension(dimension)
-
-    if resolved_dimension == ToneDimension.DURATION:
+    if dimension == ToneDimension.DURATION:
         return _erode_duration(tones)
-    elif resolved_dimension == ToneDimension.AMPLITUDE:
+    elif dimension == ToneDimension.AMPLITUDE:
         return _erode_amplitude(tones)
-    elif resolved_dimension == ToneDimension.FREQUENCY:
+    elif dimension == ToneDimension.FREQUENCY:
         return _erode_frequency(tones)
 
 

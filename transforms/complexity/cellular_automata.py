@@ -15,7 +15,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 
 CELLULAR_AUTOMATA_PARAMS_SPEC = TransformParamsSpec(
@@ -117,8 +116,6 @@ def cellular_automata_phrase_transform(context: PhraseTransformContext, params: 
     phrase_tones = flatten_phrase_tones(context.phrase)
 
     dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Cellular automata dimension must be a string or ToneDimension.")
 
     rule = params["rule"]
     if not isinstance(rule, int) or isinstance(rule, bool):
@@ -134,7 +131,7 @@ def cellular_automata_phrase_transform(context: PhraseTransformContext, params: 
 
     transformed_tones = apply_cellular_automata_transform(
         phrase_tones,
-        dimension=parse_dimension(dimension),
+        dimension=dimension,
         rule=rule,
         generations=generations,
         max_deviation=float(max_deviation),
@@ -162,10 +159,9 @@ def cellular_automata_score_transform(score: Score, params: Mapping[str, object]
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        resolved_dimension = parse_dimension(dimension)
         transformed_tones = apply_cellular_automata_transform(
             voice_tones,
-            dimension=resolved_dimension,
+            dimension=dimension,
             rule=rule,
             generations=generations,
             max_deviation=float(max_deviation),

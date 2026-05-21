@@ -14,7 +14,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 from transforms.basic.scale import scale_transform
 
@@ -32,12 +31,11 @@ def _cumulative_dimension(tones: ToneSequence, dim: ToneDimension) -> float:
     return float(sum(getattr(t, dimension) for t in tones))
 
 
-def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION) -> ToneSequence:
+def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION) -> ToneSequence:
     if not tones:
         return []
 
-    dim = parse_dimension(dimension)
-    dim_attr = dim.name.lower()
+    dim_attr = dimension.name.lower()
     new_tones = [tones[0]]
 
     for tone in tones[1:]:
@@ -48,11 +46,11 @@ def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension | str = To
         dur = tone.duration
         amp = tone.amplitude
 
-        if dim == ToneDimension.FREQUENCY:
+        if dimension == ToneDimension.FREQUENCY:
             freq = max(1.0, new_val)
-        elif dim == ToneDimension.DURATION:
+        elif dimension == ToneDimension.DURATION:
             dur = max(0.0, new_val)
-        elif dim == ToneDimension.AMPLITUDE:
+        elif dimension == ToneDimension.AMPLITUDE:
             amp = max(0.0, min(1.0, new_val))
 
         new_tones.append(Tone(frequency=freq, duration=dur, sample_rate=tone.sample_rate, amplitude=amp))
@@ -84,7 +82,7 @@ def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params
 
 
 def phrase_feigenbaum_shrink(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION
+    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
 ) -> ToneSequence:
     if not tones:
         return tones
@@ -92,15 +90,14 @@ def phrase_feigenbaum_shrink(
     if not previous_tones:
         raise ValueError("Cannot apply phrase-feigenbaum-shrink: no preceding phrases exist to relate to.")
 
-    dim = parse_dimension(dimension)
-    previous = _cumulative_dimension(previous_tones, dim)
-    current = _cumulative_dimension(tones, dim)
+    previous = _cumulative_dimension(previous_tones, dimension)
+    current = _cumulative_dimension(tones, dimension)
 
     if current == 0 or previous == 0:
         return tones
 
     scale_factor = (previous / FEIGENBAUM_RATIO) / current
-    return scale_transform(tones, dim, scale_factor)
+    return scale_transform(tones, dimension, scale_factor)
 
 
 def phrase_feigenbaum_shrink_transform(
@@ -134,7 +131,7 @@ def phrase_feigenbaum_grow_transform(
 
 
 def phrase_feigenbaum_grow(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION
+    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
 ) -> ToneSequence:
     if not tones:
         return tones
@@ -142,29 +139,27 @@ def phrase_feigenbaum_grow(
     if not previous_tones:
         raise ValueError("Cannot apply phrase-feigenbaum-grow: no preceding phrases exist to relate to.")
 
-    dim = parse_dimension(dimension)
-    previous = _cumulative_dimension(previous_tones, dim)
-    current = _cumulative_dimension(tones, dim)
+    previous = _cumulative_dimension(previous_tones, dimension)
+    current = _cumulative_dimension(tones, dimension)
 
     if current == 0 or previous == 0:
         return tones
 
     scale_factor = (previous * FEIGENBAUM_RATIO) / current
-    return scale_transform(tones, dim, scale_factor)
+    return scale_transform(tones, dimension, scale_factor)
 
 
-def score_feigenbaum_sequence(score: Score, dimension: ToneDimension | str = ToneDimension.DURATION) -> Score:
+def score_feigenbaum_sequence(score: Score, dimension: ToneDimension = ToneDimension.DURATION) -> Score:
     if not score.voices:
         return score
 
     if len(score.voices) < 2:
         raise ValueError("score_feigenbaum_sequence requires at least 2 voices to apply a sequence.")
 
-    dim = parse_dimension(dimension)
     new_voices = []
     for i, voice in enumerate(score.voices):
         scale_factor = 1.0 / (FEIGENBAUM_RATIO ** i)
-        new_tones = scale_transform(flatten_voice_tones(voice), dim, scale_factor)
+        new_tones = scale_transform(flatten_voice_tones(voice), dimension, scale_factor)
         new_voices.append(
             Voice(phrases=[Phrase(motifs=[Motif(name="<feigenbaum>", tones=new_tones)])])
         )

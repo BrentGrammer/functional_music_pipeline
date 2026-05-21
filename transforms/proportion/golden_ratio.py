@@ -13,7 +13,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 from transforms.basic.scale import scale_transform
 
@@ -31,7 +30,7 @@ def _cumulative_dimension(tones: ToneSequence, dim: ToneDimension) -> float:
     return float(sum(getattr(t, dimension) for t in tones))
 
 
-def golden_ratio_transform(tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION) -> ToneSequence:
+def golden_ratio_transform(tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION) -> ToneSequence:
     return scale_transform(tones, dimension, 1 / GOLDEN_RATIO)
 
 
@@ -89,7 +88,7 @@ def phrase_golden_ratio_grow_transform(
 
 
 def phrase_golden_ratio_shrink(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION
+    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
 ) -> ToneSequence:
     if not tones:
         return tones
@@ -97,19 +96,18 @@ def phrase_golden_ratio_shrink(
     if not previous_tones:
         raise ValueError("Cannot apply phrase-golden-ratio-shrink: no preceding phrases exist to relate to.")
 
-    dim = parse_dimension(dimension)
-    prev_val = _cumulative_dimension(previous_tones, dim)
-    curr_val = _cumulative_dimension(tones, dim)
+    prev_val = _cumulative_dimension(previous_tones, dimension)
+    curr_val = _cumulative_dimension(tones, dimension)
 
     if curr_val == 0 or prev_val == 0:
         return tones
 
     scale_factor = (prev_val / GOLDEN_RATIO) / curr_val
-    return scale_transform(tones, dim, scale_factor)
+    return scale_transform(tones, dimension, scale_factor)
 
 
 def phrase_golden_ratio_grow(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension | str = ToneDimension.DURATION
+    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
 ) -> ToneSequence:
     if not tones:
         return tones
@@ -117,15 +115,14 @@ def phrase_golden_ratio_grow(
     if not previous_tones:
         raise ValueError("Cannot apply phrase-golden-ratio-grow: no preceding phrases exist to relate to.")
 
-    dim = parse_dimension(dimension)
-    prev_val = _cumulative_dimension(previous_tones, dim)
-    curr_val = _cumulative_dimension(tones, dim)
+    prev_val = _cumulative_dimension(previous_tones, dimension)
+    curr_val = _cumulative_dimension(tones, dimension)
 
     if curr_val == 0 or prev_val == 0:
         return tones
 
     scale_factor = (prev_val * GOLDEN_RATIO) / curr_val
-    return scale_transform(tones, dim, scale_factor)
+    return scale_transform(tones, dimension, scale_factor)
 
 
 def golden_ratio_score_transform(score: Score, params: Mapping[str, object]) -> Score:

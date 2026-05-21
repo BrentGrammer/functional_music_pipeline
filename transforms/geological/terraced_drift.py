@@ -15,7 +15,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 
 TERRACED_DRIFT_PARAMS_SPEC = TransformParamsSpec(
@@ -79,7 +78,7 @@ def terraced_drift_phrase_transform(context: PhraseTransformContext, params: Map
     phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = apply_terraced_drift_transform(
         phrase_tones,
-        dimension=parse_dimension(dimension),
+        dimension=dimension,
         max_step_change_pct=max_step_change_pct,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
@@ -97,10 +96,9 @@ def terraced_drift_score_transform(score: Score, params: Mapping[str, object]) -
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        resolved_dimension = parse_dimension(dimension)
         transformed_tones = apply_terraced_drift_transform(
             voice_tones,
-            dimension=resolved_dimension,
+            dimension=dimension,
             max_step_change_pct=max_step_change_pct,
         )
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))

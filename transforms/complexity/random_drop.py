@@ -15,7 +15,6 @@ from transforms.base import (
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
-    parse_dimension,
 )
 
 
@@ -86,7 +85,7 @@ def random_drop_phrase_transform(context: PhraseTransformContext, params: Mappin
 
     transformed_tones = apply_random_drop_transform(
         phrase_tones,
-        dimension=parse_dimension(dimension),
+        dimension=dimension,
         max_drop_pct=max_drop_pct,
         drop_frequency_pct=drop_frequency_pct,
     )
@@ -109,10 +108,9 @@ def random_drop_score_transform(score: Score, params: Mapping[str, object]) -> S
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        resolved_dimension = parse_dimension(dimension)
         transformed_tones = apply_random_drop_transform(
             voice_tones,
-            dimension=resolved_dimension,
+            dimension=dimension,
             max_drop_pct=max_drop_pct,
             drop_frequency_pct=drop_frequency_pct,
         )
