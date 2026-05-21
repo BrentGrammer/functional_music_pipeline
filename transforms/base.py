@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import MISSING, dataclass, field
 from enum import StrEnum, auto
 from typing import Generic, TypeAlias, TypeVar
 
@@ -92,6 +92,8 @@ class NoParams:
 class TransformParamFieldSpec:
     schema: ParamSchema | tuple[ParamSchema, ...]
     required: bool = False
+    # MISSING lets parse-time code distinguish "no default declared" from an explicit default like None.
+    default: object = MISSING
 
 
 @dataclass(frozen=True)
