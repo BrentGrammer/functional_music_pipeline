@@ -210,7 +210,10 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 
 - The main typing risk is the heterogeneous transform registry: one registry maps names to transform definitions with different params types.
 - Do not solve that by spreading `Any`, broad `Mapping[str, object]`, or `typing.cast` into transform modules.
-- Keep any unavoidable type erasure localized to the registry/transformer boundary, where raw user params become typed params.
+- Do not name the registry-facing abstraction `AnyPhraseTransformDefinition` or similar; that names the typing compromise instead of the domain role.
+- Use Protocols named `PhraseTransformDescriptor` and `ScoreTransformDescriptor` for registry values.
+- The descriptor Protocols should expose only the public registry contract: `name` and `transform(...)`.
+- Keep the concrete generic params type hidden inside `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]`.
 - Prefer `TransformParamsSpec[P].parse_params(...) -> P` and `PhraseTransformDefinition[P]` / `ScoreTransformDefinition[P]` methods that preserve the params type for each definition.
 - If constructing a params dataclass generically with `params_model(**parsed_fields)` causes mypy friction, prefer a small typed factory on `TransformParamsSpec[P]` over distributed per-transform builders.
 - The success condition is that transform modules receive concrete params objects and can pass mypy without local casts or defensive `isinstance` checks.
@@ -223,6 +226,7 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - Do not name it `apply(...)`; `transform(...)` better matches the domain language already used by the project.
 - Rename the stored callable field from `transform` to `transform_function` so the descriptor can expose a `transform(...)` method without a naming collision.
 - Registry entries should therefore pass `transform_function=drift_phrase_transform` and callers should use `descriptor.transform(context, raw_params)` or `descriptor.transform(score, raw_params)`.
+- Registry type annotations should be `dict[str, PhraseTransformDescriptor]` and `dict[str, ScoreTransformDescriptor]`, not `dict[str, PhraseTransformDefinition[Any]]`.
 
 ## Files to Change
 
