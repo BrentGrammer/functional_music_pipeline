@@ -1,0 +1,124 @@
+# Fix Generic Callable Params in Transforms
+
+## Problem
+
+Transform functions currently use `Mapping[str, object]` for their params parameter, which requires repeated `isinstance` checks inside every transform for `rate`, `factor`, `dimension`, `max_deviation`, etc. This is redundant because params are already validated at the boundary in `composition/transformer.py` via `descriptor.validate_params()` before the transform is invoked.
+
+## Design
+
+1. **Define typed params models** per transform (e.g., `DriftParams`, `InvertParams`, `ScaleParams`). Each model matches the shape of the corresponding `TransformParamsSpec`.
+
+2. **Update transform signatures** to use the typed params model instead of `Mapping[str, object]`.
+
+3. **Update `PhraseTransformDefinition` / `ScoreTransformDefinition`** (or introduce new generic variants) so the `transform` callable carries the typed params contract.
+
+4. **In `composition/transformer.py`**, after `descriptor.validate_params(transform_params)`, cast the dict to the typed params model before calling `descriptor.transform(...)`.
+
+## Benefits
+
+- **Single validation point**: Runtime validation happens once at the boundary via `TransformParamsSpec`.
+- **No redundant checks inside transforms**: Transforms can trust their params (no `isinstance` guards needed).
+- **Type-safe signatures**: Each transform's signature documents exactly what params it expects.
+- **Eliminates `Mapping[str, object]`**: All internal transform code works with concrete, typed params.
+
+## Approach
+
+### Option A: TypedDict (lightweight)
+
+```python
+from typing import TypedDict
+from transforms.base import ToneDimension
+
+class DriftParams(TypedDict):
+    dimension: ToneDimension
+    rate: float
+
+def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams) -> Phrase:
+    ...
+```
+
+- Pro: Easy, no imports needed at call sites.
+- Con: Python won't enforce at runtime; still need `TransformParamsSpec.validate` at boundary.
+
+### Option B: Frozen dataclass (safer)
+
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class DriftParams:
+    dimension: ToneDimension
+    rate: float
+
+def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams) -> Phrase:
+    ...
+```
+
+- Pro: Enforced at construction time; can use `dataclasses.asdict` for existing dict params.
+- Con: Slightly more ceremony at the boundary.
+
+### Option C: Generic TransformDefinition[P]
+
+Wrap the transform callable with a typed generic:
+
+```python
+from typing import Generic, TypeVar
+
+P = TypeVar("P")
+
+class PhraseTransformDefinition(Generic[P]):
+    name: str
+    params_spec: TransformParamsSpec
+    transform: Callable[[PhraseTransformContext, P], Phrase]
+```
+
+Then the registry entry binds the type:
+
+```python
+PHRASE_TRANSFORMS = {
+    "drift": PhraseTransformDefinition[DriftParams](
+        name="drift",
+        params_spec=DRIFT_PARAMS_SPEC,
+        transform=drift_phrase_transform,
+    ),
+}
+```
+
+And in the preparation layer, after validation, construct the typed params:
+
+```python
+# In composition/transformer.py
+drift_params = DriftParams(
+    dimension=transform_params["dimension"],
+    rate=float(transform_params["rate"]),
+)
+descriptor.transform(context, drift_params)
+```
+
+## Files to Change
+
+- `transforms/base.py` — Make `PhraseTransformDefinition` / `ScoreTransformDefinition` generic (optional).
+- `transforms/basic/drift.py`, `inversion.py`, `scale.py` — Add typed params classes, update signatures.
+- `transforms/complexity/*.py` — Same.
+- `transforms/geological/*.py` — Same.
+- `transforms/proportion/*.py` — Same.
+- `transforms/basic/delay.py`, `repeat.py`, `reversal.py`, `transpose.py`, `pad_silence.py` — If they have params.
+- `transforms/tempo/*.py` — Same.
+- `transforms/counterpoint/*.py` — Same.
+- `composition/transformer.py` — Cast dict to typed params after validation.
+- `tests/` — Update direct calls to use typed params.
+
+## Status
+
+- [x] Removed all `isinstance(dimension, ...)` guards from transform functions (cleanup step 1).
+- [ ] Define typed params models per transform.
+- [ ] Update transform function signatures.
+- [ ] Update registry definitions.
+- [ ] Update `composition/transformer.py` boundary code.
+- [ ] Update tests.
+- [ ] Remove `parse_dimension` from `transforms/base.py` or keep only for external use.
+
+
+## Final step
+
+- check drift.py - it looks like there is a transform function not used in production code?
