@@ -8,7 +8,7 @@ from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.basic.delay import delay_phrase_transform, delay_score_transform
 from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
-from transforms.basic.repeat import repeat_phrase_transform, repeat_score_transform
+from transforms.basic.repeat import RepeatParams, repeat_phrase_transform, repeat_score_transform
 from transforms.basic.transpose import transpose_phrase_transform, transpose_score_transform
 from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
 from transforms.complexity.random_drop import random_drop_phrase_transform, random_drop_score_transform
@@ -64,7 +64,7 @@ def test_repeat_phrase_and_score_transform_repeat_observable_output():
     context = PhraseTransformContext(score=phrase_score, voice_index=0, phrase_index=0)
 
     phrase_repeat_count = 2
-    repeated_phrase = repeat_phrase_transform(context, {"count": phrase_repeat_count})
+    repeated_phrase = repeat_phrase_transform(context, RepeatParams(count=phrase_repeat_count))
     original_phrase_tone_count_plus_repeats = len(phrase_tones) + (len(phrase_tones) * phrase_repeat_count)
     assert len(repeated_phrase.motifs[0].tones) == original_phrase_tone_count_plus_repeats
 
@@ -86,7 +86,7 @@ def test_repeat_phrase_and_score_transform_repeat_observable_output():
             )
         ]
     )
-    repeated_score = repeat_score_transform(score, {"count": score_repeat_count})
+    repeated_score = repeat_score_transform(score, RepeatParams(count=score_repeat_count))
 
     original_score_tone_count_plus_repeats = len(score_tones) + (len(score_tones) * score_repeat_count)
     assert len(repeated_score.voices[0].phrases[0].motifs[0].tones) == original_score_tone_count_plus_repeats

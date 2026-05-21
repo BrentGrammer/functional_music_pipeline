@@ -8,7 +8,7 @@ from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.basic.delay import delay_phrase_transform, delay_score_transform
 from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
-from transforms.basic.repeat import repeat_phrase_transform, repeat_score_transform
+from transforms.basic.repeat import REPEAT_PARAMS_SPEC
 from transforms.basic.transpose import transpose_phrase_transform, transpose_score_transform
 from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
 from transforms.complexity.random_drop import random_drop_phrase_transform, random_drop_score_transform
@@ -41,19 +41,8 @@ def _make_test_score(*, voices: list[Voice] | None = None) -> Score:
 
 
 def test_repeat_phrase_transform_rejects_bool_count():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="repeat-target", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            )
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-
     with pytest.raises(ValueError):
-        repeat_phrase_transform(context, {"count": True})
+        REPEAT_PARAMS_SPEC.parse_params({"count": True}, transform_name="repeat")
 
 
 def test_transpose_score_transform_rejects_bool_semitones():
@@ -119,18 +108,8 @@ def test_delay_phrase_transform_rejects_bool_seconds():
 
 
 def test_repeat_score_transform_rejects_bool_count():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="repeat-target", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            )
-        ]
-    )
-
     with pytest.raises(ValueError):
-        repeat_score_transform(score, {"count": True})
+        REPEAT_PARAMS_SPEC.parse_params({"count": True}, transform_name="repeat")
 
 
 def test_invert_phrase_transform_rejects_bool_dimension():
