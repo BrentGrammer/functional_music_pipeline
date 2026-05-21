@@ -40,8 +40,9 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - Make `ParamSchema[T]` expose `parse(value: object, field_name: str) -> T`.
 - Keep `validate(...) -> None` only as a compatibility wrapper around `parse(...)` if still needed.
 - `FloatParam.parse` returns `float`; `IntegerParam.parse` returns `int`; `BooleanParam.parse` returns `bool`; `StringParam.parse` returns `str`.
-- Keep `parse_dimension(...)` for external/raw-input boundary parsing in `composition/parser.py`.
-- Add `ToneDimensionParam.parse` returning `ToneDimension`; it should reuse `parse_dimension(...)` so parser and transform param parsing share the same dimension normalization behavior.
+- Keep raw dimension string normalization in `composition/parser.py`, because that is the external user-input boundary.
+- Transform param parsing should validate that dimension values are already `ToneDimension` instances. It should not parse raw dimension strings or duplicate parser normalization.
+- Consider moving `parse_dimension(...)` out of `transforms/base.py` and into `composition/parser.py` or a parser-adjacent module so user-input normalization is not owned by the transform base layer.
 - Keep `EnumParam` for string enum-like values such as intensity presets; it should return normalized `str`.
 - Add a `default` field to `TransformParamFieldSpec` so optional/defaulted params are defined in the spec instead of transform functions calling `params.get(...)`.
 - Make `TransformParamsSpec[P]` use a typed factory, such as `params_factory: Callable[[Mapping[str, object]], P]`, to construct params models after field parsing.
@@ -131,7 +132,7 @@ Recommended model: `GPT-5.4`.
   - generic `TransformParamsSpec[P]`
   - typed `params_factory`
   - typed custom validators as `Callable[[P], None]`
-- Add `ToneDimensionParam` and make it reuse `parse_dimension(...)`.
+- Add a dimension param schema only if needed to validate already-normalized `ToneDimension` values; it must not accept raw strings.
 - Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
 - Make `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]` generic.
 - Rename the stored callable field to `transform_function`.
@@ -146,6 +147,7 @@ Recommended model: `GPT-5.4`.
   - pass `transform_function=...` to each definition
 - Update `composition/transformer.py` to call registered transform `transform(...)`.
 - Keep `composition/parser.py` using `parse_dimension(...)` for raw input normalization.
+- Do not add dimension string parsing to transform params specs; internal transform requests should already contain `ToneDimension`.
 
 ### Stage 3: Pilot transforms
 
@@ -180,9 +182,10 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
   - unknown params
   - missing required params
   - defaulted optional params
-  - `ToneDimensionParam`
+  - dimension params requiring already-normalized `ToneDimension`
   - custom validators running on typed params
   - registered transform `transform(...)`
+- Keep raw string dimension normalization tests at the parser boundary. Direct transform tests should pass typed params models containing `ToneDimension`, not raw strings.
 - Run targeted tests first, then coverage for touched modules, then the broader suite.
 - Run mypy and ensure transform modules do not require local casts or `Any`.
 - Check `drift.py` for any transform function that is not used in production code.
@@ -201,7 +204,8 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
 - [ ] Update transform function signatures and remove redundant `isinstance` guards.
 - [ ] Update registry definitions.
 - [ ] Update tests.
-- [ ] Keep `parse_dimension` for `composition/parser.py` and reuse it from `ToneDimensionParam`.
+- [ ] Keep raw dimension string normalization at the parser boundary, not in transform param parsing.
+- [ ] Move `parse_dimension(...)` out of `transforms/base.py` if doing so keeps the parser boundary clearer.
 - [ ] Check `drift.py` for any transform function that is not used in production code.
 
 ## Success Criteria
