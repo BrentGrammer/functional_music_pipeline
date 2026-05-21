@@ -99,7 +99,7 @@ drift_params = DriftParams(
 descriptor.transform(context, drift_params)
 ```
 
-### Option D: Distributed builder with registry (preferred)
+### Option D: Distributed builder with registry
 
 Add a `params_builder` field to `TransformDefinition` so each transform file owns its own ceremony. This avoids a centralized factory while keeping the registry as the single source of truth.
 
@@ -147,12 +147,68 @@ typed_params = (
 descriptor.transform(context, typed_params)
 ```
 
-- Pro: Registry stays as ONE list in ONE place; each transform owns its params construction
-- Con: Still need params_builder boilerplate per transform
+- Pro: Registry stays as ONE list in ONE place; each transform owns its params construction.
+- Con: Still needs params_builder boilerplate per transform.
+
+### Option E: Typed parsing in TransformParamsSpec (preferred)
+
+Make `TransformParamsSpec` responsible for both validation and normalization. This keeps the transform spec as the single boundary object: raw user/config params go in, typed params come out.
+
+```python
+@dataclass(frozen=True)
+class DriftParams:
+    dimension: ToneDimension
+    rate: float
+
+DRIFT_PARAMS_SPEC = TransformParamsSpec[DriftParams](
+    params_model=DriftParams,
+    fields={
+        "dimension": TransformParamFieldSpec(
+            schema=ToneDimensionParam(),
+            required=True,
+        ),
+        "rate": TransformParamFieldSpec(
+            schema=FloatParam(),
+            required=True,
+        ),
+    },
+)
+```
+
+Then transform functions can depend on typed params directly:
+
+```python
+def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams) -> Phrase:
+    drifted_tones = drift_transform(
+        flatten_phrase_tones(context.phrase),
+        dimension=params.dimension,
+        rate=params.rate,
+    )
+    return Phrase(motifs=[Motif(name="<transformed>", tones=drifted_tones)])
+```
+
+**Core design:**
+
+- `ParamSchema[T]` should expose `parse(value: object, field_name: str) -> T`.
+- Existing `validate(...) -> None` can remain as a compatibility wrapper around `parse(...)`.
+- `FloatParam.parse` returns `float`; `IntegerParam.parse` returns `int`; `BooleanParam.parse` returns `bool`; `StringParam.parse` returns `str`.
+- Add `ToneDimensionParam.parse` returning `ToneDimension`.
+- `EnumParam` can remain for string enum-like values such as intensity presets and return normalized `str`.
+- `TransformParamsSpec[P].parse_params(raw_params) -> P` validates unknown/missing fields, parses each field, applies the custom validator if present, then constructs the frozen params dataclass.
+- `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]` should be generic and invoke transforms with `P`, not `Mapping[str, object]`.
+- `composition/transformer.py` should call `descriptor.parse_params(transform_params)` once before building the prepared transform, then close over the typed params.
+
+**Why this is preferred:**
+
+- It avoids `typing.cast` in normal application code.
+- It avoids one-off `params_builder` boilerplate in every transform module.
+- It removes redundant `isinstance` checks from transform functions without weakening runtime validation.
+- It keeps validation, normalization, defaults, and typed construction in one place: the transform params spec.
+- It makes the callable signature honest: transform functions receive the params type they actually require.
 
 ## Files to Change
 
-- `transforms/base.py` — Make `PhraseTransformDefinition` / `ScoreTransformDefinition` generic (optional).
+- `transforms/base.py` — Make param schemas parse typed values; make `TransformParamsSpec`, `PhraseTransformDefinition`, and `ScoreTransformDefinition` generic.
 - `transforms/basic/drift.py`, `inversion.py`, `scale.py` — Add typed params classes, update signatures.
 - `transforms/complexity/*.py` — Same.
 - `transforms/geological/*.py` — Same.
@@ -160,12 +216,13 @@ descriptor.transform(context, typed_params)
 - `transforms/basic/delay.py`, `repeat.py`, `reversal.py`, `transpose.py`, `pad_silence.py` — If they have params.
 - `transforms/tempo/*.py` — Same.
 - `transforms/counterpoint/*.py` — Same.
-- `composition/transformer.py` — Cast dict to typed params after validation.
+- `composition/transformer.py` — Parse raw params into typed params once before invoking transforms.
 - `tests/` — Update direct calls to use typed params.
 
 ## Status
 
-- [x] Removed all `isinstance(dimension, ...)` guards from transform functions (cleanup step 1).
+- [ ] Removed all `isinstance(dimension, ...)` guards from transform functions (cleanup step 1).
+- [ ] Add typed parsing to `TransformParamsSpec`.
 - [ ] Define typed params models per transform.
 - [ ] Update transform function signatures.
 - [ ] Update registry definitions.
