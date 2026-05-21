@@ -2,7 +2,7 @@
 
 ## Goal
 
-Remove `Mapping[str, object]` from transform module function signatures and replace it with concrete typed params models. Runtime validation and parsing should happen once at the transform descriptor boundary, before the transform function is invoked.
+Remove `Mapping[str, object]` from transform module function signatures and replace it with concrete typed params models. Runtime validation and parsing should happen once at the registered transform boundary, before the transform function is invoked.
 
 ## Problem
 
@@ -113,12 +113,12 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 
 - `transforms/base.py` — Add typed parsing, generic params specs, generic transform definitions, registered transform Protocols, and public definition `transform(...)` methods.
 - Transform modules — Add params dataclasses, update transform function signatures, remove redundant param type guards.
-- `transforms/registry.py` — Use `transform_function=...` and descriptor Protocol dict annotations.
+- `transforms/registry.py` — Use `transform_function=...` and registered transform Protocol dict annotations.
 - `composition/transformer.py` — Invoke transforms through `descriptor.transform(...)` so validation/parsing stays hidden behind the registered transform.
 - `tests/` — Update direct transform calls to pass typed params models where they bypass the descriptor.
 
 ## Status
-- 
+
 - [ ] Add typed parsing to `ParamSchema` and `TransformParamsSpec`.
 - [ ] Add shared `NoParams`.
 - [ ] Add defaults to `TransformParamFieldSpec`.
@@ -126,7 +126,7 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - [ ] Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
 - [ ] Make `PhraseTransformDefinition` and `ScoreTransformDefinition` generic.
 - [ ] Rename stored callable field to `transform_function`.
-- [ ] Route production transform invocation through descriptor `transform(...)`.
+- [ ] Route production transform invocation through registered transform `transform(...)`.
 - [ ] Define typed params models per transform.
 - [ ] Update transform function signatures and remove redundant `isinstance` guards.
 - [ ] Update registry definitions.
@@ -138,5 +138,5 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 
 - Transform modules receive concrete params objects, not `Mapping[str, object]`.
 - Mypy passes without local casts or `Any` in transform modules.
-- Runtime validation errors still happen at the descriptor/spec boundary.
+- Runtime validation errors still happen at the registered transform/spec boundary.
 - Existing transform behavior is preserved.
