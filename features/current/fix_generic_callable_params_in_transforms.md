@@ -13,6 +13,7 @@ Transform functions currently receive raw params as `Mapping[str, object]`, whic
 ### Typed params models
 
 - Define a frozen dataclass params model for each transform that takes params, such as `DriftParams`, `ScaleParams`, and `RepeatParams`.
+- Use a shared frozen `NoParams` dataclass for transforms with no configurable params.
 - Transform functions should receive those concrete params models directly.
 - Transform functions should not contain local `isinstance` guards for already-validated params.
 
@@ -39,10 +40,15 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - Make `ParamSchema[T]` expose `parse(value: object, field_name: str) -> T`.
 - Keep `validate(...) -> None` only as a compatibility wrapper around `parse(...)` if still needed.
 - `FloatParam.parse` returns `float`; `IntegerParam.parse` returns `int`; `BooleanParam.parse` returns `bool`; `StringParam.parse` returns `str`.
-- Add `ToneDimensionParam.parse` returning `ToneDimension`.
+- Keep `parse_dimension(...)` for external/raw-input boundary parsing in `composition/parser.py`.
+- Add `ToneDimensionParam.parse` returning `ToneDimension`; it should reuse `parse_dimension(...)` so parser and transform param parsing share the same dimension normalization behavior.
 - Keep `EnumParam` for string enum-like values such as intensity presets; it should return normalized `str`.
-- Make `TransformParamsSpec[P].parse_params(raw_params) -> P` validate unknown/missing fields, parse each field, apply the custom validator if present, and construct the params model.
-- If generic dataclass construction with `params_model(**parsed_fields)` causes mypy friction, use a small typed factory on `TransformParamsSpec[P]`. Do not add distributed per-transform builders.
+- Add a `default` field to `TransformParamFieldSpec` so optional/defaulted params are defined in the spec instead of transform functions calling `params.get(...)`.
+- Make `TransformParamsSpec[P]` use a typed factory, such as `params_factory: Callable[[Mapping[str, object]], P]`, to construct params models after field parsing.
+- Do not use generic dataclass construction with `params_model(**parsed_fields)` as the primary design; the typed factory is the official mypy-friendly construction path.
+- Do not add distributed per-transform builders outside the params spec.
+- Make `TransformParamsSpec[P].parse_params(raw_params) -> P` validate unknown/missing fields, parse raw field values, apply defaults, construct the typed params model, then run the custom validator if present.
+- Field schemas validate and parse raw values. Custom validators should run on typed params as `Callable[[P], None]` so cross-field validation can use concrete attributes without defensive type checks.
 
 ### Transform definitions
 
@@ -112,8 +118,11 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - `tests/` — Update direct transform calls to pass typed params models where they bypass the descriptor.
 
 ## Status
-
+- 
 - [ ] Add typed parsing to `ParamSchema` and `TransformParamsSpec`.
+- [ ] Add shared `NoParams`.
+- [ ] Add defaults to `TransformParamFieldSpec`.
+- [ ] Make custom validators operate on typed params.
 - [ ] Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
 - [ ] Make `PhraseTransformDefinition` and `ScoreTransformDefinition` generic.
 - [ ] Rename stored callable field to `transform_function`.
@@ -122,7 +131,7 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - [ ] Update transform function signatures and remove redundant `isinstance` guards.
 - [ ] Update registry definitions.
 - [ ] Update tests.
-- [ ] Remove `parse_dimension` from `transforms/base.py` or keep only if still needed by external/raw-input code.
+- [ ] Keep `parse_dimension` for `composition/parser.py` and reuse it from `ToneDimensionParam`.
 - [ ] Check `drift.py` for any transform function that is not used in production code.
 
 ## Success Criteria
