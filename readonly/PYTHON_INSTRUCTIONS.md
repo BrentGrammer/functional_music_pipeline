@@ -26,3 +26,4 @@ When working on Python tests:
 with pytest.raises(ValueError) # do not add this: match="must include 'seconds'"):
    params_spec.parse_params({}, transform_name="delay")
 ```
+10. If magic strings or numbers are reused in a test and mean the same thing, extract them to named variables.
