@@ -1,5 +1,9 @@
 # Fix Generic Callable Params in Transforms
 
+## Goal
+
+We need a clean way to get rid of  params: Mapping[str, object] in the transform modules so that the params are typed and we don't have to sprawl validation in the definitions. The TransformSpec should validate the params or that's its responsibility. Depending on when that happens, ideally the TransformSpec should validate params before we call the definition in the transform module.
+
 ## Problem
 
 Transform functions currently use `Mapping[str, object]` for their params parameter, which requires repeated `isinstance` checks inside every transform for `rate`, `factor`, `dimension`, `max_deviation`, etc. This is redundant because params are already validated at the boundary in `composition/transformer.py` via `descriptor.validate_params()` before the transform is invoked.
@@ -94,6 +98,57 @@ drift_params = DriftParams(
 )
 descriptor.transform(context, drift_params)
 ```
+
+### Option D: Distributed builder with registry (preferred)
+
+Add a `params_builder` field to `TransformDefinition` so each transform file owns its own ceremony. This avoids a centralized factory while keeping the registry as the single source of truth.
+
+**In `transforms/base.py`:**
+```python
+@dataclass(frozen=True)
+class PhraseTransformDefinition:
+    name: str
+    params_spec: TransformParamsSpec
+    transform: Callable[[PhraseTransformContext, Any], Phrase]
+    params_builder: Callable[[dict[str, object]], object] | None = None
+```
+
+**In each transform file (e.g., `transforms/basic/drift.py`):**
+```python
+@dataclass(frozen=True)
+class DriftParams:
+    dimension: ToneDimension
+    rate: float
+
+def _build_drift_params(raw: dict[str, object]) -> DriftParams:
+    return DriftParams(
+        dimension=raw["dimension"],
+        rate=float(raw["rate"]),
+    )
+```
+
+**In `transforms/registry.py` (single list):**
+```python
+"drift": PhraseTransformDefinition(
+    name="drift",
+    params_spec=DRIFT_PARAMS_SPEC,
+    transform=drift_phrase_transform,
+    params_builder=_build_drift_params,  # lives with transform
+),
+```
+
+**In `composition/transformer.py`:**
+```python
+typed_params = (
+    descriptor.params_builder(transform_params) 
+    if descriptor.params_builder 
+    else transform_params
+)
+descriptor.transform(context, typed_params)
+```
+
+- Pro: Registry stays as ONE list in ONE place; each transform owns its params construction
+- Con: Still need params_builder boilerplate per transform
 
 ## Files to Change
 
