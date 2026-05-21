@@ -8,8 +8,8 @@ from score_model.score import Score
 from score_model.tone import Tone
 
 ToneSequence: TypeAlias = list[Tone]
-TransformParamsValidator: TypeAlias = Callable[[Mapping[str, object]], None]
 ParsedParam = TypeVar("ParsedParam")
+ParsedParams = TypeVar("ParsedParams")
 
 
 class ToneDimension(StrEnum):
@@ -97,15 +97,15 @@ class TransformParamFieldSpec:
 
 
 @dataclass(frozen=True)
-class TransformParamsSpec:
+class TransformParamsSpec(Generic[ParsedParams]):
+    params_factory: Callable[[Mapping[str, object]], ParsedParams]
     fields: dict[str, TransformParamFieldSpec] = field(default_factory=dict)
-    validator: TransformParamsValidator | None = None
 
     def parse_params(
         self,
         raw_params: Mapping[str, object],
         transform_name: str | None = None,
-    ) -> dict[str, object]:
+    ) -> ParsedParams:
         transform_description = f"The '{transform_name}' transform params" if transform_name is not None else "Transform params"
 
         unknown_fields = tuple(field_name for field_name in raw_params if field_name not in self.fields)
@@ -135,10 +135,9 @@ class TransformParamsSpec:
             if field_spec.default is not MISSING:
                 parsed_params[field_name] = field_spec.default
 
-        if self.validator is not None:
-            self.validator(parsed_params)
+        parsed_params_model = self.params_factory(parsed_params)
 
-        return parsed_params
+        return parsed_params_model
 
 
 def _parse_transform_param_value(

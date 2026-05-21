@@ -1,5 +1,3 @@
-from collections.abc import Mapping
-
 import pytest
 
 from score_model.motif import Motif
@@ -65,10 +63,9 @@ def test_param_schema_base_validate_is_abstract():
 
 
 def test_transform_params_spec_defaults_to_no_fields():
-    params_spec = TransformParamsSpec()
+    params_spec = TransformParamsSpec(params_factory=dict)
 
     assert params_spec.fields == {}
-    assert params_spec.validator is None
 
 
 def test_transform_params_spec_parse_params_returns_parsed_values():
@@ -78,6 +75,7 @@ def test_transform_params_spec_parse_params_returns_parsed_values():
     expected_intensity = "high"
 
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "factor": TransformParamFieldSpec(
                 schema=FloatParam(),
@@ -99,6 +97,7 @@ def test_transform_params_spec_parse_params_applies_declared_defaults():
     default_factor = 1.5
 
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "factor": TransformParamFieldSpec(
                 schema=FloatParam(),
@@ -140,6 +139,7 @@ def test_transform_param_field_spec_accepts_union_schemas():
 
 def test_transform_params_spec_parse_params_rejects_unknown_fields():
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "seconds": TransformParamFieldSpec(
                 schema=FloatParam(),
@@ -154,6 +154,7 @@ def test_transform_params_spec_parse_params_rejects_unknown_fields():
 
 def test_transform_params_spec_parse_params_rejects_missing_required_fields():
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "seconds": TransformParamFieldSpec(
                 schema=FloatParam(),
@@ -168,6 +169,7 @@ def test_transform_params_spec_parse_params_rejects_missing_required_fields():
 
 def test_transform_params_spec_parse_params_accepts_enum_field_case_insensitively():
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "dimension": TransformParamFieldSpec(
                 schema=EnumParam(allowed_values=("frequency", "duration", "amplitude")),
@@ -179,31 +181,9 @@ def test_transform_params_spec_parse_params_accepts_enum_field_case_insensitivel
     params_spec.parse_params({"dimension": "DURATION"}, transform_name="erosion")
 
 
-def test_transform_params_spec_parse_params_runs_custom_validator():
-    factor_input = 2
-    expected_factor = 2.0
-    recorded_params: list[Mapping[str, object]] = []
-
-    def validator(params: Mapping[str, object]) -> None:
-        recorded_params.append(params)
-
-    params_spec = TransformParamsSpec(
-        fields={
-            "factor": TransformParamFieldSpec(
-                schema=FloatParam(),
-                required=True,
-            )
-        },
-        validator=validator,
-    )
-
-    params_spec.parse_params({"factor": factor_input}, transform_name="scale")
-
-    assert recorded_params == [{"factor": expected_factor}]
-
-
 def test_transform_params_spec_parse_params_surfaces_single_schema_error():
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "label": TransformParamFieldSpec(
                 schema=StringParam(),
@@ -218,6 +198,7 @@ def test_transform_params_spec_parse_params_surfaces_single_schema_error():
 
 def test_transform_params_spec_parse_params_combines_union_schema_errors():
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "strength": TransformParamFieldSpec(
                 schema=(StringParam(), FloatParam()),
@@ -244,6 +225,7 @@ def test_phrase_transform_context_exposes_current_phrase():
 
 def test_phrase_transform_definition_validate_params_uses_its_params_spec():
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "seconds": TransformParamFieldSpec(
                 schema=FloatParam(),
@@ -262,6 +244,7 @@ def test_phrase_transform_definition_validate_params_uses_its_params_spec():
 
 def test_score_transform_definition_validate_params_uses_its_params_spec():
     params_spec = TransformParamsSpec(
+        params_factory=dict,
         fields={
             "seconds": TransformParamFieldSpec(
                 schema=FloatParam(),
