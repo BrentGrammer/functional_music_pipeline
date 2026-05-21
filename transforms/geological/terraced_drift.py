@@ -1,12 +1,12 @@
 import random
 from collections.abc import Mapping
-from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
+from transforms._modulation import apply_fluctuations
 from transforms.base import (
     EnumParam,
     IntegerParam,
@@ -16,7 +16,6 @@ from transforms.base import (
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
-from transforms.geological._modulation import apply_profile
 
 TERRACED_DRIFT_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -32,30 +31,24 @@ TERRACED_DRIFT_PARAMS_SPEC = TransformParamsSpec(
 )
 
 
-@dataclass(frozen=True)
-class _TerracedBrownianProfile:
-    seed: int = 42
-    step_size: float = 0.25
-    quantize_resolution: float = 0.2
+def _build_terraced_fluctuations(length: int, step_size: float, quantize_resolution: float) -> list[float]:
+    random.seed(42)
+    current_value = 0.0
+    fluctuations: list[float] = []
 
-    def generate(self, length: int) -> list[float]:
-        random.seed(self.seed)
-        current_value = 0.0
-        profile = []
+    for _ in range(length):
+        current_value += random.uniform(-step_size, step_size)
+        current_value = max(-1.0, min(1.0, current_value))
 
-        for _ in range(length):
-            current_value += random.uniform(-self.step_size, self.step_size)
-            current_value = max(-1.0, min(1.0, current_value))
+        if quantize_resolution > 0:
+            quantized = round(current_value / quantize_resolution) * quantize_resolution
+        else:
+            quantized = current_value
 
-            if self.quantize_resolution > 0:
-                quantized = round(current_value / self.quantize_resolution) * self.quantize_resolution
-            else:
-                quantized = current_value
+        quantized = max(-1.0, min(1.0, quantized))
+        fluctuations.append(quantized)
 
-            quantized = max(-1.0, min(1.0, quantized))
-            profile.append(quantized)
-
-        return profile
+    return fluctuations
 
 
 def apply_terraced_drift_transform(
@@ -69,17 +62,8 @@ def apply_terraced_drift_transform(
         raise ValueError(f"max_step_change_pct must be between 1 and 100, got {max_step_change_pct}")
 
     step_size = max_step_change_pct / 100.0
-
-    return apply_profile(
-        tones,
-        _TerracedBrownianProfile(
-            seed=42,
-            step_size=step_size,
-            quantize_resolution=step_size,
-        ),
-        dimension,
-        step_size,
-    )
+    fluctuations = _build_terraced_fluctuations(len(tones), step_size, step_size)
+    return apply_fluctuations(tones, fluctuations, dimension, step_size)
 
 
 def terraced_drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:

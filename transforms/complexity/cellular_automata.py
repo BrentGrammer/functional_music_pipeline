@@ -5,6 +5,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
+from transforms._modulation import apply_fluctuations
 from transforms.base import (
     EnumParam,
     FloatParam,
@@ -16,7 +17,6 @@ from transforms.base import (
     TransformParamsSpec,
     parse_dimension,
 )
-from transforms.complexity._modulation import _modulate_tone_dimension
 
 CELLULAR_AUTOMATA_PARAMS_SPEC = TransformParamsSpec(
     fields={
@@ -114,9 +114,9 @@ def apply_cellular_automata_transform(
     # how strongly the pattern affects the music.
     DEAD = -1.0
     LIVE = 1.0
-    profile = [DEAD if cell == 0 else LIVE for cell in final_state]
+    fluctuations = [DEAD if cell == 0 else LIVE for cell in final_state]
 
-    return _modulate_tone_dimension(tones, profile, resolved_dimension, max_deviation)
+    return apply_fluctuations(tones, fluctuations, resolved_dimension, max_deviation)
 
 
 def cellular_automata_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
