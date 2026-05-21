@@ -121,6 +121,8 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 
 ### Stage 1: Base infrastructure
 
+Recommended model: `GPT-5.4`.
+
 - Update `transforms/base.py` with typed parsing primitives:
   - `ParamSchema[T].parse(...)`
   - shared frozen `NoParams`
@@ -136,6 +138,8 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 
 ### Stage 2: Registry and production wiring
 
+Recommended model: `GPT-5.4`.
+
 - Update `transforms/registry.py` to:
   - annotate registries as `dict[str, RegisteredPhraseTransform]` and `dict[str, RegisteredScoreTransform]`
   - pass `transform_function=...` to each definition
@@ -143,6 +147,8 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - Keep `composition/parser.py` using `parse_dimension(...)` for raw input normalization.
 
 ### Stage 3: Pilot transforms
+
+Recommended model: `GPT-5.4`.
 
 - Convert a small representative set first:
   - `reverse` with `NoParams`
@@ -152,6 +158,8 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - Run targeted tests and mypy after this stage before sweeping the rest of the transform modules.
 
 ### Stage 4: Remaining transform modules
+
+Recommended model: `GPT-5.4 Mini`, after Stages 1-3 are green.
 
 - Convert the remaining transforms by category:
   - basic
@@ -164,6 +172,8 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - Remove redundant local `isinstance` guards for params that are already parsed by the spec.
 
 ### Stage 5: Verification and cleanup
+
+Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, architectural mismatches, or a final high-confidence audit.
 
 - Add or update tests for:
   - unknown params
