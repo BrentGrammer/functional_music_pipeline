@@ -42,8 +42,6 @@ def prepare_phrase_transform(request: PhraseTransformRequest) -> PreparedTransfo
     else:
         raise ValueError(f"Unknown phrase transform '{transform_name}'")
 
-    descriptor.validate_params(transform_params)
-
     def prepared_transform(score: Score) -> Score:
         context = PhraseTransformContext(
             score=score,
@@ -78,8 +76,6 @@ def prepare_score_transform(request: ScoreTransformRequest) -> PreparedTransform
         raise ValueError(f"Transform '{transform_name}' is only available as a phrase transform.")
     else:
         raise ValueError(f"Unknown score transform '{transform_name}'")
-
-    descriptor.validate_params(transform_params)
 
     def prepared_transform(score: Score) -> Score:
         return descriptor.transform(score, transform_params)
