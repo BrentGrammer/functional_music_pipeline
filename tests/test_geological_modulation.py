@@ -1,7 +1,7 @@
 import pytest
 
 from score_model.tone import Tone
-from transforms.geological.terraced_drift import _TerracedBrownianProfile, apply_terraced_drift_transform
+from transforms.geological.terraced_drift import _build_terraced_fluctuations, apply_terraced_drift_transform
 
 
 def _snapshot(tones: list[Tone]) -> list[tuple[float, float, int, float]]:
@@ -83,14 +83,33 @@ def test_terraced_drift_amplitude_modulates_without_touching_other_dimensions():
     assert result[2].duration == pytest.approx(tones[2].duration)
 
 
-def test_terraced_brownian_profile_returns_raw_values_when_quantization_is_disabled():
-    profile = _TerracedBrownianProfile(seed=7, step_size=0.1, quantize_resolution=0.0)
+def test_build_terraced_fluctuations_without_quantization_returns_raw_values():
+    """
+    When quantize_resolution is 0.0 the builder must skip quantization and
+    return raw floating-point values from the Brownian walk. Without this
+    guarantee, callers wanting continuous (non-stepped) modulation cannot
+    disable the quantization step.
+    """
+    tone_count = 5
+    step_size = 0.1
+    QUANTIZATION_DISABLED = 0.0
+    MODULATION_LOWER_BOUND = -1.0
+    MODULATION_UPPER_BOUND = 1.0
+    ARBITRARY_QUANTIZATION_STEP = 0.2
 
-    generated_profile = profile.generate(5)
+    fluctuations = _build_terraced_fluctuations(
+        length=tone_count, step_size=step_size, quantize_resolution=QUANTIZATION_DISABLED
+    )
 
-    assert len(generated_profile) == 5
-    assert all(-1.0 <= value <= 1.0 for value in generated_profile)
-    assert any(value != round(value / 0.2) * 0.2 for value in generated_profile)
+    assert len(fluctuations) == tone_count
+    assert all(MODULATION_LOWER_BOUND <= value <= MODULATION_UPPER_BOUND for value in fluctuations)
+    # Quantization snaps every value to the nearest multiple of a step
+    # size (e.g. 0.0, 0.2, 0.4, ...). If the builder truly skipped
+    # quantization, the raw Brownian walk values will NOT land neatly on
+    # those grid points — at least one value will be something like
+    # 0.173 instead of 0.0 or 0.2. Finding any such "off-grid" value
+    # proves quantization was genuinely disabled.
+    assert any(value != round(value / ARBITRARY_QUANTIZATION_STEP) * ARBITRARY_QUANTIZATION_STEP for value in fluctuations)
 
 
 def test_terraced_drift_rejects_non_integer_and_out_of_range_step_percentages():

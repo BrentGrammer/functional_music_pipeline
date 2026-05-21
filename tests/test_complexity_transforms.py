@@ -4,7 +4,7 @@ from score_model.tone import Tone
 from transforms.base import ToneDimension
 from transforms.complexity.cellular_automata import _derive_initial_state, apply_cellular_automata_transform
 from transforms.complexity.random_drop import apply_random_drop_transform
-from transforms.complexity.weierstrass import _resolve_intensity, _WeierstrassProfile, apply_weierstrass_transform
+from transforms.complexity.weierstrass import _resolve_intensity, _build_weierstrass_fluctuations, apply_weierstrass_transform
 
 
 def _snapshot(tones: list[Tone]) -> list[tuple[float, float, int, float]]:
@@ -44,14 +44,13 @@ def test_weierstrass_returns_empty_for_empty_input():
     assert apply_weierstrass_transform([], dimension="frequency", intensity="medium") == []
 
 
-def test_weierstrass_profile_with_zero_iterations_does_not_modulate_tones():
+def test_build_weierstrass_fluctuations_with_zero_iterations_returns_zeros():
     tone_count = 3
-    profile = _WeierstrassProfile(seed=7, amplitude_scaling=0.5, ripples_per_wave=3.0, iterations=0)
+    fluctuations = _build_weierstrass_fluctuations(
+        length=tone_count, amplitude_scaling=0.5, ripples_per_wave=3.0, iterations=0
+    )
 
-    generated_profile = profile.generate(tone_count)
-    no_modulations_per_tone = [0.0 for _ in range(tone_count)]
-
-    assert generated_profile == no_modulations_per_tone
+    assert fluctuations == [0.0, 0.0, 0.0]
 
 
 def test_weierstrass_resolve_intensity_rejects_non_string_and_unknown_values():
