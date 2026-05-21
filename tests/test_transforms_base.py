@@ -237,7 +237,7 @@ def test_phrase_transform_definition_validate_params_uses_its_params_spec():
     phrase_definition = PhraseTransformDefinition(
         name="phrase_delay",
         params_spec=params_spec,
-        transform=lambda context, params: context.phrase,
+        transform_function=lambda context, params: context.phrase,
     )
     phrase_definition.validate_params({"seconds": 1.5})
 
@@ -256,7 +256,7 @@ def test_score_transform_definition_validate_params_uses_its_params_spec():
     score_definition = ScoreTransformDefinition(
         name="score_delay",
         params_spec=params_spec,
-        transform=lambda score, params: score,
+        transform_function=lambda score, params: score,
     )
     score_definition.validate_params({"seconds": 1.5})
 

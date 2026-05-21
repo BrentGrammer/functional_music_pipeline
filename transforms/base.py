@@ -178,20 +178,20 @@ class PhraseTransformContext:
 
 
 @dataclass(frozen=True)
-class PhraseTransformDefinition:
+class PhraseTransformDefinition(Generic[ParsedParams]):
     name: str
-    params_spec: TransformParamsSpec
-    transform: Callable[[PhraseTransformContext, Mapping[str, object]], Phrase]
+    params_spec: TransformParamsSpec[ParsedParams]
+    transform_function: Callable[[PhraseTransformContext, ParsedParams], Phrase]
 
     def validate_params(self, params: Mapping[str, object]) -> None:
         self.params_spec.parse_params(params, transform_name=self.name)
 
 
 @dataclass(frozen=True)
-class ScoreTransformDefinition:
+class ScoreTransformDefinition(Generic[ParsedParams]):
     name: str
-    params_spec: TransformParamsSpec
-    transform: Callable[[Score, Mapping[str, object]], Score]
+    params_spec: TransformParamsSpec[ParsedParams]
+    transform_function: Callable[[Score, ParsedParams], Score]
 
     def validate_params(self, params: Mapping[str, object]) -> None:
         self.params_spec.parse_params(params, transform_name=self.name)
