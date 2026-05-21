@@ -93,7 +93,7 @@ def _evolve_state(state: list[int], rule: int, generations: int) -> list[int]:
 
 def apply_cellular_automata_transform(
     tones: ToneSequence,
-    dimension: ToneDimension | str,
+    dimension: ToneDimension,
     rule: int,
     generations: int,
     max_deviation: float,
@@ -103,20 +103,14 @@ def apply_cellular_automata_transform(
     if len(tones) == 1:
         return list(tones)
 
-    resolved_dimension = parse_dimension(dimension)
-
-    initial_state = _derive_initial_state(tones, resolved_dimension)
+    initial_state = _derive_initial_state(tones, dimension)
     final_state = _evolve_state(initial_state, rule, generations=generations)
 
-    # Translate the evolved binary state into modulation values.
-    # Dead cells (0) pull the tone down (-1.0), live cells (1) push it up (+1.0).
-    # _modulate_tone_dimension then scales these by max_deviation to control
-    # how strongly the pattern affects the music.
     DEAD = -1.0
     LIVE = 1.0
     fluctuations = [DEAD if cell == 0 else LIVE for cell in final_state]
 
-    return apply_fluctuations(tones, fluctuations, resolved_dimension, max_deviation)
+    return apply_fluctuations(tones, fluctuations, dimension, max_deviation)
 
 
 def cellular_automata_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
@@ -140,11 +134,11 @@ def cellular_automata_phrase_transform(context: PhraseTransformContext, params: 
 
     transformed_tones = apply_cellular_automata_transform(
         phrase_tones,
-        dimension=dimension,
+        dimension=parse_dimension(dimension),
         rule=rule,
         generations=generations,
         max_deviation=float(max_deviation),
-    ) 
+    )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
@@ -168,9 +162,10 @@ def cellular_automata_score_transform(score: Score, params: Mapping[str, object]
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
+        resolved_dimension = parse_dimension(dimension)
         transformed_tones = apply_cellular_automata_transform(
             voice_tones,
-            dimension=dimension,
+            dimension=resolved_dimension,
             rule=rule,
             generations=generations,
             max_deviation=float(max_deviation),

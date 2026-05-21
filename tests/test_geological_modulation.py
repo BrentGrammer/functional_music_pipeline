@@ -1,6 +1,7 @@
 import pytest
 
 from score_model.tone import Tone
+from transforms.base import ToneDimension
 from transforms.geological.terraced_drift import _build_terraced_fluctuations, apply_terraced_drift_transform
 
 
@@ -21,8 +22,8 @@ def _build_reference_tones() -> list[Tone]:
 def test_terraced_drift_is_repeatable():
     tones = _build_reference_tones()
 
-    result_a = apply_terraced_drift_transform(tones, dimension="frequency", max_step_change_pct=25)
-    result_b = apply_terraced_drift_transform(tones, dimension="frequency", max_step_change_pct=25)
+    result_a = apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=25)
+    result_b = apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=25)
 
     assert _snapshot(result_a) == _snapshot(result_b)
     assert len(result_a) == len(tones)
@@ -31,14 +32,14 @@ def test_terraced_drift_is_repeatable():
 def test_terraced_drift_with_minimal_step_is_nearly_no_modulation():
     tones = _build_reference_tones()
 
-    result = apply_terraced_drift_transform(tones, dimension="frequency", max_step_change_pct=10)
+    result = apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=10)
 
     for original, transformed in zip(tones, result):
         assert transformed.frequency == pytest.approx(original.frequency, rel=0.15)
 
 
 def test_terraced_drift_returns_empty_for_empty_input():
-    assert apply_terraced_drift_transform([], dimension="frequency", max_step_change_pct=25) == []
+    assert apply_terraced_drift_transform([], dimension=ToneDimension.FREQUENCY, max_step_change_pct=25) == []
 
 
 def test_terraced_drift_duration_modulates_without_touching_other_dimensions():
@@ -49,7 +50,7 @@ def test_terraced_drift_duration_modulates_without_touching_other_dimensions():
 
     result = apply_terraced_drift_transform(
         tones,
-        dimension="duration",
+        dimension=ToneDimension.DURATION,
         max_step_change_pct=50,
     )
 
@@ -69,7 +70,7 @@ def test_terraced_drift_amplitude_modulates_without_touching_other_dimensions():
 
     result = apply_terraced_drift_transform(
         tones,
-        dimension="amplitude",
+        dimension=ToneDimension.AMPLITUDE,
         max_step_change_pct=100,
     )
 
@@ -116,10 +117,10 @@ def test_terraced_drift_rejects_non_integer_and_out_of_range_step_percentages():
     tones = _build_reference_tones()
 
     with pytest.raises(ValueError, match="must be an integer"):
-        apply_terraced_drift_transform(tones, dimension="frequency", max_step_change_pct=1.5)  # type: ignore[arg-type]
+        apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=1.5)  # type: ignore[arg-type]
 
     with pytest.raises(ValueError, match="between 1 and 100"):
-        apply_terraced_drift_transform(tones, dimension="frequency", max_step_change_pct=0)
+        apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=0)
 
     with pytest.raises(ValueError, match="between 1 and 100"):
-        apply_terraced_drift_transform(tones, dimension="frequency", max_step_change_pct=101)
+        apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=101)

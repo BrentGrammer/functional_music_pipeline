@@ -4,7 +4,7 @@ from score_model.tone import Tone
 from transforms.base import ToneDimension
 from transforms.complexity.cellular_automata import _derive_initial_state, apply_cellular_automata_transform
 from transforms.complexity.random_drop import apply_random_drop_transform
-from transforms.complexity.weierstrass import _resolve_intensity, _build_weierstrass_fluctuations, apply_weierstrass_transform
+from transforms.complexity.weierstrass import _build_weierstrass_fluctuations, _resolve_intensity, apply_weierstrass_transform
 
 
 def _snapshot(tones: list[Tone]) -> list[tuple[float, float, int, float]]:
@@ -24,8 +24,8 @@ def _build_reference_tones() -> list[Tone]:
 def test_weierstrass_is_repeatable():
     tones = _build_reference_tones()
 
-    result_a = apply_weierstrass_transform(tones, dimension="frequency", intensity="medium")
-    result_b = apply_weierstrass_transform(tones, dimension="frequency", intensity="medium")
+    result_a = apply_weierstrass_transform(tones, dimension=ToneDimension.FREQUENCY, intensity="medium")
+    result_b = apply_weierstrass_transform(tones, dimension=ToneDimension.FREQUENCY, intensity="medium")
 
     assert _snapshot(result_a) == _snapshot(result_b)
     assert len(result_a) == len(tones)
@@ -34,14 +34,14 @@ def test_weierstrass_is_repeatable():
 def test_weierstrass_with_low_intensity_is_nearly_no_modulation():
     tones = _build_reference_tones()
 
-    result = apply_weierstrass_transform(tones, dimension="frequency", intensity="low")
+    result = apply_weierstrass_transform(tones, dimension=ToneDimension.FREQUENCY, intensity="low")
 
     for original, transformed in zip(tones, result):
         assert transformed.frequency == pytest.approx(original.frequency, rel=0.1)
 
 
 def test_weierstrass_returns_empty_for_empty_input():
-    assert apply_weierstrass_transform([], dimension="frequency", intensity="medium") == []
+    assert apply_weierstrass_transform([], dimension=ToneDimension.FREQUENCY, intensity="medium") == []
 
 
 def test_build_weierstrass_fluctuations_with_zero_iterations_returns_zeros():
@@ -64,8 +64,8 @@ def test_weierstrass_resolve_intensity_rejects_non_string_and_unknown_values():
 def test_cellular_automata_is_deterministic():
     tones = _build_reference_tones()
 
-    result_a = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
-    result_b = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+    result_a = apply_cellular_automata_transform(tones, dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3)
+    result_b = apply_cellular_automata_transform(tones, dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3)
 
     assert _snapshot(result_a) == _snapshot(result_b)
 
@@ -80,8 +80,8 @@ def test_cellular_automata_different_input_tones_produce_different_output():
         Tone(frequency=392.00, duration=0.5, amplitude=0.6),
     ]
 
-    result_a = apply_cellular_automata_transform(tones_a, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
-    result_b = apply_cellular_automata_transform(tones_b, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+    result_a = apply_cellular_automata_transform(tones_a, dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3)
+    result_b = apply_cellular_automata_transform(tones_b, dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3)
 
     assert _snapshot(result_a) != _snapshot(result_b)
 
@@ -89,20 +89,20 @@ def test_cellular_automata_different_input_tones_produce_different_output():
 def test_cellular_automata_different_rules_produce_different_output():
     tones = _build_reference_tones()
 
-    result_rule30 = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
-    result_rule110 = apply_cellular_automata_transform(tones, dimension="frequency", rule=110, generations=5, max_deviation=0.3)
+    result_rule30 = apply_cellular_automata_transform(tones, dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3)
+    result_rule110 = apply_cellular_automata_transform(tones, dimension=ToneDimension.FREQUENCY, rule=110, generations=5, max_deviation=0.3)
 
     assert _snapshot(result_rule30) != _snapshot(result_rule110)
 
 
 def test_cellular_automata_returns_empty_for_empty_input():
-    assert apply_cellular_automata_transform([], dimension="frequency", rule=30, generations=5, max_deviation=0.3) == []
+    assert apply_cellular_automata_transform([], dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3) == []
 
 
 def test_cellular_automata_returns_single_tone_unchanged():
     tone = Tone(frequency=440.0, duration=1.0, amplitude=0.5)
 
-    result = apply_cellular_automata_transform([tone], dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+    result = apply_cellular_automata_transform([tone], dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3)
 
     assert len(result) == 1
     assert result[0].frequency == pytest.approx(tone.frequency)
@@ -116,7 +116,7 @@ def test_cellular_automata_uniform_input_uses_alternating_fallback():
     # still be a valid, non-trivial output.
     tones = [Tone(frequency=440.0, duration=1.0, amplitude=0.5) for _ in range(6)]
 
-    result = apply_cellular_automata_transform(tones, dimension="frequency", rule=30, generations=5, max_deviation=0.3)
+    result = apply_cellular_automata_transform(tones, dimension=ToneDimension.FREQUENCY, rule=30, generations=5, max_deviation=0.3)
 
     assert len(result) == len(tones)
     assert all(tone.frequency > 0 for tone in result)
