@@ -32,5 +32,7 @@ uv.lock
 .DS_Store
 
 .serena/
+# Local overrides for serena
+!.serena/project.local.yml
 
 .antigravitycli/
