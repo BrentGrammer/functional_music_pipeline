@@ -1,0 +1,56 @@
+# This file allows you to locally override settings in project.yml for development purposes.
+#
+# Use the same keys as in project.yml here. Any setting you specify will override the corresponding
+# setting in project.yml, allowing you to customise the configuration for your local development environment
+# without affecting the project configuration in project.yml (which is intended to be versioned).
+
+ignored_paths:
+  # Python environments
+  - .venv/
+  - venv/
+  - env/
+  - ENV/
+  - .env
+  - .env/
+
+  # Python caches / bytecode / compiled output
+  - __pycache__/
+  - "*.py[cod]"
+  - "*$py.class"
+  - "*.so"
+
+  # Test / coverage / type-checker caches
+  - .pytest_cache/
+  - .mypy_cache/
+  - .ruff_cache/
+  - .tox/
+  - .nox/
+  - .cache/
+  - htmlcov/
+  - .coverage
+  - ".coverage.*"
+  - coverage.xml
+
+  # Build / package output
+  - build/
+  - dist/
+  - output/
+  - "*.egg-info/"
+
+  # Jupyter / notebooks
+  - .ipynb_checkpoints/
+
+  # Node/frontend deps if present
+  - node_modules/
+
+  # Tool/editor/project noise
+  - .git/
+  - .idea/
+  - .vscode/
+  - .antigravitycli/
+  - .DS_Store
+
+  # Logs/temp files
+  - "*.log"
+  - tmp/
+  - temp/

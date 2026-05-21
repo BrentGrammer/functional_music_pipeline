@@ -31,8 +31,11 @@ uv.lock
 # OS-generated files
 .DS_Store
 
-.serena/
-# Local overrides for serena
+# Ignore Serena files by default
+.serena/*
+# But keep the directory visible to Git
+!.serena/
+# And allow the local override file
 !.serena/project.local.yml
 
 .antigravitycli/
