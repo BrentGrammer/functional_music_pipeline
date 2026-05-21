@@ -192,21 +192,65 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
 
 ## Status
 
-- [ ] Add typed parsing to `ParamSchema` and `TransformParamsSpec`.
-- [ ] Add shared `NoParams`.
-- [ ] Add defaults to `TransformParamFieldSpec`.
-- [ ] Make custom validators operate on typed params.
-- [ ] Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
-- [ ] Make `PhraseTransformDefinition` and `ScoreTransformDefinition` generic.
-- [ ] Rename stored callable field to `transform_function`.
-- [ ] Route production transform invocation through registered transform `transform(...)`.
-- [ ] Define typed params models per transform.
-- [ ] Update transform function signatures and remove redundant `isinstance` guards.
-- [ ] Update registry definitions.
-- [ ] Update tests.
-- [ ] Keep raw dimension string normalization at the parser boundary, not in transform param parsing.
+- [x] Add typed parsing to `ParamSchema`.
+- [x] Add shared `NoParams`.
+- [x] Add defaults to `TransformParamFieldSpec`.
+- [x] Make `TransformParamsSpec[P]` generic with required typed `params_factory`.
+- [x] Add `TransformParamsSpec.parse_params(...)` returning typed params.
+- [x] Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
+- [x] Make `PhraseTransformDefinition` and `ScoreTransformDefinition` generic.
+- [x] Rename stored callable field to `transform_function`.
+- [x] Route production transform invocation through registered transform `transform(...)`.
+- [x] Update registry definitions to use `transform_function=...`.
+- [x] Remove stale `validate_params(...)` methods from transform definitions.
+- [x] Keep raw dimension string normalization at the parser boundary, not in transform param parsing.
+- [ ] Define typed params models per remaining transform.
+- [ ] Update remaining transform function signatures and remove redundant `isinstance` guards.
+- [ ] Update remaining tests.
 - [ ] Move `parse_dimension(...)` out of `transforms/base.py` if doing so keeps the parser boundary clearer.
 - [ ] Check `drift.py` for any transform function that is not used in production code.
+
+## Handoff Notes
+
+### Current state
+
+- This refactor is intentionally mid-migration. Broad test runs are expected to fail until all transform specs have `params_factory` and all registered transform functions accept typed params.
+- `transforms/base.py` now has:
+  - generic `ParamSchema[T].parse(...)`
+  - `NoParams`
+  - `TransformParamFieldSpec.default`
+  - generic `TransformParamsSpec[P]` with required `params_factory`
+  - generic `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]`
+  - public definition `transform(...)` methods that parse raw params and call `transform_function(...)`
+  - registry-facing `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols
+- `validate_transform_params(...)` and definition-level `validate_params(...)` were removed. Parsing now happens through `TransformParamsSpec.parse_params(...)` and registered definition `transform(...)`.
+- The optional custom validator hook was removed under YAGNI. Reintroduce only when a real cross-field validation rule requires it.
+- `composition/transformer.py` now calls registered definition `transform(...)` and no longer validates params separately.
+- `transforms/registry.py` now uses `transform_function=...` and Protocol-typed registries.
+- Converted transforms:
+  - `reverse` uses `NoParams`.
+  - `repeat` uses `RepeatParams(count: int)`.
+  - `transpose` uses `TransposeParams(semitones: float)`.
+  - `delay` uses `DelayParams(seconds: float)`.
+- `PAD_SILENCE_PARAMS_SPEC` was given a temporary `params_factory=dict` so `delay` can import `pad_silence_tones` while `pad_silence` itself remains unconverted.
+
+### Next small steps
+
+1. Convert `pad_silence` next.
+   - Add `PadSilenceParams(seconds: float, position: str)`.
+   - Change `PAD_SILENCE_PARAMS_SPEC` to `TransformParamsSpec[PadSilenceParams]`.
+   - Update phrase/score wrappers to accept `PadSilenceParams`.
+   - Move raw invalid-param tests to `PAD_SILENCE_PARAMS_SPEC.parse_params(...)`.
+   - Run `tests/test_pad_silence.py` and any direct wrapper smoke checks.
+2. Continue through simple basic transforms before dimension transforms.
+   - Good order: `pad_silence`, then `scale`/`drift` only after adding an internal-only dimension schema or a clear factory check for already-normalized `ToneDimension`.
+3. Keep each step reviewable.
+   - Convert one transform at a time.
+   - Update only direct tests for that transform.
+   - Run targeted tests for that transform, not the full suite until the migration is closer to complete.
+4. Do not re-add parser-style dimension normalization in transform params.
+   - Raw dimension strings belong in `composition/parser.py`.
+   - Transform params should expect already-normalized `ToneDimension` for dimension-bearing transforms.
 
 ## Success Criteria
 
