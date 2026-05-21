@@ -10,7 +10,7 @@ from score_model.traversal import flatten_voice_tones
 def _build_geological_example_composition() -> CompositionDocumentInput:
     return {
         "description": (
-            "A showcase of the stochastic profile transforms. Each voice plays the same C major arpeggio, "
+            "A showcase of the stochastic transforms. Each voice plays the same C major arpeggio, "
             "but has a different stochastic transform applied to a different musical dimension "
             "(frequency, duration, or amplitude). A score-level transform is also applied to all voices."
         ),
