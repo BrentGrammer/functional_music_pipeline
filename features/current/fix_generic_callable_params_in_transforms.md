@@ -44,11 +44,11 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - Make `TransformParamsSpec[P].parse_params(raw_params) -> P` validate unknown/missing fields, parse each field, apply the custom validator if present, and construct the params model.
 - If generic dataclass construction with `params_model(**parsed_fields)` causes mypy friction, use a small typed factory on `TransformParamsSpec[P]`. Do not add distributed per-transform builders.
 
-### Transform descriptors
+### Transform definitions
 
 - Make `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]` generic.
 - Rename the stored callable field from `transform` to `transform_function`.
-- Add a public `transform(...)` method on each descriptor. This method accepts raw request params, parses them internally with `params_spec.parse_params(...)`, then calls `transform_function(...)` with typed params.
+- Add a public `transform(...)` method on each definition. This method accepts raw request params, parses them internally with `params_spec.parse_params(...)`, then calls `transform_function(...)` with typed params.
 - Callers should use `descriptor.transform(context, raw_params)` or `descriptor.transform(score, raw_params)`.
 - Do not expose `parse_and_apply(...)`; parsing is an implementation detail.
 - Do not use `apply(...)`; `transform(...)` matches the project domain language.
@@ -73,17 +73,17 @@ class PhraseTransformDefinition(Generic[P]):
 
 ### Registry typing
 
-- Use Protocols named `PhraseTransformDescriptor` and `ScoreTransformDescriptor` for registry values.
-- The descriptor Protocols should expose only the registry-facing contract: `name` and `transform(...)`.
+- Use Protocols named `RegisteredPhraseTransform` and `RegisteredScoreTransform` for registry values.
+- The registered transform Protocols should expose only the registry-facing contract: `name` and `transform(...)`.
 - Keep each concrete params type inside `PhraseTransformDefinition[P]` / `ScoreTransformDefinition[P]`.
-- Registry annotations should be `dict[str, PhraseTransformDescriptor]` and `dict[str, ScoreTransformDescriptor]`, not `dict[str, PhraseTransformDefinition[Any]]`.
+- Registry annotations should be `dict[str, RegisteredPhraseTransform]` and `dict[str, RegisteredScoreTransform]`, not `dict[str, PhraseTransformDefinition[Any]]`.
 - Do not spread `Any`, broad `Mapping[str, object]`, or `typing.cast` into transform modules.
 - Do not name the registry-facing abstraction `AnyPhraseTransformDefinition` or similar; that names the typing compromise instead of the domain role.
 
 Example:
 
 ```python
-class PhraseTransformDescriptor(Protocol):
+class RegisteredPhraseTransform(Protocol):
     name: str
 
     def transform(
@@ -94,7 +94,7 @@ class PhraseTransformDescriptor(Protocol):
         ...
 
 
-PHRASE_TRANSFORMS: dict[str, PhraseTransformDescriptor] = {
+PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
     "drift": PhraseTransformDefinition[DriftParams](
         name="drift",
         params_spec=DRIFT_PARAMS_SPEC,
@@ -105,16 +105,16 @@ PHRASE_TRANSFORMS: dict[str, PhraseTransformDescriptor] = {
 
 ## Files to Change
 
-- `transforms/base.py` — Add typed parsing, generic params specs, generic transform definitions, descriptor Protocols, and public descriptor `transform(...)` methods.
+- `transforms/base.py` — Add typed parsing, generic params specs, generic transform definitions, registered transform Protocols, and public definition `transform(...)` methods.
 - Transform modules — Add params dataclasses, update transform function signatures, remove redundant param type guards.
 - `transforms/registry.py` — Use `transform_function=...` and descriptor Protocol dict annotations.
-- `composition/transformer.py` — Invoke transforms through `descriptor.transform(...)` so validation/parsing stays hidden behind the descriptor.
+- `composition/transformer.py` — Invoke transforms through `descriptor.transform(...)` so validation/parsing stays hidden behind the registered transform.
 - `tests/` — Update direct transform calls to pass typed params models where they bypass the descriptor.
 
 ## Status
 
 - [ ] Add typed parsing to `ParamSchema` and `TransformParamsSpec`.
-- [ ] Add `PhraseTransformDescriptor` and `ScoreTransformDescriptor` Protocols.
+- [ ] Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
 - [ ] Make `PhraseTransformDefinition` and `ScoreTransformDefinition` generic.
 - [ ] Rename stored callable field to `transform_function`.
 - [ ] Route production transform invocation through descriptor `transform(...)`.
