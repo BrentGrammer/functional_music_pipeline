@@ -2,7 +2,7 @@
 
 ## Goal
 
-Remove `Mapping[str, object]` from transform module function signatures and replace it with concrete typed params models. Runtime validation and parsing should happen once at the registered transform boundary, before the transform function is invoked.
+Remove `Mapping[str, object]` from transform module function signatures and replace it with concrete typed params models. Runtime validation and parsing should happen once at the transform descriptor boundary, before the transform function is invoked.
 
 ## Problem
 
@@ -40,8 +40,7 @@ def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams)
 - Make `ParamSchema[T]` expose `parse(value: object, field_name: str) -> T`.
 - Keep `validate(...) -> None` only as a compatibility wrapper around `parse(...)` if still needed.
 - `FloatParam.parse` returns `float`; `IntegerParam.parse` returns `int`; `BooleanParam.parse` returns `bool`; `StringParam.parse` returns `str`.
-- Keep `parse_dimension(...)` for external/raw-input boundary parsing in `composition/parser.py`.
-- Add `ToneDimensionParam.parse` returning `ToneDimension`; it should reuse `parse_dimension(...)` so parser and transform param parsing share the same dimension normalization behavior.
+- Add `ToneDimensionParam.parse` returning `ToneDimension`.
 - Keep `EnumParam` for string enum-like values such as intensity presets; it should return normalized `str`.
 - Add a `default` field to `TransformParamFieldSpec` so optional/defaulted params are defined in the spec instead of transform functions calling `params.get(...)`.
 - Make `TransformParamsSpec[P]` use a typed factory, such as `params_factory: Callable[[Mapping[str, object]], P]`, to construct params models after field parsing.
@@ -113,7 +112,7 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 
 - `transforms/base.py` — Add typed parsing, generic params specs, generic transform definitions, registered transform Protocols, and public definition `transform(...)` methods.
 - Transform modules — Add params dataclasses, update transform function signatures, remove redundant param type guards.
-- `transforms/registry.py` — Use `transform_function=...` and registered transform Protocol dict annotations.
+- `transforms/registry.py` — Use `transform_function=...` and descriptor Protocol dict annotations.
 - `composition/transformer.py` — Invoke transforms through `descriptor.transform(...)` so validation/parsing stays hidden behind the registered transform.
 - `tests/` — Update direct transform calls to pass typed params models where they bypass the descriptor.
 
@@ -126,17 +125,17 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
 - [ ] Add `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols.
 - [ ] Make `PhraseTransformDefinition` and `ScoreTransformDefinition` generic.
 - [ ] Rename stored callable field to `transform_function`.
-- [ ] Route production transform invocation through registered transform `transform(...)`.
+- [ ] Route production transform invocation through descriptor `transform(...)`.
 - [ ] Define typed params models per transform.
 - [ ] Update transform function signatures and remove redundant `isinstance` guards.
 - [ ] Update registry definitions.
 - [ ] Update tests.
-- [ ] Keep `parse_dimension` for `composition/parser.py` and reuse it from `ToneDimensionParam`.
+- [ ] Remove `parse_dimension` from `transforms/base.py` or keep only if still needed by external/raw-input code.
 - [ ] Check `drift.py` for any transform function that is not used in production code.
 
 ## Success Criteria
 
 - Transform modules receive concrete params objects, not `Mapping[str, object]`.
 - Mypy passes without local casts or `Any` in transform modules.
-- Runtime validation errors still happen at the registered transform/spec boundary.
+- Runtime validation errors still happen at the descriptor/spec boundary.
 - Existing transform behavior is preserved.
