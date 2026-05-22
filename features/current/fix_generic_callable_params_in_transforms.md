@@ -204,6 +204,8 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
 - [x] Update registry definitions to use `transform_function=...`.
 - [x] Remove stale `validate_params(...)` methods from transform definitions.
 - [x] Keep raw dimension string normalization at the parser boundary, not in transform param parsing.
+- [x] Add `ToneDimensionParam` for already-normalized internal dimension values.
+- [x] Add `ParsedTransformParams` so factories build typed params without repeating schema validation.
 - [ ] Define typed params models per remaining transform.
 - [ ] Update remaining transform function signatures and remove redundant `isinstance` guards.
 - [ ] Update remaining tests.
@@ -218,8 +220,10 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
 - `transforms/base.py` now has:
   - generic `ParamSchema[T].parse(...)`
   - `NoParams`
+  - `ToneDimensionParam`, which accepts only already-normalized `ToneDimension` values and does not parse raw strings
   - `TransformParamFieldSpec.default`
   - generic `TransformParamsSpec[P]` with required `params_factory`
+  - `ParsedTransformParams`, the post-schema parsed-value accessor passed to transform params factories
   - generic `PhraseTransformDefinition[P]` and `ScoreTransformDefinition[P]`
   - public definition `transform(...)` methods that parse raw params and call `transform_function(...)`
   - registry-facing `RegisteredPhraseTransform` and `RegisteredScoreTransform` Protocols
@@ -227,23 +231,43 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
 - The optional custom validator hook was removed under YAGNI. Reintroduce only when a real cross-field validation rule requires it.
 - `composition/transformer.py` now calls registered definition `transform(...)` and no longer validates params separately.
 - `transforms/registry.py` now uses `transform_function=...` and Protocol-typed registries.
+- Transform factories now receive `ParsedTransformParams`, not `Mapping[str, object]`.
+  - Field schemas own raw value validation and conversion.
+  - Factories should call `parsed_params.required("field", ExpectedType)` and construct the params dataclass.
+  - Do not add repeated local `isinstance` validation blocks in transform modules for fields already parsed by schemas.
 - Converted transforms:
   - `reverse` uses `NoParams`.
   - `repeat` uses `RepeatParams(count: int)`.
   - `transpose` uses `TransposeParams(semitones: float)`.
   - `delay` uses `DelayParams(seconds: float)`.
-- `PAD_SILENCE_PARAMS_SPEC` was given a temporary `params_factory=dict` so `delay` can import `pad_silence_tones` while `pad_silence` itself remains unconverted.
+  - `pad_silence` uses `PadSilenceParams(seconds: float, position: str)`.
+  - `drift` uses `DriftParams(dimension: ToneDimension, rate: float)`.
+  - `inversion` uses `InvertParams(dimension: ToneDimension)`.
+  - `scale` uses `ScaleParams(dimension: ToneDimension, factor: float)`.
+  - `cellular_automata` uses `CellularAutomataParams(dimension: ToneDimension, rule: int, generations: int, max_deviation: float)`.
+- `MINIMUM_FREQUENCY_HZ = 0.0` now lives in `score_model/tone.py`.
+  - `inversion` and `scale` use it instead of a hard-coded `1.0` frequency floor.
+  - This preserves sub-audio positive frequencies as possible intermediate pipeline state while preventing negative frequencies.
+- Recent focused verification:
+  - `.venv/bin/mypy transforms/base.py transforms/basic/repeat.py transforms/basic/transpose.py transforms/basic/delay.py transforms/basic/pad_silence.py transforms/basic/drift.py transforms/basic/inversion.py transforms/basic/scale.py transforms/complexity/cellular_automata.py`
+  - `.venv/bin/pytest tests/test_delay.py tests/test_scale.py tests/test_invert.py -q`
+  - `py_compile` passed for `transforms/complexity/cellular_automata.py` and the wrapper behavior test files.
+- Known current blocker:
+  - `tests/test_drift.py -q` and `tests/test_complexity_transforms.py -q` still fail during collection because `transforms/complexity/random_drop.py` is the next unconverted import and its `RANDOM_DROP_PARAMS_SPEC` is missing `params_factory`.
 
 ### Next small steps
 
-1. Convert `pad_silence` next.
-   - Add `PadSilenceParams(seconds: float, position: str)`.
-   - Change `PAD_SILENCE_PARAMS_SPEC` to `TransformParamsSpec[PadSilenceParams]`.
-   - Update phrase/score wrappers to accept `PadSilenceParams`.
-   - Move raw invalid-param tests to `PAD_SILENCE_PARAMS_SPEC.parse_params(...)`.
-   - Run `tests/test_pad_silence.py` and any direct wrapper smoke checks.
-2. Continue through simple basic transforms before dimension transforms.
-   - Good order: `pad_silence`, then `scale`/`drift` only after adding an internal-only dimension schema or a clear factory check for already-normalized `ToneDimension`.
+1. Convert `random_drop` next.
+   - Add `RandomDropParams(dimension: ToneDimension, max_drop_pct: int, drop_frequency_pct: int)`.
+   - Change `RANDOM_DROP_PARAMS_SPEC` to `TransformParamsSpec[RandomDropParams]`.
+   - Use `ToneDimensionParam()` for `dimension`.
+   - Move any existing default values into `TransformParamFieldSpec.default`.
+   - Update phrase/score wrappers to accept `RandomDropParams`.
+   - Move raw invalid-param wrapper tests to `RANDOM_DROP_PARAMS_SPEC.parse_params(...)`.
+   - Use `ParsedTransformParams.required(...)` in the factory; do not add local `isinstance` guards.
+   - Run `tests/test_complexity_transforms.py -q` if possible, then rerun `tests/test_drift.py -q` to find the next import blocker.
+2. Continue through remaining unconverted transforms one at a time.
+   - Current unconverted specs include `random_drop`, `weierstrass`, `erosion`, `terraced_drift`, `frost_effect`, `feigenbaum`, `golden_ratio`, tempo common specs, and counterpoint fugue specs.
 3. Keep each step reviewable.
    - Convert one transform at a time.
    - Update only direct tests for that transform.
