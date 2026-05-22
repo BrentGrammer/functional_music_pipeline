@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.math_constants import GOLDEN_RATIO
 from score_model.motif import Motif
@@ -7,21 +7,33 @@ from score_model.score import Score
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
-    EnumParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 from transforms.basic.scale import scale_transform
 
-GOLDEN_RATIO_PARAMS_SPEC = TransformParamsSpec(
+@dataclass(frozen=True)
+class GoldenRatioParams:
+    dimension: ToneDimension
+
+
+def _golden_ratio_params_factory(parsed: ParsedTransformParams) -> GoldenRatioParams:
+    return GoldenRatioParams(dimension=parsed.required("dimension", ToneDimension))
+
+
+GOLDEN_RATIO_PARAMS_SPEC = TransformParamsSpec[GoldenRatioParams](
     fields={
         "dimension": TransformParamFieldSpec(
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
+            default=ToneDimension.DURATION,
         ),
-    }
+    },
+    params_factory=_golden_ratio_params_factory,
 )
 
 
@@ -47,43 +59,31 @@ def _previous_phrase_tones(context: PhraseTransformContext) -> list:
     return []
 
 
-def golden_ratio_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Golden ratio dimension must be a string or ToneDimension.")
-
+def golden_ratio_phrase_transform(context: PhraseTransformContext, params: GoldenRatioParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-    transformed_tones = golden_ratio_transform(phrase_tones, dimension=dimension)
+    transformed_tones = golden_ratio_transform(phrase_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
 def phrase_golden_ratio_shrink_transform(
     context: PhraseTransformContext,
-    params: Mapping[str, object],
+    params: GoldenRatioParams,
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
     previous_tones = _previous_phrase_tones(context)
 
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Phrase golden ratio shrink dimension must be a string or ToneDimension.")
-
-    result = phrase_golden_ratio_shrink(current_tones, previous_tones, dimension=dimension)
+    result = phrase_golden_ratio_shrink(current_tones, previous_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
 
 
 def phrase_golden_ratio_grow_transform(
     context: PhraseTransformContext,
-    params: Mapping[str, object],
+    params: GoldenRatioParams,
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
     previous_tones = _previous_phrase_tones(context)
 
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Phrase golden ratio grow dimension must be a string or ToneDimension.")
-
-    result = phrase_golden_ratio_grow(current_tones, previous_tones, dimension=dimension)
+    result = phrase_golden_ratio_grow(current_tones, previous_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
 
 
@@ -125,15 +125,11 @@ def phrase_golden_ratio_grow(
     return scale_transform(tones, dimension, scale_factor)
 
 
-def golden_ratio_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Golden ratio dimension must be a string or ToneDimension.")
-
+def golden_ratio_score_transform(score: Score, params: GoldenRatioParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        transformed_tones = golden_ratio_transform(voice_tones, dimension=dimension)
+        transformed_tones = golden_ratio_transform(voice_tones, dimension=params.dimension)
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
 
     return Score(voices=new_voices)

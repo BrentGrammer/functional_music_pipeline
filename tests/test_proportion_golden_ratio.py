@@ -6,8 +6,10 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
-from transforms.base import PhraseTransformContext
+from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.proportion.golden_ratio import (
+    GOLDEN_RATIO_PARAMS_SPEC,
+    GoldenRatioParams,
     golden_ratio_phrase_transform,
     golden_ratio_transform,
     phrase_golden_ratio_grow,
@@ -180,26 +182,11 @@ class TestPhraseGoldenRatioGrow:
 
 
 class TestGoldenRatioWrapperErrorPaths:
-    def test_golden_ratio_phrase_transform_rejects_non_dimension_value(self):
-        score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
-        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-
+    def test_golden_ratio_params_spec_rejects_invalid_dimension(self):
         with pytest.raises(ValueError):
-            golden_ratio_phrase_transform(context, {"dimension": 1})
-
-    def test_phrase_golden_ratio_shrink_transform_rejects_non_dimension_value(self):
-        score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
-        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-
+            GOLDEN_RATIO_PARAMS_SPEC.parse_params({"dimension": 1})
         with pytest.raises(ValueError):
-            phrase_golden_ratio_shrink_transform(context, {"dimension": []})
-
-    def test_phrase_golden_ratio_grow_transform_rejects_non_dimension_value(self):
-        score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
-        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-
-        with pytest.raises(ValueError):
-            phrase_golden_ratio_grow_transform(context, {"dimension": object()})
+            GOLDEN_RATIO_PARAMS_SPEC.parse_params({"dimension": []})
 
 
 class TestGoldenRatioPreviousPhraseFallback:
@@ -208,4 +195,4 @@ class TestGoldenRatioPreviousPhraseFallback:
         context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
         with pytest.raises(ValueError):
-            phrase_golden_ratio_grow_transform(context, {})
+            phrase_golden_ratio_grow_transform(context, GoldenRatioParams(dimension=ToneDimension.DURATION))
