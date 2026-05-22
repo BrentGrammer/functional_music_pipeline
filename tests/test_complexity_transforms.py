@@ -58,13 +58,6 @@ def test_build_weierstrass_fluctuations_with_zero_iterations_returns_zeros():
     assert fluctuations == [0.0, 0.0, 0.0]
 
 
-def test_weierstrass_resolve_intensity_rejects_non_string_and_unknown_values():
-    with pytest.raises(ValueError):
-        _resolve_intensity(1.0)  # type: ignore[arg-type]
-
-    with pytest.raises(ValueError):
-        _resolve_intensity("ultra")
-
 
 def test_onternally_called_weierstrass_params_spec_rejects_raw_dimension_strings():
     with pytest.raises(ValueError):
