@@ -10,7 +10,7 @@ from transforms.basic.delay import DelayParams, delay_phrase_transform, delay_sc
 from transforms.basic.inversion import InvertParams, invert_phrase_transform, invert_score_transform
 from transforms.basic.repeat import RepeatParams, repeat_phrase_transform, repeat_score_transform
 from transforms.basic.transpose import TransposeParams, transpose_phrase_transform, transpose_score_transform
-from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
+from transforms.complexity.cellular_automata import CellularAutomataParams, cellular_automata_phrase_transform, cellular_automata_score_transform
 from transforms.complexity.random_drop import random_drop_phrase_transform, random_drop_score_transform
 from transforms.complexity.weierstrass import weierstrass_phrase_transform, weierstrass_score_transform
 from transforms.geological.terraced_drift import terraced_drift_phrase_transform, terraced_drift_score_transform
@@ -240,7 +240,7 @@ def test_cellular_automata_phrase_and_score_transform_observable_output():
         ]
     )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
-    params = {"dimension": "duration", "rule": 30, "generations": 2, "max_deviation": 0.3}
+    params = CellularAutomataParams(dimension=ToneDimension.DURATION, rule=30, generations=2, max_deviation=0.3)
 
     result_phrase = cellular_automata_phrase_transform(context, params)
     assert len(result_phrase.motifs[0].tones) == len(automata_target_tones)

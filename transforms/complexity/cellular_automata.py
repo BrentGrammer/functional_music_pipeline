@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -7,21 +8,52 @@ from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
 from transforms.base import (
-    EnumParam,
     FloatParam,
     IntegerParam,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 
-CELLULAR_AUTOMATA_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class CellularAutomataParams:
+    dimension: ToneDimension
+    rule: int
+    generations: int
+    max_deviation: float
+
+
+def _create_cellular_automata_params(parsed_params: Mapping[str, object]) -> CellularAutomataParams:
+    dimension = parsed_params.get("dimension")
+    rule = parsed_params.get("rule")
+    generations = parsed_params.get("generations")
+    max_deviation = parsed_params.get("max_deviation")
+    if (
+        not isinstance(dimension, ToneDimension)
+        or not isinstance(rule, int)
+        or not isinstance(generations, int)
+        or not isinstance(max_deviation, float)
+    ):
+        raise ValueError("Cellular automata params were not parsed before construction.")
+
+    return CellularAutomataParams(
+        dimension=dimension,
+        rule=rule,
+        generations=generations,
+        max_deviation=max_deviation,
+    )
+
+
+CELLULAR_AUTOMATA_PARAMS_SPEC = TransformParamsSpec[CellularAutomataParams](
+    params_factory=_create_cellular_automata_params,
     fields={
         "dimension": TransformParamFieldSpec(
-            required=True,
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
+            default=ToneDimension.DURATION,
         ),
         "rule": TransformParamFieldSpec(
             required=True,
@@ -112,59 +144,29 @@ def apply_cellular_automata_transform(
     return apply_fluctuations(tones, fluctuations, dimension, max_deviation)
 
 
-def cellular_automata_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+def cellular_automata_phrase_transform(context: PhraseTransformContext, params: CellularAutomataParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-
-    dimension = params.get("dimension", ToneDimension.DURATION)
-
-    rule = params["rule"]
-    if not isinstance(rule, int) or isinstance(rule, bool):
-        raise ValueError("Cellular automata rule must be an integer.")
-
-    generations = params["generations"]
-    if not isinstance(generations, int) or isinstance(generations, bool):
-        raise ValueError("Cellular automata generations must be an integer.")
-
-    max_deviation = params["max_deviation"]
-    if not isinstance(max_deviation, (int, float)) or isinstance(max_deviation, bool):
-        raise ValueError("Cellular automata max_deviation must be a float.")
 
     transformed_tones = apply_cellular_automata_transform(
         phrase_tones,
-        dimension=dimension,
-        rule=rule,
-        generations=generations,
-        max_deviation=float(max_deviation),
+        dimension=params.dimension,
+        rule=params.rule,
+        generations=params.generations,
+        max_deviation=params.max_deviation,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
-def cellular_automata_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Cellular automata dimension must be a string or ToneDimension.")
-
-    rule = params["rule"]
-    if not isinstance(rule, int) or isinstance(rule, bool):
-        raise ValueError("Cellular automata rule must be an integer.")
-
-    generations = params["generations"]
-    if not isinstance(generations, int) or isinstance(generations, bool):
-        raise ValueError("Cellular automata generations must be an integer.")
-
-    max_deviation = params["max_deviation"]
-    if not isinstance(max_deviation, (int, float)) or isinstance(max_deviation, bool):
-        raise ValueError("Cellular automata max_deviation must be a float.")
-
+def cellular_automata_score_transform(score: Score, params: CellularAutomataParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
         transformed_tones = apply_cellular_automata_transform(
             voice_tones,
-            dimension=dimension,
-            rule=rule,
-            generations=generations,
-            max_deviation=float(max_deviation),
+            dimension=params.dimension,
+            rule=params.rule,
+            generations=params.generations,
+            max_deviation=params.max_deviation,
         )
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
 

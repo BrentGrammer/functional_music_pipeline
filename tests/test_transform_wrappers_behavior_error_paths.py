@@ -10,7 +10,7 @@ from transforms.basic.delay import DELAY_PARAMS_SPEC
 from transforms.basic.inversion import INVERT_PARAMS_SPEC
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC
-from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
+from transforms.complexity.cellular_automata import CELLULAR_AUTOMATA_PARAMS_SPEC
 from transforms.complexity.random_drop import random_drop_phrase_transform, random_drop_score_transform
 from transforms.complexity.weierstrass import weierstrass_phrase_transform, weierstrass_score_transform
 from transforms.geological.terraced_drift import terraced_drift_phrase_transform, terraced_drift_score_transform
@@ -81,156 +81,47 @@ def test_invert_score_transform_rejects_bool_dimension():
 
 
 def test_cellular_automata_transforms_reject_invalid_param_types():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="automata-target",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
-                            )
-                        ]
-                    )
-                ]
-            ),
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": ToneDimension.DURATION, "rule": 30, "generations": 2, "max_deviation": 0.3}
 
     with pytest.raises(ValueError):
-        cellular_automata_phrase_transform(context, {**params, "rule": 30.0})
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params({**params, "rule": 30.0}, transform_name="cellular_automata")
 
     with pytest.raises(ValueError):
-        cellular_automata_score_transform(score, {**params, "generations": True})
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params({**params, "generations": True}, transform_name="cellular_automata")
 
 
 def test_cellular_automata_transforms_reject_invalid_dimension_type():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="automata-target",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
-                            )
-                        ]
-                    )
-                ]
-            ),
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"rule": 30, "generations": 2, "max_deviation": 0.3}
 
     with pytest.raises(ValueError):
-        cellular_automata_phrase_transform(context, {**params, "dimension": 1})
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params({**params, "dimension": 1}, transform_name="cellular_automata")
 
     with pytest.raises(ValueError):
-        cellular_automata_score_transform(score, {**params, "dimension": []})
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params({**params, "dimension": []}, transform_name="cellular_automata")
 
 
 def test_cellular_automata_phrase_transform_rejects_non_integer_generations():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="automata-target",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
-                            )
-                        ]
-                    )
-                ]
-            ),
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": ToneDimension.DURATION, "rule": 30, "generations": 2.0, "max_deviation": 0.3}
 
     with pytest.raises(ValueError):
-        cellular_automata_phrase_transform(context, params)
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params(params, transform_name="cellular_automata")
 
 
 def test_cellular_automata_score_transform_rejects_non_integer_rule():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="automata-target",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
-                            )
-                        ]
-                    )
-                ]
-            ),
-        ]
-    )
     params = {"dimension": ToneDimension.DURATION, "rule": 30.0, "generations": 2, "max_deviation": 0.3}
 
     with pytest.raises(ValueError):
-        cellular_automata_score_transform(score, params)
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params(params, transform_name="cellular_automata")
 
 
 def test_cellular_automata_transforms_reject_invalid_max_deviation_type():
-    score = Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="automata-target",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
-                            )
-                        ]
-                    )
-                ]
-            ),
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
     params = {"dimension": ToneDimension.DURATION, "rule": 30, "generations": 2}
 
     with pytest.raises(ValueError):
-        cellular_automata_phrase_transform(context, {**params, "max_deviation": True})
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params({**params, "max_deviation": True}, transform_name="cellular_automata")
 
     with pytest.raises(ValueError):
-        cellular_automata_score_transform(score, {**params, "max_deviation": "0.3"})
+        CELLULAR_AUTOMATA_PARAMS_SPEC.parse_params({**params, "max_deviation": "0.3"}, transform_name="cellular_automata")
 
 
 def test_random_drop_transforms_reject_invalid_param_types():
