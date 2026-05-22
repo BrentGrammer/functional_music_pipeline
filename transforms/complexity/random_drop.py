@@ -1,5 +1,5 @@
 import random
-from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -8,32 +8,45 @@ from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
 from transforms.base import (
-    EnumParam,
     IntegerParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 
 
+@dataclass(frozen=True)
+class RandomDropParams:
+    dimension: ToneDimension
+    max_drop_pct: int
+    drop_frequency_pct: int
+
+
+def _create_random_drop_params(parsed_params: ParsedTransformParams) -> RandomDropParams:
+    return RandomDropParams(
+        dimension=parsed_params.required("dimension", ToneDimension),
+        max_drop_pct=parsed_params.required("max_drop_pct", int),
+        drop_frequency_pct=parsed_params.required("drop_frequency_pct", int),
+    )
+
+
 def _validate_drop_params(max_drop_pct: int, drop_frequency_pct: int) -> None:
-    if not isinstance(max_drop_pct, int):
-        raise ValueError(f"max_drop_pct must be an integer, got {type(max_drop_pct).__name__}")
-    if not isinstance(drop_frequency_pct, int):
-        raise ValueError(f"drop_frequency_pct must be an integer, got {type(drop_frequency_pct).__name__}")
     if max_drop_pct < 1 or max_drop_pct > 100:
         raise ValueError(f"max_drop_pct must be between 1 and 100, got {max_drop_pct}")
     if drop_frequency_pct < 1 or drop_frequency_pct > 100:
         raise ValueError(f"drop_frequency_pct must be between 1 and 100, got {drop_frequency_pct}")
 
 
-RANDOM_DROP_PARAMS_SPEC = TransformParamsSpec(
+RANDOM_DROP_PARAMS_SPEC = TransformParamsSpec[RandomDropParams](
+    params_factory=_create_random_drop_params,
     fields={
         "dimension": TransformParamFieldSpec(
-            required=True,
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
+            default=ToneDimension.DURATION,
         ),
         "max_drop_pct": TransformParamFieldSpec(
             required=True,
@@ -68,51 +81,27 @@ def apply_random_drop_transform(
     return apply_fluctuations(tones, fluctuations, dimension, max_deviation)
 
 
-def random_drop_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+def random_drop_phrase_transform(context: PhraseTransformContext, params: RandomDropParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Random drop dimension must be a string or ToneDimension.")
-
-    max_drop_pct = params["max_drop_pct"]
-    if not isinstance(max_drop_pct, int) or isinstance(max_drop_pct, bool):
-        raise ValueError("Random drop max_drop_pct must be an integer.")
-
-    drop_frequency_pct = params["drop_frequency_pct"]
-    if not isinstance(drop_frequency_pct, int) or isinstance(drop_frequency_pct, bool):
-        raise ValueError("Random drop drop_frequency_pct must be an integer.")
 
     transformed_tones = apply_random_drop_transform(
         phrase_tones,
-        dimension=dimension,
-        max_drop_pct=max_drop_pct,
-        drop_frequency_pct=drop_frequency_pct,
+        dimension=params.dimension,
+        max_drop_pct=params.max_drop_pct,
+        drop_frequency_pct=params.drop_frequency_pct,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
-def random_drop_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Random drop dimension must be a string or ToneDimension.")
-
-    max_drop_pct = params["max_drop_pct"]
-    if not isinstance(max_drop_pct, int) or isinstance(max_drop_pct, bool):
-        raise ValueError("Random drop max_drop_pct must be an integer.")
-
-    drop_frequency_pct = params["drop_frequency_pct"]
-    if not isinstance(drop_frequency_pct, int) or isinstance(drop_frequency_pct, bool):
-        raise ValueError("Random drop drop_frequency_pct must be an integer.")
-
+def random_drop_score_transform(score: Score, params: RandomDropParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
         transformed_tones = apply_random_drop_transform(
             voice_tones,
-            dimension=dimension,
-            max_drop_pct=max_drop_pct,
-            drop_frequency_pct=drop_frequency_pct,
+            dimension=params.dimension,
+            max_drop_pct=params.max_drop_pct,
+            drop_frequency_pct=params.drop_frequency_pct,
         )
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
 

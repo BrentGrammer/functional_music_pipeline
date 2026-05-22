@@ -3,7 +3,7 @@ import pytest
 from score_model.tone import Tone
 from transforms.base import ToneDimension
 from transforms.complexity.cellular_automata import _derive_initial_state, apply_cellular_automata_transform
-from transforms.complexity.random_drop import apply_random_drop_transform
+from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform
 from transforms.complexity.weierstrass import _build_weierstrass_fluctuations, _resolve_intensity, apply_weierstrass_transform
 
 
@@ -194,23 +194,16 @@ def test_random_drop_rejects_out_of_range_drop_frequency_pct():
 
 
 def test_random_drop_rejects_non_integer_max_drop_pct():
-    tones = _build_reference_tones()
-
     with pytest.raises(ValueError):
-        apply_random_drop_transform(
-            tones, dimension=ToneDimension.AMPLITUDE,
-            max_drop_pct=50.0, # type: ignore[arg-type]
-            drop_frequency_pct=40
+        RANDOM_DROP_PARAMS_SPEC.parse_params(
+            {"dimension": ToneDimension.AMPLITUDE, "max_drop_pct": 50.0, "drop_frequency_pct": 40},
+            transform_name="random_drop",
         )
 
 
 def test_random_drop_rejects_non_integer_drop_frequency_pct():
-    tones = _build_reference_tones()
-
     with pytest.raises(ValueError):
-        apply_random_drop_transform(
-            tones,
-            dimension=ToneDimension.AMPLITUDE,
-            max_drop_pct=50,
-            drop_frequency_pct=40.0,  # type: ignore[arg-type]
+        RANDOM_DROP_PARAMS_SPEC.parse_params(
+            {"dimension": ToneDimension.AMPLITUDE, "max_drop_pct": 50, "drop_frequency_pct": 40.0},
+            transform_name="random_drop",
         )

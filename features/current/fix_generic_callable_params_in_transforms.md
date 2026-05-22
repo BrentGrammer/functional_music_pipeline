@@ -245,29 +245,32 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
   - `inversion` uses `InvertParams(dimension: ToneDimension)`.
   - `scale` uses `ScaleParams(dimension: ToneDimension, factor: float)`.
   - `cellular_automata` uses `CellularAutomataParams(dimension: ToneDimension, rule: int, generations: int, max_deviation: float)`.
+  - `random_drop` uses `RandomDropParams(dimension: ToneDimension, max_drop_pct: int, drop_frequency_pct: int)`.
 - `MINIMUM_FREQUENCY_HZ = 0.0` now lives in `score_model/tone.py`.
   - `inversion` and `scale` use it instead of a hard-coded `1.0` frequency floor.
   - This preserves sub-audio positive frequencies as possible intermediate pipeline state while preventing negative frequencies.
 - Recent focused verification:
+  - `.venv/bin/mypy transforms/complexity/random_drop.py`
+  - `.venv/bin/python -m py_compile transforms/complexity/random_drop.py tests/test_complexity_transforms.py tests/test_transform_wrappers_behavior_happy_path.py tests/test_transform_wrappers_behavior_error_paths.py`
+  - `.venv/bin/ruff check transforms/complexity/random_drop.py tests/test_complexity_transforms.py tests/test_transform_wrappers_behavior_happy_path.py tests/test_transform_wrappers_behavior_error_paths.py`
   - `.venv/bin/mypy transforms/base.py transforms/basic/repeat.py transforms/basic/transpose.py transforms/basic/delay.py transforms/basic/pad_silence.py transforms/basic/drift.py transforms/basic/inversion.py transforms/basic/scale.py transforms/complexity/cellular_automata.py`
   - `.venv/bin/pytest tests/test_delay.py tests/test_scale.py tests/test_invert.py -q`
   - `py_compile` passed for `transforms/complexity/cellular_automata.py` and the wrapper behavior test files.
 - Known current blocker:
-  - `tests/test_drift.py -q` and `tests/test_complexity_transforms.py -q` still fail during collection because `transforms/complexity/random_drop.py` is the next unconverted import and its `RANDOM_DROP_PARAMS_SPEC` is missing `params_factory`.
+  - `tests/test_drift.py -q` and `tests/test_complexity_transforms.py -q` still fail during collection because `transforms/complexity/weierstrass.py` is the next unconverted import and its `WEIERSTRASS_PARAMS_SPEC` is missing `params_factory`.
 
 ### Next small steps
 
-1. Convert `random_drop` next.
-   - Add `RandomDropParams(dimension: ToneDimension, max_drop_pct: int, drop_frequency_pct: int)`.
-   - Change `RANDOM_DROP_PARAMS_SPEC` to `TransformParamsSpec[RandomDropParams]`.
+1. Convert `weierstrass` next.
+   - Add a typed params dataclass and params factory.
+   - Change `WEIERSTRASS_PARAMS_SPEC` to a generic `TransformParamsSpec[...]`.
    - Use `ToneDimensionParam()` for `dimension`.
-   - Move any existing default values into `TransformParamFieldSpec.default`.
-   - Update phrase/score wrappers to accept `RandomDropParams`.
-   - Move raw invalid-param wrapper tests to `RANDOM_DROP_PARAMS_SPEC.parse_params(...)`.
-   - Use `ParsedTransformParams.required(...)` in the factory; do not add local `isinstance` guards.
+   - Move defaults into `TransformParamFieldSpec.default`.
+   - Update phrase/score wrappers to accept typed params.
+   - Move raw invalid-param wrapper tests to `WEIERSTRASS_PARAMS_SPEC.parse_params(...)`.
    - Run `tests/test_complexity_transforms.py -q` if possible, then rerun `tests/test_drift.py -q` to find the next import blocker.
 2. Continue through remaining unconverted transforms one at a time.
-   - Current unconverted specs include `random_drop`, `weierstrass`, `erosion`, `terraced_drift`, `frost_effect`, `feigenbaum`, `golden_ratio`, tempo common specs, and counterpoint fugue specs.
+   - Current unconverted specs include `weierstrass`, `erosion`, `terraced_drift`, `frost_effect`, `feigenbaum`, `golden_ratio`, tempo common specs, and counterpoint fugue specs.
 3. Keep each step reviewable.
    - Convert one transform at a time.
    - Update only direct tests for that transform.

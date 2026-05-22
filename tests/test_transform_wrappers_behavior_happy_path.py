@@ -11,7 +11,7 @@ from transforms.basic.inversion import InvertParams, invert_phrase_transform, in
 from transforms.basic.repeat import RepeatParams, repeat_phrase_transform, repeat_score_transform
 from transforms.basic.transpose import TransposeParams, transpose_phrase_transform, transpose_score_transform
 from transforms.complexity.cellular_automata import CellularAutomataParams, cellular_automata_phrase_transform, cellular_automata_score_transform
-from transforms.complexity.random_drop import random_drop_phrase_transform, random_drop_score_transform
+from transforms.complexity.random_drop import RandomDropParams, random_drop_phrase_transform, random_drop_score_transform
 from transforms.complexity.weierstrass import weierstrass_phrase_transform, weierstrass_score_transform
 from transforms.geological.terraced_drift import terraced_drift_phrase_transform, terraced_drift_score_transform
 from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transform, feigenbaum_sequence_score_transform
@@ -273,7 +273,7 @@ def test_random_drop_phrase_and_score_transform_observable_output():
         ]
     )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-    params = {"dimension": "amplitude", "max_drop_pct": 20, "drop_frequency_pct": 80}
+    params = RandomDropParams(dimension=ToneDimension.AMPLITUDE, max_drop_pct=20, drop_frequency_pct=80)
 
     dropped_phrase = random_drop_phrase_transform(context, params)
     assert len(dropped_phrase.motifs[0].tones) == len(drop_target_tones)
