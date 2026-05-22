@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.math_constants import FEIGENBAUM_DELTA as FEIGENBAUM_RATIO
 from score_model.motif import Motif
@@ -8,21 +8,33 @@ from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
-    EnumParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 from transforms.basic.scale import scale_transform
 
-FEIGENBAUM_PARAMS_SPEC = TransformParamsSpec(
+@dataclass(frozen=True)
+class FeigenbaumParams:
+    dimension: ToneDimension
+
+
+def _feigenbaum_params_factory(parsed: ParsedTransformParams) -> FeigenbaumParams:
+    return FeigenbaumParams(dimension=parsed.required("dimension", ToneDimension))
+
+
+FEIGENBAUM_PARAMS_SPEC = TransformParamsSpec[FeigenbaumParams](
     fields={
         "dimension": TransformParamFieldSpec(
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
+            default=ToneDimension.DURATION,
         ),
-    }
+    },
+    params_factory=_feigenbaum_params_factory,
 )
 
 
@@ -71,13 +83,9 @@ def _previous_phrase_tones(context: PhraseTransformContext) -> list:
     return []
 
 
-def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Feigenbaum sequence dimension must be a string or ToneDimension.")
-
+def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params: FeigenbaumParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-    transformed_tones = feigenbaum_sequence(phrase_tones, dimension=dimension)
+    transformed_tones = feigenbaum_sequence(phrase_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
@@ -102,31 +110,23 @@ def phrase_feigenbaum_shrink(
 
 def phrase_feigenbaum_shrink_transform(
     context: PhraseTransformContext,
-    params: Mapping[str, object],
+    params: FeigenbaumParams,
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
     previous_tones = _previous_phrase_tones(context)
 
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Phrase feigenbaum shrink dimension must be a string or ToneDimension.")
-
-    result = phrase_feigenbaum_shrink(current_tones, previous_tones, dimension=dimension)
+    result = phrase_feigenbaum_shrink(current_tones, previous_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
 
 
 def phrase_feigenbaum_grow_transform(
     context: PhraseTransformContext,
-    params: Mapping[str, object],
+    params: FeigenbaumParams,
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
     previous_tones = _previous_phrase_tones(context)
 
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Phrase feigenbaum grow dimension must be a string or ToneDimension.")
-
-    result = phrase_feigenbaum_grow(current_tones, previous_tones, dimension=dimension)
+    result = phrase_feigenbaum_grow(current_tones, previous_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
 
 
@@ -167,9 +167,5 @@ def score_feigenbaum_sequence(score: Score, dimension: ToneDimension = ToneDimen
     return Score(new_voices)
 
 
-def feigenbaum_sequence_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Feigenbaum sequence dimension must be a string or ToneDimension.")
-
-    return score_feigenbaum_sequence(score, dimension=dimension)
+def feigenbaum_sequence_score_transform(score: Score, params: FeigenbaumParams) -> Score:
+    return score_feigenbaum_sequence(score, dimension=params.dimension)
