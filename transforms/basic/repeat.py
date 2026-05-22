@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -6,7 +5,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import IntegerParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import IntegerParam, ParsedTransformParams, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 
 @dataclass(frozen=True)
@@ -14,11 +13,8 @@ class RepeatParams:
     count: int
 
 
-def _create_repeat_params(parsed_params: Mapping[str, object]) -> RepeatParams:
-    count = parsed_params["count"]
-    if isinstance(count, bool) or not isinstance(count, int):
-        raise ValueError("Param 'count' must be an integer.")
-    return RepeatParams(count=count)
+def _create_repeat_params(parsed_params: ParsedTransformParams) -> RepeatParams:
+    return RepeatParams(count=parsed_params.required("count", int))
 
 
 REPEAT_PARAMS_SPEC = TransformParamsSpec[RepeatParams](

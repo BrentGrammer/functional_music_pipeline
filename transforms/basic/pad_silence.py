@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -7,7 +6,7 @@ from score_model.score import Score
 from score_model.tone_utils import make_silence_tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import EnumParam, FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import EnumParam, FloatParam, ParsedTransformParams, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 
 @dataclass(frozen=True)
@@ -16,15 +15,10 @@ class PadSilenceParams:
     position: str
 
 
-def _create_pad_silence_params(parsed_params: Mapping[str, object]) -> PadSilenceParams:
-    seconds = parsed_params.get("seconds")
-    position = parsed_params.get("position")
-    if not isinstance(seconds, float) or not isinstance(position, str):
-        raise ValueError("Pad silence params were not parsed before construction.")
-
+def _create_pad_silence_params(parsed_params: ParsedTransformParams) -> PadSilenceParams:
     return PadSilenceParams(
-        seconds=seconds,
-        position=position,
+        seconds=parsed_params.required("seconds", float),
+        position=parsed_params.required("position", str),
     )
 
 

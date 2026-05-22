@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -8,7 +7,7 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import FloatParam, ParsedTransformParams, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 
 @dataclass(frozen=True)
@@ -16,11 +15,8 @@ class TransposeParams:
     semitones: float
 
 
-def _create_transpose_params(parsed_params: Mapping[str, object]) -> TransposeParams:
-    semitones = parsed_params["semitones"]
-    if isinstance(semitones, bool) or not isinstance(semitones, (float, int)):
-        raise ValueError("Param 'semitones' must be a float.")
-    return TransposeParams(semitones=float(semitones))
+def _create_transpose_params(parsed_params: ParsedTransformParams) -> TransposeParams:
+    return TransposeParams(semitones=parsed_params.required("semitones", float))
 
 
 TRANSPOSE_PARAMS_SPEC = TransformParamsSpec[TransposeParams](

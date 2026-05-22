@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -9,6 +8,7 @@ from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     FloatParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
@@ -24,15 +24,10 @@ class ScaleParams:
     factor: float
 
 
-def _create_scale_params(parsed_params: Mapping[str, object]) -> ScaleParams:
-    dimension = parsed_params.get("dimension")
-    factor = parsed_params.get("factor")
-    if not isinstance(dimension, ToneDimension) or not isinstance(factor, float):
-        raise ValueError("Scale params were not parsed before construction.")
-
+def _create_scale_params(parsed_params: ParsedTransformParams) -> ScaleParams:
     return ScaleParams(
-        dimension=dimension,
-        factor=factor,
+        dimension=parsed_params.required("dimension", ToneDimension),
+        factor=parsed_params.required("factor", float),
     )
 
 

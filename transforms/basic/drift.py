@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -9,6 +8,7 @@ from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
     FloatParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
@@ -24,15 +24,10 @@ class DriftParams:
     rate: float
 
 
-def _create_drift_params(parsed_params: Mapping[str, object]) -> DriftParams:
-    dimension = parsed_params.get("dimension")
-    rate = parsed_params.get("rate")
-    if not isinstance(dimension, ToneDimension) or not isinstance(rate, float):
-        raise ValueError("Drift params were not parsed before construction.")
-
+def _create_drift_params(parsed_params: ParsedTransformParams) -> DriftParams:
     return DriftParams(
-        dimension=dimension,
-        rate=rate,
+        dimension=parsed_params.required("dimension", ToneDimension),
+        rate=parsed_params.required("rate", float),
     )
 
 

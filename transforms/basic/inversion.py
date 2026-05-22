@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -7,7 +6,7 @@ from score_model.score import Score
 from score_model.tone import MINIMUM_FREQUENCY_HZ, Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import PhraseTransformContext, ToneDimension, ToneDimensionParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import ParsedTransformParams, PhraseTransformContext, ToneDimension, ToneDimensionParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 
 
 @dataclass(frozen=True)
@@ -15,12 +14,8 @@ class InvertParams:
     dimension: ToneDimension
 
 
-def _create_invert_params(parsed_params: Mapping[str, object]) -> InvertParams:
-    dimension = parsed_params.get("dimension")
-    if not isinstance(dimension, ToneDimension):
-        raise ValueError("Invert params were not parsed before construction.")
-
-    return InvertParams(dimension=dimension)
+def _create_invert_params(parsed_params: ParsedTransformParams) -> InvertParams:
+    return InvertParams(dimension=parsed_params.required("dimension", ToneDimension))
 
 
 INVERT_PARAMS_SPEC = TransformParamsSpec[InvertParams](

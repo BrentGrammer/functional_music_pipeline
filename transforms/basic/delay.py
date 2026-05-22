@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -6,7 +5,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import FloatParam, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import FloatParam, ParsedTransformParams, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
 from transforms.basic.pad_silence import pad_silence_tones
 
 
@@ -15,11 +14,8 @@ class DelayParams:
     seconds: float
 
 
-def _create_delay_params(parsed_params: Mapping[str, object]) -> DelayParams:
-    seconds = parsed_params["seconds"]
-    if isinstance(seconds, bool) or not isinstance(seconds, (float, int)):
-        raise ValueError("Param 'seconds' must be a float.")
-    return DelayParams(seconds=float(seconds))
+def _create_delay_params(parsed_params: ParsedTransformParams) -> DelayParams:
+    return DelayParams(seconds=parsed_params.required("seconds", float))
 
 
 DELAY_PARAMS_SPEC = TransformParamsSpec[DelayParams](

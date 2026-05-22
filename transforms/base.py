@@ -105,8 +105,20 @@ class TransformParamFieldSpec:
 
 
 @dataclass(frozen=True)
+class ParsedTransformParams:
+    # Field schemas have already converted raw values from the input; factories use this to build typed params without re-validating input.
+    values: Mapping[str, object]
+
+    def required(self, field_name: str, expected_type: type[ParsedParam]) -> ParsedParam:
+        value = self.values[field_name]
+        if not isinstance(value, expected_type):
+            raise TypeError(f"Parsed transform param '{field_name}' violated its schema contract.")
+        return value
+
+
+@dataclass(frozen=True)
 class TransformParamsSpec(Generic[ParsedParams]):
-    params_factory: Callable[[Mapping[str, object]], ParsedParams]
+    params_factory: Callable[[ParsedTransformParams], ParsedParams]
     fields: dict[str, TransformParamFieldSpec] = field(default_factory=dict)
 
     def parse_params(
@@ -143,7 +155,7 @@ class TransformParamsSpec(Generic[ParsedParams]):
             if field_spec.default is not MISSING:
                 parsed_params[field_name] = field_spec.default
 
-        parsed_params_model = self.params_factory(parsed_params)
+        parsed_params_model = self.params_factory(ParsedTransformParams(parsed_params))
 
         return parsed_params_model
 

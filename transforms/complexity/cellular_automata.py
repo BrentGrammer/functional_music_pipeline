@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from score_model.motif import Motif
@@ -10,6 +9,7 @@ from transforms._modulation import apply_fluctuations
 from transforms.base import (
     FloatParam,
     IntegerParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
@@ -27,24 +27,12 @@ class CellularAutomataParams:
     max_deviation: float
 
 
-def _create_cellular_automata_params(parsed_params: Mapping[str, object]) -> CellularAutomataParams:
-    dimension = parsed_params.get("dimension")
-    rule = parsed_params.get("rule")
-    generations = parsed_params.get("generations")
-    max_deviation = parsed_params.get("max_deviation")
-    if (
-        not isinstance(dimension, ToneDimension)
-        or not isinstance(rule, int)
-        or not isinstance(generations, int)
-        or not isinstance(max_deviation, float)
-    ):
-        raise ValueError("Cellular automata params were not parsed before construction.")
-
+def _create_cellular_automata_params(parsed_params: ParsedTransformParams) -> CellularAutomataParams:
     return CellularAutomataParams(
-        dimension=dimension,
-        rule=rule,
-        generations=generations,
-        max_deviation=max_deviation,
+        dimension=parsed_params.required("dimension", ToneDimension),
+        rule=parsed_params.required("rule", int),
+        generations=parsed_params.required("generations", int),
+        max_deviation=parsed_params.required("max_deviation", float),
     )
 
 
