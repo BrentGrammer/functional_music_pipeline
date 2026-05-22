@@ -285,8 +285,6 @@ def frost_effect(score: Score, iterations: int = 3) -> Score:
 
     Applies one or more audible frost events to the score.
     """
-    if isinstance(iterations, bool) or not isinstance(iterations, int):
-        raise ValueError("frost_effect iterations must be a positive integer.")
     if iterations < 1:
         raise ValueError("frost_effect iterations must be a positive integer.")
 

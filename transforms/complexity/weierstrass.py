@@ -50,12 +50,6 @@ def _create_weierstrass_params(parsed_params: ParsedTransformParams) -> Weierstr
 
 
 def _resolve_intensity(value: str) -> WeierstrassPreset:
-    if not isinstance(value, str):
-        raise ValueError(f"Intensity must be a string, got {type(value).__name__}")
-    if value not in _WEIERSTRASS_INTENSITY_PRESETS:
-        raise ValueError(
-            f"Invalid intensity '{value}'. Must be one of: {', '.join(_WEIERSTRASS_INTENSITY_PRESETS.keys())}"
-        )
     return _WEIERSTRASS_INTENSITY_PRESETS[value]
 
 
