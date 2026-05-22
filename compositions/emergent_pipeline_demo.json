@@ -1,0 +1,62 @@
+{
+  "description": "Compact emergent pipeline demo: one authored motif becomes a larger result through ordered phrase and score transforms.",
+  "motifs": {
+    "seed": [
+      "261.63:0.50",
+      "293.66:0.50",
+      "329.63:0.50",
+      "392.00:0.50"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "EmergentLine",
+        "phrases": [
+          {
+            "comment": "The seed phrase is never authored in this final shape. Each transform receives the output of the previous one.",
+            "motifs": ["seed"],
+            "transforms": [
+              { "name": "reverse" },
+              {
+                "name": "drift",
+                "params": { "dimension": "frequency", "rate": 0.04 }
+              },
+              {
+                "name": "scale",
+                "params": { "dimension": "duration", "factor": 0.75 }
+              },
+              {
+                "name": "cellular_automata",
+                "params": {
+                  "dimension": "duration",
+                  "rule": 30,
+                  "generations": 4,
+                  "max_deviation": 0.2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "name": "repeat",
+        "params": { "count": 1 }
+      },
+      {
+        "name": "drift",
+        "params": { "dimension": "frequency", "rate": -0.015 }
+      },
+      {
+        "name": "scale",
+        "params": { "dimension": "amplitude", "factor": 0.75 }
+      },
+      {
+        "name": "pad_silence",
+        "params": { "seconds": 0.75, "position": "end" }
+      }
+    ]
+  }
+}
