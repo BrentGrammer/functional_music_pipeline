@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field
 from enum import StrEnum, auto
-from typing import Generic, Protocol, TypeAlias, TypeVar
+from typing import Any, Generic, Protocol, TypeAlias, TypeVar, overload
 
 from score_model.phrase import Phrase
 from score_model.score import Score
@@ -99,7 +99,13 @@ class TransformParamFieldSpec:
 class ParsedTransformParams:
     values: Mapping[str, object]
 
-    def required(self, field_name: str, expected_type: type[ParsedParam]) -> ParsedParam:
+    @overload
+    def required(self, field_name: str, expected_type: type[ParsedParam]) -> ParsedParam: ...
+
+    @overload
+    def required(self, field_name: str, expected_type: tuple[type[ParsedParam], type[Any]]) -> ParsedParam | Any: ...
+
+    def required(self, field_name: str, expected_type: Any) -> Any:
         value = self.values[field_name]
         if not isinstance(value, expected_type):
             raise TypeError(f"Parsed transform param '{field_name}' violated its schema contract.")

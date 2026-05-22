@@ -41,13 +41,10 @@ def _create_add_pedal_tone_params(parsed_params: ParsedTransformParams) -> AddPe
 
 
 def _create_stretto_params(parsed_params: ParsedTransformParams) -> StrettoParams:
-    spacing = parsed_params.values["spacing"]
-    if not isinstance(spacing, (str, float)):
-        raise TypeError("Parsed transform param 'spacing' violated its schema contract.")
     return StrettoParams(
         motif=parsed_params.required("motif", str),
         num_times=parsed_params.required("num_times", int),
-        spacing=spacing,
+        spacing=parsed_params.required("spacing", (str, float)),
     )
 
 

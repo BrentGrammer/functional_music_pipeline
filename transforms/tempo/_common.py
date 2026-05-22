@@ -26,18 +26,18 @@ class TempoChangeParams:
     jaggedness: float
 
 
-def _resolve_intensity(value: object) -> float:
+def _resolve_intensity(value: str | float) -> float:
     if isinstance(value, str):
         return INTENSITY_LEVELS[value.lower()]
-    val = float(value)  # type: ignore[arg-type]
+    val = float(value)
     if not (0.0 <= val <= 1.0):
         raise ValueError(f"Intensity float must be between 0.0 and 1.0, got {val}")
     return val
 
 
 def _tempo_change_params_factory(parsed: ParsedTransformParams) -> TempoChangeParams:
-    strength_raw = parsed.required("strength", object)
-    jaggedness_raw = parsed.required("jaggedness", object)
+    strength_raw = parsed.required("strength", (str, float))
+    jaggedness_raw = parsed.required("jaggedness", (str, float))
     return TempoChangeParams(
         strength=_resolve_intensity(strength_raw),
         jaggedness=_resolve_intensity(jaggedness_raw),
