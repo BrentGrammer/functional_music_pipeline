@@ -208,12 +208,14 @@ class ScoreTransformDefinition(Generic[ParsedParams]):
 
 
 class RegisteredPhraseTransform(Protocol):
-    name: str
+    @property
+    def name(self) -> str: ...
 
     def transform(self, context: PhraseTransformContext, raw_params: Mapping[str, object]) -> Phrase: ...
 
 
 class RegisteredScoreTransform(Protocol):
-    name: str
+    @property
+    def name(self) -> str: ...
 
     def transform(self, score: Score, raw_params: Mapping[str, object]) -> Score: ...
