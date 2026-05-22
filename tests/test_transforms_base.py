@@ -207,3 +207,9 @@ def test_boolean_param_rejects_string():
 def test_boolean_param_rejects_none():
     with pytest.raises(ValueError):
         BooleanParam().validate(None, "test_field")
+
+def test_parsed_transform_params_required_raises_type_error_on_mismatch():
+    from transforms.base import ParsedTransformParams
+    parsed = ParsedTransformParams({"foo": "bar"})
+    with pytest.raises(TypeError, match="violated its schema contract"):
+        parsed.required("foo", int)

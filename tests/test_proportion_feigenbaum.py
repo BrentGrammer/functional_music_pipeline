@@ -176,9 +176,20 @@ class TestPhraseFeigenbaumShrink:
             pytest.approx(scaled_total_phrase_duration_based_on_ref_phrase / 2),
         ]
 
+    def test_phrase_feigenbaum_shrink_transform_raises_when_used_on_first_phrase_of_score(self):
+        score = Score([Voice([Phrase([Motif("active", [Tone(220.0, duration=1.0)])])])])
+        context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+
+        with pytest.raises(ValueError):
+            phrase_feigenbaum_shrink_transform(context, FeigenbaumParams(dimension=ToneDimension.DURATION))
+
     def test_feigenbaum_params_spec_rejects_invalid_dimension_type(self):
         with pytest.raises(ValueError):
             FEIGENBAUM_PARAMS_SPEC.parse_params({"dimension": True})
+
+    def test_feigenbaum_params_spec_parses_successfully(self):
+        params = FEIGENBAUM_PARAMS_SPEC.parse_params({"dimension": ToneDimension.FREQUENCY}, transform_name="feigenbaum")
+        assert params.dimension == ToneDimension.FREQUENCY
 
 
 class TestPhraseFeigenbaumGrow:

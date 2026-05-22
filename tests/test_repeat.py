@@ -66,3 +66,9 @@ class TestRepeatTones:
             assert result[2 * i + 1].frequency == pytest.approx(523.25)
             assert result[2 * i + 1].duration == pytest.approx(0.3)
             assert result[2 * i + 1].amplitude == pytest.approx(0.7)
+
+def test_repeat_params_spec_parses_successfully():
+    count = 4
+    from transforms.basic.repeat import REPEAT_PARAMS_SPEC
+    params = REPEAT_PARAMS_SPEC.parse_params({"count": count}, transform_name="repeat")
+    assert params.count == count

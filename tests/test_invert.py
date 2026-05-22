@@ -115,5 +115,9 @@ class TestInvertTones:
         assert result[0].amplitude == pytest.approx(0.5)
         # 0.5 / (1.0 / 0.5) = 0.25
         assert result[1].amplitude == pytest.approx(0.25)
-        # 0.5 / (0.25 / 0.5) = 1.0
         assert result[2].amplitude == pytest.approx(1.0)
+
+def test_invert_params_spec_parses_successfully():
+    from transforms.basic.inversion import INVERT_PARAMS_SPEC
+    params = INVERT_PARAMS_SPEC.parse_params({"dimension": ToneDimension.DURATION}, transform_name="invert")
+    assert params.dimension == ToneDimension.DURATION
