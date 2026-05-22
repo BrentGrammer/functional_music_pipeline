@@ -247,10 +247,16 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
   - `cellular_automata` uses `CellularAutomataParams(dimension: ToneDimension, rule: int, generations: int, max_deviation: float)`.
   - `random_drop` uses `RandomDropParams(dimension: ToneDimension, max_drop_pct: int, drop_frequency_pct: int)`.
   - `weierstrass` uses `WeierstrassParams(dimension: ToneDimension, intensity: str)`.
+  - `add_pedal_tone` uses `AddPedalToneParams(frequency: float)`.
+  - `stretto` uses `StrettoParams(motif: str, num_times: int, spacing: str | float)`.
 - `MINIMUM_FREQUENCY_HZ = 0.0` now lives in `score_model/tone.py`.
   - `inversion` and `scale` use it instead of a hard-coded `1.0` frequency floor.
   - This preserves sub-audio positive frequencies as possible intermediate pipeline state while preventing negative frequencies.
 - Recent focused verification:
+  - `.venv/bin/mypy transforms/counterpoint/fugue.py`
+  - `.venv/bin/python -m py_compile transforms/counterpoint/fugue.py tests/test_counterpoint_fugue.py`
+  - `.venv/bin/ruff check transforms/counterpoint/fugue.py tests/test_counterpoint_fugue.py`
+  - direct smoke check for `ADD_PEDAL_TONE_PARAMS_SPEC`, `STRETTO_PARAMS_SPEC`, `add_pedal_tone_score_transform(...)`, and `stretto_score_transform(...)`
   - `.venv/bin/mypy transforms/complexity/weierstrass.py transforms/complexity/random_drop.py`
   - `.venv/bin/pytest tests/test_complexity_transforms.py -q`
   - `.venv/bin/python -m py_compile transforms/complexity/weierstrass.py tests/test_complexity_transforms.py tests/test_transform_wrappers_behavior_happy_path.py tests/test_transform_wrappers_behavior_error_paths.py`
@@ -262,18 +268,18 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
   - `.venv/bin/pytest tests/test_delay.py tests/test_scale.py tests/test_invert.py -q`
   - `py_compile` passed for `transforms/complexity/cellular_automata.py` and the wrapper behavior test files.
 - Known current blocker:
-  - `tests/test_drift.py -q` still fails during collection because `transforms/counterpoint/fugue.py` is the next unconverted registry import and its `ADD_PEDAL_TONE_PARAMS_SPEC` is missing `params_factory`.
+  - `tests/test_drift.py -q` and `tests/test_counterpoint_fugue.py -q` still fail during collection because `transforms/geological/erosion.py` is the next unconverted registry import and its `EROSION_PARAMS_SPEC` is missing `params_factory`.
 
 ### Next small steps
 
-1. Convert `transforms/counterpoint/fugue.py` next.
-   - Start with `ADD_PEDAL_TONE_PARAMS_SPEC`, which is the current import blocker.
-   - Add typed params dataclasses and params factories for the fugue specs in that module.
-   - Change fugue specs to generic `TransformParamsSpec[...]` instances.
-   - Move raw invalid-param wrapper tests to the relevant spec `parse_params(...)` calls.
+1. Convert `transforms/geological/erosion.py` next.
+   - Add a typed params dataclass and params factory.
+   - Change `EROSION_PARAMS_SPEC` to a generic `TransformParamsSpec[...]`.
+   - Update wrapper signatures to accept typed params.
+   - Move raw invalid-param wrapper tests to `EROSION_PARAMS_SPEC.parse_params(...)`.
    - Run `tests/test_drift.py -q` again to find the next registry import blocker.
 2. Continue through remaining unconverted transforms one at a time.
-   - Current unconverted specs include `erosion`, `terraced_drift`, `frost_effect`, `feigenbaum`, `golden_ratio`, tempo common specs, and counterpoint fugue specs.
+   - Current unconverted specs include `erosion`, `terraced_drift`, `frost_effect`, `feigenbaum`, `golden_ratio`, and tempo common specs.
 3. Keep each step reviewable.
    - Convert one transform at a time.
    - Update only direct tests for that transform.

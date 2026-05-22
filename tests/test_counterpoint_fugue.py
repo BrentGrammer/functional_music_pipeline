@@ -13,6 +13,10 @@ from score_model.tone_utils import make_silence_tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.counterpoint.fugue import (
+    ADD_PEDAL_TONE_PARAMS_SPEC,
+    STRETTO_PARAMS_SPEC,
+    AddPedalToneParams,
+    StrettoParams,
     add_pedal_tone,
     add_pedal_tone_score_transform,
     stretto,
@@ -230,7 +234,7 @@ class TestAddPedalToneScoreTransform:
                 )
             ]
         )
-        params = {"frequency": pedal_frequency}
+        params = AddPedalToneParams(frequency=pedal_frequency)
 
         result = add_pedal_tone_score_transform(score=score, params=params)
 
@@ -243,10 +247,8 @@ class TestAddPedalToneScoreTransform:
         assert flatten_voice_tones(pedal_voice)[0].duration == pytest.approx(seed_duration)
 
     def test_add_pedal_tone_score_transform_rejects_non_numeric_frequency(self):
-        score = Score([Voice([Phrase([Motif("seed", [Tone(440.0, duration=1.0)])])])])
-
-        with pytest.raises(TypeError):
-            add_pedal_tone_score_transform(score=score, params={"frequency": "130.81"})
+        with pytest.raises(ValueError):
+            ADD_PEDAL_TONE_PARAMS_SPEC.parse_params({"frequency": "130.81"}, transform_name="add_pedal_tone")
 
 
 class TestStrettoScoreTransform:
@@ -271,11 +273,7 @@ class TestStrettoScoreTransform:
                 )
             ]
         )
-        params = {
-            "motif": subject_name,
-            "num_times": num_times,
-            "spacing": spacing,
-        }
+        params = StrettoParams(motif=subject_name, num_times=num_times, spacing=spacing)
 
         result = stretto_score_transform(score=score, params=params)
 
@@ -291,28 +289,22 @@ class TestStrettoScoreTransform:
         assert tones[1].frequency == pytest.approx(subject_frequency)
 
     def test_stretto_score_transform_rejects_non_string_motif(self):
-        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
-
-        with pytest.raises(TypeError):
-            stretto_score_transform(score=score, params={"motif": 123, "num_times": 2, "spacing": 0.25})
+        with pytest.raises(ValueError):
+            STRETTO_PARAMS_SPEC.parse_params({"motif": 123, "num_times": 2, "spacing": 0.25}, transform_name="stretto")
 
     def test_stretto_score_transform_rejects_non_integer_num_times(self):
-        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
-
-        with pytest.raises(TypeError):
-            stretto_score_transform(score=score, params={"motif": "subject", "num_times": 2.3, "spacing": 0.25})
+        with pytest.raises(ValueError):
+            STRETTO_PARAMS_SPEC.parse_params({"motif": "subject", "num_times": 2.3, "spacing": 0.25}, transform_name="stretto")
 
     def test_stretto_score_transform_rejects_invalid_spacing_type(self):
-        score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
-
-        with pytest.raises(TypeError):
-            stretto_score_transform(score=score, params={"motif": "subject", "num_times": 2, "spacing": []})
+        with pytest.raises(ValueError):
+            STRETTO_PARAMS_SPEC.parse_params({"motif": "subject", "num_times": 2, "spacing": []}, transform_name="stretto")
 
     def test_stretto_score_transform_rejects_missing_motif_in_score(self):
         score = Score([Voice([Phrase([Motif("subject", [Tone(440.0, duration=0.5)])])])])
 
         with pytest.raises(ValueError):
-            stretto_score_transform(score=score, params={"motif": "missing", "num_times": 2, "spacing": 0.25})
+            stretto_score_transform(score=score, params=StrettoParams(motif="missing", num_times=2, spacing=0.25))
 
 
 class TestPedalToneRegistration:

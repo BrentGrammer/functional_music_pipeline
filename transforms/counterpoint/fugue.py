@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.math_constants import FEIGENBAUM_DELTA, GOLDEN_RATIO
 from score_model.motif import Motif
@@ -12,6 +12,7 @@ from transforms.base import (
     EnumParam,
     FloatParam,
     IntegerParam,
+    ParsedTransformParams,
     StringParam,
     TransformParamFieldSpec,
     TransformParamsSpec,
@@ -22,7 +23,37 @@ NAMED_STRETTO_SPACINGS = {
     "feigenbaum_delta": FEIGENBAUM_DELTA,
 }
 
-ADD_PEDAL_TONE_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class AddPedalToneParams:
+    frequency: float
+
+
+@dataclass(frozen=True)
+class StrettoParams:
+    motif: str
+    num_times: int
+    spacing: str | float
+
+
+def _create_add_pedal_tone_params(parsed_params: ParsedTransformParams) -> AddPedalToneParams:
+    return AddPedalToneParams(frequency=parsed_params.required("frequency", float))
+
+
+def _create_stretto_params(parsed_params: ParsedTransformParams) -> StrettoParams:
+    spacing = parsed_params.values["spacing"]
+    if not isinstance(spacing, (str, float)):
+        raise TypeError("Parsed transform param 'spacing' violated its schema contract.")
+
+    return StrettoParams(
+        motif=parsed_params.required("motif", str),
+        num_times=parsed_params.required("num_times", int),
+        spacing=spacing,
+    )
+
+
+ADD_PEDAL_TONE_PARAMS_SPEC = TransformParamsSpec[AddPedalToneParams](
+    params_factory=_create_add_pedal_tone_params,
     fields={
         "frequency": TransformParamFieldSpec(
             schema=FloatParam(),
@@ -30,7 +61,8 @@ ADD_PEDAL_TONE_PARAMS_SPEC = TransformParamsSpec(
         ),
     }
 )
-STRETTO_PARAMS_SPEC = TransformParamsSpec(
+STRETTO_PARAMS_SPEC = TransformParamsSpec[StrettoParams](
+    params_factory=_create_stretto_params,
     fields={
         "motif": TransformParamFieldSpec(
             schema=StringParam(),
@@ -110,38 +142,23 @@ def add_pedal_tone(
     )
 
 
-def add_pedal_tone_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    frequency_val = params["frequency"]
-    if not isinstance(frequency_val, (int, float)):
-        raise TypeError(f"Expected int or float for frequency, got {type(frequency_val)}")
-    return add_pedal_tone(score, frequency=float(frequency_val))
+def add_pedal_tone_score_transform(score: Score, params: AddPedalToneParams) -> Score:
+    return add_pedal_tone(score, frequency=params.frequency)
 
 
-def stretto_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    motif_name = params["motif"]
-    if not isinstance(motif_name, str):
-        raise TypeError(f"Expected str for motif, got {type(motif_name)}")
-
-    num_times = params["num_times"]
-    if not isinstance(num_times, int):
-        raise TypeError(f"Expected int for num_times, got {type(num_times)}")
-
-    spacing = params["spacing"]
-    if not isinstance(spacing, (str, int, float)):
-        raise TypeError(f"Expected str, int, or float for spacing, got {type(spacing)}")
-
-    if find_motif_by_name(score, motif_name) is None:
-        raise ValueError(f"Stretto motif '{motif_name}' was not found in score.")
+def stretto_score_transform(score: Score, params: StrettoParams) -> Score:
+    if find_motif_by_name(score, params.motif) is None:
+        raise ValueError(f"Stretto motif '{params.motif}' was not found in score.")
 
     return stretto(
         score,
-        motif=motif_name,
-        num_times=num_times,
-        spacing=spacing,
+        motif=params.motif,
+        num_times=params.num_times,
+        spacing=params.spacing,
     )
 
 
-def stretto_score_transform_adapter(score: Score, params: Mapping[str, object]) -> Score:
+def stretto_score_transform_adapter(score: Score, params: StrettoParams) -> Score:
     """Adapter kept for registry compatibility; delegates to stretto_score_transform.
 
     This named adapter gives the registry a stable callable object to reference
