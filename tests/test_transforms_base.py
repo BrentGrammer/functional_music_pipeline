@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 import pytest
 
 from score_model.motif import Motif
@@ -125,8 +127,8 @@ def test_phrase_transform_definition_transform_parses_params_before_invoking_tra
     score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
-    def transform_function(context: PhraseTransformContext, params: dict[str, object]) -> Phrase:
-        captured_params.append(params)
+    def transform_function(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
+        captured_params.append(dict(params))
         return context.phrase
 
     phrase_definition = PhraseTransformDefinition(
@@ -145,8 +147,8 @@ def test_score_transform_definition_transform_parses_params_before_invoking_tran
     captured_params: list[dict[str, object]] = []
     score = Score([Voice([Phrase([Motif("subject", [Tone(440.0)])])])])
 
-    def transform_function(score: Score, params: dict[str, object]) -> Score:
-        captured_params.append(params)
+    def transform_function(score: Score, params: Mapping[str, object]) -> Score:
+        captured_params.append(dict(params))
         return score
 
     score_definition = ScoreTransformDefinition(

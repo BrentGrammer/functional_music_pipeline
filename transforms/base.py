@@ -106,6 +106,10 @@ class ParsedTransformParams:
         return value
 
 
+class BaseTransformParamsSpec(Protocol):
+    @property
+    def fields(self) -> dict[str, TransformParamFieldSpec]: ...
+
 @dataclass(frozen=True)
 class TransformParamsSpec(Generic[ParsedParams]):
     params_factory: Callable[[ParsedTransformParams], ParsedParams]
@@ -211,11 +215,17 @@ class RegisteredPhraseTransform(Protocol):
     @property
     def name(self) -> str: ...
 
+    @property
+    def params_spec(self) -> BaseTransformParamsSpec: ...
+
     def transform(self, context: PhraseTransformContext, raw_params: Mapping[str, object]) -> Phrase: ...
 
 
 class RegisteredScoreTransform(Protocol):
     @property
     def name(self) -> str: ...
+
+    @property
+    def params_spec(self) -> BaseTransformParamsSpec: ...
 
     def transform(self, score: Score, raw_params: Mapping[str, object]) -> Score: ...
