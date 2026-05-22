@@ -2,7 +2,7 @@ import pytest
 
 from score_model.tone import Tone
 from transforms.base import ToneDimension
-from transforms.geological.terraced_drift import _build_terraced_fluctuations, apply_terraced_drift_transform
+from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, _build_terraced_fluctuations, apply_terraced_drift_transform
 
 
 def _snapshot(tones: list[Tone]) -> list[tuple[float, float, int, float]]:
@@ -116,8 +116,11 @@ def test_build_terraced_fluctuations_without_quantization_returns_raw_values():
 def test_terraced_drift_rejects_non_integer_and_out_of_range_step_percentages():
     tones = _build_reference_tones()
 
-    with pytest.raises(ValueError, match="must be an integer"):
-        apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=1.5)  # type: ignore[arg-type]
+    with pytest.raises(ValueError):
+        TERRACED_DRIFT_PARAMS_SPEC.parse_params(
+            {"dimension": ToneDimension.FREQUENCY, "max_step_change_pct": 1.5},
+            transform_name="terraced_drift",
+        )
 
     with pytest.raises(ValueError, match="between 1 and 100"):
         apply_terraced_drift_transform(tones, dimension=ToneDimension.FREQUENCY, max_step_change_pct=0)

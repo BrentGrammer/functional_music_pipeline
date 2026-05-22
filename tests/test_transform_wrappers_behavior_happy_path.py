@@ -13,7 +13,7 @@ from transforms.basic.transpose import TransposeParams, transpose_phrase_transfo
 from transforms.complexity.cellular_automata import CellularAutomataParams, cellular_automata_phrase_transform, cellular_automata_score_transform
 from transforms.complexity.random_drop import RandomDropParams, random_drop_phrase_transform, random_drop_score_transform
 from transforms.complexity.weierstrass import WeierstrassParams, weierstrass_phrase_transform, weierstrass_score_transform
-from transforms.geological.terraced_drift import terraced_drift_phrase_transform, terraced_drift_score_transform
+from transforms.geological.terraced_drift import TerracedDriftParams, terraced_drift_phrase_transform, terraced_drift_score_transform
 from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transform, feigenbaum_sequence_score_transform
 from transforms.proportion.golden_ratio import (
     golden_ratio_phrase_transform,
@@ -306,7 +306,7 @@ def test_terraced_drift_phrase_and_score_transform_observable_output():
         ]
     )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-    params = {"dimension": "frequency", "max_step_change_pct": 25}
+    params = TerracedDriftParams(dimension=ToneDimension.FREQUENCY, max_step_change_pct=25)
 
     drifted_phrase = terraced_drift_phrase_transform(context, params)
     assert len(drifted_phrase.motifs[0].tones) == len(drift_target_tones)

@@ -13,7 +13,7 @@ from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC
 from transforms.complexity.cellular_automata import CELLULAR_AUTOMATA_PARAMS_SPEC
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC
 from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC
-from transforms.geological.terraced_drift import terraced_drift_phrase_transform, terraced_drift_score_transform
+from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC
 from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transform
 from transforms.proportion.golden_ratio import golden_ratio_score_transform
 from transforms.tempo.accelerando import accelerando_phrase_transform
@@ -160,35 +160,23 @@ def test_random_drop_phrase_transform_rejects_non_integer_drop_frequency_pct():
 
 
 def test_terraced_drift_transforms_reject_invalid_param_types():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="drift-target",
-                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
-                            )
-                        ]
-                    )
-                ]
-            )
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+    with pytest.raises(ValueError):
+        TERRACED_DRIFT_PARAMS_SPEC.parse_params({"dimension": None, "max_step_change_pct": 25}, transform_name="terraced_drift")
 
     with pytest.raises(ValueError):
-        terraced_drift_phrase_transform(context, {"dimension": None, "max_step_change_pct": 25})
+        TERRACED_DRIFT_PARAMS_SPEC.parse_params(
+            {"dimension": ToneDimension.FREQUENCY, "max_step_change_pct": True},
+            transform_name="terraced_drift",
+        )
 
     with pytest.raises(ValueError):
-        terraced_drift_phrase_transform(context, {"dimension": "frequency", "max_step_change_pct": True})
+        TERRACED_DRIFT_PARAMS_SPEC.parse_params(
+            {"dimension": ToneDimension.FREQUENCY, "max_step_change_pct": True},
+            transform_name="terraced_drift",
+        )
 
     with pytest.raises(ValueError):
-        terraced_drift_score_transform(score, {"dimension": "frequency", "max_step_change_pct": True})
-
-    with pytest.raises(ValueError):
-        terraced_drift_score_transform(score, {"dimension": 1, "max_step_change_pct": 25})
+        TERRACED_DRIFT_PARAMS_SPEC.parse_params({"dimension": 1, "max_step_change_pct": 25}, transform_name="terraced_drift")
 
 
 def test_golden_ratio_score_transform_rejects_non_dimension_value():

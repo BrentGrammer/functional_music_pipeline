@@ -1,5 +1,5 @@
 import random
-from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -8,20 +8,36 @@ from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
 from transforms.base import (
-    EnumParam,
     IntegerParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 
-TERRACED_DRIFT_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class TerracedDriftParams:
+    dimension: ToneDimension
+    max_step_change_pct: int
+
+
+def _create_terraced_drift_params(parsed_params: ParsedTransformParams) -> TerracedDriftParams:
+    return TerracedDriftParams(
+        dimension=parsed_params.required("dimension", ToneDimension),
+        max_step_change_pct=parsed_params.required("max_step_change_pct", int),
+    )
+
+
+TERRACED_DRIFT_PARAMS_SPEC = TransformParamsSpec[TerracedDriftParams](
+    params_factory=_create_terraced_drift_params,
     fields={
         "dimension": TransformParamFieldSpec(
             required=True,
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
         ),
         "max_step_change_pct": TransformParamFieldSpec(
             required=True,
@@ -56,8 +72,6 @@ def apply_terraced_drift_transform(
     dimension: ToneDimension,
     max_step_change_pct: int,
 ) -> ToneSequence:
-    if not isinstance(max_step_change_pct, int):
-        raise ValueError(f"max_step_change_pct must be an integer, got {type(max_step_change_pct).__name__}")
     if max_step_change_pct < 1 or max_step_change_pct > 100:
         raise ValueError(f"max_step_change_pct must be between 1 and 100, got {max_step_change_pct}")
 
@@ -66,40 +80,24 @@ def apply_terraced_drift_transform(
     return apply_fluctuations(tones, fluctuations, dimension, step_size)
 
 
-def terraced_drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    dimension = params.get("dimension")
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Terraced drift dimension must be a string or ToneDimension.")
-
-    max_step_change_pct = params.get("max_step_change_pct")
-    if not isinstance(max_step_change_pct, int) or isinstance(max_step_change_pct, bool):
-        raise ValueError("Terraced drift max_step_change_pct must be an integer.")
-
+def terraced_drift_phrase_transform(context: PhraseTransformContext, params: TerracedDriftParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = apply_terraced_drift_transform(
         phrase_tones,
-        dimension=dimension,
-        max_step_change_pct=max_step_change_pct,
+        dimension=params.dimension,
+        max_step_change_pct=params.max_step_change_pct,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
-def terraced_drift_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params["dimension"]
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Terraced drift dimension must be a string or ToneDimension.")
-
-    max_step_change_pct = params["max_step_change_pct"]
-    if not isinstance(max_step_change_pct, int) or isinstance(max_step_change_pct, bool):
-        raise ValueError("Terraced drift max_step_change_pct must be an integer.")
-
+def terraced_drift_score_transform(score: Score, params: TerracedDriftParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
         transformed_tones = apply_terraced_drift_transform(
             voice_tones,
-            dimension=dimension,
-            max_step_change_pct=max_step_change_pct,
+            dimension=params.dimension,
+            max_step_change_pct=params.max_step_change_pct,
         )
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
 
