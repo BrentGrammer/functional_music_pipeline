@@ -70,6 +70,14 @@ class BooleanParam(ParamSchema[bool]):
 
 
 @dataclass(frozen=True)
+class ToneDimensionParam(ParamSchema[ToneDimension]):
+    def parse(self, value: object, field_name: str) -> ToneDimension:
+        if not isinstance(value, ToneDimension):
+            raise ValueError(f"Param '{field_name}' must be a ToneDimension.")
+        return value
+
+
+@dataclass(frozen=True)
 class EnumParam(ParamSchema[str]):
     allowed_values: tuple[str, ...]
 

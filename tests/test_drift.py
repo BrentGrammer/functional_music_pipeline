@@ -10,7 +10,7 @@ from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ScoreTransformDefinition, ToneDimension
-from transforms.basic.drift import drift_phrase_transform, drift_score_transform, drift_transform
+from transforms.basic.drift import DRIFT_PARAMS_SPEC, DriftParams, drift_phrase_transform, drift_score_transform, drift_transform
 from transforms.registry import SCORE_TRANSFORMS
 
 
@@ -18,7 +18,7 @@ class TestDriftExceptions:
     def test_unknown_dimension_raises(self):
         tones = [Tone(440.0, 1.0)]
         with pytest.raises(ValueError):
-            drift_transform(tones, dimension="InvalidDimension", rate=0.1)
+            drift_transform(tones, dimension="InvalidDimension", rate=0.1)  # type: ignore[arg-type]
 
 
 class TestDriftFrequency:
@@ -300,7 +300,7 @@ class TestDriftPhraseTransformHappyPath:
         context = PhraseTransformContext(score=source_score, voice_index=0, phrase_index=0)
 
         rate = 0.1
-        transformed = drift_phrase_transform(context, {"dimension": ToneDimension.FREQUENCY, "rate": rate})
+        transformed = drift_phrase_transform(context, DriftParams(dimension=ToneDimension.FREQUENCY, rate=rate))
 
         transformed_tones = transformed.motifs[0].tones
         base_frequency = original_frequencies[0]
@@ -316,18 +316,12 @@ class TestDriftPhraseTransformHappyPath:
 
 class TestDriftPhraseTransformErrorPath:
     def test_phrase_transform_rejects_invalid_dimension_type(self):
-        source_score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, 0.5)])])])])
-        context = PhraseTransformContext(score=source_score, voice_index=0, phrase_index=0)
-
         with pytest.raises(ValueError):
-            drift_phrase_transform(context, {"dimension": True, "rate": 0.1})
+            DRIFT_PARAMS_SPEC.parse_params({"dimension": True, "rate": 0.1}, transform_name="drift")
 
     def test_phrase_transform_rejects_invalid_rate_type(self):
-        source_score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, 0.5)])])])])
-        context = PhraseTransformContext(score=source_score, voice_index=0, phrase_index=0)
-
         with pytest.raises(ValueError):
-            drift_phrase_transform(context, {"dimension": ToneDimension.FREQUENCY, "rate": True})
+            DRIFT_PARAMS_SPEC.parse_params({"dimension": ToneDimension.FREQUENCY, "rate": True}, transform_name="drift")
 
 
 class TestDriftScoreTransformHappyPath:
@@ -354,7 +348,7 @@ class TestDriftScoreTransformHappyPath:
         )
 
         rate = 0.1
-        transformed = drift_score_transform(score, {"dimension": ToneDimension.FREQUENCY, "rate": rate})
+        transformed = drift_score_transform(score, DriftParams(dimension=ToneDimension.FREQUENCY, rate=rate))
 
         high = flatten_voice_tones(transformed.voices[0])
         low = flatten_voice_tones(transformed.voices[1])
@@ -379,13 +373,9 @@ class TestDriftScoreTransformHappyPath:
 
 class TestDriftScoreTransformErrorPath:
     def test_score_transform_rejects_invalid_dimension_type(self):
-        score = Score(voices=[])
-
         with pytest.raises(ValueError):
-            drift_score_transform(score, {"dimension": None, "rate": 0.1})
+            DRIFT_PARAMS_SPEC.parse_params({"dimension": None, "rate": 0.1}, transform_name="drift")
 
     def test_score_transform_rejects_invalid_rate_type(self):
-        score = Score(voices=[])
-
         with pytest.raises(ValueError):
-            drift_score_transform(score, {"dimension": ToneDimension.FREQUENCY, "rate": True})
+            DRIFT_PARAMS_SPEC.parse_params({"dimension": ToneDimension.FREQUENCY, "rate": True}, transform_name="drift")

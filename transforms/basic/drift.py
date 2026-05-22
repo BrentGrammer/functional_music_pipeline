@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -7,20 +8,40 @@ from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
-    EnumParam,
     FloatParam,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 
-DRIFT_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class DriftParams:
+    dimension: ToneDimension
+    rate: float
+
+
+def _create_drift_params(parsed_params: Mapping[str, object]) -> DriftParams:
+    dimension = parsed_params.get("dimension")
+    rate = parsed_params.get("rate")
+    if not isinstance(dimension, ToneDimension) or not isinstance(rate, float):
+        raise ValueError("Drift params were not parsed before construction.")
+
+    return DriftParams(
+        dimension=dimension,
+        rate=rate,
+    )
+
+
+DRIFT_PARAMS_SPEC = TransformParamsSpec[DriftParams](
+    params_factory=_create_drift_params,
     fields={
         "dimension": TransformParamFieldSpec(
             required=True,
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
         ),
         "rate": TransformParamFieldSpec(
             schema=FloatParam(),
@@ -68,30 +89,20 @@ def drift_transform(
     if dimension == ToneDimension.DURATION:
         return _drift_duration(tones, rate)
 
+    raise ValueError(f"Invalid dimension: {dimension}. Must be one of {', '.join(d.value for d in ToneDimension)}")
 
-def drift_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    dimension = params["dimension"]
 
-    rate = params["rate"]
-    if isinstance(rate, bool) or not isinstance(rate, (int, float)):
-        raise ValueError("Param 'rate' must be a float.")
-
+def drift_phrase_transform(context: PhraseTransformContext, params: DriftParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-    drifted_tones = drift_transform(phrase_tones, dimension=dimension, rate=float(rate))
+    drifted_tones = drift_transform(phrase_tones, dimension=params.dimension, rate=params.rate)
     return Phrase(motifs=[Motif(name="<transformed>", tones=drifted_tones)])
 
 
-def drift_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params["dimension"]
-
-    rate = params["rate"]
-    if isinstance(rate, bool) or not isinstance(rate, (int, float)):
-        raise ValueError("Param 'rate' must be a float.")
-
+def drift_score_transform(score: Score, params: DriftParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        drifted_tones = drift_transform(voice_tones, dimension=dimension, rate=float(rate))
+        drifted_tones = drift_transform(voice_tones, dimension=params.dimension, rate=params.rate)
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=drifted_tones)])]))
 
     return Score(voices=new_voices)
