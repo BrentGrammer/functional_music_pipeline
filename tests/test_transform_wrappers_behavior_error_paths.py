@@ -7,7 +7,7 @@ from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.basic.delay import DELAY_PARAMS_SPEC
-from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
+from transforms.basic.inversion import INVERT_PARAMS_SPEC
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC
 from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
@@ -71,18 +71,13 @@ def test_repeat_score_transform_rejects_bool_count():
 
 
 def test_invert_phrase_transform_rejects_bool_dimension():
-    score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="x", tones=[Tone(0.0), Tone(10.0)])])])])
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-
     with pytest.raises(ValueError):
-        invert_phrase_transform(context, {"dimension": True})
+        INVERT_PARAMS_SPEC.parse_params({"dimension": True}, transform_name="invert")
 
 
 def test_invert_score_transform_rejects_bool_dimension():
-    score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="x", tones=[Tone(0.0), Tone(10.0)])])])])
-
     with pytest.raises(ValueError):
-        invert_score_transform(score, {"dimension": True})
+        INVERT_PARAMS_SPEC.parse_params({"dimension": True}, transform_name="invert")
 
 
 def test_cellular_automata_transforms_reject_invalid_param_types():

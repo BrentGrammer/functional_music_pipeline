@@ -3,11 +3,11 @@ import pytest
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.tone import Tone
+from score_model.tone import MINIMUM_FREQUENCY_HZ, Tone
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.basic.delay import DelayParams, delay_phrase_transform, delay_score_transform
-from transforms.basic.inversion import invert_phrase_transform, invert_score_transform
+from transforms.basic.inversion import InvertParams, invert_phrase_transform, invert_score_transform
 from transforms.basic.repeat import RepeatParams, repeat_phrase_transform, repeat_score_transform
 from transforms.basic.transpose import TransposeParams, transpose_phrase_transform, transpose_score_transform
 from transforms.complexity.cellular_automata import cellular_automata_phrase_transform, cellular_automata_score_transform
@@ -183,7 +183,7 @@ def test_delay_phrase_and_score_transform_delay_observable_output():
     assert delayed_score.voices[0].phrases[0].motifs[0].tones[0].frequency == 0
 
 
-def test_invert_phrase_and_score_transform_bounds_observable_output():
+def test_invert_frequency_phrase_transform_allows_zero_hz_floor_for_emergent_pipelines():
     starting_frequencies = [0.0, 10.0]
     score = Score(
         voices=[
@@ -196,10 +196,23 @@ def test_invert_phrase_and_score_transform_bounds_observable_output():
     )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
-    inverted_phrase = invert_phrase_transform(context, {"dimension": "frequency"})
-    assert inverted_phrase.motifs[0].tones[1].frequency >= 1.0
+    inverted_phrase = invert_phrase_transform(context, InvertParams(dimension=ToneDimension.FREQUENCY))
+    assert inverted_phrase.motifs[0].tones[1].frequency == MINIMUM_FREQUENCY_HZ
 
-    inverted_score = invert_score_transform(score, {"dimension": ToneDimension.FREQUENCY})
+
+def test_invert_frequency_score_transform_preserves_tone_count():
+    starting_frequencies = [0.0, 10.0]
+    score = Score(
+        voices=[
+            Voice(
+                phrases=[
+                    Phrase(motifs=[Motif(name="x", tones=[Tone(starting_frequencies[0]), Tone(starting_frequencies[1])])])
+                ]
+            )
+        ]
+    )
+
+    inverted_score = invert_score_transform(score, InvertParams(dimension=ToneDimension.FREQUENCY))
     assert len(inverted_score.voices[0].phrases[0].motifs[0].tones) == len(starting_frequencies)
 
 
