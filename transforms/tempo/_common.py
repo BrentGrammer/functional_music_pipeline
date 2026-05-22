@@ -1,9 +1,11 @@
 import random
+from dataclasses import dataclass
 
 from score_model.tone import Tone
 from transforms.base import (
     EnumParam,
     FloatParam,
+    ParsedTransformParams,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
@@ -18,64 +20,44 @@ INTENSITY_LEVELS: dict[str, float] = {
 }
 
 
-def build_tempo_change_params_spec() -> TransformParamsSpec:
+@dataclass(frozen=True)
+class TempoChangeParams:
+    strength: float
+    jaggedness: float
+
+
+def _resolve_intensity(value: object) -> float:
+    if isinstance(value, str):
+        return INTENSITY_LEVELS[value.lower()]
+    val = float(value)  # type: ignore[arg-type]
+    if not (0.0 <= val <= 1.0):
+        raise ValueError(f"Intensity float must be between 0.0 and 1.0, got {val}")
+    return val
+
+
+def _tempo_change_params_factory(parsed: ParsedTransformParams) -> TempoChangeParams:
+    strength_raw = parsed.required("strength", object)
+    jaggedness_raw = parsed.required("jaggedness", object)
+    return TempoChangeParams(
+        strength=_resolve_intensity(strength_raw),
+        jaggedness=_resolve_intensity(jaggedness_raw),
+    )
+
+
+def build_tempo_change_params_spec() -> TransformParamsSpec[TempoChangeParams]:
     intensity_schema = (EnumParam(allowed_values=tuple(INTENSITY_LEVELS)), FloatParam())
-    return TransformParamsSpec(
+    return TransformParamsSpec[TempoChangeParams](
         fields={
             "strength": TransformParamFieldSpec(
-                required=True,
                 schema=intensity_schema,
+                default=INTENSITY_LEVELS["medium"],
             ),
             "jaggedness": TransformParamFieldSpec(
                 schema=intensity_schema,
+                default=INTENSITY_LEVELS["medium"],
             ),
-        }
-    )
-
-
-def resolve_strength(value: object = "medium") -> float:
-    if isinstance(value, bool):
-        raise ValueError(
-            f"Invalid strength: {repr(value)}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-        )
-    if isinstance(value, str):
-        lower_value = value.lower()
-        if lower_value not in INTENSITY_LEVELS:
-            raise ValueError(
-                f"Invalid strength: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-            )
-        return INTENSITY_LEVELS[lower_value]
-    if isinstance(value, (int, float)):
-        if not (0.0 <= value <= 1.0):
-            raise ValueError(
-                f"Invalid strength: {value}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-            )
-        return float(value)
-    raise ValueError(
-        f"Invalid strength: {repr(value)}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-    )
-
-
-def resolve_jaggedness(value: object = "none") -> float:
-    if isinstance(value, bool):
-        raise ValueError(
-            f"Invalid jaggedness: {repr(value)}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-        )
-    if isinstance(value, str):
-        lower_value = value.lower()
-        if lower_value not in INTENSITY_LEVELS:
-            raise ValueError(
-                f"Invalid jaggedness: '{value}'. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-            )
-        return INTENSITY_LEVELS[lower_value]
-    if isinstance(value, (int, float)):
-        if not (0.0 <= value <= 1.0):
-            raise ValueError(
-                f"Invalid jaggedness: {value}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
-            )
-        return float(value)
-    raise ValueError(
-        f"Invalid jaggedness: {repr(value)}. Use one of none, low, medium, high, extreme, or a number from 0.0 to 1.0."
+        },
+        params_factory=_tempo_change_params_factory,
     )
 
 

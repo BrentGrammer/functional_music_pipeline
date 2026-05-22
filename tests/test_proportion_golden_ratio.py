@@ -10,12 +10,10 @@ from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
     GoldenRatioParams,
-    golden_ratio_phrase_transform,
     golden_ratio_transform,
     phrase_golden_ratio_grow,
     phrase_golden_ratio_grow_transform,
     phrase_golden_ratio_shrink,
-    phrase_golden_ratio_shrink_transform,
 )
 
 

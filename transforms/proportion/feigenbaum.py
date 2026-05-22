@@ -18,6 +18,7 @@ from transforms.base import (
 )
 from transforms.basic.scale import scale_transform
 
+
 @dataclass(frozen=True)
 class FeigenbaumParams:
     dimension: ToneDimension

@@ -252,6 +252,9 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
   - `erosion` uses `ErosionParams(dimension: ToneDimension)`.
   - `frost_effect` uses `FrostEffectParams(iterations: int)`.
   - `terraced_drift` uses `TerracedDriftParams(dimension: ToneDimension, max_step_change_pct: int)`.
+  - `feigenbaum` uses `FeigenbaumParams(dimension: ToneDimension)`.
+  - `golden_ratio` uses `GoldenRatioParams(dimension: ToneDimension)`.
+  - `accelerando` and `ritardando` use `TempoChangeParams(strength: float, jaggedness: float)`.
 - `MINIMUM_FREQUENCY_HZ = 0.0` now lives in `score_model/tone.py`.
   - `inversion` and `scale` use it instead of a hard-coded `1.0` frequency floor.
   - This preserves sub-audio positive frequencies as possible intermediate pipeline state while preventing negative frequencies.
@@ -298,7 +301,7 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
    - Move raw invalid-param wrapper tests to `FEIGENBAUM_PARAMS_SPEC.parse_params(...)`.
    - Run `tests/test_drift.py -q` again to find the next registry import blocker.
 2. Continue through remaining unconverted transforms one at a time.
-   - Current unconverted specs are `feigenbaum`, `golden_ratio`, and tempo common specs in `transforms/tempo/_common.py`.
+   - Current unconverted specs are the tempo/time transforms: `rubato` and anything else remaining.
 3. Keep each step reviewable.
    - Convert one transform at a time.
    - Update only direct tests for that transform.

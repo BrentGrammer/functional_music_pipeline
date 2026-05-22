@@ -8,13 +8,13 @@ from score_model.voice import Voice
 from transforms.base import PhraseTransformContext
 from transforms.tempo._common import (
     INTENSITY_LEVELS,
+    TempoChangeParams,
     apply_duration_multipliers,
     compute_jaggedness_weights,
     compute_tempo_change_factors,
-    resolve_jaggedness,
-    resolve_strength,
 )
 from transforms.tempo.accelerando import (
+    ACCELERANDO_PARAMS_SPEC,
     _resolve_accelerando_final_duration_multiplier,
     accelerando_phrase_transform,
     accelerando_transform,
@@ -26,92 +26,41 @@ from transforms.tempo.ritardando import (
 )
 
 
-class TestResolveStrength:
-    def test_default_is_medium(self):
-        assert resolve_strength() == INTENSITY_LEVELS["medium"]
+class TestTempoChangeParamsSpec:
+    def test_defaults(self):
+        params = ACCELERANDO_PARAMS_SPEC.parse_params({})
+        assert params.strength == INTENSITY_LEVELS["medium"]
+        assert params.jaggedness == INTENSITY_LEVELS["none"]
 
     def test_presets_case_insensitive(self):
-        assert resolve_strength("none") == INTENSITY_LEVELS["none"]
-        assert resolve_strength("NONE") == INTENSITY_LEVELS["none"]
-        assert resolve_strength("None") == INTENSITY_LEVELS["none"]
-        assert resolve_strength("low") == INTENSITY_LEVELS["low"]
-        assert resolve_strength("medium") == INTENSITY_LEVELS["medium"]
-        assert resolve_strength("high") == INTENSITY_LEVELS["high"]
-        assert resolve_strength("extreme") == INTENSITY_LEVELS["extreme"]
+        params = ACCELERANDO_PARAMS_SPEC.parse_params({"strength": "NONE", "jaggedness": "LOW"})
+        assert params.strength == INTENSITY_LEVELS["none"]
+        assert params.jaggedness == INTENSITY_LEVELS["low"]
 
-    def test_numeric_values_in_range(self):
-        assert resolve_strength(0.0) == INTENSITY_LEVELS["none"]
-        assert resolve_strength(0.5) == INTENSITY_LEVELS["medium"]
-        assert resolve_strength(1.0) == INTENSITY_LEVELS["extreme"]
-        assert resolve_strength(0.37) == 0.37
+    def test_numeric_values(self):
+        params = ACCELERANDO_PARAMS_SPEC.parse_params({"strength": 0.37, "jaggedness": 1})
+        assert params.strength == 0.37
+        assert params.jaggedness == 1.0
 
-    def test_integer_values_in_range(self):
-        assert resolve_strength(0) == INTENSITY_LEVELS["none"]
-        assert resolve_strength(1) == INTENSITY_LEVELS["extreme"]
-
-    def test_invalid_preset_raises_valueerror(self):
+    def test_invalid_presets_raise_value_error(self):
         with pytest.raises(ValueError):
-            resolve_strength("wild")
+            ACCELERANDO_PARAMS_SPEC.parse_params({"strength": "wild"})
 
-    def test_out_of_range_numeric_raises_valueerror(self):
+    def test_out_of_range_numeric_raises_value_error(self):
         with pytest.raises(ValueError):
-            resolve_strength(-0.1)
+            ACCELERANDO_PARAMS_SPEC.parse_params({"strength": 1.1})
+
+    def test_boolean_raises_value_error(self):
         with pytest.raises(ValueError):
-            resolve_strength(1.1)
+            ACCELERANDO_PARAMS_SPEC.parse_params({"strength": True})
 
-    def test_boolean_raises_valueerror(self):
+    def test_numeric_string_raises_value_error(self):
         with pytest.raises(ValueError):
-            resolve_strength(True)
+            ACCELERANDO_PARAMS_SPEC.parse_params({"strength": "0.75"})
+
+    def test_invalid_type_raises_value_error(self):
         with pytest.raises(ValueError):
-            resolve_strength(False)
-
-    def test_numeric_string_raises_valueerror(self):
-        with pytest.raises(ValueError):
-            resolve_strength("0.75")
-
-    def test_invalid_type_raises_valueerror(self):
-        with pytest.raises(ValueError):
-            resolve_strength(None)
-
-
-class TestResolveJaggedness:
-    def test_default_is_none(self):
-        assert resolve_jaggedness() == INTENSITY_LEVELS["none"]
-
-    def test_presets_case_insensitive(self):
-        assert resolve_jaggedness("none") == INTENSITY_LEVELS["none"]
-        assert resolve_jaggedness("NONE") == INTENSITY_LEVELS["none"]
-        assert resolve_jaggedness("low") == INTENSITY_LEVELS["low"]
-        assert resolve_jaggedness("medium") == INTENSITY_LEVELS["medium"]
-        assert resolve_jaggedness("high") == INTENSITY_LEVELS["high"]
-        assert resolve_jaggedness("extreme") == INTENSITY_LEVELS["extreme"]
-
-    def test_numeric_values_in_range(self):
-        assert resolve_jaggedness(0.0) == INTENSITY_LEVELS["none"]
-        assert resolve_jaggedness(0.5) == INTENSITY_LEVELS["medium"]
-        assert resolve_jaggedness(1.0) == INTENSITY_LEVELS["extreme"]
-
-    def test_invalid_preset_raises_valueerror(self):
-        with pytest.raises(ValueError):
-            resolve_jaggedness("crazy")
-
-    def test_out_of_range_numeric_raises_valueerror(self):
-        with pytest.raises(ValueError):
-            resolve_jaggedness(-0.1)
-        with pytest.raises(ValueError):
-            resolve_jaggedness(1.5)
-
-    def test_boolean_raises_valueerror(self):
-        with pytest.raises(ValueError):
-            resolve_jaggedness(True)
-
-    def test_numeric_string_raises_valueerror(self):
-        with pytest.raises(ValueError):
-            resolve_jaggedness("0.5")
-
-    def test_invalid_type_raises_valueerror(self):
-        with pytest.raises(ValueError):
-            resolve_jaggedness(None)
+            ACCELERANDO_PARAMS_SPEC.parse_params({"strength": None})
 
 
 class TestResolveAccelerandoFinalDurationMultiplier:
@@ -187,18 +136,18 @@ class TestApplyDurationMultipliers:
 
 class TestAccelerandoTransform:
     def test_empty_phrase_returns_empty(self):
-        assert accelerando_transform([]) == []
+        assert accelerando_transform([], strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"]) == []
 
     def test_single_tone_unchanged(self):
         tone = Tone(frequency=440.0, duration=1.0)
-        result = accelerando_transform([tone])
+        result = accelerando_transform([tone], strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
         assert len(result) == 1
         assert result[0].duration == 1.0
         assert result[0].frequency == 440.0
 
     def test_durations_decrease_across_phrase(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
-        result = accelerando_transform(tones, strength="medium", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
         for i in range(1, len(result)):
             assert result[i].duration < result[i - 1].duration
 
@@ -208,7 +157,7 @@ class TestAccelerandoTransform:
             Tone(frequency=440.0, duration=1.0),
             Tone(frequency=440.0, duration=0.5),
         ]
-        result = accelerando_transform(tones, strength="high", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["none"])
         assert result[0].duration == 2.0
 
         final_multiplier = _resolve_accelerando_final_duration_multiplier(INTENSITY_LEVELS["high"])
@@ -218,14 +167,14 @@ class TestAccelerandoTransform:
 
     def test_preserves_frequency_sample_rate_and_amplitude(self):
         tones = [Tone(frequency=440.0, duration=1.0, sample_rate=44100, amplitude=0.8)]
-        result = accelerando_transform(tones, strength="high", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["none"])
         assert result[0].frequency == 440.0
         assert result[0].sample_rate == 44100
         assert result[0].amplitude == 0.8
 
     def test_first_tone_duration_unchanged(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
-        result = accelerando_transform(tones, strength="high", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["none"])
         assert result[0].duration == 1.0
 
     def test_phrase_transform_returns_transformed_phrase(self):
@@ -233,7 +182,7 @@ class TestAccelerandoTransform:
         score = Score([Voice([Phrase([Motif("m", tones)])])])
         context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
-        result = accelerando_phrase_transform(context, {"strength": "medium", "jaggedness": "none"})
+        result = accelerando_phrase_transform(context, TempoChangeParams(strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"]))
 
         assert len(result.motifs[0].tones) == len(tones)
         assert result.motifs[0].tones[1].duration < result.motifs[0].tones[0].duration
@@ -241,18 +190,18 @@ class TestAccelerandoTransform:
 
 class TestRitardandoTransform:
     def test_empty_phrase_returns_empty(self):
-        assert ritardando_transform([]) == []
+        assert ritardando_transform([], strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"]) == []
 
     def test_single_tone_unchanged(self):
         tone = Tone(frequency=440.0, duration=1.0)
-        result = ritardando_transform([tone])
+        result = ritardando_transform([tone], strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
         assert len(result) == 1
         assert result[0].duration == 1.0
         assert result[0].frequency == 440.0
 
     def test_durations_increase_across_phrase(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
-        result = ritardando_transform(tones, strength="medium", jaggedness="none")
+        result = ritardando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
         for i in range(1, len(result)):
             assert result[i].duration > result[i - 1].duration
 
@@ -262,7 +211,7 @@ class TestRitardandoTransform:
             Tone(frequency=440.0, duration=0.5),
             Tone(frequency=440.0, duration=0.25),
         ]
-        result = ritardando_transform(tones, strength="high", jaggedness="none")
+        result = ritardando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["none"])
         assert result[0].duration == 1.0
 
         start_factor = 1.0
@@ -274,14 +223,14 @@ class TestRitardandoTransform:
 
     def test_preserves_frequency_sample_rate_and_amplitude(self):
         tones = [Tone(frequency=440.0, duration=1.0, sample_rate=44100, amplitude=0.8)]
-        result = ritardando_transform(tones, strength="high", jaggedness="none")
+        result = ritardando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["none"])
         assert result[0].frequency == 440.0
         assert result[0].sample_rate == 44100
         assert result[0].amplitude == 0.8
 
     def test_first_tone_duration_unchanged(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
-        result = ritardando_transform(tones, strength="high", jaggedness="none")
+        result = ritardando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["none"])
         assert result[0].duration == 1.0
 
     def test_phrase_transform_returns_transformed_phrase(self):
@@ -289,7 +238,7 @@ class TestRitardandoTransform:
         score = Score([Voice([Phrase([Motif("m", tones)])])])
         context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
-        result = ritardando_phrase_transform(context, {"strength": "medium", "jaggedness": "none"})
+        result = ritardando_phrase_transform(context, TempoChangeParams(strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"]))
 
         assert len(result.motifs[0].tones) == len(tones)
         assert result.motifs[0].tones[1].duration > result.motifs[0].tones[0].duration
@@ -324,7 +273,7 @@ class TestJaggedTempoTransforms:
     def test_accelerando_with_jaggedness_can_produce_local_reversals(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(10)]
 
-        result = accelerando_transform(tones, strength="low", jaggedness="extreme")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["low"], jaggedness=INTENSITY_LEVELS["extreme"])
 
         # Check if any later tone is longer than the previous one
         reversals = [i for i in range(1, len(result)) if result[i].duration > result[i-1].duration]
@@ -334,7 +283,7 @@ class TestJaggedTempoTransforms:
     def test_ritardando_with_jaggedness_can_produce_local_reversals(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(10)]
 
-        result = ritardando_transform(tones, strength="low", jaggedness="extreme")
+        result = ritardando_transform(tones, strength=INTENSITY_LEVELS["low"], jaggedness=INTENSITY_LEVELS["extreme"])
 
         # In ritardando, a reversal means a later tone is shorter than the previous one
         reversals = [i for i in range(1, len(result)) if result[i].duration < result[i-1].duration]
@@ -344,11 +293,11 @@ class TestJaggedTempoTransforms:
     def test_jaggedness_none_is_smooth(self):
         tones = [Tone(frequency=440.0, duration=1.0) for _ in range(5)]
         
-        result_accel = accelerando_transform(tones, strength="medium", jaggedness="none")
+        result_accel = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
         for i in range(1, len(result_accel)):
             assert result_accel[i].duration < result_accel[i-1].duration
             
-        result_rit = ritardando_transform(tones, strength="medium", jaggedness="none")
+        result_rit = ritardando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
         for i in range(1, len(result_rit)):
             assert result_rit[i].duration > result_rit[i-1].duration
 
@@ -357,27 +306,27 @@ class TestMinimumDurationProtection:
     def test_accelerando_extreme_strength_preserves_positive_durations(self):
         tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
 
-        result = accelerando_transform(tones, strength="extreme", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["extreme"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert all(tone.duration > 0 for tone in result)
 
     def test_accelerando_extreme_strength_with_jaggedness_preserves_positive_durations(self):
         tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0), Tone(660.0, 1.0)]
 
-        result = accelerando_transform(tones, strength="extreme", jaggedness="extreme")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["extreme"], jaggedness=INTENSITY_LEVELS["extreme"])
 
         assert all(tone.duration > 0 for tone in result)
 
     def test_accelerando_clamps_to_minimum_duration(self):
         tones = [Tone(440.0, 0.0001), Tone(880.0, 0.0001)]
 
-        result = accelerando_transform(tones, strength="extreme", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["extreme"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert result[0].duration >= 0.001
         assert result[1].duration >= 0.001
 
     def test_single_tone_protected_from_collapse(self):
-        result = accelerando_transform([Tone(440.0, 0.0001)], strength="extreme", jaggedness="extreme")
+        result = accelerando_transform([Tone(440.0, 0.0001)], strength=INTENSITY_LEVELS["extreme"], jaggedness=INTENSITY_LEVELS["extreme"])
 
         assert len(result) == 1
         assert result[0].duration >= 0.001
@@ -385,7 +334,7 @@ class TestMinimumDurationProtection:
     def test_ritardando_preserves_positive_durations(self):
         tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
 
-        result = ritardando_transform(tones, strength="extreme", jaggedness="none")
+        result = ritardando_transform(tones, strength=INTENSITY_LEVELS["extreme"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert all(tone.duration > 0 for tone in result)
 
@@ -394,8 +343,8 @@ class TestJaggednessPresetEquivalence:
     def test_jaggedness_none_preset_matches_none_numeric(self):
         tones = [Tone(440.0, 1.0), Tone(880.0, 1.0)]
 
-        result_preset = accelerando_transform(tones, strength="medium", jaggedness="none")
-        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=INTENSITY_LEVELS["none"])
+        result_preset = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
+        result_numeric = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert result_preset[0].duration == pytest.approx(result_numeric[0].duration)
         assert result_preset[1].duration == pytest.approx(result_numeric[1].duration)
@@ -403,8 +352,8 @@ class TestJaggednessPresetEquivalence:
     def test_jaggedness_low_preset_is_accepted(self):
         tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
 
-        result_preset = accelerando_transform(tones, strength="low", jaggedness="low")
-        result_numeric = accelerando_transform(tones, strength="low", jaggedness=INTENSITY_LEVELS["low"])
+        result_preset = accelerando_transform(tones, strength=INTENSITY_LEVELS["low"], jaggedness=INTENSITY_LEVELS["low"])
+        result_numeric = accelerando_transform(tones, strength=INTENSITY_LEVELS["low"], jaggedness=INTENSITY_LEVELS["low"])
 
         assert len(result_preset) == len(tones)
         assert len(result_numeric) == len(tones)
@@ -414,8 +363,8 @@ class TestJaggednessPresetEquivalence:
     def test_jaggedness_extreme_preset_is_accepted(self):
         tones = [Tone(440.0, 1.0), Tone(880.0, 1.0)]
 
-        result_preset = accelerando_transform(tones, strength="medium", jaggedness="extreme")
-        result_numeric = accelerando_transform(tones, strength="medium", jaggedness=INTENSITY_LEVELS["extreme"])
+        result_preset = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["extreme"])
+        result_numeric = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["extreme"])
 
         assert len(result_preset) == len(result_numeric)
 
@@ -424,21 +373,21 @@ class TestJaggednessPreservesToneProperties:
     def test_jaggedness_preserves_frequencies(self):
         tones = [Tone(440.0, 1.0), Tone(880.0, 1.0), Tone(523.0, 1.0)]
 
-        result = accelerando_transform(tones, strength="medium", jaggedness="extreme")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["extreme"])
 
         assert [tone.frequency for tone in result] == [tone.frequency for tone in tones]
 
     def test_jaggedness_preserves_amplitudes(self):
         tones = [Tone(440.0, 1.0, amplitude=0.8), Tone(880.0, 1.0, amplitude=0.6)]
 
-        result = accelerando_transform(tones, strength="high", jaggedness="extreme")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["extreme"])
 
         assert [tone.amplitude for tone in result] == [tone.amplitude for tone in tones]
 
     def test_jaggedness_preserves_sample_rates(self):
         tones = [Tone(440.0, 1.0, sample_rate=48000), Tone(880.0, 1.0, sample_rate=48000)]
 
-        result = accelerando_transform(tones, strength="medium", jaggedness="high")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["high"])
 
         assert [tone.sample_rate for tone in result] == [tone.sample_rate for tone in tones]
 
@@ -451,7 +400,7 @@ class TestUnevenDurationScaling:
             Tone(523.0, 0.5),
         ]
 
-        result = accelerando_transform(tones, strength="medium", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert result[0].duration == tones[0].duration
         assert result[1].duration < tones[1].duration
@@ -464,7 +413,7 @@ class TestUnevenDurationScaling:
             Tone(523.0, 0.5),
         ]
 
-        result = ritardando_transform(tones, strength="medium", jaggedness="none")
+        result = ritardando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert result[0].duration == tones[0].duration
         assert result[1].duration > tones[1].duration
@@ -477,7 +426,7 @@ class TestUnevenDurationScaling:
             Tone(523.0, 0.1),
         ]
 
-        result = accelerando_transform(tones, strength="high", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["high"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert result[1].duration >= 0.001
         assert result[2].duration >= 0.001
@@ -489,7 +438,7 @@ class TestUnevenDurationScaling:
             Tone(523.0, 0.25),
         ]
 
-        result = accelerando_transform(tones, strength="low", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["low"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert result[1].duration > result[0].duration
         assert result[1].duration > result[2].duration
@@ -501,7 +450,7 @@ class TestUnevenDurationScaling:
             Tone(523.0, 1.0),
         ]
 
-        result = accelerando_transform(tones, strength="medium", jaggedness="none")
+        result = accelerando_transform(tones, strength=INTENSITY_LEVELS["medium"], jaggedness=INTENSITY_LEVELS["none"])
 
         assert result[0].duration == 1.0
         assert result[1].duration < result[0].duration

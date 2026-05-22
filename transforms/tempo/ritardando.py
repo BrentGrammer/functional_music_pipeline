@@ -1,17 +1,15 @@
 import random
-from collections.abc import Mapping
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.traversal import flatten_phrase_tones
 from transforms.base import PhraseTransformContext, ToneSequence
 from transforms.tempo._common import (
+    TempoChangeParams,
     apply_duration_multipliers,
     build_tempo_change_params_spec,
     compute_jaggedness_weights,
     compute_tempo_change_factors,
-    resolve_jaggedness,
-    resolve_strength,
 )
 
 RITARDANDO_PARAMS_SPEC = build_tempo_change_params_spec()
@@ -35,8 +33,8 @@ def _resolve_ritardando_final_duration_multiplier(strength: float) -> float:
 
 def ritardando_transform(
     tones: ToneSequence,
-    strength: str | float = "medium",
-    jaggedness: str | float = "none",
+    strength: float,
+    jaggedness: float,
 ) -> ToneSequence:
     """
     Apply a ritardando effect that gradually lengthens durations across the phrase.
@@ -47,12 +45,9 @@ def ritardando_transform(
     if not tones:
         return []
 
-    resolved_jaggedness = resolve_jaggedness(jaggedness)
-    resolved_strength = resolve_strength(strength)
-
-    final_duration_multiplier = _resolve_ritardando_final_duration_multiplier(resolved_strength)
+    final_duration_multiplier = _resolve_ritardando_final_duration_multiplier(strength)
     trend_multipliers = compute_tempo_change_factors(len(tones), 1.0, final_duration_multiplier)
-    jaggedness_weights = compute_jaggedness_weights(len(tones), resolved_jaggedness, _INTERNAL_RANDOM)
+    jaggedness_weights = compute_jaggedness_weights(len(tones), jaggedness, _INTERNAL_RANDOM)
 
     combined_multipliers = [
         trend * weight for trend, weight in zip(trend_multipliers, jaggedness_weights)
@@ -61,15 +56,7 @@ def ritardando_transform(
     return apply_duration_multipliers(tones, combined_multipliers)
 
 
-def ritardando_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    strength = params.get("strength", "medium")
-    if isinstance(strength, bool) or not isinstance(strength, (str, float)):
-        raise ValueError("Param 'strength' must be a string or float.")
-
-    jaggedness = params.get("jaggedness", "none")
-    if isinstance(jaggedness, bool) or not isinstance(jaggedness, (str, float)):
-        raise ValueError("Param 'jaggedness' must be a string or float.")
-
+def ritardando_phrase_transform(context: PhraseTransformContext, params: TempoChangeParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-    transformed_tones = ritardando_transform(phrase_tones, strength=strength, jaggedness=jaggedness)
+    transformed_tones = ritardando_transform(phrase_tones, strength=params.strength, jaggedness=params.jaggedness)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
