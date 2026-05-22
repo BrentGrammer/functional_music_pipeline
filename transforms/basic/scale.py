@@ -1,26 +1,47 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.tone import Tone
+from score_model.tone import MINIMUM_FREQUENCY_HZ, Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
-    EnumParam,
     FloatParam,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 
-SCALE_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class ScaleParams:
+    dimension: ToneDimension
+    factor: float
+
+
+def _create_scale_params(parsed_params: Mapping[str, object]) -> ScaleParams:
+    dimension = parsed_params.get("dimension")
+    factor = parsed_params.get("factor")
+    if not isinstance(dimension, ToneDimension) or not isinstance(factor, float):
+        raise ValueError("Scale params were not parsed before construction.")
+
+    return ScaleParams(
+        dimension=dimension,
+        factor=factor,
+    )
+
+
+SCALE_PARAMS_SPEC = TransformParamsSpec[ScaleParams](
+    params_factory=_create_scale_params,
     fields={
         "dimension": TransformParamFieldSpec(
             required=True,
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
         ),
         "factor": TransformParamFieldSpec(
             schema=FloatParam(),
@@ -40,7 +61,7 @@ def scale_transform(tones: ToneSequence, dimension: ToneDimension, factor: float
     result = []
     for t in tones:
         if dimension == ToneDimension.FREQUENCY:
-            new_val = max(1.0, t.frequency * factor)
+            new_val = max(MINIMUM_FREQUENCY_HZ, t.frequency * factor)
             result.append(Tone(new_val, t.duration, t.sample_rate, t.amplitude))
         elif dimension == ToneDimension.DURATION:
             new_val = max(0.0, t.duration * factor)
@@ -52,29 +73,17 @@ def scale_transform(tones: ToneSequence, dimension: ToneDimension, factor: float
     return result
 
 
-def scale_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    dimension = params["dimension"]
-
-    factor = params["factor"]
-    if isinstance(factor, bool) or not isinstance(factor, (int, float)):
-        raise ValueError("Param 'factor' must be a float.")
-
+def scale_phrase_transform(context: PhraseTransformContext, params: ScaleParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-    scaled_tones = scale_transform(phrase_tones, dimension=dimension, factor=float(factor))
+    scaled_tones = scale_transform(phrase_tones, dimension=params.dimension, factor=params.factor)
     return Phrase(motifs=[Motif(name="<transformed>", tones=scaled_tones)])
 
 
-def scale_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params["dimension"]
-
-    factor = params["factor"]
-    if isinstance(factor, bool) or not isinstance(factor, (int, float)):
-        raise ValueError("Param 'factor' must be a float.")
-
+def scale_score_transform(score: Score, params: ScaleParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
-        scaled_tones = scale_transform(voice_tones, dimension=dimension, factor=float(factor))
+        scaled_tones = scale_transform(voice_tones, dimension=params.dimension, factor=params.factor)
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=scaled_tones)])]))
 
     return Score(voices=new_voices)
