@@ -7,7 +7,6 @@ from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_ran
 from transforms.complexity.weierstrass import (
     WEIERSTRASS_PARAMS_SPEC,
     _build_weierstrass_fluctuations,
-    _resolve_intensity,
     apply_weierstrass_transform,
 )
 

@@ -316,3 +316,28 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
 - Mypy passes without local casts or `Any` in transform modules.
 - Runtime validation errors still happen at the registered transform/spec boundary.
 - Existing transform behavior is preserved.
+
+## Pipeline Verification
+
+To prove that internal transform logic receives cryptographically trusted values without relying on redundant `isinstance` checks, here is the exact parameter validation trace:
+
+### Trace 1: Strict Enum Enforcement (`weierstrass.py`)
+If a user submits `{"intensity": "ultra"}` (invalid string) or `{"intensity": 1.0}` (float):
+1. **The Registry Boundary**: The `weierstrass` registered transform is invoked and hands the raw dictionary to `WEIERSTRASS_PARAMS_SPEC.parse_params(raw_params)`.
+2. **Schema Enforcement**: The spec maps `"intensity"` to `EnumParam(allowed_values=("low", "medium", "high", "extreme"))`.
+3. **Validation & Rejection**: The `EnumParam` explicitly checks the type and value. If it's `1.0`, it raises a `ValueError` because it's not a string. If it's `"ultra"`, it raises a `ValueError` because it's not in the allowed list. (The bad data dies here).
+4. **Parsed Container**: Only if it perfectly passes the `EnumParam` is the exact, lowercase string placed into the `ParsedTransformParams` container.
+5. **Factory Extraction**: `_weierstrass_params_factory` runs and calls `parsed.required("intensity", str)`. Due to `typing.overload` in `base.py`, this safely extracts the trusted string.
+6. **Internal Function**: The trusted string is finally passed to `_resolve_intensity(value)`. 
+
+### Trace 2: Union Schema Enforcement (`tempo/_common.py`)
+If a user submits `{"strength": True}` or `{"strength": "invalid_word"}`:
+1. **The Registry Boundary**: `ACCELERANDO_PARAMS_SPEC.parse_params(raw_params)` is called.
+2. **Union Schema Enforcement**: The `"strength"` field uses a Union schema: `(EnumParam(...), FloatParam())`.
+3. **Validation & Rejection**: The parser tries the `EnumParam` (which rejects `"invalid_word"` and `True`). It then tries the `FloatParam` (which rejects `"invalid_word"` and strictly identifies `True` as a boolean, rejecting it). Because both schemas fail, `parse_params` throws a `ValueError`. (The bad data dies here).
+4. **Parsed Container**: Only a perfectly matched Enum string OR a valid float makes it into the `ParsedTransformParams`.
+5. **Factory Extraction**: `_tempo_change_params_factory` calls `parsed.required("strength", (str, float))`.
+6. **Internal Function**: The trusted `str | float` is passed to `_resolve_intensity(value)`.
+
+**Conclusion**:
+Because all definitions route through `self.params_spec.parse_params(raw_params)` *before* calling the transform factory, it is structurally impossible for an invalid type or an invalid enum string to ever reach `_resolve_intensity` or `apply_frost_effect`. The perimeter is fully secured natively through the type and schema systems without redundant runtime defensive guards.
