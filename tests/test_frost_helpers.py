@@ -10,10 +10,13 @@ from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.geological.frost_effect import (
+    DEFAULT_FROST_EFFECT_ITERATIONS,
     FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS,
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
+    FROST_EFFECT_PARAMS_SPEC,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS,
+    FrostEffectParams,
     _apply_frost_iteration,
     _build_frost_voice,
     _copy_voice_retaining_frost_history,
@@ -179,16 +182,17 @@ def test_apply_frost_iteration_raises_when_edge_voice_lacks_audible_tone():
 
 
 def test_frost_effect_score_transform_adapter_rejects_non_integer_iterations():
-    seed_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
-
     with pytest.raises(ValueError):
-        frost_effect_score_transform_adapter(seed_score, {"iterations": True})
+        FROST_EFFECT_PARAMS_SPEC.parse_params({"iterations": True}, transform_name="frost_effect")
 
 
-def test_frost_effect_score_transform_adapter_applies_default_iteration_count_of_3():
+def test_frost_effect_score_transform_adapter_applies_default_params():
     seed_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
+    params = FROST_EFFECT_PARAMS_SPEC.parse_params({}, transform_name="frost_effect")
 
-    result = frost_effect_score_transform_adapter(seed_score, {})
+    assert params == FrostEffectParams(iterations=DEFAULT_FROST_EFFECT_ITERATIONS)
+
+    result = frost_effect_score_transform_adapter(seed_score, params)
 
     assert result != seed_score
     assert len(result.voices) == len(seed_score.voices) + 3

@@ -1,6 +1,6 @@
 import math
 import random
-from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -10,7 +10,7 @@ from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import IntegerParam, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import IntegerParam, ParsedTransformParams, TransformParamFieldSpec, TransformParamsSpec
 from transforms.basic.delay import delay_tones
 
 FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS = 25.0
@@ -19,11 +19,24 @@ FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS = 0.28
 FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS = 0.55
 FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS = 0.18
 FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS = 0.32
+DEFAULT_FROST_EFFECT_ITERATIONS = 1
 
-FROST_EFFECT_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class FrostEffectParams:
+    iterations: int
+
+
+def _create_frost_effect_params(parsed_params: ParsedTransformParams) -> FrostEffectParams:
+    return FrostEffectParams(iterations=parsed_params.required("iterations", int))
+
+
+FROST_EFFECT_PARAMS_SPEC = TransformParamsSpec[FrostEffectParams](
+    params_factory=_create_frost_effect_params,
     fields={
         "iterations": TransformParamFieldSpec(
             schema=IntegerParam(),
+            default=DEFAULT_FROST_EFFECT_ITERATIONS,
         )
     }
 )
@@ -284,8 +297,5 @@ def frost_effect(score: Score, iterations: int = 3) -> Score:
     return result
 
 
-def frost_effect_score_transform_adapter(score: Score, params: Mapping[str, object]) -> Score:
-    iterations = params.get("iterations", 1)
-    if isinstance(iterations, bool) or not isinstance(iterations, int):
-        raise ValueError("frost_effect iterations must be a positive integer.")
-    return frost_effect(score, iterations=iterations)
+def frost_effect_score_transform_adapter(score: Score, params: FrostEffectParams) -> Score:
+    return frost_effect(score, iterations=params.iterations)
