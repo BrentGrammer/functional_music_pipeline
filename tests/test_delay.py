@@ -13,7 +13,7 @@ from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext
 from transforms.basic.delay import DelayParams, delay_phrase_transform, delay_score_transform, delay_tones
-from transforms.basic.pad_silence import pad_silence_phrase_transform, pad_silence_score_transform, pad_silence_tones
+from transforms.basic.pad_silence import PadSilenceParams, pad_silence_phrase_transform, pad_silence_score_transform, pad_silence_tones
 
 
 def test_delay_zero():
@@ -111,7 +111,7 @@ def test_delay_phrase_transform_matches_pad_silence_start():
 
     delay_seconds = 0.2
     delayed_phrase = delay_phrase_transform(context, DelayParams(seconds=delay_seconds))
-    padded_phrase = pad_silence_phrase_transform(context, {"seconds": delay_seconds, "position": "start"})
+    padded_phrase = pad_silence_phrase_transform(context, PadSilenceParams(seconds=delay_seconds, position="start"))
 
     assert len(delayed_phrase.motifs) == len(padded_phrase.motifs)
     assert len(delayed_phrase.motifs[0].tones) == len(padded_phrase.motifs[0].tones)
@@ -139,7 +139,7 @@ def test_delay_score_transform_matches_pad_silence_start():
 
     delay_seconds = 0.2
     delayed_score = delay_score_transform(score, DelayParams(seconds=delay_seconds))
-    padded_score = pad_silence_score_transform(score, {"seconds": delay_seconds, "position": "start"})
+    padded_score = pad_silence_score_transform(score, PadSilenceParams(seconds=delay_seconds, position="start"))
 
     assert len(delayed_score.voices) == len(padded_score.voices)
     for delayed_voice, padded_voice in zip(delayed_score.voices, padded_score.voices):

@@ -10,7 +10,7 @@ from score_model.tone import Tone
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import PhraseTransformContext
-from transforms.basic.pad_silence import pad_silence_phrase_transform, pad_silence_score_transform, pad_silence_tones
+from transforms.basic.pad_silence import PAD_SILENCE_PARAMS_SPEC, PadSilenceParams, pad_silence_phrase_transform, pad_silence_score_transform, pad_silence_tones
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
 
 
@@ -243,31 +243,36 @@ def test_applies_pad_silence_between_phrases():
     assert [tone.duration for tone in flatten_voice_tones(score.voices[0])] == pytest.approx([phrase_duration, silence_seconds, phrase_duration])
 
 
-def test_pad_silence_phrase_transform_rejects_non_numeric_seconds():
+def test_pad_silence_params_rejects_non_numeric_seconds():
+    with pytest.raises(ValueError):
+        PAD_SILENCE_PARAMS_SPEC.parse_params({"seconds": True, "position": "end"}, transform_name="pad_silence")
+
+
+def test_pad_silence_params_rejects_non_string_position():
+    with pytest.raises(ValueError):
+        PAD_SILENCE_PARAMS_SPEC.parse_params({"seconds": 0.2, "position": None}, transform_name="pad_silence")
+
+
+def test_pad_silence_phrase_transform_accepts_typed_params():
+    silence_seconds = 0.3
     score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, duration=0.5)])])])])
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+    params = PadSilenceParams(seconds=silence_seconds, position="end")
 
-    with pytest.raises(ValueError):
-        pad_silence_phrase_transform(context, {"seconds": True, "position": "end"})
+    result = pad_silence_phrase_transform(context, params)
+
+    assert len(result.motifs[0].tones) == 2
+    assert result.motifs[0].tones[1].frequency == 0
+    assert result.motifs[0].tones[1].duration == pytest.approx(silence_seconds)
 
 
-def test_pad_silence_phrase_transform_rejects_non_string_position():
+def test_pad_silence_score_transform_accepts_typed_params():
+    silence_seconds = 0.3
     score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, duration=0.5)])])])])
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+    params = PadSilenceParams(seconds=silence_seconds, position="start")
 
-    with pytest.raises(ValueError):
-        pad_silence_phrase_transform(context, {"seconds": 0.2, "position": None})
+    result = pad_silence_score_transform(score, params)
 
-
-def test_pad_silence_score_transform_rejects_non_numeric_seconds():
-    score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, duration=0.5)])])])])
-
-    with pytest.raises(ValueError):
-        pad_silence_score_transform(score, {"seconds": True, "position": "end"})
-
-
-def test_pad_silence_score_transform_rejects_non_string_position():
-    score = Score(voices=[Voice(phrases=[Phrase(motifs=[Motif(name="m", tones=[Tone(440.0, duration=0.5)])])])])
-
-    with pytest.raises(ValueError):
-        pad_silence_score_transform(score, {"seconds": 0.2, "position": None})
+    assert len(result.voices[0].phrases[0].motifs[0].tones) == 2
+    assert result.voices[0].phrases[0].motifs[0].tones[0].frequency == 0
+    assert result.voices[0].phrases[0].motifs[0].tones[0].duration == pytest.approx(silence_seconds)
