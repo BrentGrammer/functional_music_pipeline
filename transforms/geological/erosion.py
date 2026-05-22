@@ -1,22 +1,35 @@
-from collections.abc import Mapping
+from dataclasses import dataclass
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones
 from transforms.base import (
-    EnumParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 
-EROSION_PARAMS_SPEC = TransformParamsSpec(
+
+@dataclass(frozen=True)
+class ErosionParams:
+    dimension: ToneDimension
+
+
+def _create_erosion_params(parsed_params: ParsedTransformParams) -> ErosionParams:
+    return ErosionParams(dimension=parsed_params.required("dimension", ToneDimension))
+
+
+EROSION_PARAMS_SPEC = TransformParamsSpec[ErosionParams](
+    params_factory=_create_erosion_params,
     fields={
         "dimension": TransformParamFieldSpec(
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
+            default=ToneDimension.DURATION,
         ),
     }
 )
@@ -42,19 +55,17 @@ def erosion_transform(
 
     if dimension == ToneDimension.DURATION:
         return _erode_duration(tones)
-    elif dimension == ToneDimension.AMPLITUDE:
+    if dimension == ToneDimension.AMPLITUDE:
         return _erode_amplitude(tones)
-    elif dimension == ToneDimension.FREQUENCY:
+    if dimension == ToneDimension.FREQUENCY:
         return _erode_frequency(tones)
 
+    raise ValueError(f"Invalid dimension: {dimension}. Must be one of {', '.join(d.value for d in ToneDimension)}")
 
-def erosion_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    dimension = params.get("dimension", ToneDimension.DURATION)
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Erosion dimension must be a string or ToneDimension.")
 
+def erosion_phrase_transform(context: PhraseTransformContext, params: ErosionParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
-    transformed_tones = erosion_transform(phrase_tones, dimension=dimension)
+    transformed_tones = erosion_transform(phrase_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
