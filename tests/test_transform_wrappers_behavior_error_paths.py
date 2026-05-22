@@ -12,7 +12,7 @@ from transforms.basic.repeat import REPEAT_PARAMS_SPEC
 from transforms.basic.transpose import TRANSPOSE_PARAMS_SPEC
 from transforms.complexity.cellular_automata import CELLULAR_AUTOMATA_PARAMS_SPEC
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC
-from transforms.complexity.weierstrass import weierstrass_phrase_transform, weierstrass_score_transform
+from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC
 from transforms.geological.terraced_drift import terraced_drift_phrase_transform, terraced_drift_score_transform
 from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transform
 from transforms.proportion.golden_ratio import golden_ratio_score_transform
@@ -234,35 +234,17 @@ def test_golden_ratio_score_transform_rejects_non_dimension_value():
 
 
 def test_weierstrass_transforms_reject_invalid_param_types():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="weierstrass-target",
-                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
-                            )
-                        ]
-                    )
-                ]
-            )
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+    with pytest.raises(ValueError):
+        WEIERSTRASS_PARAMS_SPEC.parse_params({"dimension": None, "intensity": "medium"}, transform_name="weierstrass")
 
     with pytest.raises(ValueError):
-        weierstrass_phrase_transform(context, {"dimension": None, "intensity": "medium"})
+        WEIERSTRASS_PARAMS_SPEC.parse_params({"dimension": ToneDimension.FREQUENCY, "intensity": 1}, transform_name="weierstrass")
 
     with pytest.raises(ValueError):
-        weierstrass_phrase_transform(context, {"dimension": "frequency", "intensity": 1})
+        WEIERSTRASS_PARAMS_SPEC.parse_params({"dimension": 1, "intensity": "medium"}, transform_name="weierstrass")
 
     with pytest.raises(ValueError):
-        weierstrass_score_transform(score, {"dimension": 1, "intensity": "medium"})
-
-    with pytest.raises(ValueError):
-        weierstrass_score_transform(score, {"dimension": "frequency", "intensity": True})
+        WEIERSTRASS_PARAMS_SPEC.parse_params({"dimension": ToneDimension.FREQUENCY, "intensity": True}, transform_name="weierstrass")
 
 
 def test_feigenbaum_phrase_transform_rejects_non_dimension_value():

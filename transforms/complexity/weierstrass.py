@@ -1,6 +1,7 @@
 import math
 import random
-from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import TypedDict
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -10,14 +11,24 @@ from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
 from transforms.base import (
     EnumParam,
+    ParsedTransformParams,
     PhraseTransformContext,
     ToneDimension,
+    ToneDimensionParam,
     ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
 
-_WEIERSTRASS_INTENSITY_PRESETS = {
+
+class WeierstrassPreset(TypedDict):
+    max_deviation: float
+    amplitude_scaling: float
+    ripples_per_wave: float
+    iterations: int
+
+
+_WEIERSTRASS_INTENSITY_PRESETS: dict[str, WeierstrassPreset] = {
     "low": {"max_deviation": 0.05, "amplitude_scaling": 0.3, "ripples_per_wave": 2.0, "iterations": 6},
     "medium": {"max_deviation": 0.15, "amplitude_scaling": 0.5, "ripples_per_wave": 3.0, "iterations": 10},
     "high": {"max_deviation": 0.25, "amplitude_scaling": 0.6, "ripples_per_wave": 4.0, "iterations": 12},
@@ -25,7 +36,20 @@ _WEIERSTRASS_INTENSITY_PRESETS = {
 }
 
 
-def _resolve_intensity(value: str) -> dict:
+@dataclass(frozen=True)
+class WeierstrassParams:
+    dimension: ToneDimension
+    intensity: str
+
+
+def _create_weierstrass_params(parsed_params: ParsedTransformParams) -> WeierstrassParams:
+    return WeierstrassParams(
+        dimension=parsed_params.required("dimension", ToneDimension),
+        intensity=parsed_params.required("intensity", str),
+    )
+
+
+def _resolve_intensity(value: str) -> WeierstrassPreset:
     if not isinstance(value, str):
         raise ValueError(f"Intensity must be a string, got {type(value).__name__}")
     if value not in _WEIERSTRASS_INTENSITY_PRESETS:
@@ -35,11 +59,12 @@ def _resolve_intensity(value: str) -> dict:
     return _WEIERSTRASS_INTENSITY_PRESETS[value]
 
 
-WEIERSTRASS_PARAMS_SPEC = TransformParamsSpec(
+WEIERSTRASS_PARAMS_SPEC = TransformParamsSpec[WeierstrassParams](
+    params_factory=_create_weierstrass_params,
     fields={
         "dimension": TransformParamFieldSpec(
             required=True,
-            schema=EnumParam(allowed_values=tuple(ToneDimension)),
+            schema=ToneDimensionParam(),
         ),
         "intensity": TransformParamFieldSpec(
             required=True,
@@ -86,38 +111,22 @@ def apply_weierstrass_transform(
     return apply_fluctuations(tones, fluctuations, dimension, preset["max_deviation"])
 
 
-def weierstrass_phrase_transform(context: PhraseTransformContext, params: Mapping[str, object]) -> Phrase:
-    dimension = params.get("dimension")
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Weierstrass dimension must be a string or ToneDimension.")
-
-    intensity = params.get("intensity")
-    if not isinstance(intensity, str):
-        raise ValueError("Weierstrass intensity must be a string.")
-
+def weierstrass_phrase_transform(context: PhraseTransformContext, params: WeierstrassParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = apply_weierstrass_transform(
-        phrase_tones, dimension=dimension, intensity=intensity
+        phrase_tones, dimension=params.dimension, intensity=params.intensity
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
-def weierstrass_score_transform(score: Score, params: Mapping[str, object]) -> Score:
-    dimension = params["dimension"]
-    if not isinstance(dimension, (str, ToneDimension)):
-        raise ValueError("Weierstrass dimension must be a string or ToneDimension.")
-
-    intensity = params["intensity"]
-    if not isinstance(intensity, str):
-        raise ValueError("Weierstrass intensity must be a string.")
-
+def weierstrass_score_transform(score: Score, params: WeierstrassParams) -> Score:
     new_voices = []
     for voice in score.voices:
         voice_tones = flatten_voice_tones(voice)
         transformed_tones = apply_weierstrass_transform(
             voice_tones,
-            dimension=dimension,
-            intensity=intensity,
+            dimension=params.dimension,
+            intensity=params.intensity,
         )
         new_voices.append(Voice(phrases=[Phrase(motifs=[Motif(name="<each_voice>", tones=transformed_tones)])]))
 

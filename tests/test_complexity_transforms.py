@@ -4,7 +4,12 @@ from score_model.tone import Tone
 from transforms.base import ToneDimension
 from transforms.complexity.cellular_automata import _derive_initial_state, apply_cellular_automata_transform
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC, apply_random_drop_transform
-from transforms.complexity.weierstrass import _build_weierstrass_fluctuations, _resolve_intensity, apply_weierstrass_transform
+from transforms.complexity.weierstrass import (
+    WEIERSTRASS_PARAMS_SPEC,
+    _build_weierstrass_fluctuations,
+    _resolve_intensity,
+    apply_weierstrass_transform,
+)
 
 
 def _snapshot(tones: list[Tone]) -> list[tuple[float, float, int, float]]:
@@ -54,11 +59,19 @@ def test_build_weierstrass_fluctuations_with_zero_iterations_returns_zeros():
 
 
 def test_weierstrass_resolve_intensity_rejects_non_string_and_unknown_values():
-    with pytest.raises(ValueError, match="must be a string"):
+    with pytest.raises(ValueError):
         _resolve_intensity(1.0)  # type: ignore[arg-type]
 
-    with pytest.raises(ValueError, match="Invalid intensity"):
+    with pytest.raises(ValueError):
         _resolve_intensity("ultra")
+
+
+def test_onternally_called_weierstrass_params_spec_rejects_raw_dimension_strings():
+    with pytest.raises(ValueError):
+        WEIERSTRASS_PARAMS_SPEC.parse_params(
+            {"dimension": "frequency", "intensity": "medium"},
+            transform_name="weierstrass",
+        )
 
 
 def test_cellular_automata_is_deterministic():

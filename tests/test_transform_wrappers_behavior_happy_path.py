@@ -12,7 +12,7 @@ from transforms.basic.repeat import RepeatParams, repeat_phrase_transform, repea
 from transforms.basic.transpose import TransposeParams, transpose_phrase_transform, transpose_score_transform
 from transforms.complexity.cellular_automata import CellularAutomataParams, cellular_automata_phrase_transform, cellular_automata_score_transform
 from transforms.complexity.random_drop import RandomDropParams, random_drop_phrase_transform, random_drop_score_transform
-from transforms.complexity.weierstrass import weierstrass_phrase_transform, weierstrass_score_transform
+from transforms.complexity.weierstrass import WeierstrassParams, weierstrass_phrase_transform, weierstrass_score_transform
 from transforms.geological.terraced_drift import terraced_drift_phrase_transform, terraced_drift_score_transform
 from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transform, feigenbaum_sequence_score_transform
 from transforms.proportion.golden_ratio import (
@@ -339,7 +339,7 @@ def test_weierstrass_phrase_and_score_transform_observable_output():
         ]
     )
     context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-    params = {"dimension": "frequency", "intensity": "medium"}
+    params = WeierstrassParams(dimension=ToneDimension.FREQUENCY, intensity="medium")
 
     transformed_phrase = weierstrass_phrase_transform(context, params)
     assert len(transformed_phrase.motifs[0].tones) == len(weierstrass_target_tones)
