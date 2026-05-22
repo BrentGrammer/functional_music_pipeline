@@ -31,7 +31,7 @@ class TestGoldenRatioTransform:
         original_duration = 1.0
         tones = [Tone(original_frequency, original_duration)]
 
-        result = golden_ratio_transform(tones, dimension="FREQUENCY")
+        result = golden_ratio_transform(tones, dimension=ToneDimension.FREQUENCY)
 
         assert result[0].frequency == pytest.approx(original_frequency / GOLDEN_RATIO)
         assert result[0].duration == pytest.approx(original_duration)
@@ -99,7 +99,7 @@ class TestPhraseGoldenRatioShrink:
         transformed_phrase = phrase_golden_ratio_shrink(
             current_phrase,
             previous_phrase,
-            dimension="AMPLITUDE",
+            dimension=ToneDimension.AMPLITUDE,
         )
 
         expected_total_amplitude = previous_phrase_total_amplitude / GOLDEN_RATIO
@@ -170,7 +170,7 @@ class TestPhraseGoldenRatioGrow:
         transformed_phrase = phrase_golden_ratio_grow(
             current_phrase,
             previous_phrase,
-            dimension="FREQUENCY",
+            dimension=ToneDimension.FREQUENCY,
         )
 
         expected_total_frequency = previous_phrase_total_frequency * GOLDEN_RATIO

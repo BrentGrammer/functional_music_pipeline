@@ -18,15 +18,6 @@ class ToneDimension(StrEnum):
     AMPLITUDE = auto()
 
 
-def parse_dimension(dim: ToneDimension | str) -> ToneDimension:
-    if isinstance(dim, ToneDimension):
-        return dim
-    try:
-        return ToneDimension(str(dim).lower())
-    except ValueError:
-        raise ValueError(f"Invalid dimension: {dim}. Must be one of {', '.join(d.value for d in ToneDimension)}")
-
-
 class ParamSchema(Generic[ParsedParam]):
     """Base class for all parameter shapes/types."""
 
@@ -106,7 +97,6 @@ class TransformParamFieldSpec:
 
 @dataclass(frozen=True)
 class ParsedTransformParams:
-    # Field schemas have already converted raw values from the input; factories use this to build typed params without re-validating input.
     values: Mapping[str, object]
 
     def required(self, field_name: str, expected_type: type[ParsedParam]) -> ParsedParam:
@@ -134,9 +124,7 @@ class TransformParamsSpec(Generic[ParsedParams]):
             raise ValueError(f"{transform_description} include unknown fields: {unknown_fields_description}.")
 
         missing_fields = tuple(
-            field_name
-            for field_name, field_spec in self.fields.items()
-            if field_spec.required and field_name not in raw_params and field_spec.default is MISSING
+            field_name for field_name, field_spec in self.fields.items() if field_spec.required and field_name not in raw_params and field_spec.default is MISSING
         )
         if missing_fields:
             missing_fields_description = ", ".join(f"'{field}'" for field in missing_fields)
@@ -203,11 +191,7 @@ class PhraseTransformDefinition(Generic[ParsedParams]):
     params_spec: TransformParamsSpec[ParsedParams]
     transform_function: Callable[[PhraseTransformContext, ParsedParams], Phrase]
 
-    def transform(
-        self,
-        context: PhraseTransformContext,
-        raw_params: Mapping[str, object],
-    ) -> Phrase:
+    def transform(self, context: PhraseTransformContext, raw_params: Mapping[str, object]) -> Phrase:
         params = self.params_spec.parse_params(raw_params, transform_name=self.name)
         return self.transform_function(context, params)
 
@@ -218,11 +202,7 @@ class ScoreTransformDefinition(Generic[ParsedParams]):
     params_spec: TransformParamsSpec[ParsedParams]
     transform_function: Callable[[Score, ParsedParams], Score]
 
-    def transform(
-        self,
-        score: Score,
-        raw_params: Mapping[str, object],
-    ) -> Score:
+    def transform(self, score: Score, raw_params: Mapping[str, object]) -> Score:
         params = self.params_spec.parse_params(raw_params, transform_name=self.name)
         return self.transform_function(score, params)
 
@@ -230,20 +210,10 @@ class ScoreTransformDefinition(Generic[ParsedParams]):
 class RegisteredPhraseTransform(Protocol):
     name: str
 
-    def transform(
-        self,
-        context: PhraseTransformContext,
-        raw_params: Mapping[str, object],
-    ) -> Phrase:
-        ...
+    def transform(self, context: PhraseTransformContext, raw_params: Mapping[str, object]) -> Phrase: ...
 
 
 class RegisteredScoreTransform(Protocol):
     name: str
 
-    def transform(
-        self,
-        score: Score,
-        raw_params: Mapping[str, object],
-    ) -> Score:
-        ...
+    def transform(self, score: Score, raw_params: Mapping[str, object]) -> Score: ...

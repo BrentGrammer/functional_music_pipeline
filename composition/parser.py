@@ -17,7 +17,7 @@ from composition.score_plan import (
 from score_model.motif import Motif
 from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
-from transforms.base import parse_dimension
+from transforms.base import ToneDimension
 
 
 def _parse_tone_string(tone_string: str) -> Tone:
@@ -257,3 +257,16 @@ def generate_score_plan(document: object) -> ScorePlan:
         phrase_transform_requests=phrase_transform_requests,
         score_transform_requests=score_transform_requests,
     )
+
+
+def parse_dimension(dim: "ToneDimension | str") -> "ToneDimension":
+    from transforms.base import ToneDimension
+    if isinstance(dim, ToneDimension):
+        return dim
+    try:
+        return ToneDimension[str(dim).upper()]
+    except KeyError:
+        valid_options = ", ".join(d.name for d in ToneDimension)
+        raise ValueError(
+            f"Unknown dimension '{dim}'. Valid options are: {valid_options}"
+        ) from None

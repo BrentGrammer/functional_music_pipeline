@@ -58,7 +58,7 @@ def test_tempo_curve_descriptor_accepts_preset_or_float_controls(transform_name)
     fields = PHRASE_TRANSFORMS[transform_name].params_spec.fields
 
     assert isinstance(fields["strength"].schema, tuple)
-    assert fields["strength"].required is True
+    assert fields["strength"].required is False
     assert isinstance(fields["strength"].schema[0], EnumParam)
     assert fields["strength"].schema[0].allowed_values == ("none", "low", "medium", "high", "extreme")
     assert isinstance(fields["jaggedness"].schema, tuple)
@@ -1112,16 +1112,19 @@ def test_generate_score_plan_with_value_score_transform():
     assert flatten_voice_tones(score.voices[0])[0].duration == original_duration * factor
 
 def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params_only():
-    captured = {}
-
-    def capture_score_target_motifs_transform(score, motif):
-        captured["motif"] = motif
-        captured["score"] = score
-        return score
+    """
+    Confirms that when a score-level transform is executed, the pipeline strictly
+    passes exactly two arguments: the Score and the explicitly configured parameters.
+    It proves we don't implicitly inject global state (like the JSON motifs dictionary).
+    """
+    from unittest.mock import Mock
+    
+    mock_transform = Mock(return_value=Score(voices=[]))
 
     SCORE_TRANSFORMS["_test_score_with_motifs"] = ScoreTransformDefinition(
         name="_test_score_with_motifs",
         params_spec=TransformParamsSpec(
+            params_factory=lambda p: p.values,
             fields={
                 "motif": TransformParamFieldSpec(
                     schema=StringParam(),
@@ -1129,8 +1132,9 @@ def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params
                 )
             }
         ),
-        transform=lambda score, params: capture_score_target_motifs_transform(score, params["motif"]),
+        transform_function=mock_transform,
     )
+    
     try:
         valid_document: CompositionDocumentInput = {
             "motifs": {"seed": ["440:0.5"]},
@@ -1144,24 +1148,31 @@ def test_generate_score_plan_score_target_motifs_scope_receives_score_and_params
                 ],
             },
         }
-        transform_score(generate_score_plan(
-            valid_document
-        ))
+        transform_score(generate_score_plan(valid_document))
     finally:
         SCORE_TRANSFORMS.pop("_test_score_with_motifs", None)
 
-    assert captured["motif"] == "seed"
-    assert isinstance(captured["score"], Score)
+    mock_transform.assert_called_once()
+    
+    called_score, called_params = mock_transform.call_args.args
+    
+    assert isinstance(called_score, Score)
+    assert called_params == {"motif": "seed"}
 
 
 def test_generate_score_plan_score_target_motifs_scope_requires_params_object():
+    """
+    Confirms that if a transform requires parameters, the JSON document must provide
+    them as a valid 'params' object rather than invalid types (like a list or string).
+    """
     def noop_score_target_motifs_transform(score, motif):
         return score
 
     SCORE_TRANSFORMS["_test_score_with_motifs"] = ScoreTransformDefinition(
         name="_test_score_with_motifs",
-        transform=lambda score, params: noop_score_target_motifs_transform(score, params["motif"]),
+        transform_function=lambda score, params: noop_score_target_motifs_transform(score, params["motif"]),
         params_spec=TransformParamsSpec(
+            params_factory=lambda p: p.values,
             fields={
                 "motif": TransformParamFieldSpec(
                     schema=StringParam(),
@@ -1191,13 +1202,18 @@ def test_generate_score_plan_score_target_motifs_scope_requires_params_object():
 
 
 def test_generate_score_plan_score_target_motifs_scope_requires_params():
+    """
+    Confirms that if a transform requires parameters, the JSON document cannot
+    omit the 'params' field entirely, enforcing strict configuration requirements.
+    """
     def noop_score_target_motifs_transform(score, motif):
         return score
 
     SCORE_TRANSFORMS["_test_score_with_motifs"] = ScoreTransformDefinition(
         name="_test_score_with_motifs",
-        transform=lambda score, params: noop_score_target_motifs_transform(score, params["motif"]),
+        transform_function=lambda score, params: noop_score_target_motifs_transform(score, params["motif"]),
         params_spec=TransformParamsSpec(
+            params_factory=lambda p: p.values,
             fields={
                 "motif": TransformParamFieldSpec(
                     schema=StringParam(),
@@ -1242,3 +1258,25 @@ def test_stretto_with_missing_required_fields_raises_error():
 
         with pytest.raises(ValueError):
             transform_score(generate_score_plan(composition_doc))
+
+
+def test_parse_dimension_returns_same_enum_instance():
+    from composition.parser import parse_dimension
+    from transforms.base import ToneDimension
+    assert parse_dimension(ToneDimension.FREQUENCY) is ToneDimension.FREQUENCY
+
+def test_parse_dimension_accepts_case_insensitive_string():
+    from composition.parser import parse_dimension
+    from transforms.base import ToneDimension
+    assert parse_dimension("duration") is ToneDimension.DURATION
+    assert parse_dimension("DURATION") is ToneDimension.DURATION
+    assert parse_dimension("amplitude") is ToneDimension.AMPLITUDE
+    assert parse_dimension("AMPLITUDE") is ToneDimension.AMPLITUDE
+    assert parse_dimension("frequency") is ToneDimension.FREQUENCY
+    assert parse_dimension("FREQUENCY") is ToneDimension.FREQUENCY
+
+def test_parse_dimension_rejects_unknown_dimension_with_valid_options_in_message():
+    from composition.parser import parse_dimension
+    invalid_dimension = "timbre"
+    with pytest.raises(ValueError, match=f"Unknown dimension '{invalid_dimension}'. Valid options are:"):
+        parse_dimension(invalid_dimension)

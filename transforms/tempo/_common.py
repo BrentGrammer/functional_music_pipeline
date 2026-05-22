@@ -50,11 +50,11 @@ def build_tempo_change_params_spec() -> TransformParamsSpec[TempoChangeParams]:
         fields={
             "strength": TransformParamFieldSpec(
                 schema=intensity_schema,
-                default=INTENSITY_LEVELS["medium"],
+                default="medium",
             ),
             "jaggedness": TransformParamFieldSpec(
                 schema=intensity_schema,
-                default=INTENSITY_LEVELS["medium"],
+                default="none",
             ),
         },
         params_factory=_tempo_change_params_factory,

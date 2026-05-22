@@ -5,7 +5,7 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
-from transforms.base import PhraseTransformContext, ToneDimension
+from transforms.base import ToneDimension
 from transforms.basic.delay import DELAY_PARAMS_SPEC
 from transforms.basic.inversion import INVERT_PARAMS_SPEC
 from transforms.basic.repeat import REPEAT_PARAMS_SPEC
@@ -14,10 +14,6 @@ from transforms.complexity.cellular_automata import CELLULAR_AUTOMATA_PARAMS_SPE
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC
 from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC
 from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC
-from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transform
-from transforms.proportion.golden_ratio import golden_ratio_score_transform
-from transforms.tempo.accelerando import accelerando_phrase_transform
-from transforms.tempo.ritardando import ritardando_phrase_transform
 
 
 def _make_test_score(*, voices: list[Voice] | None = None) -> Score:
@@ -180,45 +176,9 @@ def test_terraced_drift_transforms_reject_invalid_param_types():
 
 
 def test_golden_ratio_score_transform_rejects_non_dimension_value():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="first-phrase",
-                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
-                            )
-                        ]
-                    ),
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="second-phrase",
-                                tones=[Tone(440.0, duration=1.0)],
-                            )
-                        ]
-                    ),
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="cross-voice-phrase",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
-                            )
-                        ]
-                    )
-                ]
-            ),
-        ]
-    )
-
+    from transforms.proportion.golden_ratio import GOLDEN_RATIO_PARAMS_SPEC
     with pytest.raises(ValueError):
-        golden_ratio_score_transform(score, {"dimension": 3})
+        GOLDEN_RATIO_PARAMS_SPEC.parse_params({"dimension": 3}, transform_name="golden_ratio")
 
 
 def test_weierstrass_transforms_reject_invalid_param_types():
@@ -236,80 +196,24 @@ def test_weierstrass_transforms_reject_invalid_param_types():
 
 
 def test_feigenbaum_phrase_transform_rejects_non_dimension_value():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="other-voice", tones=[Tone(220.0, duration=0.5)])])
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="feigenbaum-target",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
-                            )
-                        ]
-                    )
-                ]
-            ),
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
-
+    from transforms.proportion.feigenbaum import FEIGENBAUM_PARAMS_SPEC
     with pytest.raises(ValueError):
-        feigenbaum_sequence_phrase_transform(context, {"dimension": 1})
+        FEIGENBAUM_PARAMS_SPEC.parse_params({"dimension": 1}, transform_name="feigenbaum_sequence")
 
 
 def test_accelerando_phrase_transform_rejects_invalid_param_types():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="accelerando-target",
-                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
-                            )
-                        ]
-                    )
-                ]
-            )
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+    from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC
+    with pytest.raises(ValueError):
+        ACCELERANDO_PARAMS_SPEC.parse_params({"strength": True, "jaggedness": "none"}, transform_name="accelerando")
 
     with pytest.raises(ValueError):
-        accelerando_phrase_transform(context, {"strength": True, "jaggedness": "none"})
-
-    with pytest.raises(ValueError):
-        accelerando_phrase_transform(context, {"strength": "medium", "jaggedness": []})
+        ACCELERANDO_PARAMS_SPEC.parse_params({"strength": "medium", "jaggedness": []}, transform_name="accelerando")
 
 
 def test_ritardando_phrase_transform_rejects_invalid_param_types():
-    score = _make_test_score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(
-                        motifs=[
-                            Motif(
-                                name="ritardando-target",
-                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
-                            )
-                        ]
-                    )
-                ]
-            )
-        ]
-    )
-    context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
+    from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC
+    with pytest.raises(ValueError):
+        RITARDANDO_PARAMS_SPEC.parse_params({"strength": {}, "jaggedness": "none"}, transform_name="ritardando")
 
     with pytest.raises(ValueError):
-        ritardando_phrase_transform(context, {"strength": {}, "jaggedness": "none"})
-
-    with pytest.raises(ValueError):
-        ritardando_phrase_transform(context, {"strength": "medium", "jaggedness": True})
+        RITARDANDO_PARAMS_SPEC.parse_params({"strength": "medium", "jaggedness": True}, transform_name="ritardando")

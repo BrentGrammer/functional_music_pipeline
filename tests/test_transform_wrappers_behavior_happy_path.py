@@ -14,8 +14,9 @@ from transforms.complexity.cellular_automata import CellularAutomataParams, cell
 from transforms.complexity.random_drop import RandomDropParams, random_drop_phrase_transform, random_drop_score_transform
 from transforms.complexity.weierstrass import WeierstrassParams, weierstrass_phrase_transform, weierstrass_score_transform
 from transforms.geological.terraced_drift import TerracedDriftParams, terraced_drift_phrase_transform, terraced_drift_score_transform
-from transforms.proportion.feigenbaum import feigenbaum_sequence_phrase_transform, feigenbaum_sequence_score_transform
+from transforms.proportion.feigenbaum import FeigenbaumParams, feigenbaum_sequence_phrase_transform, feigenbaum_sequence_score_transform
 from transforms.proportion.golden_ratio import (
+    GoldenRatioParams,
     golden_ratio_phrase_transform,
     golden_ratio_score_transform,
     phrase_golden_ratio_grow_transform,
@@ -389,15 +390,15 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
     second_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
     cross_voice_context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
-    golden_phrase = golden_ratio_phrase_transform(first_context, {"dimension": "duration"})
+    golden_phrase = golden_ratio_phrase_transform(first_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
     assert golden_phrase.motifs[0].tones[0].duration < first_context.phrase.motifs[0].tones[0].duration
 
-    grown = phrase_golden_ratio_grow_transform(second_context, {"dimension": "duration"})
-    shrunk = phrase_golden_ratio_shrink_transform(cross_voice_context, {"dimension": "duration"})
+    grown = phrase_golden_ratio_grow_transform(second_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
+    shrunk = phrase_golden_ratio_shrink_transform(cross_voice_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
     assert len(grown.motifs[0].tones) == len(second_context.phrase.motifs[0].tones)
     assert len(shrunk.motifs[0].tones) == len(cross_voice_context.phrase.motifs[0].tones)
 
-    golden_score = golden_ratio_score_transform(score, {"dimension": "duration"})
+    golden_score = golden_ratio_score_transform(score, GoldenRatioParams(dimension=ToneDimension.DURATION))
     assert len(golden_score.voices) == len(score.voices)
 
 
@@ -426,8 +427,8 @@ def test_feigenbaum_phrase_and_score_transform_previous_phrase_paths():
     )
     context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
-    seq_phrase = feigenbaum_sequence_phrase_transform(context, {"dimension": "duration"})
+    seq_phrase = feigenbaum_sequence_phrase_transform(context, FeigenbaumParams(dimension=ToneDimension.DURATION))
     assert len(seq_phrase.motifs[0].tones) == len(feigenbaum_target_tones)
 
-    seq_score = feigenbaum_sequence_score_transform(score, {"dimension": "duration"})
+    seq_score = feigenbaum_sequence_score_transform(score, FeigenbaumParams(dimension=ToneDimension.DURATION))
     assert len(seq_score.voices) == len(score.voices)

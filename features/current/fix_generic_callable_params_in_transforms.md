@@ -206,11 +206,11 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
 - [x] Keep raw dimension string normalization at the parser boundary, not in transform param parsing.
 - [x] Add `ToneDimensionParam` for already-normalized internal dimension values.
 - [x] Add `ParsedTransformParams` so factories build typed params without repeating schema validation.
-- [ ] Define typed params models per remaining transform.
-- [ ] Update remaining transform function signatures and remove redundant `isinstance` guards.
-- [ ] Update remaining tests.
-- [ ] Move `parse_dimension(...)` out of `transforms/base.py` if doing so keeps the parser boundary clearer.
-- [ ] Check `drift.py` for any transform function that is not used in production code.
+- [x] Define typed params models per remaining transform.
+- [x] Update remaining transform function signatures and remove redundant `isinstance` guards.
+- [x] Update remaining tests.
+- [x] Move `parse_dimension(...)` out of `transforms/base.py` if doing so keeps the parser boundary clearer.
+- [x] Check `drift.py` for any transform function that is not used in production code.
 
 ## Handoff Notes
 
