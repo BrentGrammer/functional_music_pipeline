@@ -17,16 +17,13 @@ class PadSilenceParams:
 
 
 def _create_pad_silence_params(parsed_params: Mapping[str, object]) -> PadSilenceParams:
-    seconds = parsed_params["seconds"]
-    if isinstance(seconds, bool) or not isinstance(seconds, (float, int)):
-        raise ValueError("Param 'seconds' must be a float.")
-
-    position = parsed_params["position"]
-    if not isinstance(position, str):
-        raise ValueError("Param 'position' must be a string.")
+    seconds = parsed_params.get("seconds")
+    position = parsed_params.get("position")
+    if not isinstance(seconds, float) or not isinstance(position, str):
+        raise ValueError("Pad silence params were not parsed before construction.")
 
     return PadSilenceParams(
-        seconds=float(seconds),
+        seconds=seconds,
         position=position,
     )
 
