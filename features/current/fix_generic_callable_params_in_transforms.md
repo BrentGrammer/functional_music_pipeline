@@ -249,10 +249,26 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
   - `weierstrass` uses `WeierstrassParams(dimension: ToneDimension, intensity: str)`.
   - `add_pedal_tone` uses `AddPedalToneParams(frequency: float)`.
   - `stretto` uses `StrettoParams(motif: str, num_times: int, spacing: str | float)`.
+  - `erosion` uses `ErosionParams(dimension: ToneDimension)`.
+  - `frost_effect` uses `FrostEffectParams(iterations: int)`.
+  - `terraced_drift` uses `TerracedDriftParams(dimension: ToneDimension, max_step_change_pct: int)`.
 - `MINIMUM_FREQUENCY_HZ = 0.0` now lives in `score_model/tone.py`.
   - `inversion` and `scale` use it instead of a hard-coded `1.0` frequency floor.
   - This preserves sub-audio positive frequencies as possible intermediate pipeline state while preventing negative frequencies.
 - Recent focused verification:
+  - `.venv/bin/mypy transforms/geological/terraced_drift.py tests/test_geological_modulation.py`
+  - `.venv/bin/pytest tests/test_geological_modulation.py -q`
+  - `.venv/bin/ruff check transforms/geological/terraced_drift.py tests/test_geological_modulation.py tests/test_transform_wrappers_behavior_happy_path.py tests/test_transform_wrappers_behavior_error_paths.py`
+  - `.venv/bin/python -m py_compile transforms/geological/terraced_drift.py tests/test_geological_modulation.py tests/test_transform_wrappers_behavior_happy_path.py tests/test_transform_wrappers_behavior_error_paths.py`
+  - `.venv/bin/mypy transforms/geological/frost_effect.py tests/test_frost_helpers.py`
+  - `.venv/bin/pytest tests/test_frost_helpers.py -q`
+  - `.venv/bin/pytest tests/test_frost_effect_edge_expansion.py -q`
+  - `.venv/bin/ruff check transforms/geological/frost_effect.py tests/test_frost_helpers.py`
+  - `.venv/bin/python -m py_compile transforms/geological/frost_effect.py tests/test_frost_helpers.py`
+  - `.venv/bin/mypy transforms/geological/erosion.py tests/test_geological_erosion.py`
+  - `.venv/bin/pytest tests/test_geological_erosion.py -q`
+  - `.venv/bin/ruff check transforms/geological/erosion.py tests/test_geological_erosion.py`
+  - `.venv/bin/python -m py_compile transforms/geological/erosion.py tests/test_geological_erosion.py`
   - `.venv/bin/mypy transforms/counterpoint/fugue.py`
   - `.venv/bin/python -m py_compile transforms/counterpoint/fugue.py tests/test_counterpoint_fugue.py`
   - `.venv/bin/ruff check transforms/counterpoint/fugue.py tests/test_counterpoint_fugue.py`
@@ -268,18 +284,21 @@ Recommended model: `GPT-5.4`. Use `GPT-5.5` only for hard type-design blockers, 
   - `.venv/bin/pytest tests/test_delay.py tests/test_scale.py tests/test_invert.py -q`
   - `py_compile` passed for `transforms/complexity/cellular_automata.py` and the wrapper behavior test files.
 - Known current blocker:
-  - `tests/test_drift.py -q` and `tests/test_counterpoint_fugue.py -q` still fail during collection because `transforms/geological/erosion.py` is the next unconverted registry import and its `EROSION_PARAMS_SPEC` is missing `params_factory`.
+  - `tests/test_drift.py -q` still fails during collection because `transforms/proportion/feigenbaum.py` is the next unconverted registry import and its `FEIGENBAUM_PARAMS_SPEC` is missing `params_factory`.
+  - `tests/test_frost_effect_demo.py -q` and `tests/test_frost_effect_recursive_demo.py -q` fail on the same `feigenbaum` registry import blocker.
 
 ### Next small steps
 
-1. Convert `transforms/geological/erosion.py` next.
+1. Convert `transforms/proportion/feigenbaum.py` next.
    - Add a typed params dataclass and params factory.
-   - Change `EROSION_PARAMS_SPEC` to a generic `TransformParamsSpec[...]`.
-   - Update wrapper signatures to accept typed params.
-   - Move raw invalid-param wrapper tests to `EROSION_PARAMS_SPEC.parse_params(...)`.
+   - Change `FEIGENBAUM_PARAMS_SPEC` to a generic `TransformParamsSpec[...]`.
+   - Use `ToneDimensionParam()` for `dimension`.
+   - Move defaults into `TransformParamFieldSpec.default`.
+   - Update phrase/score wrapper signatures to accept typed params.
+   - Move raw invalid-param wrapper tests to `FEIGENBAUM_PARAMS_SPEC.parse_params(...)`.
    - Run `tests/test_drift.py -q` again to find the next registry import blocker.
 2. Continue through remaining unconverted transforms one at a time.
-   - Current unconverted specs include `erosion`, `terraced_drift`, `frost_effect`, `feigenbaum`, `golden_ratio`, and tempo common specs.
+   - Current unconverted specs are `feigenbaum`, `golden_ratio`, and tempo common specs in `transforms/tempo/_common.py`.
 3. Keep each step reviewable.
    - Convert one transform at a time.
    - Update only direct tests for that transform.
