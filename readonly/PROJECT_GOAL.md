@@ -2,10 +2,10 @@
 
 ## Core Objective
 
-To develop a system that accepts short melodic motifs, applies algorithmic transformations (inversion, retrograde, etc.), and outputs the result as a WAV file.
+To develop a system that accepts short melodic motifs, applies algorithmic transformations (inversion, retrograde, etc.), and outputs the result as a WAV file (or optionally a MIDI file which can be imported into a DAW).
 The primary purpose of this project is to experiment with ideas coming from the realm of Chaos Theory, the Complex Sciences and Stephen Wolfram's idea of Computational Irreducibility and how they can be applied to composing music.
 One of the main ideas that inspired this project is the curiosity about how you can construct music which is computationally irreducible and complex in the sense that it is the unpredictable and relatively complex outcome of following simple rules and iterating on them to produce the final and surprising result.
-The music produced by this program should be the emergent property of the algorithms and their various combinations whose application is left up to the user to decide and experiment with.
+The music produced by this program should be the emergent property of the algorithms and their various combinations as they are processed through a functional-programming style pipeline whose application is left up to the user to decide and experiment with.
 
 ## Technical North Stars
 
