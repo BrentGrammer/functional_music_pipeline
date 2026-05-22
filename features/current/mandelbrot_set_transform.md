@@ -19,3 +19,21 @@ The following properties of the Mandelbrot set are candidates for translation in
 7. **Period of bulbs** — each bulb on the Mandelbrot set has an associated period. The main cardioid is period-1, the large circle to its left is period-2, and so on. The number of spokes/branches on a bulb equals its period.
 
 8. **Critical orbit** — the orbit of `z = 0` for a given `c`. If this orbit is bounded, `c` is in the set. The trajectory of this orbit (the sequence of complex values it visits) is itself a rich data source.
+
+## Mapping Complex Numbers to Music
+
+A complex number has two orthogonal components — real and imaginary — that together define a point in a 2D space. A Tone in this project has three independent properties: **frequency**, **duration**, and **amplitude**. We need a pair that behaves like the real and imaginary axes.
+
+### Proposed mapping: Duration ↔ Real, Frequency ↔ Imaginary
+
+- **Duration is linear**, like the real number line. Time flows forward; durations add together straightforwardly. It is the concrete, directly measurable dimension.
+
+- **Frequency is cyclic**, like the imaginary axis. The key property of the imaginary unit *i* is that it causes **rotation** in the complex plane — multiplying by *i* rotates 90°, and multiplying by *i⁴* returns to the start. Pitch is fundamentally rotational: **octave equivalence** means A4 and A5 are "the same note" in a sense. The pitch space wraps around. Frequency ratios, not differences, determine musical intervals, which is inherently multiplicative — just like how complex multiplication works.
+
+- In **standard musical notation**, this mapping is literally visual: time flows on the horizontal axis (real) and pitch lives on the vertical axis (imaginary).
+
+- There is also a philosophical fit: the real part is what you can directly count and measure linearly. The imaginary part is the dimension that *shouldn't exist* but turns out to be essential — and arguably pitch, with its strange octave periodicity and logarithmic perception, has that quality.
+
+### Amplitude as magnitude
+
+**Amplitude** could serve as a third dimension, mapping to the **magnitude** `|z| = √(real² + imag²)` of the complex number. This represents the "energy" or intensity of the point — how far it is from the origin. In the Mandelbrot iteration, the magnitude determines whether an orbit escapes (diverges beyond the escape radius) or stays bounded.
