@@ -133,8 +133,8 @@ When a transform uses `params`, `params` must be an object with named fields.
 #### Proportion & Counterpoint
 
 - **`golden_ratio` / `feigenbaum_sequence`**: Applies mathematical constants to a phrase or group of phrases so that they are related proportionally using these ratios. Both optionally accept `dimension`.
-  - **`phrase_relative_golden_ratio_grow`**: Grows the phrase it is applied to by a proportion of the Golden Ratio to the previous phrase in the same voice. Accepts `dimension` as a parameter.
-  - **`phrase_relative_golden_ratio_shrink`**: Shrinks the phrase it is applied to by a proportion of the Golden Ratio to the previous phrase in the same voice. Accepts `dimension` as a parameter.
+  - **`phrase_relative_golden_ratio_grow`**: Grows the phrase it is applied to in proportion to the immediately previous phrase in the same voice using the Golden Ratio. Accepts `dimension` as a parameter.
+  - **`phrase_relative_golden_ratio_shrink`**: Shrinks the phrase it is applied to in proportion to the immediately previous phrase in the same voice using the Golden Ratio. Accepts `dimension` as a parameter.
 - **`add_pedal_tone`**: A fugal technique that adds a sustained anchor note to the score. Requires only `frequency` (Hz). Duration is derived automatically from the longest voice in the score.
 - **`stretto`**: A fugal technique that creates overlapping, imitative entries of a motif using `motif`, `num_times`, and `spacing`.
 
