@@ -1,10 +1,5 @@
 import pytest
 
-from score_model.motif import Motif
-from score_model.phrase import Phrase
-from score_model.score import Score
-from score_model.tone import Tone
-from score_model.voice import Voice
 from transforms.base import ToneDimension
 from transforms.basic.delay import DELAY_PARAMS_SPEC
 from transforms.basic.inversion import INVERT_PARAMS_SPEC
@@ -14,26 +9,6 @@ from transforms.complexity.cellular_automata import CELLULAR_AUTOMATA_PARAMS_SPE
 from transforms.complexity.random_drop import RANDOM_DROP_PARAMS_SPEC
 from transforms.complexity.weierstrass import WEIERSTRASS_PARAMS_SPEC
 from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC
-
-
-def _make_test_score(*, voices: list[Voice] | None = None) -> Score:
-    if voices is not None:
-        return Score(voices=voices)
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="a", tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)])]),
-                    Phrase(motifs=[Motif(name="b", tones=[Tone(440.0, duration=1.0)])]),
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="c", tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)])])
-                ]
-            ),
-        ]
-    )
 
 
 def test_repeat_phrase_transform_rejects_bool_count():

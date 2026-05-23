@@ -24,29 +24,9 @@ from transforms.proportion.golden_ratio import (
 )
 
 
-def _make_test_score(*, voices: list[Voice] | None = None) -> Score:
-    if voices is not None:
-        return Score(voices=voices)
-    return Score(
-        voices=[
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="a", tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)])]),
-                    Phrase(motifs=[Motif(name="b", tones=[Tone(440.0, duration=1.0)])]),
-                ]
-            ),
-            Voice(
-                phrases=[
-                    Phrase(motifs=[Motif(name="c", tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)])])
-                ]
-            ),
-        ]
-    )
-
-
 def test_repeat_phrase_and_score_transform_repeat_observable_output():
     phrase_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
-    phrase_score = _make_test_score(
+    phrase_score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -71,7 +51,7 @@ def test_repeat_phrase_and_score_transform_repeat_observable_output():
 
     score_repeat_count = 1
     score_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -98,7 +78,7 @@ def test_transpose_phrase_and_score_transform_transpose_observable_output():
     phrase_upper_neighbor_frequency = 330.0
     score_starting_frequency = 550.0
     score_upper_neighbor_frequency = 660.0
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -148,7 +128,7 @@ def test_transpose_phrase_and_score_transform_transpose_observable_output():
 def test_delay_phrase_and_score_transform_delay_observable_output():
     score_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
     phrase_target_tones = [Tone(440.0, duration=1.0)]
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -219,7 +199,7 @@ def test_invert_frequency_score_transform_preserves_tone_count():
 
 def test_cellular_automata_phrase_and_score_transform_observable_output():
     automata_target_tones = [Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)]
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -252,7 +232,7 @@ def test_cellular_automata_phrase_and_score_transform_observable_output():
 
 def test_random_drop_phrase_and_score_transform_observable_output():
     drop_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -285,7 +265,7 @@ def test_random_drop_phrase_and_score_transform_observable_output():
 
 def test_terraced_drift_phrase_and_score_transform_observable_output():
     drift_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -318,7 +298,7 @@ def test_terraced_drift_phrase_and_score_transform_observable_output():
 
 def test_weierstrass_phrase_and_score_transform_observable_output():
     weierstrass_target_tones = [Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)]
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -350,7 +330,7 @@ def test_weierstrass_phrase_and_score_transform_observable_output():
 
 
 def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
@@ -404,7 +384,7 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
 
 def test_feigenbaum_phrase_and_score_transform_previous_phrase_paths():
     feigenbaum_target_tones = [Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)]
-    score = _make_test_score(
+    score = Score(
         voices=[
             Voice(
                 phrases=[
