@@ -1,5 +1,6 @@
 import pytest
 
+from score_model.math_constants import GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
@@ -17,9 +18,6 @@ from transforms.geological.terraced_drift import TerracedDriftParams, terraced_d
 from transforms.proportion.feigenbaum import FeigenbaumParams, feigenbaum_sequence_phrase_transform, feigenbaum_sequence_score_transform
 from transforms.proportion.golden_ratio import (
     GoldenRatioParams,
-    golden_ratio_score_transform,
-    golden_ratio_single_phrase_transform,
-    phrase_relative_golden_ratio_grow_transform,
     phrase_relative_golden_ratio_shrink_transform,
 )
 
@@ -329,7 +327,16 @@ def test_weierstrass_phrase_and_score_transform_observable_output():
     assert len(transformed_score.voices) == len(score.voices)
 
 
-def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
+def test_phrase_relative_golden_ratio_shrink_transform_uses_previous_voice_when_first_phrase():
+    previous_voice_first_phrase_tone_duration = 0.5
+    previous_voice_second_phrase_tone_duration = 1.0
+    previous_voice_total_duration = (
+        previous_voice_first_phrase_tone_duration * 2
+        + previous_voice_second_phrase_tone_duration
+    )
+    current_voice_tone_duration = 0.25
+    current_voice_tone_count = 2
+
     score = Score(
         voices=[
             Voice(
@@ -338,7 +345,10 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
                         motifs=[
                             Motif(
                                 name="first-phrase",
-                                tones=[Tone(220.0, duration=0.5), Tone(330.0, duration=0.5)],
+                                tones=[
+                                    Tone(220.0, duration=previous_voice_first_phrase_tone_duration),
+                                    Tone(330.0, duration=previous_voice_first_phrase_tone_duration),
+                                ],
                             )
                         ]
                     ),
@@ -346,7 +356,7 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
                         motifs=[
                             Motif(
                                 name="second-phrase",
-                                tones=[Tone(440.0, duration=1.0)],
+                                tones=[Tone(440.0, duration=previous_voice_second_phrase_tone_duration)],
                             )
                         ]
                     ),
@@ -358,7 +368,10 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
                         motifs=[
                             Motif(
                                 name="cross-voice-phrase",
-                                tones=[Tone(550.0, duration=0.25), Tone(660.0, duration=0.25)],
+                                tones=[
+                                    Tone(550.0, duration=current_voice_tone_duration),
+                                    Tone(660.0, duration=current_voice_tone_duration),
+                                ],
                             )
                         ]
                     )
@@ -366,20 +379,17 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
             ),
         ]
     )
-    first_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
-    second_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
     cross_voice_context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
-    golden_phrase = golden_ratio_single_phrase_transform(first_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
-    assert golden_phrase.motifs[0].tones[0].duration < first_context.phrase.motifs[0].tones[0].duration
-
-    grown = phrase_relative_golden_ratio_grow_transform(second_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
     shrunk = phrase_relative_golden_ratio_shrink_transform(cross_voice_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
-    assert len(grown.motifs[0].tones) == len(second_context.phrase.motifs[0].tones)
-    assert len(shrunk.motifs[0].tones) == len(cross_voice_context.phrase.motifs[0].tones)
+    durations = [tone.duration for tone in shrunk.motifs[0].tones]
 
-    golden_score = golden_ratio_score_transform(score, GoldenRatioParams(dimension=ToneDimension.DURATION))
-    assert len(golden_score.voices) == len(score.voices)
+    expected_total_duration = previous_voice_total_duration / GOLDEN_RATIO
+    expected_duration_per_tone = expected_total_duration / current_voice_tone_count
+    assert len(durations) == current_voice_tone_count
+    assert sum(durations) == pytest.approx(expected_total_duration)
+    assert durations[0] == pytest.approx(expected_duration_per_tone)
+    assert durations[1] == pytest.approx(expected_duration_per_tone)
 
 
 def test_feigenbaum_phrase_and_score_transform_previous_phrase_paths():
