@@ -224,6 +224,9 @@ def _random_single_seed_edge_separation_seconds() -> float:
 
 
 def _expand_frost_seed(seed_event: FrostSeedEvent, iterations: int) -> list[Voice]:
+    if iterations < 1:
+        raise ValueError("frost seed expansion iterations must be a positive integer.")
+
     local_seed_voice = Voice(
         phrases=[
             Phrase(
