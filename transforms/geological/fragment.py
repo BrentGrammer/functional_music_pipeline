@@ -20,20 +20,20 @@ from transforms.base import (
 class FragmentParams:
     damage_pct: int
     damage_tones_chunk_size: int # how wide a span of tones to damage throughout the phrase
-    damage_pattern_key: str | None
+    repeatable_damage_key: str | None
 
 
 def _create_fragment_params(parsed_params: ParsedTransformParams) -> FragmentParams:
     damage_pct = parsed_params.required("damage_pct", int)
     damage_tones_chunk_size = parsed_params.required("damage_tones_chunk_size", int)
-    damage_pattern_key = parsed_params.required("damage_pattern_key", (str, type(None)))
+    repeatable_damage_key = parsed_params.required("repeatable_damage_key", (str, type(None)))
 
     _validate_fragment_params(damage_pct=damage_pct, damage_tones_chunk_size=damage_tones_chunk_size)
 
     return FragmentParams(
         damage_pct=damage_pct,
         damage_tones_chunk_size=damage_tones_chunk_size,
-        damage_pattern_key=damage_pattern_key,
+        repeatable_damage_key=repeatable_damage_key,
     )
 
 
@@ -55,7 +55,7 @@ FRAGMENT_PARAMS_SPEC = TransformParamsSpec[FragmentParams](
             required=True,
             schema=IntegerParam(),
         ),
-        "damage_pattern_key": TransformParamFieldSpec(
+        "repeatable_damage_key": TransformParamFieldSpec(
             schema=StringParam(),
             default=None,
         ),
@@ -63,8 +63,8 @@ FRAGMENT_PARAMS_SPEC = TransformParamsSpec[FragmentParams](
 )
 
 
-def _create_damage_pattern_randomizer(damage_pattern_key: str) -> random.Random:
-    seed_bytes = hashlib.sha256(damage_pattern_key.encode("utf-8")).digest()
+def _create_damage_pattern_randomizer(repeatable_damage_key: str) -> random.Random:
+    seed_bytes = hashlib.sha256(repeatable_damage_key.encode("utf-8")).digest()
     seed = int.from_bytes(seed_bytes[:8], byteorder="big", signed=False)
     return random.Random(seed)
 
@@ -73,12 +73,12 @@ def fragment_transform(
     tones: list[Tone],
     damage_pct: int,
     damage_tones_chunk_size: int,
-    damage_pattern_key: str | None = None,
+    repeatable_damage_key: str | None = None,
 ) -> list[Tone]:
     _validate_fragment_params(damage_pct=damage_pct, damage_tones_chunk_size=damage_tones_chunk_size)
 
-    if damage_pattern_key is not None:
-        _create_damage_pattern_randomizer(damage_pattern_key)
+    if repeatable_damage_key is not None:
+        _create_damage_pattern_randomizer(repeatable_damage_key)
 
     if damage_pct == 0:
         return [
@@ -100,6 +100,6 @@ def fragment_phrase_transform(context: PhraseTransformContext, params: FragmentP
         phrase_tones,
         damage_pct=params.damage_pct,
         damage_tones_chunk_size=params.damage_tones_chunk_size,
-        damage_pattern_key=params.damage_pattern_key,
+        repeatable_damage_key=params.repeatable_damage_key,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])

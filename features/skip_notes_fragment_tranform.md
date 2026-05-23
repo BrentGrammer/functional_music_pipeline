@@ -46,7 +46,7 @@ The multi-dimensional behavior could work like this:
 fragment(
       damage_pct=40,
       damage_tones_chunk_size=4,
-      damage_pattern_key="pattern-key-a",
+      repeatable_damage_key="pattern-key-a",
   )
 ```
 
@@ -73,7 +73,7 @@ That gives the user a clearer mental model:
 
 damage_pct = how much of the phrase is damaged
 damage_tones_chunk_size = how chunky the damage is
-damage_pattern_key = reuse this fragmentation pattern later
+repeatable_damage_key = reuse this fragmentation pattern later
 
 Example: 20 notes, damage_pct=40, damage_tones_chunk_size=4 means 8 notes get damaged, likely as two 4-note damaged regions. That is much easier to predict than “up to 4
 notes, maybe smaller, maybe scattered.”
@@ -82,7 +82,7 @@ notes, maybe smaller, maybe scattered.”
 
 - First sweep the original phrase with a random selector to pluck a random selection of notes in the phrase. The process should be stochastic and non-deterministic.
 - After a randomly seleted sample is chosen, operate on the dimension to fragment or reduce it ("chip it away") as described in hte above block.
-- optional damage_pattern_key parameter to reuse the same figure, the same ruin later in the composition. If damage_pattern_key is omitted, the transform is stochastic and non-deterministic.
+- optional repeatable_damage_key parameter to reuse the same figure, the same ruin later in the composition. If repeatable_damage_key is omitted, the transform is stochastic and non-deterministic.
 
 # Fragment Transform Plan (Revised based on discussion)
 
@@ -97,8 +97,8 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 - Public params:
   - damage_pct: int: percentage of original tones to damage, 0-100.
   - damage_tones_chunk_size: int: exact target width of each damaged patch, in adjacent tones.
-  - damage_pattern_key: string: optional; same damage_pattern_key reproduces the same fragment pattern. If omitted, the transform is stochastic and non-deterministic.
-  - Use a stable hash of damage_pattern_key for repeatability. Do not use Python's built-in hash because it is randomized between processes.
+  - repeatable_damage_key: string: optional; same repeatable_damage_key reproduces the same fragment pattern. If omitted, the transform is stochastic and non-deterministic.
+  - Use a stable hash of repeatable_damage_key for repeatability. Do not use Python's built-in hash because it is randomized between processes.
 - Selection behavior:
   - Compute the target damaged tone count from damage_pct using nearest whole tone, with nonzero percentages damaging at least one tone.
   - Randomly choose fragment start indexes.
@@ -142,8 +142,8 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 
 ## Test Plan
 
-- Add unit tests for repeatable output with the same damage_pattern_key.
-- Verify different damage_pattern_key values can choose different fragment start positions.
+- Add unit tests for repeatable output with the same repeatable_damage_key.
+- Verify different repeatable_damage_key values can choose different fragment start positions.
 - Verify damage_pct controls how many original tones are selected for damage.
 - Verify damage_tones_chunk_size=4 creates damaged regions from randomly chosen starts and targets four adjacent tones per fragment.
 - Verify dropped tones become silence with original duration.
@@ -158,7 +158,7 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 - V1 is phrase-level only, not score-level.
 - The transform name is fragment.
 - Silence is represented with Tone(frequency=0, amplitude=0.0, duration=...).
-- Damaged fragment starts must be stochastic; damage_pattern_key exists only to make a specific stochastic result reproducible.
+- Damaged fragment starts must be stochastic; repeatable_damage_key exists only to make a specific stochastic result reproducible.
 
 ## Implementation
 
