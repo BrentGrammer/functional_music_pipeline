@@ -10,10 +10,10 @@ from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
     GoldenRatioParams,
-    golden_ratio_transform,
-    phrase_golden_ratio_grow,
-    phrase_golden_ratio_grow_transform,
-    phrase_golden_ratio_shrink,
+    golden_ratio_transform_shrink,
+    phrase_relative_golden_ratio_grow,
+    phrase_relative_golden_ratio_grow_transform,
+    phrase_relative_golden_ratio_shrink,
 )
 
 
@@ -22,7 +22,7 @@ class TestGoldenRatioTransform:
         original_duration = 1.0
         tones = [Tone(440.0, original_duration)]
 
-        result = golden_ratio_transform(tones)
+        result = golden_ratio_transform_shrink(tones)
 
         assert result[0].duration == pytest.approx(original_duration / GOLDEN_RATIO)
 
@@ -31,7 +31,7 @@ class TestGoldenRatioTransform:
         original_duration = 1.0
         tones = [Tone(original_frequency, original_duration)]
 
-        result = golden_ratio_transform(tones, dimension=ToneDimension.FREQUENCY)
+        result = golden_ratio_transform_shrink(tones, dimension=ToneDimension.FREQUENCY)
 
         assert result[0].frequency == pytest.approx(original_frequency / GOLDEN_RATIO)
         assert result[0].duration == pytest.approx(original_duration)
@@ -48,7 +48,7 @@ class TestPhraseGoldenRatioShrink:
             Tone(523.0, duration=current_tone_duration),
         ]
 
-        transformed_phrase = phrase_golden_ratio_shrink(current_phrase, previous_phrase)
+        transformed_phrase = phrase_relative_golden_ratio_shrink(current_phrase, previous_phrase)
 
         expected_total_duration = previous_phrase_total_duration / GOLDEN_RATIO
         actual_total_duration = sum(tone.duration for tone in transformed_phrase)
@@ -65,18 +65,18 @@ class TestPhraseGoldenRatioShrink:
             ValueError,
             match="Cannot apply phrase-golden-ratio-shrink: no preceding phrases exist to relate to.",
         ):
-            phrase_golden_ratio_shrink(current_phrase, [])
+            phrase_relative_golden_ratio_shrink(current_phrase, [])
 
     def test_empty_current_phrase_returns_empty_list(self):
         previous_phrase = [Tone(440.0, duration=1.0)]
 
-        assert phrase_golden_ratio_shrink([], previous_phrase) == []
+        assert phrase_relative_golden_ratio_shrink([], previous_phrase) == []
 
     def test_zero_current_total_returns_original_tones(self):
         previous_phrase = [Tone(440.0, duration=1.0)]
         zero_duration_phrase = [Tone(880.0, duration=0.0), Tone(523.0, duration=0.0)]
 
-        result = phrase_golden_ratio_shrink(zero_duration_phrase, previous_phrase)
+        result = phrase_relative_golden_ratio_shrink(zero_duration_phrase, previous_phrase)
 
         assert result is zero_duration_phrase
 
@@ -84,7 +84,7 @@ class TestPhraseGoldenRatioShrink:
         zero_duration_previous_phrase = [Tone(440.0, duration=0.0)]
         current_phrase = [Tone(880.0, duration=1.0)]
 
-        result = phrase_golden_ratio_shrink(current_phrase, zero_duration_previous_phrase)
+        result = phrase_relative_golden_ratio_shrink(current_phrase, zero_duration_previous_phrase)
 
         assert result is current_phrase
 
@@ -96,7 +96,7 @@ class TestPhraseGoldenRatioShrink:
             Tone(880.0, amplitude=0.3),
         ]
 
-        transformed_phrase = phrase_golden_ratio_shrink(
+        transformed_phrase = phrase_relative_golden_ratio_shrink(
             current_phrase,
             previous_phrase,
             dimension=ToneDimension.AMPLITUDE,
@@ -119,7 +119,7 @@ class TestPhraseGoldenRatioGrow:
             Tone(523.0, duration=current_tone_duration),
         ]
 
-        transformed_phrase = phrase_golden_ratio_grow(current_phrase, previous_phrase)
+        transformed_phrase = phrase_relative_golden_ratio_grow(current_phrase, previous_phrase)
 
         expected_total_duration = previous_phrase_total_duration * GOLDEN_RATIO
         actual_total_duration = sum(tone.duration for tone in transformed_phrase)
@@ -136,18 +136,18 @@ class TestPhraseGoldenRatioGrow:
             ValueError,
             match="Cannot apply phrase-golden-ratio-grow: no preceding phrases exist to relate to.",
         ):
-            phrase_golden_ratio_grow(current_phrase, [])
+            phrase_relative_golden_ratio_grow(current_phrase, [])
 
     def test_empty_current_phrase_returns_empty_list(self):
         previous_phrase = [Tone(440.0, duration=1.0)]
 
-        assert phrase_golden_ratio_grow([], previous_phrase) == []
+        assert phrase_relative_golden_ratio_grow([], previous_phrase) == []
 
     def test_zero_current_total_returns_original_tones(self):
         previous_phrase = [Tone(440.0, duration=1.0)]
         zero_duration_phrase = [Tone(880.0, duration=0.0), Tone(523.0, duration=0.0)]
 
-        result = phrase_golden_ratio_grow(zero_duration_phrase, previous_phrase)
+        result = phrase_relative_golden_ratio_grow(zero_duration_phrase, previous_phrase)
 
         assert result is zero_duration_phrase
 
@@ -155,7 +155,7 @@ class TestPhraseGoldenRatioGrow:
         zero_duration_previous_phrase = [Tone(440.0, duration=0.0)]
         current_phrase = [Tone(880.0, duration=1.0)]
 
-        result = phrase_golden_ratio_grow(current_phrase, zero_duration_previous_phrase)
+        result = phrase_relative_golden_ratio_grow(current_phrase, zero_duration_previous_phrase)
 
         assert result is current_phrase
 
@@ -167,7 +167,7 @@ class TestPhraseGoldenRatioGrow:
             Tone(220.0, duration=1.0),
         ]
 
-        transformed_phrase = phrase_golden_ratio_grow(
+        transformed_phrase = phrase_relative_golden_ratio_grow(
             current_phrase,
             previous_phrase,
             dimension=ToneDimension.FREQUENCY,
@@ -193,4 +193,4 @@ class TestGoldenRatioPreviousPhraseFallback:
         context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 
         with pytest.raises(ValueError):
-            phrase_golden_ratio_grow_transform(context, GoldenRatioParams(dimension=ToneDimension.DURATION))
+            phrase_relative_golden_ratio_grow_transform(context, GoldenRatioParams(dimension=ToneDimension.DURATION))

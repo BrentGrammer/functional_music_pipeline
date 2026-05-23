@@ -38,10 +38,10 @@ from transforms.proportion.feigenbaum import (
 )
 from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
-    golden_ratio_phrase_transform,
     golden_ratio_score_transform,
-    phrase_golden_ratio_grow_transform,
-    phrase_golden_ratio_shrink_transform,
+    golden_ratio_single_phrase_transform,
+    phrase_relative_golden_ratio_grow_transform,
+    phrase_relative_golden_ratio_shrink_transform,
 )
 from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_phrase_transform
 from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_phrase_transform
@@ -55,7 +55,7 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
     "golden_ratio": PhraseTransformDefinition(
         name="golden_ratio",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform_function=golden_ratio_phrase_transform,
+        transform_function=golden_ratio_single_phrase_transform,
     ),
     "invert": PhraseTransformDefinition(
         name="invert",
@@ -115,12 +115,12 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
     "phrase_golden_ratio_shrink": PhraseTransformDefinition(
         name="phrase_golden_ratio_shrink",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform_function=phrase_golden_ratio_shrink_transform,
+        transform_function=phrase_relative_golden_ratio_shrink_transform,
     ),
     "phrase_golden_ratio_grow": PhraseTransformDefinition(
         name="phrase_golden_ratio_grow",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform_function=phrase_golden_ratio_grow_transform,
+        transform_function=phrase_relative_golden_ratio_grow_transform,
     ),
     "accelerando": PhraseTransformDefinition(
         name="accelerando",

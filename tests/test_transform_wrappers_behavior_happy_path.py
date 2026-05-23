@@ -17,10 +17,10 @@ from transforms.geological.terraced_drift import TerracedDriftParams, terraced_d
 from transforms.proportion.feigenbaum import FeigenbaumParams, feigenbaum_sequence_phrase_transform, feigenbaum_sequence_score_transform
 from transforms.proportion.golden_ratio import (
     GoldenRatioParams,
-    golden_ratio_phrase_transform,
     golden_ratio_score_transform,
-    phrase_golden_ratio_grow_transform,
-    phrase_golden_ratio_shrink_transform,
+    golden_ratio_single_phrase_transform,
+    phrase_relative_golden_ratio_grow_transform,
+    phrase_relative_golden_ratio_shrink_transform,
 )
 
 
@@ -390,11 +390,11 @@ def test_golden_ratio_phrase_and_score_transform_previous_phrase_paths():
     second_context = PhraseTransformContext(score=score, voice_index=0, phrase_index=1)
     cross_voice_context = PhraseTransformContext(score=score, voice_index=1, phrase_index=0)
 
-    golden_phrase = golden_ratio_phrase_transform(first_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
+    golden_phrase = golden_ratio_single_phrase_transform(first_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
     assert golden_phrase.motifs[0].tones[0].duration < first_context.phrase.motifs[0].tones[0].duration
 
-    grown = phrase_golden_ratio_grow_transform(second_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
-    shrunk = phrase_golden_ratio_shrink_transform(cross_voice_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
+    grown = phrase_relative_golden_ratio_grow_transform(second_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
+    shrunk = phrase_relative_golden_ratio_shrink_transform(cross_voice_context, GoldenRatioParams(dimension=ToneDimension.DURATION))
     assert len(grown.motifs[0].tones) == len(second_context.phrase.motifs[0].tones)
     assert len(shrunk.motifs[0].tones) == len(cross_voice_context.phrase.motifs[0].tones)
 

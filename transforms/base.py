@@ -1,11 +1,10 @@
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field
 from enum import StrEnum, auto
-from typing import Any, Generic, Protocol, TypeAlias, TypeVar, overload
+from typing import Any, Generic, Protocol, TypeVar, overload
 
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.tone import Tone
 
 ParsedParam = TypeVar("ParsedParam")
 ParsedParams = TypeVar("ParsedParams")
