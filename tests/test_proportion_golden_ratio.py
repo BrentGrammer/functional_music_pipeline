@@ -1,5 +1,7 @@
 import pytest
 
+from composition.parser import generate_score_plan
+from composition.transformer import transform_score
 from score_model.math_constants import GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
@@ -14,6 +16,7 @@ from transforms.proportion.golden_ratio import (
     phrase_relative_golden_ratio_grow,
     phrase_relative_golden_ratio_grow_transform,
     phrase_relative_golden_ratio_shrink,
+    phrase_relative_golden_ratio_shrink_transform,
 )
 
 
@@ -192,3 +195,62 @@ class TestGoldenRatioErrors:
 
         with pytest.raises(ValueError):
             phrase_relative_golden_ratio_grow_transform(context, GoldenRatioParams(dimension=ToneDimension.DURATION))
+
+
+class TestGoldenRatioCompositionRegression:
+
+
+    def test_phrase_relative_golden_ratio_shrink_demo_scales_from_immediately_previous_phrase(self):
+        
+        origin_seed_total_duration = 8.0 # 2.0 + 2.0 + 2.0 + 2.0 - each duration added up from the seed tones
+
+        composition_document = {
+            "motifs": {
+                "c_major_arpeggio": [
+                    "261.63:2.0",
+                    "329.63:2.0",
+                    "392.00:2.0",
+                    "523.25:2.0",
+                ]
+            },
+            "composition": {
+                "voices": [
+                    {
+                        "phrases": [
+                            {"motifs": ["c_major_arpeggio"]},
+                            {
+                                "motifs": ["c_major_arpeggio"],
+                                "transforms": [
+                                    {
+                                        "name": "phrase_relative_golden_ratio_shrink",
+                                        "params": {"dimension": "duration"},
+                                    }
+                                ],
+                            },
+                            {
+                                "motifs": ["c_major_arpeggio"],
+                                "transforms": [
+                                    {
+                                        "name": "phrase_relative_golden_ratio_shrink",
+                                        "params": {"dimension": "duration"},
+                                    }
+                                ],
+                            },
+                        ]
+                    }
+                ],
+                "score_transforms": [],
+            },
+        }
+
+        score = transform_score(generate_score_plan(composition_document))
+
+        phrase_duration_totals = [
+            sum(tone.duration for motif in phrase.motifs for tone in motif.tones)
+            for phrase in score.voices[0].phrases
+        ]
+        original_phrase_total_duration = phrase_duration_totals[0]
+
+        assert original_phrase_total_duration == pytest.approx(origin_seed_total_duration)
+        assert phrase_duration_totals[1] == pytest.approx(original_phrase_total_duration / GOLDEN_RATIO)
+        assert phrase_duration_totals[2] == pytest.approx(original_phrase_total_duration / GOLDEN_RATIO / GOLDEN_RATIO)
