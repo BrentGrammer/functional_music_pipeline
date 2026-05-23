@@ -27,6 +27,7 @@ from transforms.counterpoint.fugue import (
     stretto_score_transform_adapter,
 )
 from transforms.geological.erosion import EROSION_PARAMS_SPEC, erosion_phrase_transform
+from transforms.geological.fragment import FRAGMENT_PARAMS_SPEC, fragment_phrase_transform
 from transforms.geological.frost_effect import FROST_EFFECT_PARAMS_SPEC, frost_effect_score_transform_adapter
 from transforms.geological.terraced_drift import TERRACED_DRIFT_PARAMS_SPEC, terraced_drift_phrase_transform, terraced_drift_score_transform
 from transforms.proportion.feigenbaum import (
@@ -97,6 +98,11 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
         name="erosion",
         params_spec=EROSION_PARAMS_SPEC,
         transform_function=erosion_phrase_transform,
+    ),
+    "fragment": PhraseTransformDefinition(
+        name="fragment",
+        params_spec=FRAGMENT_PARAMS_SPEC,
+        transform_function=fragment_phrase_transform,
     ),
     "drift": PhraseTransformDefinition(
         name="drift",

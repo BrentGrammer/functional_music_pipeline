@@ -23,16 +23,16 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - `fragment` is registered in `PHRASE_TRANSFORMS`.
   - `fragment` is not registered in `SCORE_TRANSFORMS`.
   - `damage_pct=0` returns an equivalent phrase.
-  - omitted `pattern_key` is accepted and treated as no fixed reusable pattern.
-  - provided `pattern_key` is accepted when it is a string.
-  - invalid `pattern_key` values are rejected through normal string param validation.
+  - omitted `damage_pattern_key` is accepted and treated as no fixed reusable pattern.
+  - provided `damage_pattern_key` is accepted when it is a string.
+  - invalid `damage_pattern_key` values are rejected through normal string param validation.
 - Add transforms/geological/fragment.py with:
-  - FragmentParams(damage_pct: int, damage_tones_span: int, pattern_key: str | None)
+  - FragmentParams(damage_pct: int, damage_tones_span: int, damage_pattern_key: str | None)
   - FRAGMENT_PARAMS_SPEC
   - validation for 0 <= damage_pct <= 100
   - validation for damage_tones_span >= 1
   - no-op behavior for `damage_pct=0`
-- When `pattern_key` is present, derive the random source from a stable hash such as SHA-256, not Python's built-in hash.
+- When `damage_pattern_key` is present, derive the random source from a stable hash such as SHA-256, not Python's built-in hash.
 - Review checkpoint: public API exists and no-op behavior works.
 
 ## Iteration 2: Fragment Selection + Real Damage
@@ -47,7 +47,7 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - damage_pct=100 selects every tone.
   - Full fragments select exactly damage_tones_span adjacent tones.
   - If fewer than damage_tones_span tones remain to satisfy damage_pct, create one final partial fragment of exactly the remaining count.
-  - Fragment start indexes are random and controlled by `pattern_key` when one is provided.
+  - Fragment start indexes are random and controlled by `damage_pattern_key` when one is provided.
   - Avoid selecting already damaged tones twice.
   - Choose from currently valid fragment starts rather than retrying indefinitely.
   - When no full-width start remains but damage count remains, create the final partial fragment from a valid remaining adjacent run.
@@ -72,8 +72,8 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - `damage_pct` controls how many original-tone positions are changed in the resulting phrase.
   - `damage_tones_span` produces changed positions in adjacent groups of that width when the target count allows it.
   - final partial fragment behavior is visible when `damage_pct` leaves a remainder.
-  - same `pattern_key` produces the same changed-position pattern and transformed tone snapshot.
-  - different `pattern_key` values can produce a different changed-position pattern or transformed tone snapshot.
+  - same `damage_pattern_key` produces the same changed-position pattern and transformed tone snapshot.
+  - different `damage_pattern_key` values can produce a different changed-position pattern or transformed tone snapshot.
   - dropped tones become silence with preserved duration
   - shortened tones preserve total timeline duration
   - softened tones never increase amplitude
@@ -98,8 +98,8 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
 
 - Add final end-to-end acceptance tests using a small phrase with known tones.
 - Verify:
-  - same `pattern_key` produces identical transformed tone snapshots
-  - different `pattern_key` values can alter fragment placement or damage result
+  - same `damage_pattern_key` produces identical transformed tone snapshots
+  - different `damage_pattern_key` values can alter fragment placement or damage result
   - total phrase duration is preserved after transformation
   - damage_pct=0 returns an equivalent phrase
   - nonzero damage creates at least one silent, shortened, or softened remnant
@@ -115,8 +115,8 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
 
 - The implementation lives under transforms/geological/fragment.py.
 - The public transform name is fragment.
-- Public params are exactly damage_pct, tones_per_fragment, and pattern_key.
-- Public params are exactly damage_pct, damage_tones_span, and pattern_key.
+- Public params are exactly damage_pct, tones_per_fragment, and damage_pattern_key.
+- Public params are exactly damage_pct, damage_tones_span, and damage_pattern_key.
 - damage_pct controls total damaged original tones; damage_tones_span controls normal chunk width.
-- Fragment start positions must be stochastic; pattern_key only makes a specific stochastic result reproducible.
+- Fragment start positions must be stochastic; damage_pattern_key only makes a specific stochastic result reproducible.
 - Timeline preservation is required for both full drops and shortened tones.
