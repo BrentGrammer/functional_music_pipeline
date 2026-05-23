@@ -163,4 +163,4 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 ## Implementation
 
 - Use the iterative test-first plan in [fragment_transform_implementation_plan.md](./fragment_transform_implementation_plan.md).
-- Start each step by adding failing observable-behavior tests, then implement the smallest production change needed to pass them.
+- Start with acceptance tests for observable behavior. It is acceptable for tests to stay red during implementation as long as the final feature makes them pass.

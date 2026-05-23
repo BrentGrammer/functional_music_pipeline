@@ -2,12 +2,13 @@
 
 ## Summary
 
-Implement `fragment` as a phrase-level geological transform in small reviewable slices. Each slice should follow the same test-first loop:
-add failing observable-behavior tests, confirm they fail, then add the smallest production change needed to pass.
+Implement `fragment` as a phrase-level geological transform in small reviewable slices. Start by writing acceptance tests for the observable behavior the feature must satisfy, then implement toward those tests.
 
 ## Workflow
 
-- Add tests before implementation in every iteration.
+- Write the core acceptance tests before production implementation.
+- Use a red-green loop where it is useful, but do not treat it dogmatically.
+- It is acceptable for tests to remain red during a breaking feature slice as long as they are green by the end of the full implementation.
 - Prefer observable phrase output over private implementation assertions.
 - Test through the public transform registry or phrase transform function whenever practical.
 - Avoid asserting private selected indexes, RNG call order, or helper function internals.
