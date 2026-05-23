@@ -165,6 +165,7 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   "transforms": [{"name": "erosion", "params": {"dimension": "duration"}}]
   ```
 - **`frost_effect`**: Simulates freeze-thaw expansion which occurs in hoodoo formation in southest Utah by appending polyphonic frost blooms to the score. Each audible tone in the input score becomes its own local frost seed. Accepts `iterations` (non-negative integer, `0` is a no-op) and optional `sustain_notes` (boolean, defaults to `false`).
+  - With `sustain_notes: false`, generated frost notes keep their normal staggered durations. With `sustain_notes: true`, generated frost notes durations within each local frost bloom are extended so they all share the same end time in that generation.
   ```json
   "score_transforms": [
     {
