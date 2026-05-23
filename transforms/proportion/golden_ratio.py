@@ -5,7 +5,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones, previous_phrase_tones
 from score_model.voice import Voice
 from transforms.base import (
     PhraseTransformContext,
@@ -42,22 +42,6 @@ def golden_ratio_transform_shrink(
     """Reduce the selected dimension by the golden ratio, to 61.8% of its original value."""
     return scale_transform(tones, dimension, 1 / GOLDEN_RATIO)
 
-
-def _previous_phrase_tones(context: PhraseTransformContext) -> list[Tone]:
-    if context.phrase_index > 0:
-        return [
-            tone
-            for phrase in context.score.voices[context.voice_index].phrases[: context.phrase_index]
-            for motif in phrase.motifs
-            for tone in motif.tones
-        ]
-
-    if context.voice_index > 0:
-        return flatten_voice_tones(context.score.voices[context.voice_index - 1])
-
-    return []
-
-
 def golden_ratio_single_phrase_transform(
     context: PhraseTransformContext,
     params: GoldenRatioParams,
@@ -76,7 +60,7 @@ def phrase_relative_golden_ratio_shrink_transform(
 ) -> Phrase:
     transformed_tones = phrase_relative_golden_ratio_shrink(
         flatten_phrase_tones(context.phrase),
-        _previous_phrase_tones(context),
+        previous_phrase_tones(context.score, context.voice_index, context.phrase_index),
         params.dimension,
     )
 
@@ -89,7 +73,7 @@ def phrase_relative_golden_ratio_grow_transform(
 ) -> Phrase:
     transformed_tones = phrase_relative_golden_ratio_grow(
         flatten_phrase_tones(context.phrase),
-        _previous_phrase_tones(context),
+        previous_phrase_tones(context.score, context.voice_index, context.phrase_index),
         params.dimension,
     )
 

@@ -5,7 +5,7 @@ from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
-from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
+from score_model.traversal import flatten_phrase_tones, flatten_voice_tones, previous_phrase_tones
 from score_model.voice import Voice
 from transforms.base import (
     ParsedTransformParams,
@@ -69,20 +69,6 @@ def feigenbaum_sequence(tones: list[Tone], dimension: ToneDimension = ToneDimens
 
     return new_tones
 
-
-def _previous_phrase_tones(context: PhraseTransformContext) -> list:
-    if context.phrase_index > 0:
-        return [
-            tone
-            for phrase in context.score.voices[context.voice_index].phrases[:context.phrase_index]
-            for motif in phrase.motifs
-            for tone in motif.tones
-        ]
-    if context.voice_index > 0:
-        return flatten_voice_tones(context.score.voices[context.voice_index - 1])
-    return []
-
-
 def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params: FeigenbaumParams) -> Phrase:
     phrase_tones = flatten_phrase_tones(context.phrase)
     transformed_tones = feigenbaum_sequence(phrase_tones, dimension=params.dimension)
@@ -113,7 +99,7 @@ def phrase_feigenbaum_shrink_transform(
     params: FeigenbaumParams,
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
-    previous_tones = _previous_phrase_tones(context)
+    previous_tones = previous_phrase_tones(context.score, context.voice_index, context.phrase_index)
 
     result = phrase_feigenbaum_shrink(current_tones, previous_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
@@ -124,7 +110,7 @@ def phrase_feigenbaum_grow_transform(
     params: FeigenbaumParams,
 ) -> Phrase:
     current_tones = flatten_phrase_tones(context.phrase)
-    previous_tones = _previous_phrase_tones(context)
+    previous_tones = previous_phrase_tones(context.score, context.voice_index, context.phrase_index)
 
     result = phrase_feigenbaum_grow(current_tones, previous_tones, dimension=params.dimension)
     return Phrase(motifs=[Motif(name="<transformed>", tones=result)])
