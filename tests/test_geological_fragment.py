@@ -14,7 +14,7 @@ from transforms.base import PhraseTransformContext
 from transforms.geological.fragment import (
     FRAGMENT_PARAMS_SPEC,
     FragmentParams,
-    _select_fragment_chunks,
+    _select_chunks_to_damage,
     fragment_phrase_transform,
 )
 from transforms.registry import PHRASE_TRANSFORMS
@@ -76,7 +76,7 @@ def test_fragment_damage_pct_zero_returns_equivalent_phrase():
 
 class TestFragmentSelection:
     def test_fragment_selection_returns_no_chunks_for_an_empty_phrase(self):
-        selected_chunks = _select_fragment_chunks(
+        selected_chunks = _select_chunks_to_damage(
             tone_count=0,
             damage_pct=50,
             damage_tones_chunk_size=4,
@@ -86,7 +86,7 @@ class TestFragmentSelection:
         assert selected_chunks == []
 
     def test_fragment_selection_returns_no_chunks_when_damage_pct_is_zero(self):
-        selected_chunks = _select_fragment_chunks(
+        selected_chunks = _select_chunks_to_damage(
             tone_count=8,
             damage_pct=0,
             damage_tones_chunk_size=4,
@@ -102,7 +102,7 @@ class TestFragmentSelection:
         expected_damaged_tone_count = math.floor((tone_count * damage_pct / 100) + 0.5)
         configured_chunk_size = expected_damaged_tone_count + 2
 
-        selected_chunks = _select_fragment_chunks(
+        selected_chunks = _select_chunks_to_damage(
             tone_count=tone_count,
             damage_pct=damage_pct,
             damage_tones_chunk_size=configured_chunk_size,
@@ -130,7 +130,7 @@ class TestFragmentSelection:
         # Whatever damage budget remains after that becomes the smaller second chunk.
         num_tones_still_needing_damage_after_first_full_chunk_applied = configured_damage_budget - configured_chunk_size
 
-        selected_chunks = _select_fragment_chunks(
+        selected_chunks = _select_chunks_to_damage(
             tone_count=tone_count,
             damage_pct=damage_pct,
             damage_tones_chunk_size=configured_chunk_size,
@@ -148,7 +148,7 @@ class TestFragmentSelection:
         damage_pct = 60
         configured_chunk_size = 4
 
-        selected_chunks = _select_fragment_chunks(
+        selected_chunks = _select_chunks_to_damage(
             tone_count=tone_count,
             damage_pct=damage_pct,
             damage_tones_chunk_size=configured_chunk_size,
@@ -175,7 +175,7 @@ class TestFragmentSelection:
         damage_tones_chunk_size: int,
         expected_selected_count: int,
     ):
-        selected_chunks = _select_fragment_chunks(
+        selected_chunks = _select_chunks_to_damage(
             tone_count=tone_count,
             damage_pct=damage_pct,
             damage_tones_chunk_size=damage_tones_chunk_size,
@@ -188,13 +188,13 @@ class TestFragmentSelection:
         assert selected_tone_count == expected_selected_count
 
     def test_damage_chunk_selection_with_the_same_repeatable_damage_key_repeats_the_same_chunks(self):
-        first_chunks = _select_fragment_chunks(
+        first_chunks = _select_chunks_to_damage(
             tone_count=20,
             damage_pct=40,
             damage_tones_chunk_size=4,
             repeatable_damage_key="pattern-key-a",
         )
-        second_chunks = _select_fragment_chunks(
+        second_chunks = _select_chunks_to_damage(
             tone_count=20,
             damage_pct=40,
             damage_tones_chunk_size=4,
