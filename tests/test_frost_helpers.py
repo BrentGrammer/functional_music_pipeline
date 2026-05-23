@@ -20,6 +20,7 @@ from transforms.geological.frost_effect import (
     FrostEffectParams,
     _apply_frost_iteration,
     _build_frost_voice,
+    _collect_audible_seed_events,
     _copy_voice_retaining_frost_history,
     _find_frost_edge_voices,
     _first_audible_tone,
@@ -36,7 +37,6 @@ def _voice_start_time(voice: Voice) -> float:
     if voice_tones and voice_tones[0].frequency == 0:
         return voice_tones[0].duration
     return 0.0
-
 
 def test_copy_voice_retaining_frost_history_preserves_generation_and_copies_tones():
     source_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
@@ -83,6 +83,157 @@ def test_first_audible_tone_returns_none_for_silent_voice():
     silent_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0), Tone(440.0, duration=1.0, amplitude=0.0)])])])
 
     assert _first_audible_tone(silent_voice) is None
+
+
+def test_collect_audible_seed_events_collects_multiple_tones_in_one_phrase_in_voice():
+    first_frequency = 440.0
+    second_frequency = 660.0
+    first_duration_seconds = 0.5
+    second_duration_seconds = 1.25
+
+    score = Score(
+        [Voice([Phrase([Motif("<test>", [Tone(first_frequency, duration=first_duration_seconds), Tone(second_frequency, duration=second_duration_seconds)])])])]
+    )
+
+    seed_events = _collect_audible_seed_events(score)
+
+    assert [
+        (seed_event.tone.frequency, seed_event.start_time, seed_event.end_time)
+        for seed_event in seed_events
+    ] == [
+        (first_frequency, 0.0, first_duration_seconds),
+        (second_frequency, first_duration_seconds, first_duration_seconds + second_duration_seconds),
+    ]
+
+
+def test_collect_audible_seed_events_collects_across_multiple_phrases_in_one_voice():
+    first_frequency = 440.0
+    second_frequency = 660.0
+    first_duration_seconds = 0.5
+    second_duration_seconds = 0.75
+
+    score = Score(
+        [
+            Voice(
+                [
+                    Phrase([Motif("<first>", [Tone(first_frequency, duration=first_duration_seconds)])]),
+                    Phrase([Motif("<second>", [Tone(second_frequency, duration=second_duration_seconds)])]),
+                ]
+            )
+        ]
+    )
+
+    seed_events = _collect_audible_seed_events(score)
+
+    assert [
+        (seed_event.tone.frequency, seed_event.start_time, seed_event.end_time)
+        for seed_event in seed_events
+    ] == [
+        (first_frequency, 0.0, first_duration_seconds),
+        (second_frequency, first_duration_seconds, first_duration_seconds + second_duration_seconds),
+    ]
+
+
+def test_collect_audible_seed_events_collects_from_multiple_voices():
+    high_frequency = 880.0
+    low_frequency = 220.0
+    high_duration_seconds = 0.5
+    low_duration_seconds = 1.0
+
+    score = Score(
+        [
+            Voice([Phrase([Motif("<high>", [Tone(high_frequency, duration=high_duration_seconds)])])]),
+            Voice([Phrase([Motif("<low>", [Tone(low_frequency, duration=low_duration_seconds)])])]),
+        ]
+    )
+
+    seed_events = _collect_audible_seed_events(score)
+
+    assert [
+        (seed_event.tone.frequency, seed_event.start_time, seed_event.end_time)
+        for seed_event in seed_events
+    ] == [
+        (high_frequency, 0.0, high_duration_seconds),
+        (low_frequency, 0.0, low_duration_seconds),
+    ]
+
+
+def test_collect_audible_seed_events_uses_leading_silence_in_seed_timing():
+    leading_silence_seconds = 0.25
+    audible_frequency = 440.0
+    audible_duration_seconds = 0.5
+    audible_end_time_seconds = leading_silence_seconds + audible_duration_seconds
+
+    score = Score(
+        [
+            Voice(
+                [
+                    Phrase(
+                        [
+                            Motif(
+                                "<test>",
+                                [
+                                    Tone(0.0, duration=leading_silence_seconds),
+                                    Tone(audible_frequency, duration=audible_duration_seconds),
+                                ],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+
+    seed_events = _collect_audible_seed_events(score)
+
+    assert [
+        (seed_event.tone.frequency, seed_event.start_time, seed_event.end_time)
+        for seed_event in seed_events
+    ] == [
+        (audible_frequency, leading_silence_seconds, audible_end_time_seconds),
+    ]
+
+
+def test_collect_audible_seed_events_skips_rests_and_zero_amplitude_tones():
+    rest_duration_seconds = 0.5
+    muted_frequency = 440.0
+    muted_duration_seconds = 0.25
+    audible_frequency = 550.0
+    audible_duration_seconds = 0.75
+    zero_duration_frequency = 660.0
+    audible_start_time_seconds = rest_duration_seconds + muted_duration_seconds
+    audible_end_time_seconds = audible_start_time_seconds + audible_duration_seconds
+
+    score = Score(
+        [
+            Voice(
+                [
+                    Phrase(
+                        [
+                            Motif(
+                                "<test>",
+                                [
+                                    Tone(0.0, duration=rest_duration_seconds),
+                                    Tone(muted_frequency, duration=muted_duration_seconds, amplitude=0.0),
+                                    Tone(audible_frequency, duration=audible_duration_seconds),
+                                    Tone(zero_duration_frequency, duration=0.0),
+                                ],
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+
+    seed_events = _collect_audible_seed_events(score)
+
+    assert [
+        (seed_event.tone.frequency, seed_event.start_time, seed_event.end_time)
+        for seed_event in seed_events
+    ] == [
+        (audible_frequency, audible_start_time_seconds, audible_end_time_seconds),
+    ]
 
 
 def test_find_frost_edge_voices_returns_lowest_and_highest_audible_voice():

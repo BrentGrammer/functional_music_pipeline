@@ -29,6 +29,13 @@ class FrostEffectParams:
     sustain_notes: bool
 
 
+@dataclass(frozen=True)
+class FrostSeedEvent:
+    tone: Tone
+    start_time: float
+    end_time: float
+
+
 def _create_frost_effect_params(parsed_params: ParsedTransformParams) -> FrostEffectParams:
     return FrostEffectParams(
         iterations=parsed_params.required("iterations", int),
@@ -143,6 +150,20 @@ def _first_audible_tone(voice: Voice) -> Tone | None:
             return tone
 
     return None
+
+
+def _collect_audible_seed_events(score: Score) -> list[FrostSeedEvent]:
+    seed_events: list[FrostSeedEvent] = []
+
+    for voice in score.voices:
+        voice_time = 0.0
+        for tone in flatten_voice_tones(voice):
+            tone_end_time = voice_time + tone.duration
+            if tone.frequency > 0 and tone.amplitude > 0 and tone.duration > 0:
+                seed_events.append(FrostSeedEvent(tone=tone, start_time=voice_time, end_time=tone_end_time))
+            voice_time = tone_end_time
+
+    return seed_events
 
 
 def _find_frost_edge_voices(voices: list[Voice]) -> tuple[Voice | None, Voice | None]:
