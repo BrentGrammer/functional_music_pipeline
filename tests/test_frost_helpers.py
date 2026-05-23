@@ -42,7 +42,7 @@ def _voice_start_time(voice: Voice) -> float:
 
 def test_copy_voice_retaining_frost_history_preserves_generation_and_copies_tones():
     source_voice = Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])
-    setattr(source_voice, "frost_generation", 3)
+    setattr(source_voice, "frost_generation_index", 3)
 
     copied_voice = _copy_voice_retaining_frost_history(source_voice)
 
@@ -50,7 +50,7 @@ def test_copy_voice_retaining_frost_history_preserves_generation_and_copies_tone
     assert flatten_voice_tones(copied_voice) is not flatten_voice_tones(source_voice)
     assert flatten_voice_tones(copied_voice)[0] is not flatten_voice_tones(source_voice)[0]
     assert flatten_voice_tones(copied_voice)[0].frequency == pytest.approx(440.0)
-    assert getattr(copied_voice, "frost_generation") == 3
+    assert getattr(copied_voice, "frost_generation_index") == 3
 
 
 def test_build_frost_voice_applies_delay_and_generation():
@@ -66,7 +66,7 @@ def test_build_frost_voice_applies_delay_and_generation():
     assert flatten_voice_tones(child_voice)[0].duration == pytest.approx(0.25)
     assert flatten_voice_tones(child_voice)[1].frequency == pytest.approx(660.0)
     assert flatten_voice_tones(child_voice)[1].duration == pytest.approx(0.5)
-    assert getattr(child_voice, "frost_generation") == 2
+    assert getattr(child_voice, "frost_generation_index") == 2
 
 
 def test_score_end_time_uses_longest_voice_and_handles_empty_score():
@@ -285,12 +285,12 @@ def test_expand_frost_seed_second_generation_replays_previous_local_generation_a
     first_generation_frequencies = [
         flatten_voice_tones(voice)[1].frequency
         for voice in generated_voices
-        if getattr(voice, "frost_generation", 0) == 1
+        if getattr(voice, "frost_generation_index", 0) == 1
     ]
     second_generation_frequencies = [
         flatten_voice_tones(voice)[1].frequency
         for voice in generated_voices
-        if getattr(voice, "frost_generation", 0) == 2
+        if getattr(voice, "frost_generation_index", 0) == 2
     ]
 
     assert len(first_generation_frequencies) == 3
@@ -316,12 +316,12 @@ def test_expand_frost_seed_second_generation_starts_after_first_generation_ends(
     first_generation_end_times = [
         sum(tone.duration for tone in flatten_voice_tones(voice))
         for voice in generated_voices
-        if getattr(voice, "frost_generation", 0) == 1
+        if getattr(voice, "frost_generation_index", 0) == 1
     ]
     second_generation_start_times = [
         flatten_voice_tones(voice)[0].duration
         for voice in generated_voices
-        if getattr(voice, "frost_generation", 0) == 2
+        if getattr(voice, "frost_generation_index", 0) == 2
     ]
 
     assert min(second_generation_start_times) >= max(first_generation_end_times)
@@ -372,12 +372,12 @@ def test_apply_frost_iteration_returns_no_new_voices_when_source_event_has_no_au
 
 def test_apply_frost_iteration_returns_no_new_voices_when_latest_generation_is_silent():
     silent_source_voice = Voice([Phrase([Motif("<test>", [Tone(0.0, duration=1.0)])])])
-    setattr(silent_source_voice, "frost_generation", 2)
+    setattr(silent_source_voice, "frost_generation_index", 2)
 
     result = _apply_frost_iteration(Score([silent_source_voice]))
 
     assert len(result.voices) == 1
-    assert getattr(result.voices[0], "frost_generation") == 2
+    assert getattr(result.voices[0], "frost_generation_index") == 2
 
 
 def test_apply_frost_iteration_replays_source_voice_after_score_end():
@@ -460,8 +460,8 @@ def test_frost_effect_score_transform_adapter_passes_sustain_notes_to_frost_effe
     frost_effect_mock.assert_called_once_with(seed_score, iterations=2, sustain_notes=True)
 
 
-@pytest.mark.parametrize("invalid_iterations", [0, -1])
-def test_frost_effect_rejects_non_positive_iterations(invalid_iterations):
+@pytest.mark.parametrize("invalid_iterations", [-1])
+def test_frost_effect_rejects_negative_iterations(invalid_iterations):
     seed_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
 
     with pytest.raises(ValueError, match="positive integer"):

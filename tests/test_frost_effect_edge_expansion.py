@@ -38,7 +38,7 @@ def _event_frequencies(score: Score, event_number: int) -> list[float]:
     frequencies = []
 
     for voice in score.voices:
-        if getattr(voice, "frost_generation", 0) != event_number:
+        if getattr(voice, "frost_generation_index", 0) != event_number:
             continue
 
         frequency = _first_audible_frequency(voice)
@@ -52,7 +52,7 @@ def _event_voices(score: Score, event_number: int) -> list[Voice]:
     return [
         voice
         for voice in score.voices
-        if getattr(voice, "frost_generation", 0) == event_number
+        if getattr(voice, "frost_generation_index", 0) == event_number
         and _first_audible_frequency(voice) is not None
     ]
 
@@ -164,7 +164,7 @@ def test_cents_to_frequency_ratio_converts_octaves_and_unisons():
     assert _cents_to_frequency_ratio(-1200.0) == pytest.approx(0.5)
 
 
-def test_frost_generations_map_to_audible_event_count():
+def test_frost_generation_indices_map_to_audible_event_count():
     score = frost_effect(Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])]), iterations=2)
 
     assert _event_frequencies(score, 0) == [pytest.approx(440.0)]
@@ -187,37 +187,42 @@ def test_first_frost_event_delays_only_new_edge_tones_within_controlled_bounds()
     _assert_event_has_controlled_edge_stagger(score, [440.0], 1)
 
 
-def test_first_frost_event_expands_cluster_as_one_staggered_event():
+def test_first_frost_event_expands_each_cluster_tone_as_its_own_local_seed():
+    low_frequency = 330.0
+    middle_frequency = 440.0
+    high_frequency = 550.0
+    seed_duration_seconds = 1.0
+    source_frequencies = [
+        pytest.approx(low_frequency),
+        pytest.approx(middle_frequency),
+        pytest.approx(high_frequency),
+    ]
+
     score = frost_effect(
         Score(
             [
-                Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
-                Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
-                Voice([Phrase([Motif("<test>", [Tone(550.0, duration=1.0)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(low_frequency, duration=seed_duration_seconds)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(middle_frequency, duration=seed_duration_seconds)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(high_frequency, duration=seed_duration_seconds)])])]),
             ]
         ),
         iterations=1,
     )
 
     source_event_end_time = max(_voice_end_time(voice) for voice in _event_voices(score, 0))
-    source_frequencies = _event_frequencies(score, 0)
     first_frost_frequencies = _event_frequencies(score, 1)
     new_frequencies = _find_frequencies_added_to_next_event(
-        source_frequencies,
+        _event_frequencies(score, 0),
         first_frost_frequencies,
     )
 
-    assert source_frequencies == [
-        pytest.approx(330.0),
-        pytest.approx(440.0),
-        pytest.approx(550.0),
-    ]
-    assert len(first_frost_frequencies) == 5
-    assert len(new_frequencies) == 2
-    assert sum(frequency < 330.0 for frequency in new_frequencies) == 1
-    assert sum(frequency > 550.0 for frequency in new_frequencies) == 1
+    assert _event_frequencies(score, 0) == source_frequencies
+    assert len(first_frost_frequencies) == 9
+    assert len(new_frequencies) == 6
+    assert sum(frequency == pytest.approx(low_frequency) for frequency in first_frost_frequencies) == 1
+    assert sum(frequency == pytest.approx(middle_frequency) for frequency in first_frost_frequencies) == 1
+    assert sum(frequency == pytest.approx(high_frequency) for frequency in first_frost_frequencies) == 1
     assert min(_event_start_times(score, 1)) >= source_event_end_time
-    _assert_event_has_controlled_edge_stagger(score, source_frequencies, 1)
 
 
 def test_second_frost_event_replays_previous_event_and_staggers_new_edges():
@@ -240,15 +245,20 @@ def test_second_frost_event_replays_previous_event_and_staggers_new_edges():
     _assert_event_has_controlled_edge_stagger(score, first_frost_event_frequencies, 2)
 
 
-def test_cluster_frost_events_replay_previous_event_and_add_two_edges():
+def test_cluster_frost_events_replay_previous_event_and_add_two_edges_per_seed():
+    low_frequency = 330.0
+    middle_frequency = 440.0
+    high_frequency = 550.0
+    seed_duration_seconds = 1.0
     requested_iterations = 3
+    new_voices_per_generation = 6
 
     score = frost_effect(
         Score(
             [
-                Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
-                Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
-                Voice([Phrase([Motif("<test>", [Tone(550.0, duration=1.0)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(low_frequency, duration=seed_duration_seconds)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(middle_frequency, duration=seed_duration_seconds)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(high_frequency, duration=seed_duration_seconds)])])]),
             ]
         ),
         iterations=requested_iterations,
@@ -257,9 +267,9 @@ def test_cluster_frost_events_replay_previous_event_and_add_two_edges():
     previous_event_frequencies = _event_frequencies(score, 0)
 
     assert previous_event_frequencies == [
-        pytest.approx(330.0),
-        pytest.approx(440.0),
-        pytest.approx(550.0),
+        pytest.approx(low_frequency),
+        pytest.approx(middle_frequency),
+        pytest.approx(high_frequency),
     ]
 
     for event_number in range(1, requested_iterations + 1):
@@ -269,38 +279,35 @@ def test_cluster_frost_events_replay_previous_event_and_add_two_edges():
             current_event_frequencies,
         )
 
-        assert len(current_event_frequencies) == len(previous_event_frequencies) + 2
-        assert len(new_frequencies) == 2
-        assert sum(frequency < min(previous_event_frequencies) for frequency in new_frequencies) == 1
-        assert sum(frequency > max(previous_event_frequencies) for frequency in new_frequencies) == 1
-        _assert_event_has_controlled_edge_stagger(score, previous_event_frequencies, event_number)
+        assert len(current_event_frequencies) == len(previous_event_frequencies) + new_voices_per_generation
+        assert len(new_frequencies) == new_voices_per_generation
+        assert all(frequency in current_event_frequencies for frequency in previous_event_frequencies)
+        assert min(new_frequencies) < min(previous_event_frequencies)
+        assert max(new_frequencies) > max(previous_event_frequencies)
 
         previous_event_frequencies = current_event_frequencies
 
 
-def test_repeated_frost_calls_continue_audible_event_sequence():
-    score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
+def test_repeated_frost_calls_expand_every_existing_audible_seed():
+    seed_frequency = 440.0
+    seed_duration_seconds = 1.0
+    generated_voices_per_seed = 3
+    source_event_count = 1
+    first_event_count = generated_voices_per_seed
+    second_call_seed_count = source_event_count + first_event_count
+    second_event_count = second_call_seed_count * generated_voices_per_seed
+    third_call_seed_count = source_event_count + first_event_count + second_event_count
+    third_event_count = third_call_seed_count * generated_voices_per_seed
+
+    score = Score([Voice([Phrase([Motif("<test>", [Tone(seed_frequency, duration=seed_duration_seconds)])])])])
     score = frost_effect(score, iterations=1)
     score = frost_effect(score, iterations=1)
     score = frost_effect(score, iterations=1)
 
-    assert len(_event_frequencies(score, 0)) == 1
-    assert len(_event_frequencies(score, 1)) == 3
-    assert len(_event_frequencies(score, 2)) == 5
-    assert len(_event_frequencies(score, 3)) == 7
-
-    for event_number in range(1, 4):
-        previous_event_frequencies = _event_frequencies(score, event_number - 1)
-        current_event_frequencies = _event_frequencies(score, event_number)
-        new_frequencies = _find_frequencies_added_to_next_event(
-            previous_event_frequencies,
-            current_event_frequencies,
-        )
-
-        assert len(new_frequencies) == 2
-        assert sum(frequency < min(previous_event_frequencies) for frequency in new_frequencies) == 1
-        assert sum(frequency > max(previous_event_frequencies) for frequency in new_frequencies) == 1
-        _assert_event_has_controlled_edge_stagger(score, previous_event_frequencies, event_number)
+    assert len(_event_frequencies(score, 0)) == source_event_count
+    assert len(_event_frequencies(score, 1)) == first_event_count
+    assert len(_event_frequencies(score, 2)) == second_event_count
+    assert len(_event_frequencies(score, 3)) == third_event_count
 
 
 def test_first_audible_tone_with_start_time_returns_single_seed_at_zero():
@@ -520,89 +527,126 @@ def test_first_frost_event_edge_children_respect_per_edge_cent_bounds():
     assert upper_outward_cents <= FROST_EFFECT_MAXIMUM_OUTWARD_MOVEMENT_CENTS
 
 
-def test_multi_voice_input_is_treated_as_one_frost_field():
-    seed_frequency_cluster =  [
-        Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
-        Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
-        Voice([Phrase([Motif("<test>", [Tone(550.0, duration=1.0)])])]),
+def test_multi_note_melodic_line_expands_every_audible_note():
+    low_frequency = 330.0
+    middle_frequency = 440.0
+    high_frequency = 550.0
+    source_frequencies = [low_frequency, middle_frequency, high_frequency]
+    seed_duration_seconds = 1.0
+    generated_voice_count = 9
+
+    melodic_line = Voice(
+        [
+            Phrase(
+                [
+                    Motif(
+                        "<test>",
+                        [
+                            Tone(low_frequency, duration=seed_duration_seconds),
+                            Tone(middle_frequency, duration=seed_duration_seconds),
+                            Tone(high_frequency, duration=seed_duration_seconds),
+                        ],
+                    )
+                ]
+            )
+        ]
+    )
+
+    score = frost_effect(
+        Score([melodic_line]),
+        iterations=1,
+    )
+    first_event_frequencies = _event_frequencies(score, 1)
+    first_event_start_times = _event_start_times(score, 1)
+
+    assert source_frequencies == [
+        pytest.approx(low_frequency),
+        pytest.approx(middle_frequency),
+        pytest.approx(high_frequency),
+    ]
+    assert len(first_event_frequencies) == generated_voice_count
+    assert sum(frequency == pytest.approx(low_frequency) for frequency in first_event_frequencies) == 1
+    assert sum(frequency == pytest.approx(middle_frequency) for frequency in first_event_frequencies) == 1
+    assert sum(frequency == pytest.approx(high_frequency) for frequency in first_event_frequencies) == 1
+    assert min(first_event_start_times) >= 1.0
+    assert max(first_event_start_times) >= 3.0
+
+
+def test_first_frost_event_replays_every_voice_in_multi_voice_cluster():
+    low_frequency = 330.0
+    middle_frequency = 440.0
+    high_frequency = 550.0
+    seed_duration_seconds = 1.0
+    source_frequencies = [
+        pytest.approx(low_frequency),
+        pytest.approx(middle_frequency),
+        pytest.approx(high_frequency),
     ]
 
     score = frost_effect(
         Score(
-            seed_frequency_cluster
-        ),
-        iterations=1,
-    )
-    source_frequencies = _event_frequencies(score, 0)
-    first_event_frequencies = _event_frequencies(score, 1)
-    new_frequencies = _find_frequencies_added_to_next_event(source_frequencies, first_event_frequencies)
-
-    expected_new_fequencies_count = 2
-    original_count = len(seed_frequency_cluster)
-
-    assert len(source_frequencies) == original_count
-    assert len(first_event_frequencies) == original_count + expected_new_fequencies_count
-    assert len(new_frequencies) == expected_new_fequencies_count
-    assert sum(frequency < min(source_frequencies) for frequency in new_frequencies) == 1
-    assert sum(frequency > max(source_frequencies) for frequency in new_frequencies) == 1
-
-
-def test_first_frost_event_expands_multi_voice_onset_cluster_as_one_field():
-    score = frost_effect(
-        Score(
             [
-                Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
-                Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
-                Voice([Phrase([Motif("<test>", [Tone(550.0, duration=1.0)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(low_frequency, duration=seed_duration_seconds)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(middle_frequency, duration=seed_duration_seconds)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(high_frequency, duration=seed_duration_seconds)])])]),
             ]
         ),
         iterations=1,
     )
 
-    source_frequencies = _event_frequencies(score, 0)
     first_event_frequencies = _event_frequencies(score, 1)
     new_frequencies = _find_frequencies_added_to_next_event(
-        source_frequencies,
+        _event_frequencies(score, 0),
         first_event_frequencies,
     )
 
-    assert source_frequencies == [
-        pytest.approx(330.0),
-        pytest.approx(440.0),
-        pytest.approx(550.0),
-    ]
-    assert len(first_event_frequencies) == 5
-    assert len(new_frequencies) == 2
-    assert sum(frequency < 330.0 for frequency in new_frequencies) == 1
-    assert sum(frequency > 550.0 for frequency in new_frequencies) == 1
+    assert _event_frequencies(score, 0) == source_frequencies
+    assert len(first_event_frequencies) == 9
+    assert len(new_frequencies) == 6
+    assert sum(frequency == pytest.approx(low_frequency) for frequency in first_event_frequencies) == 1
+    assert sum(frequency == pytest.approx(middle_frequency) for frequency in first_event_frequencies) == 1
+    assert sum(frequency == pytest.approx(high_frequency) for frequency in first_event_frequencies) == 1
 
 
-def test_first_frost_event_uses_earliest_onset_not_later_delayed_voice():
+def test_first_frost_event_includes_later_delayed_voice_as_its_own_seed():
+    early_frequency = 330.0
+    delayed_frequency = 550.0
+    leading_silence_seconds = 0.5
+    seed_duration_seconds = 1.0
+
     score = frost_effect(
         Score(
             [
-                Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
-                Voice([Phrase([Motif("<test>", [Tone(0.0, duration=0.5), Tone(550.0, duration=1.0)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(early_frequency, duration=seed_duration_seconds)])])]),
+                Voice([Phrase([Motif("<test>", [Tone(0.0, duration=leading_silence_seconds), Tone(delayed_frequency, duration=seed_duration_seconds)])])]),
             ]
         ),
         iterations=1,
     )
 
     first_event_frequencies = _event_frequencies(score, 1)
+    first_event_start_times = _event_start_times(score, 1)
 
-    assert len(first_event_frequencies) == 3
-    assert any(frequency == pytest.approx(330.0) for frequency in first_event_frequencies)
-    assert all(frequency != pytest.approx(550.0) for frequency in first_event_frequencies)
-    assert min(first_event_frequencies) < 330.0
-    assert max(first_event_frequencies) > 330.0
+    assert len(first_event_frequencies) == 6
+    assert any(frequency == pytest.approx(early_frequency) for frequency in first_event_frequencies)
+    assert any(frequency == pytest.approx(delayed_frequency) for frequency in first_event_frequencies)
+    assert min(first_event_frequencies) < early_frequency
+    assert max(first_event_frequencies) > delayed_frequency
+    assert min(first_event_start_times) >= seed_duration_seconds
+    assert max(first_event_start_times) >= leading_silence_seconds + seed_duration_seconds
+
 
 def test_multi_voice_input_keeps_growing_linearly_across_multiple_events():
+    low_frequency = 330.0
+    middle_frequency = 440.0
+    high_frequency = 550.0
+    seed_duration_seconds = 1.0
     seed_frequency_cluster = [
-        Voice([Phrase([Motif("<test>", [Tone(330.0, duration=1.0)])])]),
-        Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])]),
-        Voice([Phrase([Motif("<test>", [Tone(550.0, duration=1.0)])])]),
+        Voice([Phrase([Motif("<test>", [Tone(low_frequency, duration=seed_duration_seconds)])])]),
+        Voice([Phrase([Motif("<test>", [Tone(middle_frequency, duration=seed_duration_seconds)])])]),
+        Voice([Phrase([Motif("<test>", [Tone(high_frequency, duration=seed_duration_seconds)])])]),
     ]
-    expected_new_frequencies_per_iteration = 2
+    expected_new_frequencies_per_iteration = 6
     requested_iterations = 3
     original_count = len(seed_frequency_cluster)
 

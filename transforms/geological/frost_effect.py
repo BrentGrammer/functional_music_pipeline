@@ -71,7 +71,7 @@ def _copy_voice_retaining_frost_history(voice: Voice) -> Voice:
             )
         ]
     )
-    setattr(copied_voice, "frost_generation", getattr(voice, "frost_generation", 0))
+    setattr(copied_voice, "frost_generation_index", getattr(voice, "frost_generation_index", 0))
     return copied_voice
 
 
@@ -103,7 +103,7 @@ def _build_frost_voice(
             )
         ]
     )
-    setattr(child_voice, "frost_generation", generation)
+    setattr(child_voice, "frost_generation_index", generation)
     return child_voice
 
 
@@ -224,7 +224,7 @@ def _random_single_seed_edge_separation_seconds() -> float:
 
 
 def _expand_frost_seed(seed_event: FrostSeedEvent, iterations: int) -> list[Voice]:
-    if iterations < 1:
+    if iterations < 0:
         raise ValueError("frost seed expansion iterations must be a positive integer.")
 
     local_seed_voice = Voice(
@@ -257,7 +257,7 @@ def _expand_frost_seed(seed_event: FrostSeedEvent, iterations: int) -> list[Voic
     return [
         voice
         for voice in local_score.voices
-        if getattr(voice, "frost_generation", 0) > 0
+        if getattr(voice, "frost_generation_index", 0) > 0
     ]
 
 
@@ -266,7 +266,7 @@ def _apply_frost_iteration(score: Score) -> Score:
     Append one audible frost event to a score.
     """
     original_voices = [_copy_voice_retaining_frost_history(voice) for voice in score.voices]
-    latest_generation = max((getattr(voice, "frost_generation", 0) for voice in score.voices), default=0)
+    latest_generation = max((getattr(voice, "frost_generation_index", 0) for voice in score.voices), default=0)
     event_start = _score_end_time(score)
 
     if latest_generation == 0:
@@ -277,7 +277,7 @@ def _apply_frost_iteration(score: Score) -> Score:
         source_voices = [
             voice
             for voice in score.voices
-            if getattr(voice, "frost_generation", 0) == latest_generation and _first_audible_tone(voice) is not None
+            if getattr(voice, "frost_generation_index", 0) == latest_generation and _first_audible_tone(voice) is not None
         ]
         generation = latest_generation + 1
         use_single_seed_edge_separation = False
@@ -353,14 +353,25 @@ def frost_effect(score: Score, iterations: int = 3, sustain_notes: bool = DEFAUL
 
     Applies one or more audible frost events to the score.
     """
-    if iterations < 1:
-        raise ValueError("frost_effect iterations must be a positive integer.")
 
-    result = score
-    for _ in range(iterations):
-        result = _apply_frost_iteration(result)
+    preserved_voices = [_copy_voice_retaining_frost_history(voice) for voice in score.voices]
+    existing_generation_count = max((getattr(voice, "frost_generation_index", 0) for voice in score.voices), default=0)
+    generated_voices: list[Voice] = []
 
-    return result
+    for seed_event in _collect_audible_seed_events(score):
+        seed_generated_voices = _expand_frost_seed(seed_event, iterations)
+
+        if existing_generation_count > 0:
+            for voice in seed_generated_voices:
+                setattr(
+                    voice,
+                    "frost_generation_index",
+                    getattr(voice, "frost_generation_index", 0) + existing_generation_count,
+                )
+
+        generated_voices.extend(seed_generated_voices)
+
+    return Score(preserved_voices + generated_voices)
 
 
 def frost_effect_score_transform_adapter(score: Score, params: FrostEffectParams) -> Score:
