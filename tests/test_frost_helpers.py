@@ -18,10 +18,12 @@ from transforms.geological.frost_effect import (
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS,
     FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS,
     FrostEffectParams,
+    FrostSeedEvent,
     _apply_frost_iteration,
     _build_frost_voice,
     _collect_audible_seed_events,
     _copy_voice_retaining_frost_history,
+    _expand_frost_seed,
     _find_frost_edge_voices,
     _first_audible_tone,
     _random_edge_stagger_seconds,
@@ -234,6 +236,95 @@ def test_collect_audible_seed_events_skips_rests_and_zero_amplitude_tones():
     ] == [
         (audible_frequency, audible_start_time_seconds, audible_end_time_seconds),
     ]
+
+
+def test_expand_frost_seed_first_generation_replays_seed_and_adds_two_edges():
+    seed_frequency = 440.0
+    seed_duration_seconds = 1.0
+    seed_start_time_seconds = 0.25
+    seed_end_time_seconds = seed_start_time_seconds + seed_duration_seconds
+
+    generated_voices = _expand_frost_seed(
+        FrostSeedEvent(
+            tone=Tone(seed_frequency, duration=seed_duration_seconds),
+            start_time=seed_start_time_seconds,
+            end_time=seed_end_time_seconds,
+        ),
+        iterations=1,
+    )
+
+    generated_frequencies = [
+        flatten_voice_tones(voice)[1].frequency
+        for voice in generated_voices
+    ]
+    generated_start_times = [
+        flatten_voice_tones(voice)[0].duration
+        for voice in generated_voices
+    ]
+
+    assert len(generated_voices) == 3
+    assert any(frequency == pytest.approx(seed_frequency) for frequency in generated_frequencies)
+    assert sum(frequency < seed_frequency for frequency in generated_frequencies) == 1
+    assert sum(frequency > seed_frequency for frequency in generated_frequencies) == 1
+    assert min(generated_start_times) >= seed_end_time_seconds
+
+
+def test_expand_frost_seed_second_generation_replays_previous_local_generation_and_adds_two_edges():
+    seed_frequency = 440.0
+    seed_duration_seconds = 1.0
+
+    generated_voices = _expand_frost_seed(
+        FrostSeedEvent(
+            tone=Tone(seed_frequency, duration=seed_duration_seconds),
+            start_time=0.0,
+            end_time=seed_duration_seconds,
+        ),
+        iterations=2,
+    )
+
+    first_generation_frequencies = [
+        flatten_voice_tones(voice)[1].frequency
+        for voice in generated_voices
+        if getattr(voice, "frost_generation", 0) == 1
+    ]
+    second_generation_frequencies = [
+        flatten_voice_tones(voice)[1].frequency
+        for voice in generated_voices
+        if getattr(voice, "frost_generation", 0) == 2
+    ]
+
+    assert len(first_generation_frequencies) == 3
+    assert len(second_generation_frequencies) == 5
+    assert all(frequency in second_generation_frequencies for frequency in first_generation_frequencies)
+    assert sum(frequency < min(first_generation_frequencies) for frequency in second_generation_frequencies) == 1
+    assert sum(frequency > max(first_generation_frequencies) for frequency in second_generation_frequencies) == 1
+
+
+def test_expand_frost_seed_second_generation_starts_after_first_generation_ends():
+    seed_frequency = 440.0
+    seed_duration_seconds = 1.0
+
+    generated_voices = _expand_frost_seed(
+        FrostSeedEvent(
+            tone=Tone(seed_frequency, duration=seed_duration_seconds),
+            start_time=0.0,
+            end_time=seed_duration_seconds,
+        ),
+        iterations=2,
+    )
+
+    first_generation_end_times = [
+        sum(tone.duration for tone in flatten_voice_tones(voice))
+        for voice in generated_voices
+        if getattr(voice, "frost_generation", 0) == 1
+    ]
+    second_generation_start_times = [
+        flatten_voice_tones(voice)[0].duration
+        for voice in generated_voices
+        if getattr(voice, "frost_generation", 0) == 2
+    ]
+
+    assert min(second_generation_start_times) >= max(first_generation_end_times)
 
 
 def test_find_frost_edge_voices_returns_lowest_and_highest_audible_voice():

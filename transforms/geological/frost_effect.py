@@ -223,6 +223,41 @@ def _random_single_seed_edge_separation_seconds() -> float:
     )
 
 
+def _expand_frost_seed(seed_event: FrostSeedEvent, iterations: int) -> list[Voice]:
+    local_seed_voice = Voice(
+        phrases=[
+            Phrase(
+                motifs=[
+                    Motif(
+                        name="<frost_seed>",
+                        tones=delay_tones(
+                            [
+                                Tone(
+                                    frequency=seed_event.tone.frequency,
+                                    duration=seed_event.tone.duration,
+                                    sample_rate=seed_event.tone.sample_rate,
+                                    amplitude=seed_event.tone.amplitude,
+                                )
+                            ],
+                            seed_event.start_time,
+                        ),
+                    )
+                ]
+            )
+        ]
+    )
+    local_score = Score([local_seed_voice])
+
+    for _ in range(iterations):
+        local_score = _apply_frost_iteration(local_score)
+
+    return [
+        voice
+        for voice in local_score.voices
+        if getattr(voice, "frost_generation", 0) > 0
+    ]
+
+
 def _apply_frost_iteration(score: Score) -> Score:
     """
     Append one audible frost event to a score.
