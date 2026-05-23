@@ -42,6 +42,14 @@ def golden_ratio_transform_shrink(
     """Reduce the selected dimension by the golden ratio, to 61.8% of its original value."""
     return scale_transform(tones, dimension, 1 / GOLDEN_RATIO)
 
+
+def golden_ratio_transform_grow(
+    tones: list[Tone],
+    dimension: ToneDimension = ToneDimension.DURATION,
+) -> list[Tone]:
+    return scale_transform(tones, dimension, GOLDEN_RATIO)
+
+
 def golden_ratio_single_phrase_transform(
     context: PhraseTransformContext,
     params: GoldenRatioParams,
@@ -121,10 +129,38 @@ def phrase_relative_golden_ratio_grow(
 
 
 def golden_ratio_score_transform(score: Score, params: GoldenRatioParams) -> Score:
+    return score_golden_ratio_shrink_transform(score, params)
+
+
+def score_golden_ratio_shrink_transform(score: Score, params: GoldenRatioParams) -> Score:
     new_voices = []
 
     for voice in score.voices:
         transformed_tones = golden_ratio_transform_shrink(
+            flatten_voice_tones(voice),
+            params.dimension,
+        )
+
+        new_voices.append(
+            Voice(
+                phrases=[
+                    Phrase(
+                        motifs=[
+                            Motif(name="<each_voice>", tones=transformed_tones),
+                        ],
+                    ),
+                ],
+            ),
+        )
+
+    return Score(voices=new_voices)
+
+
+def score_golden_ratio_grow_transform(score: Score, params: GoldenRatioParams) -> Score:
+    new_voices = []
+
+    for voice in score.voices:
+        transformed_tones = golden_ratio_transform_grow(
             flatten_voice_tones(voice),
             params.dimension,
         )

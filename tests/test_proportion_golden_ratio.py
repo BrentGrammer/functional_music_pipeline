@@ -12,11 +12,14 @@ from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
     GoldenRatioParams,
+    golden_ratio_transform_grow,
     golden_ratio_transform_shrink,
     phrase_relative_golden_ratio_grow,
     phrase_relative_golden_ratio_grow_transform,
     phrase_relative_golden_ratio_shrink,
     phrase_relative_golden_ratio_shrink_transform,
+    score_golden_ratio_grow_transform,
+    score_golden_ratio_shrink_transform,
 )
 
 
@@ -38,6 +41,102 @@ class TestGoldenRatioTransform:
 
         assert result[0].frequency == pytest.approx(original_frequency / GOLDEN_RATIO)
         assert result[0].duration == pytest.approx(original_duration)
+
+    def test_golden_ratio_grow_scales_duration_up_proportional_to_original_duration(self):
+        original_duration = 1.0
+        tones = [Tone(440.0, original_duration)]
+
+        result = golden_ratio_transform_grow(tones)
+
+        assert result[0].duration == pytest.approx(original_duration * GOLDEN_RATIO)
+
+
+class TestScoreGoldenRatioTransforms:
+    def test_score_golden_ratio_shrink_scales_each_voice_independently(self):
+        first_voice_duration = 3.0
+        second_voice_duration = 2.0
+        score = Score(
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(motifs=[Motif("first", [Tone(440.0, duration=1.0), Tone(660.0, duration=2.0)])]),
+                    ]
+                ),
+                Voice(
+                    phrases=[
+                        Phrase(motifs=[Motif("second", [Tone(330.0, duration=2.0)])]),
+                    ]
+                ),
+            ]
+        )
+
+        transformed_score = score_golden_ratio_shrink_transform(
+            score,
+            GoldenRatioParams(dimension=ToneDimension.DURATION),
+        )
+
+        first_transformed_voice = transformed_score.voices[0]
+        second_transformed_voice = transformed_score.voices[1]
+        first_transformed_duration = sum(
+            tone.duration
+            for phrase in first_transformed_voice.phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+        second_transformed_duration = sum(
+            tone.duration
+            for phrase in second_transformed_voice.phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+
+        assert len(first_transformed_voice.phrases) == 1
+        assert len(second_transformed_voice.phrases) == 1
+        assert first_transformed_duration == pytest.approx(first_voice_duration / GOLDEN_RATIO)
+        assert second_transformed_duration == pytest.approx(second_voice_duration / GOLDEN_RATIO)
+
+    def test_score_golden_ratio_grow_scales_each_voice_independently(self):
+        first_voice_duration = 3.0
+        second_voice_duration = 2.0
+        score = Score(
+            voices=[
+                Voice(
+                    phrases=[
+                        Phrase(motifs=[Motif("first", [Tone(440.0, duration=1.0), Tone(660.0, duration=2.0)])]),
+                    ]
+                ),
+                Voice(
+                    phrases=[
+                        Phrase(motifs=[Motif("second", [Tone(330.0, duration=2.0)])]),
+                    ]
+                ),
+            ]
+        )
+
+        transformed_score = score_golden_ratio_grow_transform(
+            score,
+            GoldenRatioParams(dimension=ToneDimension.DURATION),
+        )
+
+        first_transformed_voice = transformed_score.voices[0]
+        second_transformed_voice = transformed_score.voices[1]
+        first_transformed_duration = sum(
+            tone.duration
+            for phrase in first_transformed_voice.phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+        second_transformed_duration = sum(
+            tone.duration
+            for phrase in second_transformed_voice.phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+
+        assert len(first_transformed_voice.phrases) == 1
+        assert len(second_transformed_voice.phrases) == 1
+        assert first_transformed_duration == pytest.approx(first_voice_duration * GOLDEN_RATIO)
+        assert second_transformed_duration == pytest.approx(second_voice_duration * GOLDEN_RATIO)
 
 
 class TestPhraseGoldenRatioShrink:
@@ -310,3 +409,117 @@ class TestGoldenRatioCompositionRegression:
         assert original_phrase_total_duration == pytest.approx(origin_seed_total_duration)
         assert phrase_duration_totals[1] == pytest.approx(original_phrase_total_duration * GOLDEN_RATIO)
         assert phrase_duration_totals[2] == pytest.approx(original_phrase_total_duration * GOLDEN_RATIO * GOLDEN_RATIO)
+
+    def test_score_golden_ratio_shrink_demo_scales_each_voice_total_duration(self):
+        first_voice_seed_total_duration = 8.0
+        second_voice_seed_total_duration = 4.0
+
+        composition_document = {
+            "motifs": {
+                "c_major_arpeggio": [
+                    "261.63:2.0",
+                    "329.63:2.0",
+                    "392.00:2.0",
+                    "523.25:2.0",
+                ],
+                "dyad_pulse": [
+                    "220.00:1.5",
+                    "277.18:2.5",
+                ],
+            },
+            "composition": {
+                "voices": [
+                    {
+                        "phrases": [
+                            {"motifs": ["c_major_arpeggio"]},
+                        ]
+                    },
+                    {
+                        "phrases": [
+                            {"motifs": ["dyad_pulse"]},
+                        ]
+                    },
+                ],
+                "score_transforms": [
+                    {
+                        "name": "score_golden_ratio_shrink",
+                        "params": {"dimension": "duration"},
+                    }
+                ],
+            },
+        }
+
+        score = transform_score(generate_score_plan(composition_document))
+
+        first_voice_duration_total = sum(
+            tone.duration
+            for phrase in score.voices[0].phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+        second_voice_duration_total = sum(
+            tone.duration
+            for phrase in score.voices[1].phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+
+        assert first_voice_duration_total == pytest.approx(first_voice_seed_total_duration / GOLDEN_RATIO)
+        assert second_voice_duration_total == pytest.approx(second_voice_seed_total_duration / GOLDEN_RATIO)
+
+    def test_score_golden_ratio_grow_demo_scales_each_voice_total_duration(self):
+        first_voice_seed_total_duration = 8.0
+        second_voice_seed_total_duration = 4.0
+
+        composition_document = {
+            "motifs": {
+                "c_major_arpeggio": [
+                    "261.63:2.0",
+                    "329.63:2.0",
+                    "392.00:2.0",
+                    "523.25:2.0",
+                ],
+                "dyad_pulse": [
+                    "220.00:1.5",
+                    "277.18:2.5",
+                ],
+            },
+            "composition": {
+                "voices": [
+                    {
+                        "phrases": [
+                            {"motifs": ["c_major_arpeggio"]},
+                        ]
+                    },
+                    {
+                        "phrases": [
+                            {"motifs": ["dyad_pulse"]},
+                        ]
+                    },
+                ],
+                "score_transforms": [
+                    {
+                        "name": "score_golden_ratio_grow",
+                        "params": {"dimension": "duration"},
+                    }
+                ],
+            },
+        }
+
+        score = transform_score(generate_score_plan(composition_document))
+
+        first_voice_duration_total = sum(
+            tone.duration
+            for phrase in score.voices[0].phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+        second_voice_duration_total = sum(
+            tone.duration
+            for phrase in score.voices[1].phrases
+            for motif in phrase.motifs
+            for tone in motif.tones
+        )
+
+        assert first_voice_duration_total == pytest.approx(first_voice_seed_total_duration * GOLDEN_RATIO)
+        assert second_voice_duration_total == pytest.approx(second_voice_seed_total_duration * GOLDEN_RATIO)
