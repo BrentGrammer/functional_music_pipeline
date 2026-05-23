@@ -92,6 +92,14 @@ The useful near-term refactor is to isolate the single-note frost expansion beha
 - Rewrite existing tests that assume one global frost field expansion from the earliest voice/cluster.
 - Run targeted frost tests before broader suite verification.
 
+## Documentation Cleanup
+
+- Update `README.md` so `frost_effect` documents both public params:
+  - `params.iterations`
+  - `params.sustain_notes`
+- Update frost demo comments that describe the old global-field or earliest-cluster behavior so they describe per-tone local frost seed behavior instead.
+- No tracked WAV, MIDI, or rendered audio files currently exist in the repository, so rerendering demos is an audio verification task rather than a required repo-file update.
+
 ## Demo Impact
 
 After this refactor, the existing frost demos should be rerendered. In particular, `emergent_pipeline_frost_bloom_demo.json` should sound more coherent because the frost bloom will respond to every note in the transformed output instead of spreading from only the first audible note.
