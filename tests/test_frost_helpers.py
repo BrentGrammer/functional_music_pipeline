@@ -11,6 +11,7 @@ from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
 from transforms.geological.frost_effect import (
     DEFAULT_FROST_EFFECT_ITERATIONS,
+    DEFAULT_FROST_EFFECT_SUSTAIN_NOTES,
     FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS,
     FROST_EFFECT_EDGE_STAGGER_MIN_SECONDS,
     FROST_EFFECT_PARAMS_SPEC,
@@ -186,16 +187,35 @@ def test_frost_effect_score_transform_adapter_rejects_non_integer_iterations():
         FROST_EFFECT_PARAMS_SPEC.parse_params({"iterations": True}, transform_name="frost_effect")
 
 
+def test_frost_effect_score_transform_adapter_rejects_non_boolean_sustain_notes():
+    with pytest.raises(ValueError):
+        FROST_EFFECT_PARAMS_SPEC.parse_params({"sustain_notes": 1}, transform_name="frost_effect")
+
+
 def test_frost_effect_score_transform_adapter_applies_default_params():
     seed_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
     params = FROST_EFFECT_PARAMS_SPEC.parse_params({}, transform_name="frost_effect")
 
-    assert params == FrostEffectParams(iterations=DEFAULT_FROST_EFFECT_ITERATIONS)
+    assert params == FrostEffectParams(
+        iterations=DEFAULT_FROST_EFFECT_ITERATIONS,
+        sustain_notes=DEFAULT_FROST_EFFECT_SUSTAIN_NOTES,
+    )
 
     result = frost_effect_score_transform_adapter(seed_score, params)
 
     assert result != seed_score
     assert len(result.voices) == len(seed_score.voices) + 3
+
+
+def test_frost_effect_score_transform_adapter_passes_sustain_notes_to_frost_effect():
+    seed_score = Score([Voice([Phrase([Motif("<test>", [Tone(440.0, duration=1.0)])])])])
+    params = FrostEffectParams(iterations=2, sustain_notes=True)
+
+    with patch("transforms.geological.frost_effect.frost_effect", return_value=seed_score) as frost_effect_mock:
+        result = frost_effect_score_transform_adapter(seed_score, params)
+
+    assert result is seed_score
+    frost_effect_mock.assert_called_once_with(seed_score, iterations=2, sustain_notes=True)
 
 
 @pytest.mark.parametrize("invalid_iterations", [0, -1])

@@ -10,7 +10,7 @@ from score_model.tone import Tone
 from score_model.tone_utils import copy_tones
 from score_model.traversal import flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import IntegerParam, ParsedTransformParams, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import BooleanParam, IntegerParam, ParsedTransformParams, TransformParamFieldSpec, TransformParamsSpec
 from transforms.basic.delay import delay_tones
 
 FROST_EFFECT_MINIMUM_OUTWARD_MOVEMENT_CENTS = 25.0
@@ -20,15 +20,20 @@ FROST_EFFECT_EDGE_STAGGER_MAX_SECONDS = 0.55
 FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MIN_SECONDS = 0.18
 FROST_EFFECT_SINGLE_SEED_EDGE_SEPARATION_MAX_SECONDS = 0.32
 DEFAULT_FROST_EFFECT_ITERATIONS = 1
+DEFAULT_FROST_EFFECT_SUSTAIN_NOTES = False
 
 
 @dataclass(frozen=True)
 class FrostEffectParams:
     iterations: int
+    sustain_notes: bool
 
 
 def _create_frost_effect_params(parsed_params: ParsedTransformParams) -> FrostEffectParams:
-    return FrostEffectParams(iterations=parsed_params.required("iterations", int))
+    return FrostEffectParams(
+        iterations=parsed_params.required("iterations", int),
+        sustain_notes=parsed_params.required("sustain_notes", bool),
+    )
 
 
 FROST_EFFECT_PARAMS_SPEC = TransformParamsSpec[FrostEffectParams](
@@ -37,6 +42,10 @@ FROST_EFFECT_PARAMS_SPEC = TransformParamsSpec[FrostEffectParams](
         "iterations": TransformParamFieldSpec(
             schema=IntegerParam(),
             default=DEFAULT_FROST_EFFECT_ITERATIONS,
+        ),
+        "sustain_notes": TransformParamFieldSpec(
+            schema=BooleanParam(),
+            default=DEFAULT_FROST_EFFECT_SUSTAIN_NOTES,
         )
     }
 )
@@ -279,7 +288,7 @@ def _apply_frost_iteration(score: Score) -> Score:
     return Score(original_voices + frosted_voices)
 
 
-def frost_effect(score: Score, iterations: int = 3) -> Score:
+def frost_effect(score: Score, iterations: int = 3, sustain_notes: bool = DEFAULT_FROST_EFFECT_SUSTAIN_NOTES) -> Score:
     """
     Score-level frost effect entry point.
 
@@ -296,4 +305,4 @@ def frost_effect(score: Score, iterations: int = 3) -> Score:
 
 
 def frost_effect_score_transform_adapter(score: Score, params: FrostEffectParams) -> Score:
-    return frost_effect(score, iterations=params.iterations)
+    return frost_effect(score, iterations=params.iterations, sustain_notes=params.sustain_notes)
