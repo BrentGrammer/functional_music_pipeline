@@ -27,11 +27,15 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - provided `repeatable_damage_key` is accepted when it is a string.
   - invalid `repeatable_damage_key` values are rejected through normal string param validation.
 - Add transforms/geological/fragment.py with:
-  - FragmentParams(damage_pct: int, damage_tones_chunk_size: int, repeatable_damage_key: str | None)
+  - FragmentParams(damage_pct: int, damage_tones_chunk_size: int, dimension: ToneDimension | None, repeatable_damage_key: str | None)
   - FRAGMENT_PARAMS_SPEC
   - validation for 0 <= damage_pct <= 100
   - validation for damage_tones_chunk_size >= 1
   - no-op behavior for `damage_pct=0`
+- Add an optional `dimension` param using the existing `ToneDimensionParam`.
+  - Default is `None`.
+  - `None` means multi-dimensional stochastic fragmentation.
+  - A provided `ToneDimension` restricts damage to that dimension.
 - When `repeatable_damage_key` is present, derive the random source from a stable hash such as SHA-256, not Python's built-in hash.
 - Review checkpoint: public API exists and no-op behavior works.
 
@@ -53,31 +57,40 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - Choose from currently valid fragment starts rather than retrying indefinitely.
   - When no full-width start remains but damage count remains, create the final partial fragment from a valid remaining adjacent run.
   - Every selected original-tone position must receive at least one actual damage operation.
-- Damage behavior:
-  - Roll full drop first.
-  - Full drop outputs one silent Tone with original duration.
-  - If not dropped, independently roll duration shortening and amplitude softening.
-  - If both non-drop rolls fail, force one non-drop chip so the selected tone is observably damaged.
+- Damage behavior when `dimension` is omitted:
+  - Roll tone removal first.
+  - Tone removal outputs one silent Tone with original duration.
+  - If not removed, independently roll duration damage and amplitude damage.
+  - If both non-removal rolls fail, force one non-removal damage so the selected tone is observably changed.
   - Shortened duration outputs two tones: shortened original tone plus trailing silence.
   - Shortened tone + trailing silence must equal the original duration.
-  - Amplitude softening only lowers amplitude.
+  - Amplitude damage only lowers amplitude.
+- Damage behavior when `dimension` is provided:
+  - ToneDimension.FREQUENCY: every selected tone is replaced with silence for its original duration.
+  - ToneDimension.DURATION: every selected tone is shortened and followed by trailing silence. No tone-removal roll or amplitude damage is applied.
+  - ToneDimension.AMPLITUDE: every selected tone has amplitude reduced. No tone-removal roll or duration damage is applied.
+  - Selected tones must always be observably changed within the selected dimension.
 - Use internal constants:
-  - FULL_DROP_CHANCE = 0.50
-  - DURATION_CHIP_CHANCE = 0.45
-  - AMPLITUDE_CHIP_CHANCE = 0.45
-  - MIN_DURATION_KEEP_RATIO = 0.25
-  - MAX_DURATION_KEEP_RATIO = 0.80
-  - MIN_AMPLITUDE_KEEP_RATIO = 0.10
-  - MAX_AMPLITUDE_KEEP_RATIO = 0.60
+  - TONE_REMOVAL_CHANCE = 0.50
+  - DURATION_DAMAGE_CHANCE = 0.45
+  - AMPLITUDE_DAMAGE_CHANCE = 0.45
+  - MIN_DURATION_AFTER_DAMAGE_SECONDS = 0.03
+  - MAX_DURATION_AFTER_DAMAGE_RATIO = 0.99
+  - MIN_AMPLITUDE_REDUCTION_DECIBELS = 0.1
+  - MAX_AMPLITUDE_REDUCTION_DECIBELS = 20.0
 - Add focused observable tests for:
   - `damage_pct` controls how many original-tone positions are changed in the resulting phrase.
   - same `repeatable_damage_key` produces the same changed-position pattern and transformed tone snapshot.
   - different `repeatable_damage_key` values can produce a different changed-position pattern or transformed tone snapshot.
-  - dropped tones become silence with preserved duration
+  - removed tones become silence with preserved duration
   - shortened tones preserve total timeline duration
   - softened tones never increase amplitude
-  - full drop wins over other damage
+  - tone removal wins over other damage in multi-dimensional mode
   - unselected tones remain unchanged
+  - omitted `dimension` keeps the multi-dimensional stochastic behavior
+  - `dimension=frequency` only creates silence for selected tones
+  - `dimension=duration` only shortens selected tones and preserves the phrase timeline
+  - `dimension=amplitude` only reduces selected tone amplitudes
 - Add focused selection-level tests for:
   - `damage_tones_chunk_size` repeats as the normal adjacent chunk width until the target damage count is reached.
   - If the remaining target damage count is smaller than `damage_tones_chunk_size`, only the final chunk may be smaller.
@@ -95,6 +108,7 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
 - Do not add a score-level transform in v1.
 - Add tests for:
   - parsed params invoke the phrase transform successfully
+  - parsed `dimension` strings invoke the dimension-bound phrase transform successfully
   - registry-based usage produces the same observable behavior as direct phrase-transform usage
   - invalid params fail through the registry path
 - Review checkpoint: project integration and public API.
@@ -108,6 +122,8 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - total phrase duration is preserved after transformation
   - damage_pct=0 returns an equivalent phrase
   - nonzero damage creates at least one silent, shortened, or softened remnant
+  - omitted `dimension` uses multi-dimensional stochastic behavior
+  - explicit `dimension` restricts damage to only that dimension
   - invalid params raise ValueError
 - Run targeted tests:
   - .venv/bin/pytest tests/test_geological_fragment.py -q
@@ -120,10 +136,32 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
 
 - The implementation lives under transforms/geological/fragment.py.
 - The public transform name is fragment.
-- Public params are exactly damage_pct, damage_tones_chunk_size, and repeatable_damage_key.
+- Public params are damage_pct, damage_tones_chunk_size, optional dimension, and repeatable_damage_key.
 - damage_pct controls total damaged original tones; damage_tones_chunk_size controls normal chunk width.
 - Fragment start positions must be stochastic; repeatable_damage_key only makes a specific stochastic result reproducible.
-- Timeline preservation is required for both full drops and shortened tones.
+- Timeline preservation is required for both tone removal and shortened tones.
+- Reuse the existing `ToneDimension` and parser support for `dimension`.
+- Omitted `dimension` means multi-dimensional stochastic fragmentation, not a new enum value.
+
+## Current Gap: Dimension-Bound Fragmentation
+
+The current implementation has completed the multi-dimensional path, but it does not yet support explicit dimension-bound fragmentation. Before continuing broader regression work, add the missing dimension support in a small follow-up slice.
+
+Next required steps:
+
+1. Add `dimension: ToneDimension | None` to `FragmentParams`.
+2. Add optional `dimension` to `FRAGMENT_PARAMS_SPEC` using `ToneDimensionParam`, defaulting to `None`.
+3. Add `dimension: ToneDimension | None = None` to `fragment_transform(...)`.
+4. Pass `params.dimension` from `fragment_phrase_transform(...)`.
+5. Keep current multi-dimensional damage behavior when `dimension is None`.
+6. Add dimension-bound damage behavior:
+   - frequency: selected tones become silence with original duration.
+   - duration: selected tones are shortened and followed by trailing silence.
+   - amplitude: selected tones have amplitude reduced.
+7. Add tests for direct and registry/parser usage of each explicit dimension.
+8. Re-run:
+   - .venv/bin/pytest tests/test_geological_fragment.py -q
+   - .venv/bin/pytest tests/test_transform_wrappers_behavior_happy_path.py -q
 
 ## Handoff
 
