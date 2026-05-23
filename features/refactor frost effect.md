@@ -13,12 +13,25 @@ That behavior is not the desired musical model for melodic material. If a phrase
 - Preserve the existing public transform name and params:
   - `name`: `frost_effect`
   - `params.iterations`: positive integer
+- Add an optional public transform param:
+  - `params.sustain_notes`: boolean
+  - defaults to `false` when omitted
+  - users must explicitly set it to `true` to enable duration extension
 - Change the score-level behavior so every audible tone in the input score becomes a local frost seed.
 - For each local seed tone, preserve the current single-note behavior:
   - replay the source tone in the frost generation
   - add one lower edge and one upper edge
   - repeat this process for each requested iteration
   - keep stochastic outward movement within the existing cent bounds
+- Preserve the existing stochastic rhythmic behavior:
+  - randomized stagger timing stays intact
+  - randomized edge order stays intact
+  - `sustain_notes` must not change generated note start times
+- When `sustain_notes` is `true`, extend generated frost note durations after the normal stochastic scheduling is complete.
+  - For each local frost generation, find the latest audible end time among that generation's generated notes.
+  - Extend each generated frost note in that local generation so it ends at the same latest end time.
+  - Do not alter the original source score voices.
+- When `sustain_notes` is omitted or `false`, generated frost notes keep their normal short staggered durations.
 - Schedule each local frost expansion relative to the source note's own start/end time, not only after the whole score.
 - Preserve the original score voices and append generated frost voices so the frost output plays polyphonically against the source material and other local frost events.
 
@@ -42,11 +55,14 @@ The useful near-term refactor is to isolate the single-note frost expansion beha
 
 3. Extract the current single-note frost behavior into a local expansion helper.
    - The helper should accept one seed event and `iterations`.
+   - The helper should accept `sustain_notes`, defaulting to `False` at the public param layer.
    - It should generate voices for each local generation.
    - Each generation should replay the previous local event and add one lower and one upper edge.
+   - It should apply duration extension only after each generation's stochastic notes have been scheduled.
 
-4. Update `frost_effect(score, iterations)` to:
+4. Update `frost_effect(score, iterations, sustain_notes=False)` to:
    - validate `iterations`
+   - parse and validate optional `sustain_notes`
    - copy/preserve original score voices
    - collect all audible seed events
    - generate local frost voices for every seed event
@@ -68,6 +84,11 @@ The useful near-term refactor is to isolate the single-note frost expansion beha
   - lower and upper edges are added
   - edge movement remains within existing cent bounds
   - later generations expand from the previous local generation
+- Add tests for `sustain_notes`:
+  - omitted `sustain_notes` defaults to `false`
+  - non-boolean `sustain_notes` is rejected
+  - `sustain_notes: false` preserves current generated note durations
+  - `sustain_notes: true` keeps stochastic staggered starts but extends generated notes to the latest audible end time in each local generation
 - Rewrite existing tests that assume one global frost field expansion from the earliest voice/cluster.
 - Run targeted frost tests before broader suite verification.
 
