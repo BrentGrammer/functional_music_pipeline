@@ -71,6 +71,44 @@ The useful near-term refactor is to isolate the single-note frost expansion beha
 
 5. Keep phrase-level support out of scope.
 
+## Iterative Implementation Plan
+
+1. Add `sustain_notes` param support only.
+   - Add `sustain_notes: bool` to `FrostEffectParams`.
+   - Add a `BooleanParam` field with default `False`.
+   - Pass the value through `frost_effect_score_transform_adapter`.
+   - Add tests for omitted/default `false` and non-boolean rejection.
+   - Do not change frost generation behavior in this step.
+
+2. Add seed event collection.
+   - Add the internal seed event representation.
+   - Add a helper that collects every audible tone with its absolute start and end time.
+   - Add tests for multiple tones, multiple phrases, multiple voices, leading silence, rests, and zero-amplitude tones.
+   - Keep public `frost_effect` behavior unchanged in this step.
+
+3. Extract single-seed local expansion.
+   - Move the current single-note frost behavior into a helper that expands one seed over `iterations`.
+   - Start the first generated event after the seed tone's end time.
+   - Make later generations expand from the previous local generation.
+   - Preserve stochastic stagger timing, randomized edge order, and cent bounds.
+   - Add focused tests around one seed before wiring all score seeds through it.
+
+4. Switch score behavior to all seeds.
+   - Update `frost_effect` to preserve original voices and append generated frost voices for every collected seed.
+   - Replace tests that assert the old earliest-cluster/global-field behavior.
+   - Add tests proving a multi-note line expands every audible note.
+
+5. Add `sustain_notes` duration extension.
+   - Apply duration extension after normal stochastic scheduling for each local generation.
+   - Preserve generated note start times.
+   - Extend only generated frost notes, not original score voices.
+   - Add tests for `sustain_notes: false` and `sustain_notes: true`.
+
+6. Update docs and demo comments.
+   - Update `README.md` with both public params.
+   - Update frost demo comments that describe the old global-field or earliest-cluster behavior.
+   - Treat demo rerendering as audio verification, not a required tracked file update.
+
 ## Testing Plan
 
 - Add tests for collecting audible seed events across:
