@@ -150,7 +150,7 @@ def test_terraced_drift_transforms_reject_invalid_param_types():
         TERRACED_DRIFT_PARAMS_SPEC.parse_params({"dimension": 1, "max_step_change_pct": 25}, transform_name="terraced_drift")
 
 
-def test_golden_ratio_score_transform_rejects_non_dimension_value():
+def test_golden_ratio_params_spec_rejects_non_dimension_value():
     from transforms.proportion.golden_ratio import GOLDEN_RATIO_PARAMS_SPEC
     with pytest.raises(ValueError):
         GOLDEN_RATIO_PARAMS_SPEC.parse_params({"dimension": 3}, transform_name="golden_ratio")

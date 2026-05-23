@@ -127,11 +127,6 @@ def phrase_relative_golden_ratio_grow(
 
     return scale_transform(tones, dimension, (prev_val * GOLDEN_RATIO) / curr_val)
 
-
-def golden_ratio_score_transform(score: Score, params: GoldenRatioParams) -> Score:
-    return score_golden_ratio_shrink_transform(score, params)
-
-
 def score_golden_ratio_shrink_transform(score: Score, params: GoldenRatioParams) -> Score:
     new_voices = []
 

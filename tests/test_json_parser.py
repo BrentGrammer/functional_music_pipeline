@@ -727,6 +727,36 @@ class TestScaleTransformParsing:
         # golden_ratio on frequency scales frequency by 1/GOLDEN_RATIO
         assert result[0].frequency == pytest.approx(440.0 / GOLDEN_RATIO)
 
+    def test_score_golden_ratio_shrink_accepts_optional_dimension(self):
+        composition_doc: CompositionDocumentInput = {
+            "motifs": {"seed": ["440:1.0"]},
+            "composition": {
+                "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                "score_transforms": [
+                    {"name": "score_golden_ratio_shrink", "params": {"dimension": "frequency"}}
+                ],
+            },
+        }
+
+        score = transform_score(generate_score_plan(composition_doc))
+
+        assert flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(440.0 / GOLDEN_RATIO)
+
+    def test_score_golden_ratio_grow_accepts_optional_dimension(self):
+        composition_doc: CompositionDocumentInput = {
+            "motifs": {"seed": ["440:1.0"]},
+            "composition": {
+                "voices": [{"phrases": [{"motifs": ["seed"]}]}],
+                "score_transforms": [
+                    {"name": "score_golden_ratio_grow", "params": {"dimension": "frequency"}}
+                ],
+            },
+        }
+
+        score = transform_score(generate_score_plan(composition_doc))
+
+        assert flatten_voice_tones(score.voices[0])[0].frequency == pytest.approx(440.0 * GOLDEN_RATIO)
+
     def test_erosion_rejects_unknown_param(self):
         parsed_motifs = {"seed": [Tone(440)]}
         phrase_config = {

@@ -38,10 +38,11 @@ from transforms.proportion.feigenbaum import (
 )
 from transforms.proportion.golden_ratio import (
     GOLDEN_RATIO_PARAMS_SPEC,
-    golden_ratio_score_transform,
     golden_ratio_single_phrase_transform,
     phrase_relative_golden_ratio_grow_transform,
     phrase_relative_golden_ratio_shrink_transform,
+    score_golden_ratio_grow_transform,
+    score_golden_ratio_shrink_transform,
 )
 from transforms.tempo.accelerando import ACCELERANDO_PARAMS_SPEC, accelerando_phrase_transform
 from transforms.tempo.ritardando import RITARDANDO_PARAMS_SPEC, ritardando_phrase_transform
@@ -165,10 +166,15 @@ SCORE_TRANSFORMS: dict[str, RegisteredScoreTransform] = {
         params_spec=REVERSE_PARAMS_SPEC,
         transform_function=reverse_score_transform,
     ),
-    "golden_ratio": ScoreTransformDefinition(
-        name="golden_ratio",
+    "score_golden_ratio_shrink": ScoreTransformDefinition(
+        name="score_golden_ratio_shrink",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
-        transform_function=golden_ratio_score_transform,
+        transform_function=score_golden_ratio_shrink_transform,
+    ),
+    "score_golden_ratio_grow": ScoreTransformDefinition(
+        name="score_golden_ratio_grow",
+        params_spec=GOLDEN_RATIO_PARAMS_SPEC,
+        transform_function=score_golden_ratio_grow_transform,
     ),
     "invert": ScoreTransformDefinition(
         name="invert",
