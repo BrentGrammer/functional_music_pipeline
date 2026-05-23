@@ -29,7 +29,7 @@ The multi-dimensional behavior could work like this:
 
 1. Select damaged notes using patchy clusters.
    - damage_pct=40 means choose roughly 40% of the notes.
-   - fragment_span=4 means damaged areas tend to appear in irregular runs in 4 notes long spans, unless the damage percent dictates that we cannot damage that many notes to adhere to it.
+   - tones_per_fragment=4 means damaged areas tend to appear in irregular runs in 4 note spans, unless the damage percent dictates that we cannot damage that many notes to adhere to it.
    - Selection keeps trying random patch starts and random patch lengths until the target damage count is reached.
 2. For each selected note, apply stochastic chips.
    - First, roll for full drop.
@@ -46,7 +46,7 @@ The multi-dimensional behavior could work like this:
 fragment(
       damage_pct=40,
       tones_per_fragment=4,
-      seed=None,
+      pattern_key="castle-valley-a",
   )
 ```
 
@@ -73,7 +73,7 @@ That gives the user a clearer mental model:
 
 damage_pct = how much of the phrase is damaged
 tones_per_fragment = how chunky the damage is
-seed = reproduce this ruin
+pattern_key = reuse this fragmentation pattern later
 
 Example: 20 notes, damage_pct=40, tones_per_fragment=4 means 8 notes get damaged, likely as two 4-note damaged regions. That is much easier to predict than “up to 4
 notes, maybe smaller, maybe scattered.”
@@ -82,7 +82,7 @@ notes, maybe smaller, maybe scattered.”
 
 - First sweep the original phrase with a random selector to pluck a random selection of notes in the phrase. The process should be stochastic and non-deterministic.
 - After a randomly seleted sample is chosen, operate on the dimension to fragment or reduce it ("chip it away") as described in hte above block.
-- optional seed parameter to make the transform deterministic if we want to repeat the same figure, the same ruin later in the composition.
+- optional pattern_key parameter to reuse the same figure, the same ruin later in the composition. If pattern_key is omitted, the transform is stochastic and non-deterministic.
 
 # Fragment Transform Plan (Revised based on discussion)
 
@@ -97,16 +97,20 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 - Public params:
   - damage_pct: int: percentage of original tones to damage, 0-100.
   - tones_per_fragment: int: exact target width of each damaged patch, in adjacent tones.
-  - seed: int | None: optional; same seed reproduces the same fragment pattern.
+  - pattern_key: string: optional; same pattern_key reproduces the same fragment pattern. If omitted, the transform is stochastic and non-deterministic.
+  - Use a stable hash of pattern_key for repeatability. Do not use Python's built-in hash because it is randomized between processes.
 - Selection behavior:
   - Compute the target damaged tone count from damage_pct using nearest whole tone, with nonzero percentages damaging at least one tone.
   - Randomly choose fragment start indexes.
   - Each full fragment damages exactly tones_per_fragment adjacent original tones; only the fragment may be smaller when needed to satisfy damage_pct.
   - Continue creating randomly placed fragments until the target damaged tone count is reached.
+  - Choose from currently valid fragment starts rather than retrying indefinitely.
+  - When no full-width start remains but damage count remains, create the final partial fragment from a valid remaining adjacent run.
 - Damage behavior:
   - For each selected tone, roll full drop first.
   - Full drop replaces the tone with silence of the same duration.
   - If not dropped, independently roll duration shortening and amplitude softening.
+  - If both non-drop rolls fail, force one non-drop chip so every selected tone is observably damaged.
   - Duration shortening emits a shortened tone plus trailing silence so total phrase duration is preserved.
   - Amplitude softening only reduces volume, never increases it.
 
@@ -138,8 +142,8 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 
 ## Test Plan
 
-- Add unit tests for deterministic output with the same seed.
-- Verify different seeds can choose different fragment start positions.
+- Add unit tests for repeatable output with the same pattern_key.
+- Verify different pattern_key values can choose different fragment start positions.
 - Verify damage_pct controls how many original tones are selected for damage.
 - Verify tones_per_fragment=4 creates damaged regions from randomly chosen starts and targets four adjacent tones per fragment.
 - Verify dropped tones become silence with original duration.
@@ -154,8 +158,9 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 - V1 is phrase-level only, not score-level.
 - The transform name is fragment.
 - Silence is represented with Tone(frequency=0, amplitude=0.0, duration=...).
-- Damaged fragment starts must be stochastic; seed exists only to make that randomness reproducible.
+- Damaged fragment starts must be stochastic; pattern_key exists only to make a specific stochastic result reproducible.
 
 ## Implementation
 
-- See [Implementation Plan](./fragment_transform_implementation_plan.md) for implementation steps.
+- Use the iterative test-first plan in [fragment_transform_implementation_plan.md](./fragment_transform_implementation_plan.md).
+- Start each step by adding failing observable-behavior tests, then implement the smallest production change needed to pass them.
