@@ -39,3 +39,6 @@ uv.lock
 !.serena/project.local.yml
 
 .antigravitycli/
+
+# experiments
+experiments/
