@@ -1,0 +1,39 @@
+{
+  "description": "Shrink a C Major Arpeggio phrase by the Golden Ratio twice.",
+  "motifs": {
+    "c_major_arpeggio": ["261.63:2.0", "329.63:2.0", "392.00:2.0", "523.25:2.0"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "motifs": ["c_major_arpeggio"]
+          },
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [
+              {
+                "name": "phrase_relative_golden_ratio_shrink",
+                "params": {
+                  "dimension": "duration"
+                }
+              }
+            ]
+          },
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [
+              {
+                "name": "phrase_relative_golden_ratio_shrink",
+                "params": {
+                  "dimension": "duration"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
