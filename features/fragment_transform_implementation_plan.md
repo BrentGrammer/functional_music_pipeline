@@ -124,3 +124,51 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
 - damage_pct controls total damaged original tones; damage_tones_chunk_size controls normal chunk width.
 - Fragment start positions must be stochastic; damage_pattern_key only makes a specific stochastic result reproducible.
 - Timeline preservation is required for both full drops and shortened tones.
+
+## Handoff
+
+Current state at handoff:
+
+- Iteration 1 skeleton exists in `transforms/geological/fragment.py`.
+- `fragment` is registered as a phrase transform only.
+- `FRAGMENT_PARAMS_SPEC` exists for `damage_pct`, `damage_tones_chunk_size`, and `damage_pattern_key`.
+- `damage_pct=0` currently returns an equivalent transformed phrase.
+- Nonzero `damage_pct` still raises `NotImplementedError`.
+
+Current test state:
+
+- `tests/test_geological_fragment.py` contains the iteration 1 public API coverage and top-level acceptance tests.
+- The simple top-level acceptance tests are the right shape:
+  - same `damage_pattern_key` repeats the same result
+  - different `damage_pattern_key` values can change the result
+  - total phrase duration is preserved while the phrase changes
+- Additional chunk-size acceptance tests were explored and became too complex at the top-level output boundary.
+- The user explicitly wants exact chunk-shape behavior tested, but not through acceptance tests that reverse-engineer transformed output.
+
+Important testing boundary decisions:
+
+- Top-level acceptance tests should remain at the business-layer entry point using `generate_score_plan(...)` and `transform_score(...)`.
+- Those acceptance tests should stay simple, self-contained, and readable without helper-heavy reconstruction logic.
+- Exact chunk placement rules belong in focused selection-level tests, likely around a small explicit selection function introduced for that purpose.
+
+User preferences that should be preserved next session:
+
+- Keep tests self-contained. Do not force the reader to scroll to module-level constants just to understand a test case.
+- Avoid overly clever acceptance-test logic with bookkeeping loops, output reconstruction, or dense helper behavior inline.
+- Prefer regular local variable names over all-caps extracted constants inside tests.
+- The broader design concern about param-validation sprawl was recorded in `features/current/centralize_transform_param_validation.md`.
+
+Targeted test status before clearing context:
+
+- `tests/test_geological_fragment.py` was red because nonzero `fragment` behavior is not implemented yet.
+- The expected red boundary should remain tied to missing implementation, not to confusing or unstable test design.
+
+Next smallest step:
+
+1. Clean up `tests/test_geological_fragment.py` so only the simple top-level acceptance tests remain at that level.
+2. Add focused selection-level tests for exact chunk behavior:
+   - repeated full chunks
+   - final partial chunk only when needed
+   - no duplicate selected positions
+   - selected count matches the `damage_pct` target
+3. Only after those tests exist, implement the explicit fragment-selection function and then the real damage behavior.
