@@ -29,7 +29,7 @@ The multi-dimensional behavior could work like this:
 
 1. Select damaged notes using patchy clusters.
    - damage_pct=40 means choose roughly 40% of the notes.
-   - damage_tones_span=4 means damaged areas tend to appear in irregular runs in 4 note spans, unless the damage percent dictates that we cannot damage that many notes to adhere to it.
+   - damage_tones_chunk_size=4 means damaged areas tend to appear in irregular runs in 4 note spans, unless the damage percent dictates that we cannot damage that many notes to adhere to it.
    - Selection keeps trying random patch starts and random patch lengths until the target damage count is reached.
 2. For each selected note, apply stochastic chips.
    - First, roll for full drop.
@@ -45,7 +45,7 @@ The multi-dimensional behavior could work like this:
 ```python
 fragment(
       damage_pct=40,
-      damage_tones_span=4,
+      damage_tones_chunk_size=4,
       damage_pattern_key="pattern-key-a",
   )
 ```
@@ -58,7 +58,7 @@ amplitude chip chance if not dropped: 45%
 duration keep range: 25%-80% of original duration
 amplitude keep range: 10%-60% of original amplitude
 
-`damage_tones_span`=4
+`damage_tones_chunk_size`=4
 
 Meaning: when the transform creates a damaged patch, it tries to damage 4 adjacent notes at a time. The stochastic part is then limited to:
 
@@ -67,15 +67,15 @@ Meaning: when the transform creates a damaged patch, it tries to damage 4 adjace
 - what kind of chip each selected note receives
 
 Each fragment targets exactly tones_per_fragment adjacent original tones. If the remaining number of tones needed to satisfy damage_pct is smaller than
-damage_tones_span, the final fragment targets only that remaining number.
+damage_tones_chunk_size, the final fragment targets only that remaining number.
 
 That gives the user a clearer mental model:
 
 damage_pct = how much of the phrase is damaged
-damage_tones_span = how chunky the damage is
+damage_tones_chunk_size = how chunky the damage is
 damage_pattern_key = reuse this fragmentation pattern later
 
-Example: 20 notes, damage_pct=40, damage_tones_span=4 means 8 notes get damaged, likely as two 4-note damaged regions. That is much easier to predict than “up to 4
+Example: 20 notes, damage_pct=40, damage_tones_chunk_size=4 means 8 notes get damaged, likely as two 4-note damaged regions. That is much easier to predict than “up to 4
 notes, maybe smaller, maybe scattered.”
 
 ### Proposed Design
@@ -96,13 +96,13 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 - Add a new phrase transform registered as fragment.
 - Public params:
   - damage_pct: int: percentage of original tones to damage, 0-100.
-  - damage_tones_span: int: exact target width of each damaged patch, in adjacent tones.
+  - damage_tones_chunk_size: int: exact target width of each damaged patch, in adjacent tones.
   - damage_pattern_key: string: optional; same damage_pattern_key reproduces the same fragment pattern. If omitted, the transform is stochastic and non-deterministic.
   - Use a stable hash of damage_pattern_key for repeatability. Do not use Python's built-in hash because it is randomized between processes.
 - Selection behavior:
   - Compute the target damaged tone count from damage_pct using nearest whole tone, with nonzero percentages damaging at least one tone.
   - Randomly choose fragment start indexes.
-  - Each full fragment damages exactly damage_tones_span adjacent original tones; only the fragment may be smaller when needed to satisfy damage_pct.
+  - Each full fragment damages exactly damage_tones_chunk_size adjacent original tones; only the fragment may be smaller when needed to satisfy damage_pct.
   - Continue creating randomly placed fragments until the target damaged tone count is reached.
   - Choose from currently valid fragment starts rather than retrying indefinitely.
   - When no full-width start remains but damage count remains, create the final partial fragment from a valid remaining adjacent run.
@@ -115,21 +115,21 @@ stochastically choosing fragment start positions, creating silent holes, shorten
   - Amplitude softening only reduces volume, never increases it.
 
   damage_pct determines the total number of tones to damage.
-  damage_tones_span determines the normal fragment size.
+  damage_tones_chunk_size determines the normal fragment size.
   If those two conflict, damage_pct wins for the final fragment.
 
   Example:
-  - 20 tones, damage_pct=40, damage_tones_span=4
+  - 20 tones, damage_pct=40, damage_tones_chunk_size=4
   - Target damage count = 8 tones
   - Result = two full 4-tone fragments
 
   But:
-  - 20 tones, damage_pct=30, damage_tones_span=4
+  - 20 tones, damage_pct=30, damage_tones_chunk_size=4
   - Target damage count = 6 tones
   - Result = one full 4-tone fragment + one final 2-tone fragment
 
   And:
-  - 20 tones, damage_pct=10, damage_tones_span=4
+  - 20 tones, damage_pct=10, damage_tones_chunk_size=4
   - Target damage count = 2 tones
   - Result = one 2-tone fragment, because damaging 4 tones would violate damage_pct
 
@@ -145,7 +145,7 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 - Add unit tests for repeatable output with the same damage_pattern_key.
 - Verify different damage_pattern_key values can choose different fragment start positions.
 - Verify damage_pct controls how many original tones are selected for damage.
-- Verify damage_tones_span=4 creates damaged regions from randomly chosen starts and targets four adjacent tones per fragment.
+- Verify damage_tones_chunk_size=4 creates damaged regions from randomly chosen starts and targets four adjacent tones per fragment.
 - Verify dropped tones become silence with original duration.
 - Verify shortened tones preserve timeline by adding trailing silence.
 - Verify softened tones reduce amplitude and never increase it.

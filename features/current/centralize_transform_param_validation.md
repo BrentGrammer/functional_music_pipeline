@@ -7,7 +7,7 @@ The current transform params system splits validation across two places:
 - `TransformParamFieldSpec` handles shape and type parsing.
 - Individual transform modules often add separate validation functions for value rules such as numeric bounds.
 
-This creates validation sprawl and weakens the purpose of the params spec abstraction. The `fragment` transform surfaced this clearly: the public params are declared in the spec, but range validation for `damage_pct` and `damage_tones_span` still lives in the transform module.
+This creates validation sprawl and weakens the purpose of the params spec abstraction. The `fragment` transform surfaced this clearly: the public params are declared in the spec, but range validation for `damage_pct` and `damage_tones_chunk_size` still lives in the transform module.
 
 ## Goal
 
