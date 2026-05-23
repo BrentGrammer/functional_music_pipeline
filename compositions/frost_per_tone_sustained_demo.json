@@ -1,0 +1,35 @@
+{
+  "description": "Demonstrates the refactored frost behavior with sustain_notes enabled. Each audible note still seeds its own local frost bloom, but the generated notes within each bloom are extended to a shared local end time.",
+  "motifs": {
+    "per_tone_frost_probe": [
+      "440:0.75",
+      "0:1.0",
+      "554.37:0.75",
+      "0:1.0",
+      "659.25:0.75"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "PerToneFrostSustainedVoice",
+        "phrases": [
+          {
+            "comment": "The same three-note source line as the reference and unsustained demos. Compare this render with the unsustained version to hear how sustain_notes stretches each local frost bloom without changing its staggered start times.",
+            "motifs": ["per_tone_frost_probe"]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "comment": "One frost iteration per audible seed with sustain_notes enabled. Each local replay-plus-edges group is extended to its own latest audible end time after normal stochastic scheduling.",
+        "name": "frost_effect",
+        "params": {
+          "iterations": 1,
+          "sustain_notes": true
+        }
+      }
+    ]
+  }
+}

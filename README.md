@@ -164,9 +164,15 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   ```json
   "transforms": [{"name": "erosion", "params": {"dimension": "duration"}}]
   ```
-- **`frost_effect`**: Simulates the frost effect which slowly creates cracks in rock as precipitation gets into micro-crevices and oscillates between freezing and thawing to gradually widen the cracks (e.g., in hoodoos in Southeast Utah). It optionally accepts `iterations`.
+- **`frost_effect`**: Simulates freeze-thaw expansion which occurs in hoodoo formation in southest Utah by appending polyphonic frost blooms to the score. Each audible tone in the input score becomes its own local frost seed. Accepts `iterations` (non-negative integer, `0` is a no-op) and optional `sustain_notes` (boolean, defaults to `false`).
+  - With `sustain_notes: false`, generated frost notes keep their normal staggered durations. With `sustain_notes: true`, generated frost notes durations within each local frost bloom are extended so they all share the same end time in that generation.
   ```json
-  "score_transforms": [{"name": "frost_effect", "params": {"iterations": 3}}]
+  "score_transforms": [
+    {
+      "name": "frost_effect",
+      "params": { "iterations": 3, "sustain_notes": true }
+    }
+  ]
   ```
 - **`terraced_drift`**: A quantized random walk that moves in discrete plateaus. Accepts `dimension` and `max_step_change_pct` (maximum percentage each tone can change from the previous, 1–100).
 

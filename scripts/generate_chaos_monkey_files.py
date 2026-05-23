@@ -5,11 +5,8 @@ import sys
 # Ensure functional_music_pipeline is in path if this script is in scripts/
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from transforms.base import BooleanParam, EnumParam, FloatParam, IntegerParam, StringParam, ToneDimensionParam
 from transforms.registry import PHRASE_TRANSFORMS, SCORE_TRANSFORMS
-from transforms.base import (
-    FloatParam, IntegerParam, StringParam, BooleanParam,
-    ToneDimensionParam, EnumParam
-)
 
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'compositions', 'chaos_monkey'))
 os.makedirs(OUTPUT_DIR, exist_ok=True)

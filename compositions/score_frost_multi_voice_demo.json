@@ -17,7 +17,7 @@
     ],
     "score_transforms": [
       {
-        "comment": "With two voices at different pitches, frost_effect identifies the 'outer edges' of the harmonic field and grows new voices from there. You will hear the original chord, followed by staggered 'crystals' that expand both higher and lower than the original seeds.",
+        "comment": "With two simultaneous source tones, frost_effect treats each audible tone as its own local frost seed. You will hear the original chord first, then staggered replay-and-edge blooms appended for both seed tones, creating a denser polyphonic crystal texture.",
         "name": "frost_effect",
         "params": {
           "iterations": 2

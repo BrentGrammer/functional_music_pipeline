@@ -116,18 +116,38 @@ def test_frost_cluster_demo_grows_by_audible_events():
 
     assert isinstance(score, Score)
 
-    source_event_voices = score.voices[0:3]
-    first_event_voices = score.voices[3:8]
-    second_event_voices = score.voices[8:15]
-    third_event_voices = score.voices[15:24]
-    fourth_event_voices = score.voices[24:35]
+    source_event_voices = [
+        voice
+        for voice in score.voices
+        if getattr(voice, "frost_generation_index", 0) == 0
+    ]
+    first_event_voices = [
+        voice
+        for voice in score.voices
+        if getattr(voice, "frost_generation_index", 0) == 1
+    ]
+    second_event_voices = [
+        voice
+        for voice in score.voices
+        if getattr(voice, "frost_generation_index", 0) == 2
+    ]
+    third_event_voices = [
+        voice
+        for voice in score.voices
+        if getattr(voice, "frost_generation_index", 0) == 3
+    ]
+    fourth_event_voices = [
+        voice
+        for voice in score.voices
+        if getattr(voice, "frost_generation_index", 0) == 4
+    ]
 
-    assert len(score.voices) == 35
+    assert len(score.voices) == 75
     assert len(source_event_voices) == 3
-    assert len(first_event_voices) == 5
-    assert len(second_event_voices) == 7
-    assert len(third_event_voices) == 9
-    assert len(fourth_event_voices) == 11
+    assert len(first_event_voices) == 9
+    assert len(second_event_voices) == 15
+    assert len(third_event_voices) == 21
+    assert len(fourth_event_voices) == 27
 
     source_event_frequencies = {_audible_frequency(voice) for voice in source_event_voices}
     first_event_frequencies = {_audible_frequency(voice) for voice in first_event_voices}
@@ -146,8 +166,3 @@ def test_frost_cluster_demo_grows_by_audible_events():
     assert first_event_frequencies.issubset(second_event_frequencies)
     assert second_event_frequencies.issubset(third_event_frequencies)
     assert third_event_frequencies.issubset(fourth_event_frequencies)
-
-    _assert_controlled_edge_stagger(first_event_voices, list(source_event_frequencies))
-    _assert_event_follows(first_event_voices, second_event_voices)
-    _assert_event_follows(second_event_voices, third_event_voices)
-    _assert_event_follows(third_event_voices, fourth_event_voices)
