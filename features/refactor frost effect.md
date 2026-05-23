@@ -33,6 +33,7 @@ That behavior is not the desired musical model for melodic material. If a phrase
   - Do not alter the original source score voices.
 - When `sustain_notes` is omitted or `false`, generated frost notes keep their normal short staggered durations.
 - Schedule each local frost expansion relative to the source note's own start/end time, not only after the whole score.
+  - The first generated frost event for a local seed starts after that source note's end time, preserving the current single-note scheduling model.
 - Preserve the original score voices and append generated frost voices so the frost output plays polyphonically against the source material and other local frost events.
 
 ## Current Design Constraint
