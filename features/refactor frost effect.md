@@ -12,7 +12,8 @@ That behavior is not the desired musical model for melodic material. If a phrase
 - Do not add phrase-level JSON support in this refactor.
 - Preserve the existing public transform name and params:
   - `name`: `frost_effect`
-  - `params.iterations`: positive integer
+  - `params.iterations`: non-negative integer
+  - `params.iterations: 0` is a valid no-op
 - Add an optional public transform param:
   - `params.sustain_notes`: boolean
   - defaults to `false` when omitted
@@ -63,6 +64,7 @@ The useful near-term refactor is to isolate the single-note frost expansion beha
 
 4. Update `frost_effect(score, iterations, sustain_notes=False)` to:
    - validate `iterations`
+   - treat `iterations=0` as a no-op
    - parse and validate optional `sustain_notes`
    - copy/preserve original score voices
    - collect all audible seed events
@@ -71,40 +73,57 @@ The useful near-term refactor is to isolate the single-note frost expansion beha
 
 5. Keep phrase-level support out of scope.
 
+## Current Status
+
+- Completed in code:
+  - `sustain_notes` param parsing and adapter wiring
+  - audible seed event collection across full score traversal
+  - local per-seed frost voice generation
+  - score-level switch from earliest-cluster behavior to every-audible-seed behavior
+  - local `sustain_notes` duration extension
+- Current public contract:
+  - `params.iterations` is a non-negative integer
+  - `iterations=0` is a valid no-op
+  - negative iterations are rejected
+- Remaining work:
+  - update `README.md`
+  - update frost demo comments
+  - optional broader suite verification / audio rerender verification
+
 ## Iterative Implementation Plan
 
-1. Add `sustain_notes` param support only.
+1. Completed: add `sustain_notes` param support only.
    - Add `sustain_notes: bool` to `FrostEffectParams`.
    - Add a `BooleanParam` field with default `False`.
    - Pass the value through `frost_effect_score_transform_adapter`.
    - Add tests for omitted/default `false` and non-boolean rejection.
    - Do not change frost generation behavior in this step.
 
-2. Add seed event collection.
+2. Completed: add seed event collection.
    - Add the internal seed event representation.
    - Add a helper that collects every audible tone with its absolute start and end time.
    - Add tests for multiple tones, multiple phrases, multiple voices, leading silence, rests, and zero-amplitude tones.
    - Keep public `frost_effect` behavior unchanged in this step.
 
-3. Extract single-seed local expansion.
+3. Completed: extract single-seed local expansion.
    - Move the current single-note frost behavior into a helper that expands one seed over `iterations`.
    - Start the first generated event after the seed tone's end time.
    - Make later generations expand from the previous local generation.
    - Preserve stochastic stagger timing, randomized edge order, and cent bounds.
    - Add focused tests around one seed before wiring all score seeds through it.
 
-4. Switch score behavior to all seeds.
+4. Completed: switch score behavior to all seeds.
    - Update `frost_effect` to preserve original voices and append generated frost voices for every collected seed.
    - Replace tests that assert the old earliest-cluster/global-field behavior.
    - Add tests proving a multi-note line expands every audible note.
 
-5. Add `sustain_notes` duration extension.
+5. Completed: add `sustain_notes` duration extension.
    - Apply duration extension after normal stochastic scheduling for each local generation.
    - Preserve generated note start times.
    - Extend only generated frost notes, not original score voices.
    - Add tests for `sustain_notes: false` and `sustain_notes: true`.
 
-6. Update docs and demo comments.
+6. Remaining: update docs and demo comments.
    - Update `README.md` with both public params.
    - Update frost demo comments that describe the old global-field or earliest-cluster behavior.
    - Treat demo rerendering as audio verification, not a required tracked file update.
