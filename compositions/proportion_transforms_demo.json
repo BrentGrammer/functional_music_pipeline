@@ -42,7 +42,7 @@
             "motifs": ["melody"],
             "transforms": [
               {
-                "name": "phrase_golden_ratio_grow",
+                "name": "phrase_relative_golden_ratio_grow",
                 "params": { "dimension": "duration" }
               }
             ]
@@ -52,7 +52,7 @@
             "motifs": ["melody"],
             "transforms": [
               {
-                "name": "phrase_golden_ratio_shrink",
+                "name": "phrase_relative_golden_ratio_shrink",
                 "params": { "dimension": "duration" }
               }
             ]

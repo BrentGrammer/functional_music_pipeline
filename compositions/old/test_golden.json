@@ -1,0 +1,106 @@
+{
+  "description": "A showcase of the stochastic profile transforms. Each voice plays the same C major arpeggio, but has a different stochastic transform applied to a different musical dimension (frequency, duration, or amplitude). A score-level transform is also applied to all voices.",
+  "motifs": {
+    "c_major_arpeggio": [
+      "261.63:2.0",
+      "329.63:2.0",
+      "392.00:2.0",
+      "523.25:2.0"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+               {
+                 "name": "weierstrass",
+                 "params": {
+                   "dimension": "frequency",
+                   "intensity": "low"
+                 }
+               }
+            ]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+              {
+                "name": "terraced_drift",
+                "params": {
+                  "dimension": "duration",
+                  "max_step_change_pct": 50
+                }
+              }
+            ]
+          }
+        ]
+      },
+       {
+         "phrases": [
+           {
+             "motifs": [
+               "c_major_arpeggio"
+             ],
+             "transforms": [
+               {
+                 "name": "cellular_automata",
+                  "params": {
+                    "dimension": "amplitude",
+                    "rule": 30,
+                    "generations": 5,
+                    "max_deviation": 0.4
+                  }
+               }
+             ]
+           }
+         ]
+       },
+       {
+         "phrases": [
+           {
+             "motifs": [
+               "c_major_arpeggio"
+             ],
+             "transforms": [
+                {
+                  "name": "random_drop",
+                  "params": {
+                    "dimension": "amplitude",
+                    "max_drop_pct": 90,
+                    "drop_frequency_pct": 50
+                  }
+                },
+               {
+                 "name": "random_drop",
+                 "params": {
+                   "dimension": "amplitude",
+                   "max_drop_pct": 75,
+                   "drop_frequency_pct": 50
+                 }
+               },
+               {
+                 "name": "random_drop",
+                 "params": {
+                   "dimension": "amplitude",
+                   "max_drop_pct": 25,
+                   "drop_frequency_pct": 20
+                 }
+               }
+             ]
+           }
+         ]
+       }
+    ]
+  }
+}

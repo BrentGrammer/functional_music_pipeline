@@ -18,7 +18,7 @@ from transforms.proportion.golden_ratio import (
 
 
 class TestGoldenRatioTransform:
-    def test_golden_ratio_scales_duration_by_inverse_constant(self):
+    def test_golden_ratio_shrink_scales_duration_down_proportional_to_original_duration(self):
         original_duration = 1.0
         tones = [Tone(440.0, original_duration)]
 
@@ -26,7 +26,7 @@ class TestGoldenRatioTransform:
 
         assert result[0].duration == pytest.approx(original_duration / GOLDEN_RATIO)
 
-    def test_golden_ratio_scales_frequency_when_dimension_is_frequency_string(self):
+    def test_golden_ratio_shrink_scales_frequency_down_when_dimension_is_frequency_string(self):
         original_frequency = 440.0
         original_duration = 1.0
         tones = [Tone(original_frequency, original_duration)]
@@ -50,11 +50,11 @@ class TestPhraseGoldenRatioShrink:
 
         transformed_phrase = phrase_relative_golden_ratio_shrink(current_phrase, previous_phrase)
 
-        expected_total_duration = previous_phrase_total_duration / GOLDEN_RATIO
+        expected_total_duration_current_phrase = previous_phrase_total_duration / GOLDEN_RATIO # 0.618 seconds total or 61.8% of the prev phrase duration after shrinking
         actual_total_duration = sum(tone.duration for tone in transformed_phrase)
-        expected_duration_per_tone = expected_total_duration / len(current_phrase)
+        expected_duration_per_tone = expected_total_duration_current_phrase / len(current_phrase)
 
-        assert actual_total_duration == pytest.approx(expected_total_duration)
+        assert actual_total_duration == pytest.approx(expected_total_duration_current_phrase)
         assert transformed_phrase[0].duration == pytest.approx(expected_duration_per_tone)
         assert transformed_phrase[1].duration == pytest.approx(expected_duration_per_tone)
 
@@ -63,7 +63,7 @@ class TestPhraseGoldenRatioShrink:
 
         with pytest.raises(
             ValueError,
-            match="Cannot apply phrase-golden-ratio-shrink: no preceding phrases exist to relate to.",
+            match="Cannot apply phrase-relative-golden-ratio-shrink: no preceding phrases exist to relate to.",
         ):
             phrase_relative_golden_ratio_shrink(current_phrase, [])
 
@@ -134,7 +134,7 @@ class TestPhraseGoldenRatioGrow:
 
         with pytest.raises(
             ValueError,
-            match="Cannot apply phrase-golden-ratio-grow: no preceding phrases exist to relate to.",
+            match="Cannot apply phrase-relative-golden-ratio-grow: no preceding phrases exist to relate to.",
         ):
             phrase_relative_golden_ratio_grow(current_phrase, [])
 
@@ -188,7 +188,7 @@ class TestGoldenRatioWrapperErrorPaths:
 
 
 class TestGoldenRatioPreviousPhraseFallback:
-    def test_phrase_golden_ratio_grow_transform_without_previous_phrase_raises(self):
+    def test_phrase_relative_golden_ratio_grow_transform_without_previous_phrase_raises(self):
         score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
         context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
 

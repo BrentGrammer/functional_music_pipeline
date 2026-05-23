@@ -745,7 +745,7 @@ def test_parse_phrase_with_reference_transform():
 
     phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a"],
-        "transforms": [{"name": "phrase_golden_ratio_grow"}]
+        "transforms": [{"name": "phrase_relative_golden_ratio_grow"}]
     }
 
     result = render_phrase_from_config(phrase_dict, parsed_motifs, reference_tones)
@@ -762,7 +762,7 @@ def test_parse_phrase_reference_transform_uses_total_grouped_phrase_duration():
 
     phrase_dict: PhraseConfigInput = {
         "motifs": ["seed_a", "seed_b"],
-        "transforms": [{"name": "phrase_golden_ratio_grow"}]
+        "transforms": [{"name": "phrase_relative_golden_ratio_grow"}]
     }
 
     result = render_phrase_from_config(phrase_dict, parsed_motifs, reference_tones)
@@ -831,7 +831,7 @@ def test_generate_score_plan_phrase_relative_transforms_use_document_order():
                         },
                         {
                             "motifs": ["response"],
-                            "transforms": [{"name": "phrase_golden_ratio_grow"}],
+                            "transforms": [{"name": "phrase_relative_golden_ratio_grow"}],
                         },
                     ]
                 },
@@ -839,7 +839,7 @@ def test_generate_score_plan_phrase_relative_transforms_use_document_order():
                     "phrases": [
                         {
                             "motifs": ["second_voice"],
-                            "transforms": [{"name": "phrase_golden_ratio_grow"}],
+                            "transforms": [{"name": "phrase_relative_golden_ratio_grow"}],
                         }
                     ]
                 },

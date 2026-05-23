@@ -1,5 +1,5 @@
 {
-  "description": "A demonstration of the microtonal MIDI export feature. This composition plays two C major scales sequentially. The first scale is in standard tuning. The second scale is transposed up by 0.25 semitones (a quarter-tone), demonstrating the preservation of microtonal shifts.",
+  "description": "A demonstration of the microtonal MIDI export feature. This composition plays two motifs sequentially. The first scale is in standard tuning. The second scale is transposed up by 0.25 semitones (a quarter-tone), demonstrating the preservation of microtonal shifts.",
   "motifs": {
     "scale": [
       "261.63:0.5", "293.66:0.5", "329.63:0.5", "349.23:0.5"

@@ -112,13 +112,13 @@ PHRASE_TRANSFORMS: dict[str, RegisteredPhraseTransform] = {
         params_spec=FEIGENBAUM_PARAMS_SPEC,
         transform_function=phrase_feigenbaum_grow_transform,
     ),
-    "phrase_golden_ratio_shrink": PhraseTransformDefinition(
-        name="phrase_golden_ratio_shrink",
+    "phrase_relative_golden_ratio_shrink": PhraseTransformDefinition(
+        name="phrase_relative_golden_ratio_shrink",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
         transform_function=phrase_relative_golden_ratio_shrink_transform,
     ),
-    "phrase_golden_ratio_grow": PhraseTransformDefinition(
-        name="phrase_golden_ratio_grow",
+    "phrase_relative_golden_ratio_grow": PhraseTransformDefinition(
+        name="phrase_relative_golden_ratio_grow",
         params_spec=GOLDEN_RATIO_PARAMS_SPEC,
         transform_function=phrase_relative_golden_ratio_grow_transform,
     ),

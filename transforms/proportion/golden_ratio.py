@@ -105,7 +105,7 @@ def phrase_relative_golden_ratio_shrink(
         return tones
 
     if not previous_tones:
-        raise ValueError("Cannot apply phrase-golden-ratio-shrink: no preceding phrases exist to relate to.")
+        raise ValueError("Cannot apply phrase-relative-golden-ratio-shrink: no preceding phrases exist to relate to.")
 
     prev_val = float(sum(getattr(t, dimension.value) for t in previous_tones))
     curr_val = float(sum(getattr(t, dimension.value) for t in tones))
@@ -125,7 +125,7 @@ def phrase_relative_golden_ratio_grow(
         return tones
 
     if not previous_tones:
-        raise ValueError("Cannot apply phrase-golden-ratio-grow: no preceding phrases exist to relate to.")
+        raise ValueError("Cannot apply phrase-relative-golden-ratio-grow: no preceding phrases exist to relate to.")
 
     prev_val = float(sum(getattr(t, dimension.value) for t in previous_tones))
     curr_val = float(sum(getattr(t, dimension.value) for t in tones))

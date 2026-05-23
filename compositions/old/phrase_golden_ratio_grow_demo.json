@@ -20,7 +20,7 @@
             "motifs": ["subject"],
             "transforms": [
               {
-                "name": "phrase_golden_ratio_grow"
+                "name": "phrase_relative_golden_ratio_grow"
               },
               {
                 "name": "pad_silence",
