@@ -17,7 +17,6 @@ from transforms.proportion.golden_ratio import (
     phrase_relative_golden_ratio_grow,
     phrase_relative_golden_ratio_grow_transform,
     phrase_relative_golden_ratio_shrink,
-    phrase_relative_golden_ratio_shrink_transform,
     score_golden_ratio_grow_transform,
     score_golden_ratio_shrink_transform,
 )
