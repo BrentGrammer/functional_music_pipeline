@@ -1,0 +1,43 @@
+{
+  "description": "Demonstrates score_golden_ratio_shrink by shortening each voice independently while preserving a simple even pulse.",
+  "motifs": {
+    "upper_cell": [
+      "261.63:0.5",
+      "329.63:0.5",
+      "392.00:0.5"
+    ],
+    "lower_cell": [
+      "196.00:0.5",
+      "220.00:0.5"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "UpperVoice",
+        "phrases": [
+          {
+            "motifs": ["upper_cell"]
+          }
+        ]
+      },
+      {
+        "name": "LowerVoice",
+        "phrases": [
+          {
+            "motifs": ["lower_cell"]
+          }
+        ]
+      }
+    ],
+    "score_transforms": [
+      {
+        "comment": "Shrinks each voice independently on duration by 1 / GOLDEN_RATIO while keeping the pulse inside each voice even.",
+        "name": "score_golden_ratio_shrink",
+        "params": {
+          "dimension": "duration"
+        }
+      }
+    ]
+  }
+}
