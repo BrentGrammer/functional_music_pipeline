@@ -155,3 +155,7 @@ stochastically choosing fragment start positions, creating silent holes, shorten
 - The transform name is fragment.
 - Silence is represented with Tone(frequency=0, amplitude=0.0, duration=...).
 - Damaged fragment starts must be stochastic; seed exists only to make that randomness reproducible.
+
+## Implementation
+
+- See [Implementation Plan](./fragment_transform_implementation_plan.md) for implementation steps.
