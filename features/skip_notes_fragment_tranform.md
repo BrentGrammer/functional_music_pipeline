@@ -46,7 +46,7 @@ The multi-dimensional behavior could work like this:
 fragment(
       damage_pct=40,
       damage_tones_span=4,
-      damage_pattern_key="castle-valley-a",
+      damage_pattern_key="pattern-key-a",
   )
 ```
 
