@@ -179,7 +179,7 @@ class TestPhraseGoldenRatioGrow:
         assert actual_total_frequency == pytest.approx(expected_total_frequency)
 
 
-class TestGoldenRatioWrapperErrorPaths:
+class TestGoldenRatioErrors:
     def test_golden_ratio_params_spec_rejects_invalid_dimension(self):
         with pytest.raises(ValueError):
             GOLDEN_RATIO_PARAMS_SPEC.parse_params({"dimension": 1})
