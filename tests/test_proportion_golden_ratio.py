@@ -186,8 +186,6 @@ class TestGoldenRatioWrapperErrorPaths:
         with pytest.raises(ValueError):
             GOLDEN_RATIO_PARAMS_SPEC.parse_params({"dimension": []})
 
-
-class TestGoldenRatioPreviousPhraseFallback:
     def test_phrase_relative_golden_ratio_grow_transform_without_previous_phrase_raises(self):
         score = Score([Voice([Phrase([Motif("m", [Tone(440.0, duration=1.0)])])])])
         context = PhraseTransformContext(score=score, voice_index=0, phrase_index=0)
