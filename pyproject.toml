@@ -17,6 +17,9 @@ include = [
 [tool.ruff]
 line-length = 170
 target-version = "py313"
+exclude = [
+    "readonly",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
