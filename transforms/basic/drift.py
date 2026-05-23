@@ -12,7 +12,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -47,10 +46,10 @@ DRIFT_PARAMS_SPEC = TransformParamsSpec[DriftParams](
 
 
 def drift_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     dimension: ToneDimension,
     rate: float,
-) -> ToneSequence:
+) -> list[Tone]:
     """
     Applies a progressive, linear drift to a specific dimension of the phrase.
 
@@ -103,7 +102,7 @@ def drift_score_transform(score: Score, params: DriftParams) -> Score:
     return Score(voices=new_voices)
 
 
-def _drift_frequency(tones: ToneSequence, rate: float) -> ToneSequence:
+def _drift_frequency(tones: list[Tone], rate: float) -> list[Tone]:
     """
     Applies a progressive drift to frequency (Glissando).
     """
@@ -118,7 +117,7 @@ def _drift_frequency(tones: ToneSequence, rate: float) -> ToneSequence:
     return result
 
 
-def _drift_amplitude(tones: ToneSequence, rate: float) -> ToneSequence:
+def _drift_amplitude(tones: list[Tone], rate: float) -> list[Tone]:
     """
     Applies a progressive drift to amplitude (Crescendo/Diminuendo).
     """
@@ -134,7 +133,7 @@ def _drift_amplitude(tones: ToneSequence, rate: float) -> ToneSequence:
     return result
 
 
-def _drift_duration(tones: ToneSequence, rate: float) -> ToneSequence:
+def _drift_duration(tones: list[Tone], rate: float) -> list[Tone]:
     """
     Applies a progressive drift to duration.
 

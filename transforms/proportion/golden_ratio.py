@@ -4,6 +4,7 @@ from score_model.math_constants import GOLDEN_RATIO
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms.base import (
@@ -11,7 +12,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -38,12 +38,12 @@ GOLDEN_RATIO_PARAMS_SPEC = TransformParamsSpec[GoldenRatioParams](
 )
 
 
-def _cumulative_dimension(tones: ToneSequence, dim: ToneDimension) -> float:
+def _cumulative_dimension(tones: list[Tone], dim: ToneDimension) -> float:
     dimension = dim.value
     return float(sum(getattr(t, dimension) for t in tones))
 
 
-def golden_ratio_transform(tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION) -> ToneSequence:
+def golden_ratio_transform(tones: list[Tone], dimension: ToneDimension = ToneDimension.DURATION) -> list[Tone]:
     return scale_transform(tones, dimension, 1 / GOLDEN_RATIO)
 
 
@@ -89,8 +89,8 @@ def phrase_golden_ratio_grow_transform(
 
 
 def phrase_golden_ratio_shrink(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
-) -> ToneSequence:
+    tones: list[Tone], previous_tones: list[Tone], dimension: ToneDimension = ToneDimension.DURATION
+) -> list[Tone]:
     if not tones:
         return tones
 
@@ -108,8 +108,8 @@ def phrase_golden_ratio_shrink(
 
 
 def phrase_golden_ratio_grow(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
-) -> ToneSequence:
+    tones: list[Tone], previous_tones: list[Tone], dimension: ToneDimension = ToneDimension.DURATION
+) -> list[Tone]:
     if not tones:
         return tones
 

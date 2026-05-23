@@ -12,7 +12,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -39,12 +38,12 @@ FEIGENBAUM_PARAMS_SPEC = TransformParamsSpec[FeigenbaumParams](
 )
 
 
-def _cumulative_dimension(tones: ToneSequence, dim: ToneDimension) -> float:
+def _cumulative_dimension(tones: list[Tone], dim: ToneDimension) -> float:
     dimension = dim.value
     return float(sum(getattr(t, dimension) for t in tones))
 
 
-def feigenbaum_sequence(tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION) -> ToneSequence:
+def feigenbaum_sequence(tones: list[Tone], dimension: ToneDimension = ToneDimension.DURATION) -> list[Tone]:
     if not tones:
         return []
 
@@ -91,8 +90,8 @@ def feigenbaum_sequence_phrase_transform(context: PhraseTransformContext, params
 
 
 def phrase_feigenbaum_shrink(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
-) -> ToneSequence:
+    tones: list[Tone], previous_tones: list[Tone], dimension: ToneDimension = ToneDimension.DURATION
+) -> list[Tone]:
     if not tones:
         return tones
 
@@ -132,8 +131,8 @@ def phrase_feigenbaum_grow_transform(
 
 
 def phrase_feigenbaum_grow(
-    tones: ToneSequence, previous_tones: ToneSequence, dimension: ToneDimension = ToneDimension.DURATION
-) -> ToneSequence:
+    tones: list[Tone], previous_tones: list[Tone], dimension: ToneDimension = ToneDimension.DURATION
+) -> list[Tone]:
     if not tones:
         return tones
 

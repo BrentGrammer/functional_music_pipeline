@@ -1,14 +1,15 @@
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import NoParams, PhraseTransformContext, ToneSequence, TransformParamsSpec
+from transforms.base import NoParams, PhraseTransformContext, TransformParamsSpec
 
 REVERSE_PARAMS_SPEC = TransformParamsSpec[NoParams](params_factory=lambda params: NoParams())
 
 
-def reverse_tones(tones: ToneSequence) -> ToneSequence:
+def reverse_tones(tones: list[Tone]) -> list[Tone]:
     return tones[::-1]
 
 

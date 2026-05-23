@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
@@ -13,7 +14,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -68,10 +68,10 @@ def _build_terraced_fluctuations(length: int, step_size: float, quantize_resolut
 
 
 def apply_terraced_drift_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     dimension: ToneDimension,
     max_step_change_pct: int,
-) -> ToneSequence:
+) -> list[Tone]:
     if max_step_change_pct < 1 or max_step_change_pct > 100:
         raise ValueError(f"max_step_change_pct must be between 1 and 100, got {max_step_change_pct}")
 

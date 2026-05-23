@@ -2,8 +2,9 @@ import random
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones
-from transforms.base import PhraseTransformContext, ToneSequence
+from transforms.base import PhraseTransformContext
 from transforms.tempo._common import (
     TempoChangeParams,
     apply_duration_multipliers,
@@ -30,10 +31,10 @@ def _resolve_accelerando_final_duration_multiplier(strength: float) -> float:
 
 
 def accelerando_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     strength: float,
     jaggedness: float,
-) -> ToneSequence:
+) -> list[Tone]:
     """
     Apply an accelerando effect that gradually shortens durations across the phrase.
 

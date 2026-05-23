@@ -30,12 +30,12 @@ Expose only the essential musical controls:
 
 ```python
 def apply_ridged_drop_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     dimension: ToneDimension | str,
     drop_depth: float | str,
     intensity: str = "medium",
     new_pattern_each_use: bool = False,
-) -> ToneSequence:
+) -> list[Tone]:
 ```
 
 The public JSON-facing API should not expose `seed`. The transform should own its randomness policy internally while still giving users a clear way to request a new generated drop pattern when they reuse the same transform settings.

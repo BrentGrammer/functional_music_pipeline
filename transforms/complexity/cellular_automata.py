@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
@@ -13,7 +14,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -72,7 +72,7 @@ def _get_next_cellular_state(state: list[int], rule: int) -> list[int]:
     return next_state
 
 
-def _derive_initial_state(tones: ToneSequence, dimension: ToneDimension) -> list[int]:
+def _derive_initial_state(tones: list[Tone], dimension: ToneDimension) -> list[int]:
     """
     Converts the input tones into a binary starting row for the cellular automaton.
 
@@ -111,12 +111,12 @@ def _evolve_state(state: list[int], rule: int, generations: int) -> list[int]:
 
 
 def apply_cellular_automata_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     dimension: ToneDimension,
     rule: int,
     generations: int,
     max_deviation: float,
-) -> ToneSequence:
+) -> list[Tone]:
     if not tones:
         return []
     if len(tones) == 1:

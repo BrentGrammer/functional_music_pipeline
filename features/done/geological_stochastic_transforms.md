@@ -5,7 +5,7 @@ Instead of relying on standard smooth randomness (like Perlin noise), this featu
 
 The goal is to produce musical contours that mimic geological phenomena: mesas, plateaus, sudden sheer cliffs, deep canyons, and fractal roughness. This perfectly aligns with the project's core inspiration drawn from Chaos Theory and Stephen Wolfram's ideas of Computational Irreducibility—creating complex, unpredictable outcomes from simple iterations.
 
-These stochastic variations can be applied across multiple dimensions of a `ToneSequence`:
+These stochastic variations can be applied across multiple dimensions of a `list[Tone]`:
 - **Frequency:** Interval jumps, microtonal jaggedness, and plateaued pitches.
 - **Duration:** Rhythmic snapping, sudden fermatas, and chaotic micro-timing.
 - **Amplitude:** Dynamic drops, sudden loud spikes, and fractal shimmering.
@@ -57,7 +57,7 @@ These stochastic variations can be applied across multiple dimensions of a `Tone
 ### Iteration 4: Interspersed Ridged Multifractal Drops
 *Focus: Extreme interruptions.*
 1. Implement the **Ridged Multifractal** generator (layered noise with absolute value flipping).
-2. Implement `canyon_drop_transform` that overlays these sudden spikes/drops onto a `ToneSequence`'s specified dimension.
+2. Implement `canyon_drop_transform` that overlays these sudden spikes/drops onto a `list[Tone]`'s specified dimension.
 3. Write tests to ensure it only applies sparse, extreme variations rather than constant noise, across dimensions.
 
 ### Iteration 5: Integration & Orchestration

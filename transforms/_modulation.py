@@ -1,16 +1,15 @@
 from score_model.tone import Tone
 from transforms.base import (
     ToneDimension,
-    ToneSequence,
 )
 
 
 def apply_fluctuations(
-    tones: ToneSequence,
+    tones: list[Tone],
     fluctuations: list[float],
     dimension: ToneDimension,
     max_deviation: float,
-) -> ToneSequence:
+) -> list[Tone]:
     """
     Apply per-tone fluctuation to a single dimension (frequency, duration, or amplitude).
 

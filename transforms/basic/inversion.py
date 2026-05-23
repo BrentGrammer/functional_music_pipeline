@@ -6,7 +6,7 @@ from score_model.score import Score
 from score_model.tone import MINIMUM_FREQUENCY_HZ, Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import ParsedTransformParams, PhraseTransformContext, ToneDimension, ToneDimensionParam, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import ParsedTransformParams, PhraseTransformContext, ToneDimension, ToneDimensionParam, TransformParamFieldSpec, TransformParamsSpec
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ INVERT_TONE_STRATEGIES = {
 }
 
 
-def invert_tones(tones: ToneSequence, dimension: ToneDimension = ToneDimension.FREQUENCY) -> ToneSequence:
+def invert_tones(tones: list[Tone], dimension: ToneDimension = ToneDimension.FREQUENCY) -> list[Tone]:
     if len(tones) <= 1:
         return tones[:]
 

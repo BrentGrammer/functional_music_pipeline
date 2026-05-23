@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
@@ -13,7 +14,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -61,11 +61,11 @@ RANDOM_DROP_PARAMS_SPEC = TransformParamsSpec[RandomDropParams](
 
 
 def apply_random_drop_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     dimension: ToneDimension,
     max_drop_pct: int,
     drop_frequency_pct: int,
-) -> ToneSequence:
+) -> list[Tone]:
     _validate_drop_params(max_drop_pct, drop_frequency_pct)
     max_deviation = max_drop_pct / 100.0
     drop_rate = drop_frequency_pct / 100.0

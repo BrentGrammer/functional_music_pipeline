@@ -7,7 +7,7 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import FloatParam, ParsedTransformParams, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import FloatParam, ParsedTransformParams, PhraseTransformContext, TransformParamFieldSpec, TransformParamsSpec
 
 
 @dataclass(frozen=True)
@@ -30,7 +30,7 @@ TRANSPOSE_PARAMS_SPEC = TransformParamsSpec[TransposeParams](
 )
 
 
-def transpose_tones(tones: ToneSequence, semitones: float) -> ToneSequence:
+def transpose_tones(tones: list[Tone], semitones: float) -> list[Tone]:
     return [
         Tone(
             frequency=transpose_frequency_by_semitones(t.frequency, semitones) if t.frequency > 0 else 0,

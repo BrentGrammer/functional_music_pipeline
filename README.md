@@ -123,7 +123,7 @@ When a transform uses `params`, `params` must be an object with named fields.
 - **`delay`**: Convenience alias for `pad_silence` at `position: "start"`. Use `seconds` to describe the silent duration.
 - **`repeat`**: Repeats the tones in a phrase `count` times.
 - **`pad_silence`**: Canonical silence-padding transform. Adds a block of silence to the beginning or end of a phrase or score using `seconds` and `position`.
-- **`drift`**: Creates a linear change (e.g., accelerando, crescendo) in a chosen `dimension` using `rate`.
+- **`drift`**: Creates a linear change (e.g., accelerando, crescendo) in a chosen `dimension` using `rate` (a decimal value).
 
 #### Tempo
 

@@ -6,7 +6,6 @@ from transforms.base import (
     EnumParam,
     FloatParam,
     ParsedTransformParams,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -74,7 +73,7 @@ def compute_tempo_change_factors(tone_count: int, start_factor: float, end_facto
     return factors
 
 
-def apply_duration_multipliers(tones: ToneSequence, multipliers: list[float]) -> ToneSequence:
+def apply_duration_multipliers(tones: list[Tone], multipliers: list[float]) -> list[Tone]:
     MIN_DURATION_SECONDS = 0.001
 
     if len(tones) != len(multipliers):

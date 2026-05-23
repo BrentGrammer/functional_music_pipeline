@@ -2,8 +2,9 @@ import random
 
 from score_model.motif import Motif
 from score_model.phrase import Phrase
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones
-from transforms.base import PhraseTransformContext, ToneSequence
+from transforms.base import PhraseTransformContext
 from transforms.tempo._common import (
     TempoChangeParams,
     apply_duration_multipliers,
@@ -32,10 +33,10 @@ def _resolve_ritardando_final_duration_multiplier(strength: float) -> float:
 
 
 def ritardando_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     strength: float,
     jaggedness: float,
-) -> ToneSequence:
+) -> list[Tone]:
     """
     Apply a ritardando effect that gradually lengthens durations across the phrase.
 

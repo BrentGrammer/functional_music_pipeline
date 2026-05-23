@@ -322,12 +322,12 @@ Scope:
 6. Rewrite `apply_cellular_automata_transform` to:
    ```python
    def apply_cellular_automata_transform(
-       tones: ToneSequence,
+       tones: list[Tone],
        dimension: ToneDimension | str,
        rule: int,
        max_deviation: float,
        generations: int,
-   ) -> ToneSequence:
+   ) -> list[Tone]:
        if not tones:
            return []
        if len(tones) == 1:

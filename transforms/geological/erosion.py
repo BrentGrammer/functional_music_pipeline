@@ -9,7 +9,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -36,9 +35,9 @@ EROSION_PARAMS_SPEC = TransformParamsSpec[ErosionParams](
 
 
 def erosion_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     dimension: ToneDimension = ToneDimension.DURATION,
-) -> ToneSequence:
+) -> list[Tone]:
     """
     Mimics geological erosion, gradually wearing down a musical phrase.
     
@@ -69,7 +68,7 @@ def erosion_phrase_transform(context: PhraseTransformContext, params: ErosionPar
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
 
 
-def _erode_duration(tones: ToneSequence) -> ToneSequence:
+def _erode_duration(tones: list[Tone]) -> list[Tone]:
     """
     Performs structural erosion on the duration of the phrase.
     
@@ -93,7 +92,7 @@ def _erode_duration(tones: ToneSequence) -> ToneSequence:
     return result
 
 
-def _erode_amplitude(tones: ToneSequence) -> ToneSequence:
+def _erode_amplitude(tones: list[Tone]) -> list[Tone]:
     """
     Performs volumetric erosion on the amplitude of the phrase.
     
@@ -119,7 +118,7 @@ def _erode_amplitude(tones: ToneSequence) -> ToneSequence:
     return result
 
 
-def _erode_frequency(tones: ToneSequence) -> ToneSequence:
+def _erode_frequency(tones: list[Tone]) -> list[Tone]:
     """
     Performs pitch erosion on the frequency of the phrase.
     

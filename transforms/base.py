@@ -7,7 +7,6 @@ from score_model.phrase import Phrase
 from score_model.score import Score
 from score_model.tone import Tone
 
-ToneSequence: TypeAlias = list[Tone]
 ParsedParam = TypeVar("ParsedParam")
 ParsedParams = TypeVar("ParsedParams")
 

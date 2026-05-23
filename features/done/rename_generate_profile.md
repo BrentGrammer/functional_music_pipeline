@@ -25,11 +25,11 @@ Contains one function:
 
 ```python
 def apply_fluctuations(
-    tones: ToneSequence,
+    tones: list[Tone],
     fluctuations: list[float],
     dimension: ToneDimension,
     max_deviation: float,
-) -> ToneSequence:
+) -> list[Tone]:
 ```
 
 Renamed from `_modulate_tone_dimension`. Takes a plain `list[float]` directly — no profile object, no Protocol.

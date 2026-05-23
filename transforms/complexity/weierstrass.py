@@ -6,6 +6,7 @@ from typing import TypedDict
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
 from transforms._modulation import apply_fluctuations
@@ -15,7 +16,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -91,10 +91,10 @@ def _build_weierstrass_fluctuations(
 
 
 def apply_weierstrass_transform(
-    tones: ToneSequence,
+    tones: list[Tone],
     dimension: ToneDimension,
     intensity: str,
-) -> ToneSequence:
+) -> list[Tone]:
     preset = _resolve_intensity(intensity)
     fluctuations = _build_weierstrass_fluctuations(
         len(tones),

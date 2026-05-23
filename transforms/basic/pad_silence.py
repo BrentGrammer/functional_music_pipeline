@@ -3,10 +3,11 @@ from dataclasses import dataclass
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.tone_utils import make_silence_tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import EnumParam, FloatParam, ParsedTransformParams, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import EnumParam, FloatParam, ParsedTransformParams, PhraseTransformContext, TransformParamFieldSpec, TransformParamsSpec
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,7 @@ PAD_SILENCE_PARAMS_SPEC = TransformParamsSpec[PadSilenceParams](
 )
 
 
-def pad_silence_tones(tones: ToneSequence, seconds: float, position: str) -> ToneSequence:
+def pad_silence_tones(tones: list[Tone], seconds: float, position: str) -> list[Tone]:
     if seconds < 0:
         raise ValueError("Pad silence seconds must be non-negative.")
     if position not in {"start", "end"}:

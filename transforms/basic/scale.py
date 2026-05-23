@@ -12,7 +12,6 @@ from transforms.base import (
     PhraseTransformContext,
     ToneDimension,
     ToneDimensionParam,
-    ToneSequence,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
@@ -46,7 +45,7 @@ SCALE_PARAMS_SPEC = TransformParamsSpec[ScaleParams](
 )
 
 
-def scale_transform(tones: ToneSequence, dimension: ToneDimension, factor: float) -> ToneSequence:
+def scale_transform(tones: list[Tone], dimension: ToneDimension, factor: float) -> list[Tone]:
     """
     Scales a specific dimension of a tone sequence by a given factor.
     """

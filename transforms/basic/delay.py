@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
+from score_model.tone import Tone
 from score_model.traversal import flatten_phrase_tones, flatten_voice_tones
 from score_model.voice import Voice
-from transforms.base import FloatParam, ParsedTransformParams, PhraseTransformContext, ToneSequence, TransformParamFieldSpec, TransformParamsSpec
+from transforms.base import FloatParam, ParsedTransformParams, PhraseTransformContext, TransformParamFieldSpec, TransformParamsSpec
 from transforms.basic.pad_silence import pad_silence_tones
 
 
@@ -29,7 +30,7 @@ DELAY_PARAMS_SPEC = TransformParamsSpec[DelayParams](
 )
 
 
-def delay_tones(tones: ToneSequence, seconds: float) -> ToneSequence:
+def delay_tones(tones: list[Tone], seconds: float) -> list[Tone]:
     if seconds < 0:
         raise ValueError("Delay must be non-negative. Negative offsets are not supported.")
     return pad_silence_tones(tones, seconds=seconds, position="start")
