@@ -1,0 +1,39 @@
+{
+  "description": "Grow a C Major Arpeggio phrase by the Golden Ratio twice.",
+  "motifs": {
+    "c_major_arpeggio": ["261.63:0.5", "329.63:0.5", "392.00:0.5", "523.25:0.5"]
+  },
+  "composition": {
+    "voices": [
+      {
+        "phrases": [
+          {
+            "motifs": ["c_major_arpeggio"]
+          },
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [
+              {
+                "name": "phrase_relative_golden_ratio_grow",
+                "params": {
+                  "dimension": "duration"
+                }
+              }
+            ]
+          },
+          {
+            "motifs": ["c_major_arpeggio"],
+            "transforms": [
+              {
+                "name": "phrase_relative_golden_ratio_grow",
+                "params": {
+                  "dimension": "duration"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
