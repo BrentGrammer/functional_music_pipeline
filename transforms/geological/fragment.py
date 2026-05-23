@@ -139,7 +139,7 @@ def _select_chunks_to_damage(
 
         if not valid_starts:
             # the algorithm thinks damage is still owed, but there is nowhere legal left to put it.
-            raise ValueError("unable to select fragment chunks for the requested damage pattern")
+            raise RuntimeError("unable to select fragment chunks for the requested damage pattern")
 
         start_index = randomizer.choice(valid_starts)
         selected_chunk = list(range(start_index, start_index + current_chunk_size))
