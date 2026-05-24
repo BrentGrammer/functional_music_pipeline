@@ -18,7 +18,7 @@ from transforms.base import (
     TransformParamsSpec,
 )
 
-TONE_REMOVAL_CHANCE = 0.50
+TONE_REMOVAL_CHANCE = 0.33
 DURATION_DAMAGE_CHANCE = 0.45
 AMPLITUDE_DAMAGE_CHANCE = 0.45
 MIN_DURATION_AFTER_DAMAGE_SECONDS = 0.03
@@ -109,16 +109,6 @@ def _convert_reduction_decibels_to_ratio(reduction_decibels: float) -> float:
     return 10 ** (-reduction_decibels / 20)
 
 
-def _choose_multi_dimensional_tone_damage(randomizer: random.Random) -> tuple[bool, bool]:
-    apply_duration_damage = randomizer.random() < DURATION_DAMAGE_CHANCE
-    apply_amplitude_damage = randomizer.random() < AMPLITUDE_DAMAGE_CHANCE
-
-    if apply_duration_damage or apply_amplitude_damage:
-        return apply_duration_damage, apply_amplitude_damage
-
-    return randomizer.choice([(True, False), (False, True)])
-
-
 def _calculate_damaged_duration(original_duration: float, randomizer: random.Random) -> tuple[float, float]:
     duration_after_damage_ratio = randomizer.uniform(
         0.0,
@@ -150,30 +140,42 @@ def _create_silence_from_tone(original_tone: Tone, duration: float) -> Tone:
 
 
 def _damage_selected_tone_across_dimensions(tone: Tone, randomizer: random.Random) -> list[Tone]:
-    if randomizer.random() < TONE_REMOVAL_CHANCE:
+    should_remove_tone = randomizer.random() < TONE_REMOVAL_CHANCE
+    if should_remove_tone:
         return [_create_silence_from_tone(tone, duration=tone.duration)]
 
-    apply_duration_damage, apply_amplitude_damage = _choose_multi_dimensional_tone_damage(randomizer)
+    should_shorten_duration = randomizer.random() < DURATION_DAMAGE_CHANCE
+    should_reduce_amplitude = randomizer.random() < AMPLITUDE_DAMAGE_CHANCE
+    if not should_shorten_duration and not should_reduce_amplitude:
+        # randomly choose a remaining dimension to damage so we have some damage
+        if randomizer.random() < 0.5:
+            should_shorten_duration = True
+        else:
+            should_reduce_amplitude = True
+
     damaged_duration = tone.duration
     trailing_silence_duration = 0.0
-    if apply_duration_damage:
+    if should_shorten_duration:
         damaged_duration, trailing_silence_duration = _calculate_damaged_duration(tone.duration, randomizer)
 
     damaged_amplitude = tone.amplitude
-    if apply_amplitude_damage:
+    if should_reduce_amplitude:
         damaged_amplitude = _calculate_damaged_amplitude(tone.amplitude, randomizer)
 
-    damaged_tones = [
-        Tone(
-            frequency=tone.frequency,
-            duration=damaged_duration,
-            sample_rate=tone.sample_rate,
-            amplitude=damaged_amplitude,
-        )
+    damaged_tone = Tone(
+        frequency=tone.frequency,
+        duration=damaged_duration,
+        sample_rate=tone.sample_rate,
+        amplitude=damaged_amplitude,
+    )
+    # the tone was not shortened so there is no need to return more tones/silence, just return the transformed tone
+    if trailing_silence_duration == 0.0:
+        return [damaged_tone]
+
+    return [
+        damaged_tone,
+        _create_silence_from_tone(tone, duration=trailing_silence_duration),
     ]
-    if trailing_silence_duration > 0.0:
-        damaged_tones.append(_create_silence_from_tone(tone, duration=trailing_silence_duration))
-    return damaged_tones
 
 
 def _damage_selected_tone_for_dimension(
@@ -249,29 +251,27 @@ def _select_chunks_to_damage(
 
     while len(damaged_positions) < target_damaged_tone_count:
         remaining_damage_budget = target_damaged_tone_count - len(damaged_positions)
-        desired_chunk_size = min(damage_tones_chunk_size, remaining_damage_budget)
-        current_chunk_size = desired_chunk_size
+        widest_allowed_chunk_size = min(damage_tones_chunk_size, remaining_damage_budget)
+        selected_chunk_size = 0
+        valid_starts: list[int] = []
 
-        valid_starts = _find_valid_chunk_starts(
-            damaged_positions=damaged_positions,
-            tone_count=tone_count,
-            chunk_size=current_chunk_size,
-        )
-
-        while not valid_starts and current_chunk_size > 1:
-            current_chunk_size -= 1
-            valid_starts = _find_valid_chunk_starts(
+        for candidate_chunk_size in range(widest_allowed_chunk_size, 0, -1):
+            candidate_starts = _find_valid_chunk_starts(
                 damaged_positions=damaged_positions,
                 tone_count=tone_count,
-                chunk_size=current_chunk_size,
+                chunk_size=candidate_chunk_size,
             )
+            if candidate_starts:
+                selected_chunk_size = candidate_chunk_size
+                valid_starts = candidate_starts
+                break
 
         if not valid_starts:
             # the algorithm thinks damage is still owed, but there is nowhere legal left to put it.
             raise RuntimeError("unable to select fragment chunks for the requested damage pattern")
 
         start_index = randomizer.choice(valid_starts)
-        selected_chunk = list(range(start_index, start_index + current_chunk_size))
+        selected_chunk = list(range(start_index, start_index + selected_chunk_size))
         damaged_positions.update(selected_chunk)
         selected_chunks.append(selected_chunk)
 
@@ -329,7 +329,7 @@ def fragment_transform(
             transformed_tones.extend(_damage_selected_tone_across_dimensions(tone, randomizer))
         else:
             transformed_tones.extend(_damage_selected_tone_for_dimension(tone, dimension, randomizer))
-    
+
     return transformed_tones
 
 

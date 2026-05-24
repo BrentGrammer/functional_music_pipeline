@@ -46,7 +46,8 @@ The multi-dimensional behavior could work like this:
    - First, roll for tone removal.
    - If removed, replace the note with silence of the same duration.
    - If not removed, independently roll for duration shortening and amplitude softening.
-   - A note can be both shortened and softened.
+   - A note can be shortened only, softened only, or both shortened and softened.
+   - If both non-removal rolls fail, randomly force either duration damage or amplitude damage so the selected tone is still observably changed.
    - Tone removal wins because frequency removal means the whole note is missing.
 3. Preserve the original phrase timeline.
    - Dropped notes become rests.
@@ -82,7 +83,7 @@ fragment(
 
 With internal defaults like:
 
-tone removal chance among damaged notes: 50%
+tone removal chance among damaged notes: 33%
 duration damage chance if not removed: 45%
 amplitude damage chance if not removed: 45%
 minimum duration after damage: 0.03 seconds
@@ -144,7 +145,8 @@ stochastically choosing fragment start positions, creating silent holes, shorten
   - For each selected tone, roll tone removal first.
   - Tone removal replaces the tone with silence of the same duration.
   - If not removed, independently roll duration shortening and amplitude softening.
-  - If both non-removal rolls fail, apply one non-removal damage so every selected tone is observably damaged.
+  - A selected tone may be shortened only, softened only, or both.
+  - If both non-removal rolls fail, randomly force either duration damage or amplitude damage so every selected tone is observably damaged.
   - Duration shortening emits a shortened tone plus trailing silence so total phrase duration is preserved.
   - Amplitude softening only reduces volume, never increases it.
 - Dimension-bound damage behavior when `dimension` is provided:
@@ -173,7 +175,7 @@ stochastically choosing fragment start positions, creating silent holes, shorten
   - Result = one 2-tone fragment, because damaging 4 tones would violate damage_pct
 
 - Suggested internal defaults:
-  - Tone removal chance: 50%.
+  - Tone removal chance: 33%.
   - Duration damage chance: 45%.
   - Amplitude damage chance: 45%.
   - Minimum duration after damage: 0.03 seconds, capped by the original tone duration so short tones are not lengthened.

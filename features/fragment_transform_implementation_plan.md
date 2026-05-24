@@ -61,7 +61,8 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - Roll tone removal first.
   - Tone removal outputs one silent Tone with original duration.
   - If not removed, independently roll duration damage and amplitude damage.
-  - If both non-removal rolls fail, force one non-removal damage so the selected tone is observably changed.
+  - A selected tone may be damaged in one non-removal dimension or both.
+  - If both non-removal rolls fail, randomly force either duration damage or amplitude damage so the selected tone is observably changed.
   - Shortened duration outputs two tones: shortened original tone plus trailing silence.
   - Shortened tone + trailing silence must equal the original duration.
   - Amplitude damage only lowers amplitude.
@@ -71,7 +72,7 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
   - ToneDimension.AMPLITUDE: every selected tone has amplitude reduced. No tone-removal roll or duration damage is applied.
   - Selected tones must always be observably changed within the selected dimension.
 - Use internal constants:
-  - TONE_REMOVAL_CHANCE = 0.50
+  - TONE_REMOVAL_CHANCE = 0.33
   - DURATION_DAMAGE_CHANCE = 0.45
   - AMPLITUDE_DAMAGE_CHANCE = 0.45
   - MIN_DURATION_AFTER_DAMAGE_SECONDS = 0.03
@@ -162,6 +163,9 @@ Current state at handoff:
 - Nonzero `damage_pct` no longer raises `NotImplementedError`.
 - Chunk selection is implemented in `_select_chunks_to_damage(...)`.
 - Multi-dimensional selected-tone damage is implemented in `_damage_selected_tone_across_dimensions(...)`.
+  - It uses a removal-first roll.
+  - If not removed, duration and amplitude are rolled independently.
+  - If both non-removal rolls fail, either duration or amplitude damage is chosen randomly so selected tones never remain unchanged.
 - Explicit dimension-bound damage is implemented in `_damage_selected_tone_for_dimension(...)`.
 
 Current test state:
