@@ -283,7 +283,7 @@ MP3 conversion note:
 The major architecture direction is mostly settled, but these items should be specified before implementation:
 
 - Composition/score schema migration: the UI should assume the new composition document shape described in `features/composition_score_document_schema.md`, where a composition owns metadata and contains a `score` object.
-- API and data model spec: concrete PostgreSQL tables, composition document versioning, ownership model, endpoints, request/response shapes, and error formats.
+- Data model spec: concrete PostgreSQL tables, composition document versioning, ownership model, request/response shapes, and error formats.
 - Composition persistence behavior: save, update, duplicate, delete, import/export JSON, and whether deletion is soft or hard.
 - Render execution model: synchronous preview render first, with background render jobs deferred until render time becomes slow.
 - Frontend editor state model: how voices, phrases, motifs, transform chains, timing offsets, selection, dirty state, and validation state are stored before saving.
@@ -292,6 +292,109 @@ The major architecture direction is mostly settled, but these items should be sp
 - Security details: cookie auth, CSRF protection, CORS policy, ownership checks, private render access, and safe signed URLs for saved render objects.
 - Deployment shape: Docker Compose on the Droplet, reverse proxy choice, environment variables, database migrations, `ffmpeg`, TLS, backups, and basic monitoring.
 - Testing plan: pytest for API/core behavior, frontend component tests for editor behavior, and later Playwright coverage for render/preview flows.
+
+## Initial API Shape
+
+The API should expose compositions as the top-level saved resource. The score is nested inside the composition document. Do not expose scores as the top-level resource for v1.
+
+Composition endpoints:
+
+```text
+GET    /api/compositions
+POST   /api/compositions
+GET    /api/compositions/{composition_id}
+PATCH  /api/compositions/{composition_id}
+DELETE /api/compositions/{composition_id}
+```
+
+Do not add a duplicate endpoint for v1. If duplication is needed later, the frontend can fetch an existing composition and create a new one with the same score.
+
+Composition response shape:
+
+```json
+{
+  "id": "uuid",
+  "name": "Frost bloom study",
+  "description": "Optional notes",
+  "document_version": 1,
+  "score": {
+    "motifs": {},
+    "voices": [],
+    "score_transforms": []
+  },
+  "created_at": "2026-05-24T00:00:00Z",
+  "updated_at": "2026-05-24T00:00:00Z"
+}
+```
+
+Validation endpoints:
+
+```text
+POST /api/compositions/validate
+```
+
+This endpoint validates the current editor document without saving it. It lets the backend remain the source of truth for domain validation while the frontend shows block-level feedback before save or render.
+
+Create, update, preview render, and export endpoints must still validate server-side before doing their work. Frontend validation should stay lightweight and ergonomic, such as required fields, number input shape, and immediate drag/drop overlap feedback.
+
+Preview render endpoints:
+
+```text
+POST /api/compositions/render-preview
+```
+
+For v1, preview render validates and renders the submitted composition document without saving it. It returns direct WAV audio with `Content-Type: audio/wav`.
+
+Export endpoint:
+
+```text
+POST /api/compositions/export
+```
+
+For v1, export validates and renders the submitted composition document, then returns the exported file directly. Do not create saved export records or store export files persistently. The request body should include the composition document and the requested output format, such as `wav` or `midi`. MP3 can be added later.
+
+Example export request:
+
+```json
+{
+  "composition": {
+    "name": "Frost bloom study",
+    "description": "Optional notes",
+    "document_version": 1,
+    "score": {
+      "motifs": {},
+      "voices": [],
+      "score_transforms": []
+    }
+  },
+  "format": "wav"
+}
+```
+
+Export responses should use the correct content type and attachment filename, such as `audio/wav` for WAV and `audio/midi` for MIDI.
+
+Transform metadata endpoint:
+
+```text
+GET /api/transforms
+```
+
+This endpoint should expose transform names, scopes, parameter schemas, defaults, labels, and validation rules so the UI can build transform controls dynamically.
+
+Auth endpoints:
+
+FastAPI Users should define the exact route details, but conceptually the app needs:
+
+```text
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/me
+
+// For google oauth signin
+GET  /api/auth/google/authorize
+GET  /api/auth/google/callback
+```
 
 # Summary of Plan
 
