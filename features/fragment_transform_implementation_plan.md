@@ -143,70 +143,67 @@ Implement `fragment` as a phrase-level geological transform in small reviewable 
 - Reuse the existing `ToneDimension` and parser support for `dimension`.
 - Omitted `dimension` means multi-dimensional stochastic fragmentation, not a new enum value.
 
-## Current Gap: Dimension-Bound Fragmentation
-
-The current implementation has completed the multi-dimensional path, but it does not yet support explicit dimension-bound fragmentation. Before continuing broader regression work, add the missing dimension support in a small follow-up slice.
-
-Next required steps:
-
-1. Add `dimension: ToneDimension | None` to `FragmentParams`.
-2. Add optional `dimension` to `FRAGMENT_PARAMS_SPEC` using `ToneDimensionParam`, defaulting to `None`.
-3. Add `dimension: ToneDimension | None = None` to `fragment_transform(...)`.
-4. Pass `params.dimension` from `fragment_phrase_transform(...)`.
-5. Keep current multi-dimensional damage behavior when `dimension is None`.
-6. Add dimension-bound damage behavior:
-   - frequency: selected tones become silence with original duration.
-   - duration: selected tones are shortened and followed by trailing silence.
-   - amplitude: selected tones have amplitude reduced.
-7. Add tests for direct and registry/parser usage of each explicit dimension.
-8. Re-run:
-   - .venv/bin/pytest tests/test_geological_fragment.py -q
-   - .venv/bin/pytest tests/test_transform_wrappers_behavior_happy_path.py -q
-
 ## Handoff
 
 Current state at handoff:
 
-- Iteration 1 skeleton exists in `transforms/geological/fragment.py`.
-- `fragment` is registered as a phrase transform only.
-- `FRAGMENT_PARAMS_SPEC` exists for `damage_pct`, `damage_tones_chunk_size`, and `repeatable_damage_key`.
-- `damage_pct=0` currently returns an equivalent transformed phrase.
-- Nonzero `damage_pct` still raises `NotImplementedError`.
+- `fragment` is implemented in `transforms/geological/fragment.py` as a phrase transform only.
+- `FragmentParams` and `FRAGMENT_PARAMS_SPEC` now include:
+  - `damage_pct`
+  - `damage_tones_chunk_size`
+  - optional `dimension`
+  - optional `repeatable_damage_key`
+- Omitted `dimension` now means multi-dimensional stochastic fragmentation.
+- Explicit `dimension` values now work:
+  - `ToneDimension.FREQUENCY`
+  - `ToneDimension.DURATION`
+  - `ToneDimension.AMPLITUDE`
+- `damage_pct=0` returns an equivalent transformed phrase.
+- Nonzero `damage_pct` no longer raises `NotImplementedError`.
+- Chunk selection is implemented in `_select_chunks_to_damage(...)`.
+- Multi-dimensional selected-tone damage is implemented in `_damage_selected_tone_across_dimensions(...)`.
+- Explicit dimension-bound damage is implemented in `_damage_selected_tone_for_dimension(...)`.
 
 Current test state:
 
-- `tests/test_geological_fragment.py` contains the iteration 1 public API coverage and top-level acceptance tests.
-- The simple top-level acceptance tests are the right shape:
-  - same `repeatable_damage_key` repeats the same result
-  - different `repeatable_damage_key` values can change the result
-  - total phrase duration is preserved while the phrase changes
-- Additional chunk-size acceptance tests were explored and became too complex at the top-level output boundary.
-- The user explicitly wants exact chunk-shape behavior tested, but not through acceptance tests that reverse-engineer transformed output.
+- `tests/test_geological_fragment.py` is green and now covers:
+  - public API / params parsing
+  - no-op behavior for `damage_pct=0`
+  - focused chunk-selection behavior
+  - repeatability via `repeatable_damage_key`
+  - top-level multi-dimensional acceptance behavior
+  - explicit `dimension` behavior for frequency, duration, and amplitude
+- `tests/test_transform_wrappers_behavior_happy_path.py` is green after the fragment changes.
 
 Important testing boundary decisions:
 
 - Top-level acceptance tests should remain at the business-layer entry point using `generate_score_plan(...)` and `transform_score(...)`.
 - Those acceptance tests should stay simple, self-contained, and readable without helper-heavy reconstruction logic.
-- Exact chunk placement rules belong in focused selection-level tests, likely around a small explicit selection function introduced for that purpose.
+- Exact chunk placement rules belong in focused selection-level tests, not in acceptance tests that reconstruct transformed output in detail.
 
 User preferences that should be preserved next session:
 
 - Keep tests self-contained. Do not force the reader to scroll to module-level constants just to understand a test case.
 - Avoid overly clever acceptance-test logic with bookkeeping loops, output reconstruction, or dense helper behavior inline.
 - Prefer regular local variable names over all-caps extracted constants inside tests.
+- Keep the code boring, predictable, and explicit. The user is sensitive to helpers or indirection that blur mode boundaries.
+- Avoid wrapper helpers that only rename or forward behavior without removing real complexity.
 - The broader design concern about param-validation sprawl was recorded in `features/current/centralize_transform_param_validation.md`.
 
-Targeted test status before clearing context:
+Targeted verification completed:
 
-- `tests/test_geological_fragment.py` was red because nonzero `fragment` behavior is not implemented yet.
-- The expected red boundary should remain tied to missing implementation, not to confusing or unstable test design.
+- `.venv/bin/pytest tests/test_geological_fragment.py -q`
+  - Result: passing (`25 passed` at last run).
+- `.venv/bin/pytest tests/test_transform_wrappers_behavior_happy_path.py -q`
+  - Result: passing (`11 passed` at last run).
+- `.venv/bin/python -m mypy tests/test_geological_fragment.py`
+  - Result: passing.
 
 Next smallest step:
 
-1. Clean up `tests/test_geological_fragment.py` so only the simple top-level acceptance tests remain at that level.
-2. Add focused selection-level tests for exact chunk behavior:
-   - repeated full chunks
-   - final partial chunk only when needed
-   - no duplicate selected positions
-   - selected count matches the `damage_pct` target
-3. Only after those tests exist, implement the explicit fragment-selection function and then the real damage behavior.
+1. Do a focused readability pass on `transforms/geological/fragment.py`, especially the selected-tone damage helpers and dispatch flow.
+2. Keep behavior unchanged while simplifying names or control flow that still reads as muddled.
+3. After that cleanup, run:
+   - `.venv/bin/pytest tests/test_geological_fragment.py -q`
+   - `.venv/bin/pytest tests/test_transform_wrappers_behavior_happy_path.py -q`
+4. If the fragment file is still hard to follow after that pass, identify one specific confusing block at a time and simplify it without starting a broad refactor.
