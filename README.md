@@ -173,6 +173,57 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   ```json
   "transforms": [{"name": "erosion", "params": {"dimension": "duration"}}]
   ```
+- **`fragment`**: Turns a phrase into a damaged, ruin-like version of itself, reminiscent of the damaged, incomplete rock formations in the Southeast, by selecting random adjacent tone chunks and damaging those selected tones. It preserves the original phrase timeline: removed tones become silence, and shortened tones are followed by trailing silence.
+
+  Params:
+
+  - `damage_pct`: Required integer from `0` to `100`. Controls how many original tone positions are damaged. Any nonzero value damages at least one tone when the phrase is not empty.
+  - `damage_tones_chunk_size`: Required integer of at least `1`. Controls the normal width (number of adjacent tones) of each damaged adjacent chunk. If the remaining damage budget is smaller than this value, the final chunk is smaller so `damage_pct` still wins.
+  - `dimension`: Optional. Supported values are `"frequency"`, `"duration"`, and `"amplitude"`. If omitted, selected tones use multi-dimensional stochastic damage.
+  - `repeatable_damage_key`: Optional string. Reuses the same stochastic damage pattern for the same input and params. If omitted, each run is non-deterministic.
+
+  With `dimension` omitted, each selected tone is damaged stochastically:
+
+  - Some selected tones are removed and replaced with silence.
+  - Some selected tones are shortened and followed by trailing silence.
+  - Some selected tones are softened by reducing amplitude.
+  - A selected tone may receive duration damage, amplitude damage, or both.
+
+  ```json
+  "transforms": [
+    {
+      "name": "fragment",
+      "params": {
+        "damage_pct": 40,
+        "damage_tones_chunk_size": 3,
+        "repeatable_damage_key": "damage-pattern-a"
+      }
+    }
+  ]
+  ```
+
+  With `dimension` provided, the selected tones are damaged only in that dimension:
+
+  ```json
+  "transforms": [
+    {
+      "name": "fragment",
+      "params": {
+        "damage_pct": 40,
+        "damage_tones_chunk_size": 3,
+        "dimension": "duration",
+        "repeatable_damage_key": "duration-damage-a"
+      }
+    }
+  ]
+  ```
+
+  Dimension behavior:
+
+  - `"frequency"` replaces selected tones with silence for their original duration.
+  - `"duration"` shortens selected tones and adds trailing silence so the phrase does not compress.
+  - `"amplitude"` lowers selected tone amplitudes without changing pitch or duration.
+
 - **`frost_effect`**: Simulates freeze-thaw expansion which occurs in hoodoo formation in southest Utah by appending polyphonic frost blooms to the score. Each audible tone in the input score becomes its own local frost seed. Accepts `iterations` (non-negative integer, `0` is a no-op) and optional `sustain_notes` (boolean, defaults to `false`).
   - With `sustain_notes: false`, generated frost notes keep their normal staggered durations. With `sustain_notes: true`, generated frost notes durations within each local frost bloom are extended so they all share the same end time in that generation.
   ```json
