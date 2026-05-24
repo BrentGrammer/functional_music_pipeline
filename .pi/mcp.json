@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "context-mode": {
+      "command": "context-mode"
+    },
+    "serena": {
+      "command": "uv",
+      "args": [
+        "tool",
+        "run",
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide",
+        "--project",
+        "."
+      ],
+      "env": {
+        "SERENA_USAGE_REPORTING": "false"
+      },
+      "trust": true,
+      "timeout": 120000
+    }
+  }
+}
