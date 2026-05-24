@@ -60,9 +60,11 @@ New shape:
 - Add `ScoreDocumentInput` and `ScoreDocument` schema types for the musical content.
 - Update `CompositionDocumentInput` and `CompositionDocument` so they contain metadata plus `score`.
 - Update the parser so `generate_score_plan` reads `document["score"]` instead of top-level `motifs` and `composition`.
+- After the score shape migration is stable, expand `_validate_composition_document()` to validate composition metadata fields as part of the top-level document contract.
 - Keep the existing runtime `Score` domain object. It remains the parsed/renderable domain model.
 - Update existing JSON files in `compositions/` to the new shape.
 - Update parser, loader, CLI, and tests to use the new document shape.
+- Tests that need file input should define that document inside the test and write it to a temporary file instead of depending on checked-in composition JSON fixtures.
 - Do not add compatibility logic for the old shape.
 
 ## Naming Model
@@ -94,11 +96,19 @@ New shape:
    - generate_score_plan reads document["score"].
    - Remove old document["motifs"] + document["composition"] parsing.
    - No backwards compatibility.
-3. Update composition JSON examples
+3. Stabilize score-shape coverage
+   - Update parser/schema/loader/render tests to use the new document shape.
+   - Prefer test-local documents and temporary files over checked-in JSON fixtures for tests.
+4. Validate composition metadata
+   - Expand `_validate_composition_document()` to validate top-level metadata fields.
+   - Validate `name` as a non-empty string when present.
+   - Validate `description` as a string when present.
+   - Validate `document_version` as an integer, and decide when it becomes required.
+   - Decide whether `created_at` is user-authored input or storage-managed metadata before making it required in parser validation.
+5. Update composition JSON examples
    - Convert files in compositions/ to the new shape.
-4. Update tests
-   - Parser/schema/loader/render tests should use the new document shape.
-   - Keep behavior expectations the same: same score output, same transforms, same renders.
-5. Run targeted then full tests
+6. Add metadata validation tests
+   - Add focused parser tests for valid and invalid metadata combinations.
+7. Run targeted then full tests
    - Start with parser/loader/render tests.
    - Then broader suite.
