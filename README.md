@@ -178,7 +178,7 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   Params:
 
   - `damage_pct`: Required integer from `0` to `100`. Controls how many original tone positions are damaged. Any nonzero value damages at least one tone when the phrase is not empty.
-  - `damage_tones_chunk_size`: Required integer of at least `1`. Controls the normal width (number of adjacent tones) of each damaged adjacent chunk. If the remaining damage budget is smaller than this value, the final chunk is smaller so `damage_pct` still wins.
+  - `damage_tones_chunk_size`: Required integer of at least `1`. Controls the normal width (number of adjacent tones) of each damaged chunk. If the remaining damage budget is smaller than this value, the final chunk is smaller so `damage_pct` still wins.
   - `dimension`: Optional. Supported values are `"frequency"`, `"duration"`, and `"amplitude"`. If omitted, selected tones use multi-dimensional stochastic damage.
   - `repeatable_damage_key`: Optional string. Reuses the same stochastic damage pattern for the same input and params. If omitted, each run is non-deterministic.
 
