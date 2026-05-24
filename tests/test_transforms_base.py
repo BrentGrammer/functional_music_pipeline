@@ -8,11 +8,8 @@ from score_model.score import Score
 from score_model.tone import Tone
 from score_model.voice import Voice
 from transforms.base import (
-    BooleanParam,
     EnumParam,
     FloatParam,
-    IntegerParam,
-    ParamSchema,
     PhraseTransformContext,
     PhraseTransformDefinition,
     ScoreTransformDefinition,
@@ -28,11 +25,6 @@ def _scale_duration(tones: list[Tone], multiplier: float, *, preserve_frequency:
         frequency = tone.frequency if preserve_frequency else tone.frequency * multiplier
         scaled_tones.append(Tone(frequency=frequency, duration=tone.duration * multiplier, sample_rate=tone.sample_rate, amplitude=tone.amplitude))
     return scaled_tones
-
-
-def test_param_schema_base_validate_is_abstract():
-    with pytest.raises(NotImplementedError):
-        ParamSchema().validate("value", "field")
 
 
 def test_transform_params_spec_defaults_to_no_fields():
@@ -160,53 +152,6 @@ def test_score_transform_definition_transform_parses_params_before_invoking_tran
     assert transformed_score is score
     assert captured_params == [{"factor": expected_factor}]
 
-
-def test_boolean_param_accepts_true():
-    BooleanParam().validate(True, "test_field")
-
-
-def test_string_param_rejects_non_string():
-    with pytest.raises(ValueError):
-        StringParam().validate(1.0, "test_field")
-
-
-def test_float_param_rejects_boolean():
-    with pytest.raises(ValueError):
-        FloatParam().validate(True, "test_field")
-
-
-def test_integer_param_rejects_float():
-    with pytest.raises(ValueError):
-        IntegerParam().validate(1.5, "test_field")
-
-
-def test_enum_param_rejects_unknown_value():
-    with pytest.raises(ValueError):
-        EnumParam(allowed_values=("low", "medium", "high")).validate("extreme", "test_field")
-
-
-def test_boolean_param_accepts_false():
-    BooleanParam().validate(False, "test_field")
-
-
-def test_boolean_param_rejects_integer():
-    with pytest.raises(ValueError):
-        BooleanParam().validate(1, "test_field")
-
-
-def test_boolean_param_rejects_zero():
-    with pytest.raises(ValueError):
-        BooleanParam().validate(0, "test_field")
-
-
-def test_boolean_param_rejects_string():
-    with pytest.raises(ValueError):
-        BooleanParam().validate("true", "test_field")
-
-
-def test_boolean_param_rejects_none():
-    with pytest.raises(ValueError):
-        BooleanParam().validate(None, "test_field")
 
 def test_parsed_transform_params_required_raises_type_error_on_mismatch():
     from transforms.base import ParsedTransformParams

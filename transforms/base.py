@@ -22,9 +22,6 @@ class ParamSchema(Generic[ParsedParam]):
     def parse(self, value: object, field_name: str) -> ParsedParam:
         raise NotImplementedError
 
-    def validate(self, value: object, field_name: str) -> None:
-        self.parse(value, field_name)
-
 
 @dataclass(frozen=True)
 class FloatParam(ParamSchema[float]):
