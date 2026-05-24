@@ -173,7 +173,7 @@ These transforms use geological metaphors or landform-inspired motion. Some resh
   ```json
   "transforms": [{"name": "erosion", "params": {"dimension": "duration"}}]
   ```
-- **`fragment`**: Turns a phrase into a damaged, ruin-like version of itself, reminiscent of the damaged, incomplete rock formations in the Southeast, by selecting random adjacent tone chunks and damaging those selected tones. It preserves the original phrase timeline: removed tones become silence, and shortened tones are followed by trailing silence.
+- **`fragment`**: Turns a phrase into a damaged, ruin-like version of itself, reminiscent of the damaged, incomplete rock formations in high desert environments, by selecting random adjacent tone chunks and damaging those selected tones. It preserves the original phrase timeline: removed tones become silence, and shortened tones are followed by trailing silence.
 
   Params:
 
