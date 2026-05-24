@@ -1,0 +1,81 @@
+{
+  "description": "Compares fragment transform behavior when damage is restricted to frequency, duration, or amplitude.",
+  "motifs": {
+    "melody": [
+      "261.63:0.5",
+      "293.66:0.5",
+      "329.63:0.5",
+      "349.23:0.5",
+      "392.00:0.5"
+    ],
+    "pause": [
+      "0.00:0.75"
+    ]
+  },
+  "composition": {
+    "voices": [
+      {
+        "name": "FragmentDimensionComparisonDemo",
+        "phrases": [
+          {
+            "comment": "Reference: clean five-note melody with even rhythm.",
+            "motifs": ["melody"]
+          },
+          {
+            "comment": "Frequency fragment: selected tones become silence while preserving their original durations.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "fragment",
+                "params": {
+                  "damage_pct": 60,
+                  "damage_tones_chunk_size": 2,
+                  "dimension": "frequency",
+                  "repeatable_damage_key": "fragment-frequency-demo"
+                }
+              }
+            ]
+          },
+          {
+            "comment": "Pause between fragment examples.",
+            "motifs": ["pause"]
+          },
+          {
+            "comment": "Duration fragment: selected tones are shortened and followed by trailing silence.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "fragment",
+                "params": {
+                  "damage_pct": 60,
+                  "damage_tones_chunk_size": 2,
+                  "dimension": "duration",
+                  "repeatable_damage_key": "fragment-duration-demo"
+                }
+              }
+            ]
+          },
+          {
+            "comment": "Pause between fragment examples.",
+            "motifs": ["pause"]
+          },
+          {
+            "comment": "Amplitude fragment: selected tones are softened without changing pitch or duration.",
+            "motifs": ["melody"],
+            "transforms": [
+              {
+                "name": "fragment",
+                "params": {
+                  "damage_pct": 60,
+                  "damage_tones_chunk_size": 2,
+                  "dimension": "amplitude",
+                  "repeatable_damage_key": "fragment-amplitude-demo"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
