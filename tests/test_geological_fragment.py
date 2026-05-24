@@ -1,4 +1,5 @@
 import math
+import random
 
 import pytest
 
@@ -14,11 +15,25 @@ from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.geological.fragment import (
     FRAGMENT_PARAMS_SPEC,
     FragmentParams,
+    _damage_selected_tone_across_dimensions,
     _select_chunks_to_damage,
     fragment_phrase_transform,
     fragment_transform,
 )
 from transforms.registry import PHRASE_TRANSFORMS
+
+
+class PredictableRandom(random.Random):
+    def __init__(self, random_values: list[float], uniform_values: list[float] | None = None):
+        super().__init__()
+        self.random_values = random_values
+        self.uniform_values = uniform_values or []
+
+    def random(self) -> float:
+        return self.random_values.pop(0)
+
+    def uniform(self, _low: float, _high: float) -> float:
+        return self.uniform_values.pop(0)
 
 
 def test_fragment_is_registered_as_phrase_transform():
@@ -222,6 +237,145 @@ class TestFragmentSelection:
         )
 
         assert first_chunks == second_chunks
+
+
+class TestFragmentMultiDimensionalDamage:
+    def test_multi_dimensional_damage_can_remove_a_selected_tone(self):
+        original_tone = Tone(440.0, duration=1.0, amplitude=0.5)
+        removal_roll_hits = 0.0
+
+        transformed_tones = _damage_selected_tone_across_dimensions(
+            original_tone,
+            PredictableRandom(random_values=[removal_roll_hits]),
+        )
+
+        assert len(transformed_tones) == 1
+        assert transformed_tones[0].frequency == 0.0
+        assert transformed_tones[0].duration == pytest.approx(original_tone.duration)
+        assert transformed_tones[0].amplitude == 0.0
+
+    def test_multi_dimensional_damage_can_shorten_without_softening_a_selected_tone(self):
+        original_tone = Tone(440.0, duration=1.0, amplitude=0.5)
+        removal_roll_misses = 0.99
+        duration_roll_hits = 0.0
+        amplitude_roll_misses = 0.99
+        shortened_duration = 0.5
+
+        transformed_tones = _damage_selected_tone_across_dimensions(
+            original_tone,
+            PredictableRandom(
+                random_values=[removal_roll_misses, duration_roll_hits, amplitude_roll_misses],
+                uniform_values=[shortened_duration],
+            ),
+        )
+        damaged_tone, trailing_silence = transformed_tones
+
+        assert damaged_tone.frequency == original_tone.frequency
+        assert damaged_tone.duration == pytest.approx(shortened_duration)
+        assert damaged_tone.amplitude == original_tone.amplitude
+        assert trailing_silence.frequency == 0.0
+        assert trailing_silence.amplitude == 0.0
+        assert sum(tone.duration for tone in transformed_tones) == pytest.approx(original_tone.duration)
+
+    def test_multi_dimensional_damage_can_soften_without_shortening_a_selected_tone(self):
+        original_tone = Tone(440.0, duration=1.0, amplitude=0.5)
+        # low values hit to trigger a change, high values miss.
+        removal_roll_misses = 0.99
+        duration_roll_misses = 0.99
+        amplitude_roll_hits = 0.0
+        amplitude_reduction_decibels = 6.0
+
+        transformed_tones = _damage_selected_tone_across_dimensions(
+            original_tone,
+            PredictableRandom(
+                random_values=[removal_roll_misses, duration_roll_misses, amplitude_roll_hits],
+                uniform_values=[amplitude_reduction_decibels],
+            ),
+        )
+
+        assert len(transformed_tones) == 1
+        assert transformed_tones[0].frequency == original_tone.frequency
+        assert transformed_tones[0].duration == pytest.approx(original_tone.duration)
+        assert transformed_tones[0].amplitude < original_tone.amplitude
+
+    def test_multi_dimensional_damage_can_shorten_and_soften_the_same_selected_tone(self):
+        original_tone = Tone(440.0, duration=1.0, amplitude=0.5)
+        removal_roll_misses = 0.99
+        duration_roll_hits = 0.0
+        amplitude_roll_hits = 0.0
+        shortened_duration = 0.5
+        amplitude_reduction_decibels = 6.0
+
+        transformed_tones = _damage_selected_tone_across_dimensions(
+            original_tone,
+            PredictableRandom(
+                random_values=[removal_roll_misses, duration_roll_hits, amplitude_roll_hits],
+                uniform_values=[shortened_duration, amplitude_reduction_decibels],
+            ),
+        )
+        damaged_tone, trailing_silence = transformed_tones
+
+        assert damaged_tone.frequency == original_tone.frequency
+        assert damaged_tone.duration == pytest.approx(shortened_duration)
+        assert damaged_tone.amplitude < original_tone.amplitude
+        assert trailing_silence.frequency == 0.0
+        assert trailing_silence.amplitude == 0.0
+        assert sum(tone.duration for tone in transformed_tones) == pytest.approx(original_tone.duration)
+
+    def test_multi_dimensional_damage_can_force_duration_when_duration_and_amplitude_rolls_miss(self):
+        original_tone = Tone(440.0, duration=1.0, amplitude=0.5)
+        removal_roll_misses = 0.99
+        duration_roll_misses = 0.99
+        amplitude_roll_misses = 0.99
+        fallback_roll_selects_duration = 0.0
+        shortened_duration = 0.5
+
+        transformed_tones = _damage_selected_tone_across_dimensions(
+            original_tone,
+            PredictableRandom(
+                random_values=[
+                    removal_roll_misses,
+                    duration_roll_misses,
+                    amplitude_roll_misses,
+                    fallback_roll_selects_duration,
+                ],
+                uniform_values=[shortened_duration],
+            ),
+        )
+        damaged_tone, trailing_silence = transformed_tones
+
+        assert damaged_tone.frequency == original_tone.frequency
+        assert damaged_tone.duration == pytest.approx(shortened_duration)
+        assert damaged_tone.amplitude == original_tone.amplitude
+        assert trailing_silence.frequency == 0.0
+        assert trailing_silence.amplitude == 0.0
+        assert sum(tone.duration for tone in transformed_tones) == pytest.approx(original_tone.duration)
+
+    def test_multi_dimensional_damage_can_force_amplitude_when_duration_and_amplitude_rolls_miss(self):
+        original_tone = Tone(440.0, duration=1.0, amplitude=0.5)
+        removal_roll_misses = 0.99
+        duration_roll_misses = 0.99
+        amplitude_roll_misses = 0.99
+        fallback_roll_selects_amplitude = 0.99
+        amplitude_reduction_decibels = 6.0
+
+        transformed_tones = _damage_selected_tone_across_dimensions(
+            original_tone,
+            PredictableRandom(
+                random_values=[
+                    removal_roll_misses,
+                    duration_roll_misses,
+                    amplitude_roll_misses,
+                    fallback_roll_selects_amplitude,
+                ],
+                uniform_values=[amplitude_reduction_decibels],
+            ),
+        )
+
+        assert len(transformed_tones) == 1
+        assert transformed_tones[0].frequency == original_tone.frequency
+        assert transformed_tones[0].duration == pytest.approx(original_tone.duration)
+        assert transformed_tones[0].amplitude < original_tone.amplitude
 
 
 class TestFragmentDimensionBoundDamage:
