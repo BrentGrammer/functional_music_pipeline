@@ -46,12 +46,29 @@ class CompositionConfig(TypedDict):
     score_transforms: list[TransformConfig]
 
 
-class CompositionDocumentInput(TypedDict, total=False):
-    description: str
+class ScoreDocumentInput(TypedDict, total=False):
     motifs: MotifsConfigInput
-    composition: CompositionConfigInput
+    voices: list[VoiceConfigInput]
+    score_transforms: list[TransformConfigInput]
+
+
+class ScoreDocument(TypedDict):
+    motifs: MotifsConfigInput
+    voices: list[VoiceConfig]
+    score_transforms: list[TransformConfig]
+
+
+class CompositionDocumentInput(TypedDict, total=False):
+    name: str
+    description: str
+    document_version: int
+    created_at: str
+    score: ScoreDocumentInput
 
 
 class CompositionDocument(TypedDict):
-    motifs: MotifsConfigInput
-    composition: CompositionConfig
+    name: NotRequired[str]
+    description: NotRequired[str]
+    document_version: NotRequired[int]
+    created_at: NotRequired[str]
+    score: ScoreDocument

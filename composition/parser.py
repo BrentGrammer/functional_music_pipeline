@@ -1,8 +1,8 @@
 from composition.schema import (
-    CompositionConfig,
     CompositionDocument,
     MotifsConfigInput,
     PhraseConfig,
+    ScoreDocument,
     TransformConfig,
     VoiceConfig,
 )
@@ -48,9 +48,15 @@ def _validate_composition_document(
     if not isinstance(composition_document, dict):
         raise ValueError("Composition document must be an object.")
 
-    motif_definitions = composition_document.get("motifs")
+    score_document = composition_document.get("score")
+    if not isinstance(score_document, dict):
+        raise ValueError("Composition 'score' must be an object.")
+    if not score_document:
+        raise ValueError("Composition 'score' must not be empty.")
+
+    motif_definitions = score_document.get("motifs")
     if not isinstance(motif_definitions, dict):
-        raise ValueError("Composition 'motifs' must be an object mapping motif names to tone lists.")
+        raise ValueError("Score 'motifs' must be an object mapping motif names to tone lists.")
     for motif_name, tone_strings in motif_definitions.items():
         if not isinstance(motif_name, str):
             raise ValueError("Motif names must be strings.")
@@ -62,19 +68,13 @@ def _validate_composition_document(
             if not tone_string:
                 raise ValueError(f"Motif '{motif_name}' tone entries must be non-empty strings.")
 
-    composition_config = composition_document.get("composition")
-    if not isinstance(composition_config, dict):
-        raise ValueError("Composition 'composition' must be an object.")
-    if not composition_config:
-        raise ValueError("Composition 'composition' must not be empty.")
-
-    voice_config_inputs = composition_config.get("voices", [])
+    voice_config_inputs = score_document.get("voices", [])
     if not isinstance(voice_config_inputs, list):
-        raise ValueError("Composition 'voices' must be a list.")
+        raise ValueError("Score 'voices' must be a list.")
     validated_voices: list[VoiceConfig] = []
     for voice_config in voice_config_inputs:
         if not isinstance(voice_config, dict):
-            raise ValueError("Composition 'voices' entries must be objects.")
+            raise ValueError("Score 'voices' entries must be objects.")
 
         phrase_config_inputs = voice_config.get("phrases")
         if not isinstance(phrase_config_inputs, list):
@@ -124,13 +124,13 @@ def _validate_composition_document(
 
         validated_voices.append(VoiceConfig(phrases=validated_phrases))
 
-    score_transform_inputs = composition_config.get("score_transforms", [])
+    score_transform_inputs = score_document.get("score_transforms", [])
     if not isinstance(score_transform_inputs, list):
-        raise ValueError("Composition 'score_transforms' must be a list.")
+        raise ValueError("Score 'score_transforms' must be a list.")
     validated_score_transforms: list[TransformConfig] = []
     for score_transform_spec in score_transform_inputs:
         if not isinstance(score_transform_spec, dict):
-            raise ValueError("Composition 'score_transforms' entries must be objects.")
+            raise ValueError("Score 'score_transforms' entries must be objects.")
 
         transform_name = score_transform_spec.get("name")
         if not isinstance(transform_name, str) or not transform_name:
@@ -147,15 +147,18 @@ def _validate_composition_document(
             TransformConfig(name=transform_name, params=transform_params)
         )
 
-    validated_composition = CompositionConfig(
+    validated_score = ScoreDocument(
+        motifs=motif_definitions,
         voices=validated_voices,
         score_transforms=validated_score_transforms,
     )
 
-    return CompositionDocument(
-        motifs=motif_definitions,
-        composition=validated_composition,
-    )
+    validated_document: CompositionDocument = {"score": validated_score}
+    for metadata_key in ("name", "description", "document_version", "created_at"):
+        metadata_value = composition_document.get(metadata_key)
+        if metadata_value is not None:
+            validated_document[metadata_key] = metadata_value
+    return validated_document
 
 def _extract_transform_requests_from_phrase(
     phrase_config: PhraseConfig,
@@ -239,10 +242,10 @@ def _create_voice_plans_from_document(
 
 def generate_score_plan(document: object) -> ScorePlan:
     composition_document = _validate_composition_document(document)
-    motifs_section = composition_document["motifs"]
-    composition_config = composition_document["composition"]
-    voices_section = composition_config["voices"]
-    score_transforms_section = composition_config["score_transforms"]
+    score_document = composition_document["score"]
+    motifs_section = score_document["motifs"]
+    voices_section = score_document["voices"]
+    score_transforms_section = score_document["score_transforms"]
 
     motifs = parse_motifs(motifs_section)
     plan_motifs = {name: Motif(name=name, tones=copy_tones(tones)) for name, tones in motifs.items()}
