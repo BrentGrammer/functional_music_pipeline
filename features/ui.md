@@ -239,6 +239,45 @@ Render guardrails:
 - Clean up temporary files after response completion or a short TTL.
 - Keep persistent object storage optional until users need saved render history or sharing.
 
+## Browser Audio Playback Direction
+
+Use native browser audio playback for the first UI version.
+
+Playback decisions:
+
+- Support rendered WAV playback in the browser first.
+- Do not support MIDI playback in the browser. MIDI should be export-only, and users can download MIDI files for use in a DAW or another MIDI-capable tool.
+- Consider MP3 playback/export later if smaller files or faster browser playback become important, but do not require MP3 for the first version.
+- Do not add Tone.js, Web Audio API abstractions, wavesurfer.js, or another audio library until the product needs advanced playback, browser-side synthesis, waveform visualization, synchronized playback cursors, looping, trimming, or transport controls.
+
+Recommended browser playback flow:
+
+- FastAPI renders WAV server-side.
+- The API returns `audio/wav` bytes or a short-lived playback URL.
+- React creates a Blob URL for preview responses.
+- The audio element uses the Blob URL as its source.
+- React revokes old Blob URLs when a new render replaces them or the component unmounts.
+
+Playback considerations:
+
+- Rendering can finish before playback starts for v1. True playback while rendering is more complex and is not required initially.
+- Show loading/progress state while rendering.
+- Use correct MIME types, especially `audio/wav` for playback and `audio/midi` or `audio/mid` for MIDI downloads.
+- Browser autoplay restrictions mean playback should follow an explicit user action.
+- Use range request support for saved or backend-served audio files so seeking and replay work reliably.
+- Keep mobile browser behavior conservative; native `<audio>` is the safest baseline.
+
+MP3 conversion note:
+
+- Keep WAV as the canonical first render format.
+- Add MP3 as an optional playback/export format after WAV preview works.
+- Convert WAV to MP3 by rendering WAV first, then encoding with `ffmpeg`.
+- Install `ffmpeg` in the server/Docker image.
+- Use a small Python integration layer, either a wrapper such as `pydub` or a direct `subprocess` call to `ffmpeg`.
+- Serve MP3 playback/downloads with MIME type `audio/mpeg`.
+- Expect smaller files and lower storage/bandwidth usage than WAV, at the cost of lossy compression and additional CPU time.
+- Test MP3 export by asserting that an MP3 file is produced and playable/servable, not by comparing exact encoded bytes.
+
 # Summary of Plan
 
 Frontend
