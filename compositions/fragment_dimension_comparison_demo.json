@@ -1,29 +1,33 @@
 {
-  "description": "Compares fragment transform behavior when damage is restricted to frequency, duration, or amplitude.",
-  "motifs": {
-    "melody": [
-      "261.63:0.5",
-      "293.66:0.5",
-      "329.63:0.5",
-      "349.23:0.5",
-      "392.00:0.5"
-    ],
-    "pause": [
-      "0.00:0.75"
-    ]
-  },
-  "composition": {
+  "name": "Fragment Dimension Comparison Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5",
+        "392.00:0.5"
+      ],
+      "pause": [
+        "0.00:0.75"
+      ]
+    },
     "voices": [
       {
         "name": "FragmentDimensionComparisonDemo",
         "phrases": [
           {
             "comment": "Reference: clean five-note melody with even rhythm.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Frequency fragment: selected tones become silence while preserving their original durations.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "fragment",
@@ -38,11 +42,15 @@
           },
           {
             "comment": "Pause between fragment examples.",
-            "motifs": ["pause"]
+            "motifs": [
+              "pause"
+            ]
           },
           {
             "comment": "Duration fragment: selected tones are shortened and followed by trailing silence.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "fragment",
@@ -57,11 +65,15 @@
           },
           {
             "comment": "Pause between fragment examples.",
-            "motifs": ["pause"]
+            "motifs": [
+              "pause"
+            ]
           },
           {
             "comment": "Amplitude fragment: selected tones are softened without changing pitch or duration.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "fragment",
@@ -76,6 +88,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Compares fragment transform behavior when damage is restricted to frequency, duration, or amplitude."
 }

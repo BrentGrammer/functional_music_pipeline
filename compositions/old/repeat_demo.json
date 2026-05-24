@@ -1,28 +1,40 @@
 {
-  "description": "Demonstrates the repeat transform which repeats a phrase multiple times.",
-  "motifs": {
-    "short_motif": ["261.63:0.3", "329.63:0.3", "392.00:0.3"]
-  },
-  "composition": {
+  "name": "Repeat Demo",
+  "score": {
+    "motifs": {
+      "short_motif": [
+        "261.63:0.3",
+        "329.63:0.3",
+        "392.00:0.3"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Original short motif played once.",
-            "motifs": ["short_motif"]
+            "motifs": [
+              "short_motif"
+            ]
           },
           {
             "comment": "Repeated 3 times.",
-            "motifs": ["short_motif"],
+            "motifs": [
+              "short_motif"
+            ],
             "transforms": [
               {
                 "name": "repeat",
-                "params": { "count": 3 }
+                "params": {
+                  "count": 3
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates the repeat transform which repeats a phrase multiple times."
 }

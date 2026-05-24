@@ -476,10 +476,11 @@ class TestFragmentAcceptance:
         ruin_seed_motif = [f"{frequency}:{duration}" for frequency, duration, _ in ruin_seed_snapshot]
 
         composition_document = {
-            "motifs": {
-                "ruin_seed": ruin_seed_motif
-            },
-            "composition": {
+            "name": "Fragment Repeatable Damage",
+            "score": {
+                "motifs": {
+                    "ruin_seed": ruin_seed_motif
+                },
                 "voices": [
                     {
                         "phrases": [
@@ -534,10 +535,11 @@ class TestFragmentAcceptance:
         ruin_seed_motif = [f"{frequency}:{duration}" for frequency, duration, _ in ruin_seed_snapshot]
 
         composition_document = {
-            "motifs": {
-                "ruin_seed": ruin_seed_motif
-            },
-            "composition": {
+            "name": "Fragment Different Damage Keys",
+            "score": {
+                "motifs": {
+                    "ruin_seed": ruin_seed_motif
+                },
                 "voices": [
                     {
                         "phrases": [
@@ -591,10 +593,11 @@ class TestFragmentAcceptance:
         original_total_duration = sum(duration for _, duration, _ in ruin_seed_snapshot)
 
         composition_document = {
-            "motifs": {
-                "ruin_seed": ruin_seed_motif
-            },
-            "composition": {
+            "name": "Fragment Preserves Timeline",
+            "score": {
+                "motifs": {
+                    "ruin_seed": ruin_seed_motif
+                },
                 "voices": [
                     {
                         "phrases": [

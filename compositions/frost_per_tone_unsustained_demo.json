@@ -1,22 +1,24 @@
 {
-  "description": "Demonstrates the refactored frost behavior with sustain_notes left off. Each audible note becomes its own local frost seed, so you hear three separate frost blooms following the three-note source line.",
-  "motifs": {
-    "per_tone_frost_probe": [
-      "440:0.75",
-      "0:1.0",
-      "554.37:0.75",
-      "0:1.0",
-      "659.25:0.75"
-    ]
-  },
-  "composition": {
+  "name": "Frost Per Tone Unsustained Demo",
+  "score": {
+    "motifs": {
+      "per_tone_frost_probe": [
+        "440:0.75",
+        "0:1.0",
+        "554.37:0.75",
+        "0:1.0",
+        "659.25:0.75"
+      ]
+    },
     "voices": [
       {
         "name": "PerToneFrostUnsustainedVoice",
         "phrases": [
           {
             "comment": "Three clear source notes with rests between them. The gaps make it easier to hear that frost_effect now seeds a local bloom from every audible tone instead of only the earliest audible note.",
-            "motifs": ["per_tone_frost_probe"]
+            "motifs": [
+              "per_tone_frost_probe"
+            ]
           }
         ]
       }
@@ -30,5 +32,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Demonstrates the refactored frost behavior with sustain_notes left off. Each audible note becomes its own local frost seed, so you hear three separate frost blooms following the three-note source line."
 }

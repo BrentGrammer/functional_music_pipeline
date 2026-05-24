@@ -1,26 +1,30 @@
 {
-  "description": "Comprehensive demonstration of the random_drop transform behaviors with per-dimension comparisons.",
-  "motifs": {
-    "melody": [
-      "261.63:0.5",
-      "293.66:0.5",
-      "329.63:0.5",
-      "349.23:0.5",
-      "392.00:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Random Drop Behavior Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5",
+        "392.00:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "RandomDropDemo",
         "phrases": [
           {
             "comment": "Reference: clean melody.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Pitch dips: 50% max drop, 60% frequency.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "random_drop",
@@ -34,11 +38,15 @@
           },
           {
             "comment": "Reference: clean melody.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Rhythmic fragmentation: 90% max drop for shortening, 70% frequency.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "random_drop",
@@ -52,11 +60,15 @@
           },
           {
             "comment": "Reference: clean melody.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Volume gaps: 100% max drop for silence, 50% frequency.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "random_drop",
@@ -70,11 +82,15 @@
           },
           {
             "comment": "Reference: clean melody.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Combined chaos: frequency and amplitude drops.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "random_drop",
@@ -96,6 +112,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Comprehensive demonstration of the random_drop transform behaviors with per-dimension comparisons."
 }

@@ -1,14 +1,14 @@
 {
-  "description": "A showcase of the stochastic profile transforms. Each voice plays the same C major arpeggio, but has a different stochastic transform applied to a different musical dimension (frequency, duration, or amplitude). A score-level transform is also applied to all voices.",
-  "motifs": {
-    "c_major_arpeggio": [
-      "261.63:0.5",
-      "329.63:0.5",
-      "392.00:0.5",
-      "523.25:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Geological Example",
+  "score": {
+    "motifs": {
+      "c_major_arpeggio": [
+        "261.63:0.5",
+        "329.63:0.5",
+        "392.00:0.5",
+        "523.25:0.5"
+      ]
+    },
     "voices": [
       {
         "phrases": [
@@ -17,13 +17,13 @@
               "c_major_arpeggio"
             ],
             "transforms": [
-               {
-                 "name": "weierstrass",
-                 "params": {
-                   "dimension": "frequency",
-                   "intensity": "low"
-                 }
-               }
+              {
+                "name": "weierstrass",
+                "params": {
+                  "dimension": "frequency",
+                  "intensity": "low"
+                }
+              }
             ]
           }
         ]
@@ -46,70 +46,71 @@
           }
         ]
       },
-       {
-         "phrases": [
-           {
-             "motifs": [
-               "c_major_arpeggio"
-             ],
-             "transforms": [
-               {
-                 "name": "cellular_automata",
-                  "params": {
-                    "dimension": "amplitude",
-                    "rule": 30,
-                    "generations": 5,
-                    "max_deviation": 0.4
-                  }
-               }
-             ]
-           }
-         ]
-       },
-       {
-         "phrases": [
-           {
-             "motifs": [
-               "c_major_arpeggio"
-             ],
-             "transforms": [
-                {
-                  "name": "random_drop",
-                  "params": {
-                    "dimension": "amplitude",
-                    "max_drop_pct": 90,
-                    "drop_frequency_pct": 50
-                  }
-                },
-               {
-                 "name": "random_drop",
-                 "params": {
-                   "dimension": "amplitude",
-                   "max_drop_pct": 75,
-                   "drop_frequency_pct": 50
-                 }
-               },
-               {
-                 "name": "random_drop",
-                 "params": {
-                   "dimension": "amplitude",
-                   "max_drop_pct": 25,
-                   "drop_frequency_pct": 20
-                 }
-               }
-             ]
-           }
-         ]
-       }
+      {
+        "phrases": [
+          {
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+              {
+                "name": "cellular_automata",
+                "params": {
+                  "dimension": "amplitude",
+                  "rule": 30,
+                  "generations": 5,
+                  "max_deviation": 0.4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "phrases": [
+          {
+            "motifs": [
+              "c_major_arpeggio"
+            ],
+            "transforms": [
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "amplitude",
+                  "max_drop_pct": 90,
+                  "drop_frequency_pct": 50
+                }
+              },
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "amplitude",
+                  "max_drop_pct": 75,
+                  "drop_frequency_pct": 50
+                }
+              },
+              {
+                "name": "random_drop",
+                "params": {
+                  "dimension": "amplitude",
+                  "max_drop_pct": 25,
+                  "drop_frequency_pct": 20
+                }
+              }
+            ]
+          }
+        ]
+      }
     ],
-     "score_transforms": [
-       {
-         "name": "weierstrass",
-         "params": {
-           "dimension": "amplitude",
-           "intensity": "medium"
-         }
-       }
-     ]
-  }
+    "score_transforms": [
+      {
+        "name": "weierstrass",
+        "params": {
+          "dimension": "amplitude",
+          "intensity": "medium"
+        }
+      }
+    ]
+  },
+  "description": "A showcase of the stochastic profile transforms. Each voice plays the same C major arpeggio, but has a different stochastic transform applied to a different musical dimension (frequency, duration, or amplitude). A score-level transform is also applied to all voices."
 }

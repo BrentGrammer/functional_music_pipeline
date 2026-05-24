@@ -23,8 +23,11 @@ def render_phrase_from_config(
         for name, tones in parsed_motifs.items()
     }
     composition_document: object = {
-        "motifs": motifs_section,
-        "composition": {"voices": [{"phrases": [phrase_config]}]},
+        "name": "Pad Silence Phrase Example",
+        "score": {
+            "motifs": motifs_section,
+            "voices": [{"phrases": [phrase_config]}],
+        },
     }
     score = transform_score(generate_score_plan(composition_document))
     return flatten_voice_tones(score.voices[0])
@@ -120,10 +123,11 @@ def test_parse_score_applies_pad_silence_at_start():
     subject_duration = 0.5
     silence_seconds = 0.3
     composition_document = {
-        "motifs": {
-            "subject": [f"{subject_frequency}:{subject_duration}"],
-        },
-        "composition": {
+        "name": "Pad Silence Score Start",
+        "score": {
+            "motifs": {
+                "subject": [f"{subject_frequency}:{subject_duration}"],
+            },
             "voices": [{"phrases": [{"motifs": ["subject"]}]}],
             "score_transforms": [{"name": "pad_silence", "params": {"seconds": silence_seconds, "position": "start"}}],
         },
@@ -140,10 +144,11 @@ def test_parse_score_applies_pad_silence_at_end():
     subject_duration = 0.5
     silence_seconds = 0.3
     composition_document = {
-        "motifs": {
-            "subject": [f"{subject_frequency}:{subject_duration}"],
-        },
-        "composition": {
+        "name": "Pad Silence Score End",
+        "score": {
+            "motifs": {
+                "subject": [f"{subject_frequency}:{subject_duration}"],
+            },
             "voices": [{"phrases": [{"motifs": ["subject"]}]}],
             "score_transforms": [{"name": "pad_silence", "params": {"seconds": silence_seconds, "position": "end"}}],
         },
@@ -198,10 +203,11 @@ def test_parse_score_pad_silence_requires_missing_required_fields():
         incomplete_params = valid_params.copy()
         incomplete_params.pop(required_field)
         composition_document = {
-            "motifs": {
-                "subject": [f"{subject_frequency}:{subject_duration}"],
-            },
-            "composition": {
+            "name": "Pad Silence Missing Required Fields",
+            "score": {
+                "motifs": {
+                    "subject": [f"{subject_frequency}:{subject_duration}"],
+                },
                 "voices": [{"phrases": [{"motifs": ["subject"]}]}],
                 "score_transforms": [{"name": "pad_silence", "params": incomplete_params}],
             },
@@ -217,11 +223,12 @@ def test_applies_pad_silence_between_phrases():
     phrase_duration = 0.5
     silence_seconds = 0.25
     composition_document = {
-        "motifs": {
-            "subject": [f"{subject_frequency}:{phrase_duration}"],
-            "answer": [f"{answer_frequency}:{phrase_duration}"],
-        },
-        "composition": {
+        "name": "Pad Silence Between Phrases",
+        "score": {
+            "motifs": {
+                "subject": [f"{subject_frequency}:{phrase_duration}"],
+                "answer": [f"{answer_frequency}:{phrase_duration}"],
+            },
             "voices": [
                 {
                     "phrases": [

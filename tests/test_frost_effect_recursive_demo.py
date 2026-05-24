@@ -69,13 +69,14 @@ def _assert_event_follows(previous_event_voices, event_voices):
 
 def _build_cluster_frost_composition() -> CompositionDocumentInput:
     return {
+        "name": "Cluster Frost Demo",
         "description": "A frost demo that starts from a three-tone cluster and renders four frost events.",
-        "motifs": {
-            "seed_low": ["330:1.0"],
-            "seed_mid": ["440:1.0"],
-            "seed_high": ["550:1.0"],
-        },
-        "composition": {
+        "score": {
+            "motifs": {
+                "seed_low": ["330:1.0"],
+                "seed_mid": ["440:1.0"],
+                "seed_high": ["550:1.0"],
+            },
             "voices": [
                 {
                     "phrases": [

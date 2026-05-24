@@ -9,20 +9,21 @@ from score_model.traversal import flatten_voice_tones
 
 def _build_geological_example_composition() -> CompositionDocumentInput:
     return {
+        "name": "Geological Example Composition",
         "description": (
             "A showcase of the stochastic transforms. Each voice plays the same C major arpeggio, "
             "but has a different stochastic transform applied to a different musical dimension "
             "(frequency, duration, or amplitude). A score-level transform is also applied to all voices."
         ),
-        "motifs": {
-            "c_major_arpeggio": [
-                "261.63:0.5",
-                "329.63:0.5",
-                "392.00:0.5",
-                "523.25:0.5",
-            ]
-        },
-        "composition": {
+        "score": {
+            "motifs": {
+                "c_major_arpeggio": [
+                    "261.63:0.5",
+                    "329.63:0.5",
+                    "392.00:0.5",
+                    "523.25:0.5",
+                ]
+            },
             "voices": [
                 {
                     "phrases": [
@@ -150,7 +151,7 @@ class TestGeologicalExampleComposition:
 
         # Retrieve original tones for comparison by reusing the motif parser.
         # This avoids duplicating tone-string parsing logic in the test.
-        parsed_motifs = parse_motifs(composition_data["motifs"])
+        parsed_motifs = parse_motifs(composition_data["score"]["motifs"])
         original_motif_tones = parsed_motifs["c_major_arpeggio"]
 
         # Voice 1: Weierstrass on Frequency

@@ -1,22 +1,38 @@
 {
-  "description": "Demonstrates terraced_drift which applies quantized random walk modulation across all voices.",
-  "motifs": {
-    "voice_a": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "349.23:0.4", "392.00:0.4"],
-    "voice_b": ["523.25:0.4", "493.88:0.4", "440.00:0.4", "392.00:0.4", "349.23:0.4"]
-  },
-  "composition": {
+  "name": "Score Terraced Drift Demo",
+  "score": {
+    "motifs": {
+      "voice_a": [
+        "261.63:0.4",
+        "293.66:0.4",
+        "329.63:0.4",
+        "349.23:0.4",
+        "392.00:0.4"
+      ],
+      "voice_b": [
+        "523.25:0.4",
+        "493.88:0.4",
+        "440.00:0.4",
+        "392.00:0.4",
+        "349.23:0.4"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
-            "motifs": ["voice_a"]
+            "motifs": [
+              "voice_a"
+            ]
           }
         ]
       },
       {
         "phrases": [
           {
-            "motifs": ["voice_b"]
+            "motifs": [
+              "voice_b"
+            ]
           }
         ]
       }
@@ -30,5 +46,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Demonstrates terraced_drift which applies quantized random walk modulation across all voices."
 }

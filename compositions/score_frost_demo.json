@@ -1,13 +1,22 @@
 {
-  "description": "Demonstrates the score-level frost effect which appends crystal-like expansions to the score.",
-  "motifs": {
-    "seed": ["440:0.5", "493.88:0.5"]
-  },
-  "composition": {
+  "name": "Score Frost Demo",
+  "score": {
+    "motifs": {
+      "seed": [
+        "440:0.5",
+        "493.88:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "SeedVoice",
-        "phrases": [{ "motifs": ["seed"] }]
+        "phrases": [
+          {
+            "motifs": [
+              "seed"
+            ]
+          }
+        ]
       }
     ],
     "score_transforms": [
@@ -19,5 +28,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Demonstrates the score-level frost effect which appends crystal-like expansions to the score."
 }

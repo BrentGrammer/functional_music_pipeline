@@ -296,22 +296,20 @@ class TestGoldenRatioErrors:
 
 
 class TestGoldenRatioCompositionRegression:
-
-
     def test_phrase_relative_golden_ratio_shrink_demo_scales_from_immediately_previous_phrase(self):
-        
-        origin_seed_total_duration = 8.0 # 2.0 + 2.0 + 2.0 + 2.0 - each duration added up from the seed tones
+        origin_seed_total_duration = 8.0
 
         composition_document = {
-            "motifs": {
-                "c_major_arpeggio": [
-                    "261.63:2.0",
-                    "329.63:2.0",
-                    "392.00:2.0",
-                    "523.25:2.0",
-                ]
-            },
-            "composition": {
+            "name": "Golden Ratio Study",
+            "score": {
+                "motifs": {
+                    "c_major_arpeggio": [
+                        "261.63:2.0",
+                        "329.63:2.0",
+                        "392.00:2.0",
+                        "523.25:2.0",
+                    ]
+                },
                 "voices": [
                     {
                         "phrases": [
@@ -353,21 +351,20 @@ class TestGoldenRatioCompositionRegression:
         assert phrase_duration_totals[1] == pytest.approx(original_phrase_total_duration / GOLDEN_RATIO)
         assert phrase_duration_totals[2] == pytest.approx(original_phrase_total_duration / GOLDEN_RATIO / GOLDEN_RATIO)
 
-
     def test_phrase_relative_golden_ratio_grow_demo_scales_from_immediately_previous_phrase(self):
-
-        origin_seed_total_duration = 8.0 # 2.0 + 2.0 + 2.0 + 2.0 - each duration added up from the seed tones
+        origin_seed_total_duration = 8.0
 
         composition_document = {
-            "motifs": {
-                "c_major_arpeggio": [
-                    "261.63:2.0",
-                    "329.63:2.0",
-                    "392.00:2.0",
-                    "523.25:2.0",
-                ]
-            },
-            "composition": {
+            "name": "Golden Ratio Study",
+            "score": {
+                "motifs": {
+                    "c_major_arpeggio": [
+                        "261.63:2.0",
+                        "329.63:2.0",
+                        "392.00:2.0",
+                        "523.25:2.0",
+                    ]
+                },
                 "voices": [
                     {
                         "phrases": [
@@ -414,19 +411,20 @@ class TestGoldenRatioCompositionRegression:
         second_voice_seed_total_duration = 4.0
 
         composition_document = {
-            "motifs": {
-                "c_major_arpeggio": [
-                    "261.63:2.0",
-                    "329.63:2.0",
-                    "392.00:2.0",
-                    "523.25:2.0",
-                ],
-                "dyad_pulse": [
-                    "220.00:1.5",
-                    "277.18:2.5",
-                ],
-            },
-            "composition": {
+            "name": "Golden Ratio Study",
+            "score": {
+                "motifs": {
+                    "c_major_arpeggio": [
+                        "261.63:2.0",
+                        "329.63:2.0",
+                        "392.00:2.0",
+                        "523.25:2.0",
+                    ],
+                    "dyad_pulse": [
+                        "220.00:1.5",
+                        "277.18:2.5",
+                    ],
+                },
                 "voices": [
                     {
                         "phrases": [
@@ -471,19 +469,20 @@ class TestGoldenRatioCompositionRegression:
         second_voice_seed_total_duration = 4.0
 
         composition_document = {
-            "motifs": {
-                "c_major_arpeggio": [
-                    "261.63:2.0",
-                    "329.63:2.0",
-                    "392.00:2.0",
-                    "523.25:2.0",
-                ],
-                "dyad_pulse": [
-                    "220.00:1.5",
-                    "277.18:2.5",
-                ],
-            },
-            "composition": {
+            "name": "Golden Ratio Study",
+            "score": {
+                "motifs": {
+                    "c_major_arpeggio": [
+                        "261.63:2.0",
+                        "329.63:2.0",
+                        "392.00:2.0",
+                        "523.25:2.0",
+                    ],
+                    "dyad_pulse": [
+                        "220.00:1.5",
+                        "277.18:2.5",
+                    ],
+                },
                 "voices": [
                     {
                         "phrases": [

@@ -1,47 +1,64 @@
 {
-  "description": "A demonstration of the microtonal MIDI export feature. This composition plays two motifs sequentially. The first scale is in standard tuning. The second scale is transposed up by 0.25 semitones (a quarter-tone), demonstrating the preservation of microtonal shifts.",
-  "motifs": {
-    "scale": [
-      "261.63:0.5", "293.66:0.5", "329.63:0.5", "349.23:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Microtonal Demo",
+  "score": {
+    "motifs": {
+      "scale": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "MicrotonalComparisonVoice",
         "phrases": [
           {
             "comment": "Reference phrase in standard tuning.",
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": []
           },
           {
             "comment": "Semitone transposition: a standard chromatic shift for comparison against the microtonal example.",
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": [
               {
                 "name": "transpose",
-                "params": { "semitones": 1.0 }
+                "params": {
+                  "semitones": 1.0
+                }
               }
             ]
           },
           {
             "comment": "Reference phrase repeated so the next example is easy to compare against the original tuning.",
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": []
           },
           {
             "comment": "Microtonal transposition: shifts the same phrase by half a semitone so MIDI export must preserve a non-standard pitch offset.",
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": [
               {
                 "name": "transpose",
-                "params": { "semitones": 0.5 }
+                "params": {
+                  "semitones": 0.5
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "A demonstration of the microtonal MIDI export feature. This composition plays two motifs sequentially. The first scale is in standard tuning. The second scale is transposed up by 0.25 semitones (a quarter-tone), demonstrating the preservation of microtonal shifts."
 }

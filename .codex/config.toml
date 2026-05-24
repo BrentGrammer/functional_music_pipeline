@@ -20,3 +20,6 @@ args = [
   "--open-web-dashboard=false"
 ]
 env = { SERENA_USAGE_REPORTING = "false" }
+
+[mcp_servers.serena.tools.replace_content]
+approval_mode = "approve"

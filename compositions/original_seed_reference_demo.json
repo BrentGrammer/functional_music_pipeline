@@ -1,24 +1,28 @@
 {
-  "description": "Untransformed reference score for the emergent pipeline demo. Render this file to hear the original seed by itself, then compare it with compositions/emergent_pipeline_demo.json to hear what this material becomes after the ordered phrase and score transform pipeline.",
-  "motifs": {
-    "seed": [
-      "261.63:0.50",
-      "293.66:0.50",
-      "329.63:0.50",
-      "392.00:0.50"
-    ]
-  },
-  "composition": {
+  "name": "Original Seed Reference Demo",
+  "score": {
+    "motifs": {
+      "seed": [
+        "261.63:0.50",
+        "293.66:0.50",
+        "329.63:0.50",
+        "392.00:0.50"
+      ]
+    },
     "voices": [
       {
         "name": "OriginalSeed",
         "phrases": [
           {
             "comment": "The original seed motif with no phrase transforms and no score transforms.",
-            "motifs": ["seed"]
+            "motifs": [
+              "seed"
+            ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Untransformed reference score for the emergent pipeline demo. Render this file to hear the original seed by itself, then compare it with compositions/emergent_pipeline_demo.json to hear what this material becomes after the ordered phrase and score transform pipeline."
 }

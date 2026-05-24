@@ -316,10 +316,11 @@ class TestPedalToneRegistration:
 class TestPedalToneComposition:
     def test_add_pedal_tone_applies_from_composition_json(self):
         composition_document: CompositionDocumentInput = {
-            "motifs": {
-                "subject": ["261.63:0.5", "293.66:0.5"],
-            },
-            "composition": {
+            "name": "Pedal Tone Composition",
+            "score": {
+                "motifs": {
+                    "subject": ["261.63:0.5", "293.66:0.5"],
+                },
                 "voices": [
                     {"phrases": [{"motifs": ["subject"]}]},
                 ],
@@ -344,10 +345,11 @@ class TestPedalToneComposition:
 class TestStrettoComposition:
     def test_stretto_applies_from_composition_json(self):
         composition_document: CompositionDocumentInput = {
-            "motifs": {
-                "subject": ["261.63:0.5", "329.63:0.25"],
-            },
-            "composition": {
+            "name": "Stretto Composition",
+            "score": {
+                "motifs": {
+                    "subject": ["261.63:0.5", "329.63:0.25"],
+                },
                 "voices": [
                     {"phrases": [{"motifs": ["subject"]}]},
                 ],
@@ -376,13 +378,14 @@ class TestStrettoComposition:
 
     def test_stretto_rendering_overlaps_voice_onsets(self):
         composition_document: CompositionDocumentInput = {
-            "motifs": {
-                "subject": [
-                    "261.63:0.5",
-                    "329.63:0.5",
-                ],
-            },
-            "composition": {
+            "name": "Stretto Rendering Overlap",
+            "score": {
+                "motifs": {
+                    "subject": [
+                        "261.63:0.5",
+                        "329.63:0.5",
+                    ],
+                },
                 "voices": [
                     {"phrases": [{"motifs": ["subject"]}]},
                 ],

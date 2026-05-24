@@ -1,16 +1,20 @@
 {
-  "description": "Minimal frost probe: one audible source tone with a single frost iteration so the replayed seed and the two edge voices are easy to hear.",
-  "motifs": {
-    "single_frost_seed": ["440:0.75"]
-  },
-  "composition": {
+  "name": "Frost Single Seed Probe Demo",
+  "score": {
+    "motifs": {
+      "single_frost_seed": [
+        "440:0.75"
+      ]
+    },
     "voices": [
       {
         "name": "SingleFrostSeedVoice",
         "phrases": [
           {
             "comment": "A single plain seed tone. frost_effect preserves this source note and appends one local frost bloom after it.",
-            "motifs": ["single_frost_seed"]
+            "motifs": [
+              "single_frost_seed"
+            ]
           }
         ]
       }
@@ -24,5 +28,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Minimal frost probe: one audible source tone with a single frost iteration so the replayed seed and the two edge voices are easy to hear."
 }

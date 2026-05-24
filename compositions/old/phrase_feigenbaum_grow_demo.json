@@ -1,24 +1,28 @@
 {
-  "description": "Demonstrates phrase_feigenbaum_grow which scales each phrase to be 4.669x the duration of the previous phrase, creating decelerating repetitions.",
-  "motifs": {
-    "short_theme": [
-      "523.25:0.1",
-      "493.88:0.1",
-      "440.00:0.1",
-      "392.00:0.1"
-    ]
-  },
-  "composition": {
+  "name": "Phrase Feigenbaum Grow Demo",
+  "score": {
+    "motifs": {
+      "short_theme": [
+        "523.25:0.1",
+        "493.88:0.1",
+        "440.00:0.1",
+        "392.00:0.1"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "First phrase: 4 short notes at 0.1 seconds each = 0.4 seconds total.",
-            "motifs": ["short_theme"]
+            "motifs": [
+              "short_theme"
+            ]
           },
           {
             "comment": "Second phrase: grown to 0.4 * 4.669 = ~1.87 seconds total.",
-            "motifs": ["short_theme"],
+            "motifs": [
+              "short_theme"
+            ],
             "transforms": [
               {
                 "name": "phrase_feigenbaum_grow"
@@ -27,7 +31,9 @@
           },
           {
             "comment": "Third phrase: grown again to ~8.7 seconds total. Slow, expansive.",
-            "motifs": ["short_theme"],
+            "motifs": [
+              "short_theme"
+            ],
             "transforms": [
               {
                 "name": "phrase_feigenbaum_grow"
@@ -36,6 +42,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates phrase_feigenbaum_grow which scales each phrase to be 4.669x the duration of the previous phrase, creating decelerating repetitions."
 }

@@ -1,21 +1,30 @@
 {
-  "description": "Shrink a C Major Arpeggio phrase by the Golden Ratio twice polyphonically.",
-  "motifs": {
-    "c_major_arpeggio": ["261.63:2.0", "329.63:2.0", "392.00:2.0", "523.25:2.0"]
-  },
-  "composition": {
+  "name": "Polyphonic Golden Ratio Shrink",
+  "score": {
+    "motifs": {
+      "c_major_arpeggio": [
+        "261.63:2.0",
+        "329.63:2.0",
+        "392.00:2.0",
+        "523.25:2.0"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
-            "motifs": ["c_major_arpeggio"]
+            "motifs": [
+              "c_major_arpeggio"
+            ]
           }
         ]
       },
       {
         "phrases": [
           {
-            "motifs": ["c_major_arpeggio"],
+            "motifs": [
+              "c_major_arpeggio"
+            ],
             "transforms": [
               {
                 "name": "phrase_relative_golden_ratio_shrink",
@@ -30,7 +39,9 @@
       {
         "phrases": [
           {
-            "motifs": ["c_major_arpeggio"],
+            "motifs": [
+              "c_major_arpeggio"
+            ],
             "transforms": [
               {
                 "name": "phrase_relative_golden_ratio_shrink",
@@ -42,6 +53,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Shrink a C Major Arpeggio phrase by the Golden Ratio twice polyphonically."
 }

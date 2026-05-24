@@ -1,14 +1,22 @@
 {
-  "motifs": {
-    "subject": ["261.63:0.45", "293.66:0.45", "329.63:0.45", "392.00:0.75"]
-  },
-  "composition": {
+  "name": "Fugue Stretto Golden Ratio Demo",
+  "score": {
+    "motifs": {
+      "subject": [
+        "261.63:0.45",
+        "293.66:0.45",
+        "329.63:0.45",
+        "392.00:0.75"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Plain subject statement with no transforms.",
-            "motifs": ["subject"]
+            "motifs": [
+              "subject"
+            ]
           }
         ]
       },
@@ -16,7 +24,9 @@
         "phrases": [
           {
             "comment": "First golden-ratio stretto entry begins after the plain statement and a short pause.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "pad_silence",
@@ -33,7 +43,9 @@
         "phrases": [
           {
             "comment": "Second entry overlaps according to the golden-ratio onset interval.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "pad_silence",
@@ -50,7 +62,9 @@
         "phrases": [
           {
             "comment": "Third entry continues the golden-ratio overlap pattern.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "pad_silence",
@@ -63,6 +77,7 @@
           }
         ]
       }
-    ]
+    ],
+    "score_transforms": []
   }
 }

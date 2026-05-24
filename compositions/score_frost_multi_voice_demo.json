@@ -1,18 +1,34 @@
 {
-  "description": "Demonstrates how frost_effect works with multiple input voices.",
-  "motifs": {
-    "high": ["880:0.5"],
-    "low": ["520:0.5"]
-  },
-  "composition": {
+  "name": "Score Frost Multi Voice Demo",
+  "score": {
+    "motifs": {
+      "high": [
+        "880:0.5"
+      ],
+      "low": [
+        "520:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "HighSeed",
-        "phrases": [{ "motifs": ["high"] }]
+        "phrases": [
+          {
+            "motifs": [
+              "high"
+            ]
+          }
+        ]
       },
       {
         "name": "LowSeed",
-        "phrases": [{ "motifs": ["low"] }]
+        "phrases": [
+          {
+            "motifs": [
+              "low"
+            ]
+          }
+        ]
       }
     ],
     "score_transforms": [
@@ -24,5 +40,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Demonstrates how frost_effect works with multiple input voices."
 }

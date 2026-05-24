@@ -1,16 +1,23 @@
 {
-  "description": "A short canon built from a single motif. The motif is presented plainly, then repeated later as a transposed answer and a reversed answer so the relationship stays easy to hear.",
-  "motifs": {
-    "subject": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "392.00:0.6"]
-  },
-  "composition": {
+  "name": "Composition example",
+  "score": {
+    "motifs": {
+      "subject": [
+        "261.63:0.4",
+        "293.66:0.4",
+        "329.63:0.4",
+        "392.00:0.6"
+      ]
+    },
     "voices": [
       {
         "name": "SubjectVoice",
         "phrases": [
           {
             "comment": "Subject statement: the motif is heard in its plain form with no transforms.",
-            "motifs": ["subject"]
+            "motifs": [
+              "subject"
+            ]
           }
         ]
       },
@@ -19,7 +26,9 @@
         "phrases": [
           {
             "comment": "Answer entry: the same motif is transposed up a fifth and delayed with silence at the start so it enters later like a simple canon.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "transpose",
@@ -43,7 +52,9 @@
         "phrases": [
           {
             "comment": "Reverse entry: the motif enters later again, but this time in reverse order so the imitation is easy to compare against the earlier voices.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "reverse"
@@ -59,6 +70,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "A short canon built from a single motif. The motif is presented plainly, then repeated later as a transposed answer and a reversed answer so the relationship stays easy to hear."
 }

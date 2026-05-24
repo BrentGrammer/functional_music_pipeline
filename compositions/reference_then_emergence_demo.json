@@ -1,40 +1,61 @@
 {
-  "description": "Reference-then-emergence demo: the original motif is heard first, then silence, then the same motif transformed by an ordered pipeline.",
-  "motifs": {
-    "seed": [
-      "261.63:0.50",
-      "293.66:0.50",
-      "329.63:0.50",
-      "392.00:0.50"
-    ],
-    "separator": ["0:0.9"]
-  },
-  "composition": {
+  "name": "Reference Then Emergence Demo",
+  "score": {
+    "motifs": {
+      "seed": [
+        "261.63:0.50",
+        "293.66:0.50",
+        "329.63:0.50",
+        "392.00:0.50"
+      ],
+      "separator": [
+        "0:0.9"
+      ]
+    },
     "voices": [
       {
         "name": "ReferenceThenEmergence",
         "phrases": [
           {
             "comment": "Reference: the seed motif exactly as authored.",
-            "motifs": ["seed"]
+            "motifs": [
+              "seed"
+            ]
           },
           {
             "comment": "Short silence separating the source material from the transformed result.",
-            "motifs": ["separator"]
+            "motifs": [
+              "separator"
+            ]
           },
           {
             "comment": "Emergent result: the same seed after an ordered phrase-level pipeline. Each transform receives the previous transform's output.",
-            "motifs": ["seed"],
+            "motifs": [
+              "seed"
+            ],
             "transforms": [
-              { "name": "reverse" },
-              { "name": "repeat", "params": { "count": 1 } },
+              {
+                "name": "reverse"
+              },
+              {
+                "name": "repeat",
+                "params": {
+                  "count": 1
+                }
+              },
               {
                 "name": "drift",
-                "params": { "dimension": "frequency", "rate": 0.025 }
+                "params": {
+                  "dimension": "frequency",
+                  "rate": 0.025
+                }
               },
               {
                 "name": "scale",
-                "params": { "dimension": "duration", "factor": 0.75 }
+                "params": {
+                  "dimension": "duration",
+                  "factor": 0.75
+                }
               },
               {
                 "name": "cellular_automata",
@@ -47,12 +68,17 @@
               },
               {
                 "name": "scale",
-                "params": { "dimension": "amplitude", "factor": 0.75 }
+                "params": {
+                  "dimension": "amplitude",
+                  "factor": 0.75
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Reference-then-emergence demo: the original motif is heard first, then silence, then the same motif transformed by an ordered pipeline."
 }

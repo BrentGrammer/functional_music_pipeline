@@ -1,30 +1,34 @@
 {
-  "description": "Demonstrates phrase_relative_golden_ratio_shrink when applied to the first phrase of a later voice, which uses the entire previous voice as its duration reference.",
-  "motifs": {
-    "previous_voice_step": [
-      "261.63:0.5",
-      "293.66:0.5"
-    ],
-    "previous_voice_hold": [
-      "329.63:1.0"
-    ],
-    "active_voice_cell": [
-      "392.00:0.25",
-      "440.00:0.25"
-    ]
-  },
-  "composition": {
+  "name": "Phrase Relative Golden Ratio Shrink Previous Voice Demo",
+  "score": {
+    "motifs": {
+      "previous_voice_step": [
+        "261.63:0.5",
+        "293.66:0.5"
+      ],
+      "previous_voice_hold": [
+        "329.63:1.0"
+      ],
+      "active_voice_cell": [
+        "392.00:0.25",
+        "440.00:0.25"
+      ]
+    },
     "voices": [
       {
         "name": "ReferenceVoice",
         "phrases": [
           {
             "comment": "First phrase contributes 1.0 second to the previous voice total.",
-            "motifs": ["previous_voice_step"]
+            "motifs": [
+              "previous_voice_step"
+            ]
           },
           {
             "comment": "Second phrase contributes another 1.0 second, so the full previous voice totals 2.0 seconds.",
-            "motifs": ["previous_voice_hold"]
+            "motifs": [
+              "previous_voice_hold"
+            ]
           }
         ]
       },
@@ -33,7 +37,9 @@
         "phrases": [
           {
             "comment": "Because this is the first phrase of the second voice, phrase_relative_golden_ratio_shrink uses the entire previous voice as its reference. This phrase should therefore shrink to 2.0 / GOLDEN_RATIO total duration, while keeping its two pulses even.",
-            "motifs": ["active_voice_cell"],
+            "motifs": [
+              "active_voice_cell"
+            ],
             "transforms": [
               {
                 "name": "phrase_relative_golden_ratio_shrink",
@@ -45,6 +51,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates phrase_relative_golden_ratio_shrink when applied to the first phrase of a later voice, which uses the entire previous voice as its duration reference."
 }

@@ -253,11 +253,12 @@ class TestScoreDriftApplication:
         FREQ_B = 220.0
 
         composition_document: CompositionDocumentInput = {
-            "motifs": {
-                "high": [f"{FREQ_A}:0.3", f"{FREQ_A}:0.3"],
-                "low": [f"{FREQ_B}:0.3", f"{FREQ_B}:0.3"],
-            },
-            "composition": {
+            "name": "Score Drift Application",
+            "score": {
+                "motifs": {
+                    "high": [f"{FREQ_A}:0.3", f"{FREQ_A}:0.3"],
+                    "low": [f"{FREQ_B}:0.3", f"{FREQ_B}:0.3"],
+                },
                 "voices": [
                     {"phrases": [{"motifs": ["high"]}]},
                     {"phrases": [{"motifs": ["low"]}]},

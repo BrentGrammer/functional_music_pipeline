@@ -1,42 +1,59 @@
 {
-  "description": "A demonstration of the microtonal MIDI export feature. This composition plays two motifs sequentially. The first scale is in standard tuning. The second scale is transposed up by 0.25 semitones (a quarter-tone), demonstrating the preservation of microtonal shifts.",
-  "motifs": {
-    "scale": [
-      "261.63:0.5", "293.66:0.5", "329.63:0.5", "349.23:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Microtonal Demo",
+  "score": {
+    "motifs": {
+      "scale": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": []
           },
           {
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": [
               {
                 "name": "transpose",
-                "params": { "semitones": 1.0 }
+                "params": {
+                  "semitones": 1.0
+                }
               }
             ]
           },
           {
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": []
           },
           {
-            "motifs": ["scale"],
+            "motifs": [
+              "scale"
+            ],
             "transforms": [
               {
                 "name": "transpose",
-                "params": { "semitones": 0.5 }
+                "params": {
+                  "semitones": 0.5
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "A demonstration of the microtonal MIDI export feature. This composition plays two motifs sequentially. The first scale is in standard tuning. The second scale is transposed up by 0.25 semitones (a quarter-tone), demonstrating the preservation of microtonal shifts."
 }

@@ -1,15 +1,21 @@
 {
-  "description": "A companion to the golden-ratio demo. The first voice states a short motif plainly, then the second voice reuses the same motif and grows it by the golden ratio relative to the first phrase.",
-  "motifs": {
-    "subject": ["261.63:0.35", "329.63:0.35", "392.00:0.35"]
-  },
-  "composition": {
+  "name": "Phrase Golden Ratio Grow Demo",
+  "score": {
+    "motifs": {
+      "subject": [
+        "261.63:0.35",
+        "329.63:0.35",
+        "392.00:0.35"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Plain subject statement.",
-            "motifs": ["subject"]
+            "motifs": [
+              "subject"
+            ]
           }
         ]
       },
@@ -17,7 +23,9 @@
         "phrases": [
           {
             "comment": "A second statement that grows in duration relative to the first by the golden ratio.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "phrase_relative_golden_ratio_grow"
@@ -33,6 +41,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "A companion to the golden-ratio demo. The first voice states a short motif plainly, then the second voice reuses the same motif and grows it by the golden ratio relative to the first phrase."
 }

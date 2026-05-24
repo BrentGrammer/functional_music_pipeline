@@ -1,26 +1,30 @@
 {
-  "description": "Demonstrates cellular_automata transform which generates binary modulation patterns from elementary cellular automata (like Wolfram's Rule 30 or Rule 110). The pattern is deterministic but appears chaotic, creating structured randomness.",
-  "motifs": {
-    "steady_tone": [
-      "329.63:0.3",
-      "329.63:0.3",
-      "329.63:0.3",
-      "329.63:0.3",
-      "329.63:0.3",
-      "329.63:0.3"
-    ]
-  },
-  "composition": {
+  "name": "Score Cellular Automata Demo",
+  "score": {
+    "motifs": {
+      "steady_tone": [
+        "329.63:0.3",
+        "329.63:0.3",
+        "329.63:0.3",
+        "329.63:0.3",
+        "329.63:0.3",
+        "329.63:0.3"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Original: 6 steady tones at the same pitch.",
-            "motifs": ["steady_tone"]
+            "motifs": [
+              "steady_tone"
+            ]
           },
           {
             "comment": "Rule 30 on amplitude: creates a chaotic loud/quiet pattern. Some notes drop to near-silence while others stay loud.",
-            "motifs": ["steady_tone"],
+            "motifs": [
+              "steady_tone"
+            ],
             "transforms": [
               {
                 "name": "cellular_automata",
@@ -35,7 +39,9 @@
           },
           {
             "comment": "Rule 110 on amplitude: different rule produces different binary pattern.",
-            "motifs": ["steady_tone"],
+            "motifs": [
+              "steady_tone"
+            ],
             "transforms": [
               {
                 "name": "cellular_automata",
@@ -50,7 +56,9 @@
           },
           {
             "comment": "Rule 30 on frequency: pitches jump up or down creating a melodic contour from chaos.",
-            "motifs": ["steady_tone"],
+            "motifs": [
+              "steady_tone"
+            ],
             "transforms": [
               {
                 "name": "cellular_automata",
@@ -65,6 +73,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates cellular_automata transform which generates binary modulation patterns from elementary cellular automata (like Wolfram's Rule 30 or Rule 110). The pattern is deterministic but appears chaotic, creating structured randomness."
 }
