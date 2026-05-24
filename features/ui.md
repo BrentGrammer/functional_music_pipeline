@@ -162,3 +162,30 @@ For the first phrase timeline version:
 - Block overlap instead of pushing other phrases, resizing phrases, or allowing stacked phrases within one voice.
 
 Motif-level free timeline placement should be deferred. It would push the editor closer to a DAW/event-based model and require more complex placement, collision, transform, and rendering rules.
+
+## Hosting Direction
+
+DigitalOcean is the likely first hosting target because it gives a good cost-to-maintenance balance for a small experimental application. The app should still be designed portably so it can move to AWS later: Dockerized FastAPI backend, React static build, PostgreSQL, S3-compatible object storage, environment-based configuration, and no host-specific composition storage logic.
+
+Cheap DigitalOcean option:
+
+- Basic Droplet for the FastAPI API, React static files, reverse proxy, and app runtime.
+- Local PostgreSQL on the same Droplet.
+- DigitalOcean Spaces for rendered WAV/MIDI files if render artifacts need to survive deploys cleanly.
+- Approximate cost: about $6-$17/month depending on Droplet size and whether Spaces is enabled.
+- Tradeoff: lowest cost, but the project owns OS updates, Docker updates, database backups, restore testing, disk monitoring, TLS renewal, and recovery.
+
+Lower-maintenance DigitalOcean option:
+
+- Basic Droplet for the FastAPI API, React static files, reverse proxy, and app runtime.
+- DigitalOcean Managed PostgreSQL for saved users, compositions, render metadata, and future job state.
+- DigitalOcean Spaces for rendered WAV/MIDI files.
+- Approximate cost: about $26-$32/month for a small deployment.
+- Tradeoff: costs more, but removes most database maintenance. DigitalOcean Managed PostgreSQL includes encryption at rest, SSL in transit, automatic updates, backups, point-in-time recovery, metrics, and managed database operations.
+
+Recommended first public deployment:
+
+- Use the lower-maintenance DigitalOcean option if users can create accounts and save compositions. This is the current preferred hosting direction.
+- Use the cheap option only for a private prototype or short-lived demo where local database maintenance and recovery risk are acceptable.
+- Neon Postgres was considered as a cheaper external managed database, but rejected for now because serverless scale-to-zero pricing introduces less predictable costs if usage grows or if the app keeps the database awake.
+- AWS Lightsail/RDS/S3 remains a viable later path, but DigitalOcean Droplet + Managed PostgreSQL + Spaces is preferred for the first public deployment.
