@@ -1,47 +1,69 @@
 {
-  "motifs": {
-    "ascending_scale": ["261.63:0.5", "293.66:0.5", "329.63:0.5", "349.23:0.5", "392.00:0.5"]
-  },
-  "composition": {
+  "name": "Erosion Demo",
+  "score": {
+    "motifs": {
+      "ascending_scale": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5",
+        "392.00:0.5"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "1. Play the original motif untransformed",
-            "motifs": ["ascending_scale"]
+            "motifs": [
+              "ascending_scale"
+            ]
           },
           {
             "comment": "2. Play the motif with Duration Erosion (Structural decay)",
-            "motifs": ["ascending_scale"],
+            "motifs": [
+              "ascending_scale"
+            ],
             "transforms": [
               {
                 "name": "erosion",
-                "params": { "dimension": "DURATION" }
+                "params": {
+                  "dimension": "DURATION"
+                }
               }
             ]
           },
           {
             "comment": "3. Play the motif with Amplitude Erosion (Fade to silence)",
-            "motifs": ["ascending_scale"],
+            "motifs": [
+              "ascending_scale"
+            ],
             "transforms": [
               {
                 "name": "erosion",
-                "params": { "dimension": "AMPLITUDE" }
+                "params": {
+                  "dimension": "AMPLITUDE"
+                }
               }
             ]
           },
           {
             "comment": "4. Play the motif with Frequency Erosion (Pitch collapse)",
-            "motifs": ["ascending_scale"],
+            "motifs": [
+              "ascending_scale"
+            ],
             "transforms": [
               {
                 "name": "erosion",
-                "params": { "dimension": "FREQUENCY" }
+                "params": {
+                  "dimension": "FREQUENCY"
+                }
               }
             ]
           }
         ]
       }
-    ]
+    ],
+    "score_transforms": []
   }
 }

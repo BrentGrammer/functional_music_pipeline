@@ -1,29 +1,47 @@
 {
-  "description": "Demonstrates the drift transform by comparing a plain melodic line against the same line with upward frequency drift applied.",
-  "motifs": {
-    "melodic_line": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "349.23:0.4", "392.00:0.4", "440.00:0.4", "392.00:0.4", "349.23:0.4"]
-  },
-  "composition": {
+  "name": "Drift Demo",
+  "score": {
+    "motifs": {
+      "melodic_line": [
+        "261.63:0.4",
+        "293.66:0.4",
+        "329.63:0.4",
+        "349.23:0.4",
+        "392.00:0.4",
+        "440.00:0.4",
+        "392.00:0.4",
+        "349.23:0.4"
+      ]
+    },
     "voices": [
       {
         "name": "DriftComparisonVoice",
         "phrases": [
           {
             "comment": "Original: a short melodic line with changing pitches.",
-            "motifs": ["melodic_line"]
+            "motifs": [
+              "melodic_line"
+            ]
           },
           {
             "comment": "Transformed: FREQUENCY drift with POSITIVE rate (+0.1). Upward glissando.",
-            "motifs": ["melodic_line"],
+            "motifs": [
+              "melodic_line"
+            ],
             "transforms": [
               {
                 "name": "drift",
-                "params": { "dimension": "FREQUENCY", "rate": 0.1 }
+                "params": {
+                  "dimension": "FREQUENCY",
+                  "rate": 0.1
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates the drift transform by comparing a plain melodic line against the same line with upward frequency drift applied."
 }

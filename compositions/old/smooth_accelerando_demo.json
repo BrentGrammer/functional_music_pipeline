@@ -1,24 +1,26 @@
 {
-  "description": "Smooth accelerando with no jaggedness. Durations should gradually decrease across the phrase.",
-  "motifs": {
-    "base_melody": [
-      "261.63:1.0",
-      "293.66:1.0",
-      "329.63:1.0",
-      "349.23:1.0",
-      "392.00:1.0",
-      "440.00:1.0",
-      "493.88:1.0",
-      "523.25:1.0"
-    ]
-  },
-  "composition": {
+  "name": "Smooth Accelerando Demo",
+  "score": {
+    "motifs": {
+      "base_melody": [
+        "261.63:1.0",
+        "293.66:1.0",
+        "329.63:1.0",
+        "349.23:1.0",
+        "392.00:1.0",
+        "440.00:1.0",
+        "493.88:1.0",
+        "523.25:1.0"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Smooth accelerando: durations gradually shorten, tempo speeds up.",
-            "motifs": ["base_melody"],
+            "motifs": [
+              "base_melody"
+            ],
             "transforms": [
               {
                 "name": "accelerando",
@@ -31,6 +33,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Smooth accelerando with no jaggedness. Durations should gradually decrease across the phrase."
 }

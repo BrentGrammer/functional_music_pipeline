@@ -1,21 +1,30 @@
 {
-  "description": "A short canon built from a single motif. The motif is presented plainly, then repeated later as a transposed answer and a reversed answer so the relationship stays easy to hear.",
-  "motifs": {
-    "subject": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "392.00:0.6"]
-  },
-  "composition": {
+  "name": "Composition Example",
+  "score": {
+    "motifs": {
+      "subject": [
+        "261.63:0.4",
+        "293.66:0.4",
+        "329.63:0.4",
+        "392.00:0.6"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
-            "motifs": ["subject"]
+            "motifs": [
+              "subject"
+            ]
           }
         ]
       },
       {
         "phrases": [
           {
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "transpose",
@@ -37,7 +46,9 @@
       {
         "phrases": [
           {
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "reverse"
@@ -53,6 +64,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "A short canon built from a single motif. The motif is presented plainly, then repeated later as a transposed answer and a reversed answer so the relationship stays easy to hear."
 }

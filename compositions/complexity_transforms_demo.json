@@ -1,32 +1,47 @@
 {
-  "description": "Demonstrates complex and stochastic transformations: Weierstrass, Cellular Automata, Terraced Drift, and Erosion.",
-  "motifs": {
-    "melody": [
-      "261.63:0.4", "293.66:0.4", "329.63:0.4", "349.23:0.4",
-      "392.00:0.4", "440.00:0.4", "493.88:0.4", "523.25:0.4"
-    ]
-  },
-  "composition": {
+  "name": "Complexity Transforms Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "261.63:0.4",
+        "293.66:0.4",
+        "329.63:0.4",
+        "349.23:0.4",
+        "392.00:0.4",
+        "440.00:0.4",
+        "493.88:0.4",
+        "523.25:0.4"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Reference: ascending scale.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Weierstrass (frequency, medium): adds fractal-like ripples to the pitch.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "weierstrass",
-                "params": { "dimension": "frequency", "intensity": "medium" }
+                "params": {
+                  "dimension": "frequency",
+                  "intensity": "medium"
+                }
               }
             ]
           },
           {
             "comment": "Cellular automata (Rule 30): uses Rule 30 to modulate pitch with complex patterns.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "cellular_automata",
@@ -41,46 +56,65 @@
           },
           {
             "comment": "Terraced drift: a Brownian walk with sharp, quantized pitch steps.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "terraced_drift",
-                "params": { "dimension": "frequency", "max_step_change_pct": 30 }
+                "params": {
+                  "dimension": "frequency",
+                  "max_step_change_pct": 30
+                }
               }
             ]
           },
           {
             "comment": "Erosion (duration): gradually wears down the phrase by truncating notes and returning a shortened sequence.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "erosion",
-                "params": { "dimension": "duration" }
+                "params": {
+                  "dimension": "duration"
+                }
               }
             ]
           },
           {
             "comment": "Erosion (amplitude): dissolves the phrase into silence using a fade-out.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "erosion",
-                "params": { "dimension": "amplitude" }
+                "params": {
+                  "dimension": "amplitude"
+                }
               }
             ]
           },
           {
             "comment": "Erosion (frequency): melodic collapse toward the first note's pitch.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "erosion",
-                "params": { "dimension": "frequency" }
+                "params": {
+                  "dimension": "frequency"
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates complex and stochastic transformations: Weierstrass, Cellular Automata, Terraced Drift, and Erosion."
 }

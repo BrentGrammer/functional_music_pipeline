@@ -1,24 +1,26 @@
 {
-  "description": "Demonstrates score_golden_ratio_grow by lengthening each voice independently while preserving a simple even pulse.",
-  "motifs": {
-    "upper_cell": [
-      "261.63:0.5",
-      "329.63:0.5",
-      "392.00:0.5"
-    ],
-    "lower_cell": [
-      "196.00:0.5",
-      "220.00:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Score Golden Ratio Grow Demo",
+  "score": {
+    "motifs": {
+      "upper_cell": [
+        "261.63:0.5",
+        "329.63:0.5",
+        "392.00:0.5"
+      ],
+      "lower_cell": [
+        "196.00:0.5",
+        "220.00:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "UpperVoice",
         "phrases": [
           {
             "comment": "Three even pulses totaling 1.5 seconds before the score transform.",
-            "motifs": ["upper_cell"]
+            "motifs": [
+              "upper_cell"
+            ]
           }
         ]
       },
@@ -27,7 +29,9 @@
         "phrases": [
           {
             "comment": "Two even pulses totaling 1.0 second before the score transform.",
-            "motifs": ["lower_cell"]
+            "motifs": [
+              "lower_cell"
+            ]
           }
         ]
       }
@@ -41,5 +45,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Demonstrates score_golden_ratio_grow by lengthening each voice independently while preserving a simple even pulse."
 }

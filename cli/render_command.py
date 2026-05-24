@@ -8,7 +8,7 @@ from midi_rendering.midi_writer import save_score_to_midi
 
 DEFAULT_OUTPUT_NAME = "output"
 OUTPUT_DIRECTORY = "output"
-EXAMPLE_COMPOSITION_PATH = "compositions/geological_example.json"
+EXAMPLE_COMPOSITION_PATH = "compositions/composition_example.json"
 OUTPUT_FORMAT_EXTENSIONS = {
     "wav": ".wav",
     "midi": ".mid",

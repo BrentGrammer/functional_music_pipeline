@@ -1,26 +1,30 @@
 {
-  "description": "Demonstrates the fragment transform with omitted dimension, using multi-dimensional stochastic damage on a simple five-note motif.",
-  "motifs": {
-    "melody": [
-      "261.63:0.5",
-      "293.66:0.5",
-      "329.63:0.5",
-      "349.23:0.5",
-      "392.00:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Fragment Multidimensional Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5",
+        "392.00:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "FragmentMultidimensionalDemo",
         "phrases": [
           {
             "comment": "Reference: clean five-note melody with even rhythm.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Fragment: multi-dimensional stochastic damage. Selected tones may be removed, shortened, softened, or receive combined damage.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "fragment",
@@ -34,6 +38,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates the fragment transform with omitted dimension, using multi-dimensional stochastic damage on a simple five-note motif."
 }

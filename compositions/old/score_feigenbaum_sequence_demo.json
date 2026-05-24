@@ -1,20 +1,22 @@
 {
-  "description": "Demonstrates feigenbaum_sequence which scales each voice's duration by successive powers of 1/4.669. Voice 1 stays original, voice 2 is 1/4.669x, voice 3 is 1/21.8x, etc.",
-  "motifs": {
-    "melody": [
-      "261.63:1.0",
-      "293.66:1.0",
-      "329.63:1.0",
-      "392.00:1.0"
-    ]
-  },
-  "composition": {
+  "name": "Score Feigenbaum Sequence Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "261.63:1.0",
+        "293.66:1.0",
+        "329.63:1.0",
+        "392.00:1.0"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Voice 1: original duration (4 seconds total).",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           }
         ]
       },
@@ -22,7 +24,9 @@
         "phrases": [
           {
             "comment": "Voice 2: will be scaled to ~0.86 seconds total.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           }
         ]
       },
@@ -30,7 +34,9 @@
         "phrases": [
           {
             "comment": "Voice 3: will be scaled to ~0.18 seconds total.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           }
         ]
       }
@@ -43,5 +49,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Demonstrates feigenbaum_sequence which scales each voice's duration by successive powers of 1/4.669. Voice 1 stays original, voice 2 is 1/4.669x, voice 3 is 1/21.8x, etc."
 }

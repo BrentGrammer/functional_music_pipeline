@@ -1,29 +1,55 @@
 {
-  "description": "Comparison of a multi-voice harmonic block before and after global batch transformations.",
-  "motifs": {
-    "ascending": ["261.63:0.5", "293.66:0.5", "329.63:0.5"],
-    "silence": ["0:1.5"]
-  },
-  "composition": {
+  "name": "Score Batch Comparison Demo",
+  "score": {
+    "motifs": {
+      "ascending": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5"
+      ],
+      "silence": [
+        "0:1.5"
+      ]
+    },
     "voices": [
       {
         "name": "High",
         "phrases": [
           {
             "comment": "Reference: high voice in the first block.",
-            "motifs": ["ascending"],
-            "transforms": [{"name": "transpose", "params": {"semitones": 12}}]
+            "motifs": [
+              "ascending"
+            ],
+            "transforms": [
+              {
+                "name": "transpose",
+                "params": {
+                  "semitones": 12
+                }
+              }
+            ]
           },
           {
             "comment": "Separator silence",
-            "motifs": ["silence"]
+            "motifs": [
+              "silence"
+            ]
           },
           {
             "comment": "Transformed: high voice in the second block.",
-            "motifs": ["ascending"],
+            "motifs": [
+              "ascending"
+            ],
             "transforms": [
-              {"name": "transpose", "params": {"semitones": 12}},
-              {"name": "reverse"}
+              {
+                "name": "transpose",
+                "params": {
+                  "semitones": 12
+                }
+              },
+              {
+                "name": "reverse"
+              }
             ]
           }
         ]
@@ -33,17 +59,25 @@
         "phrases": [
           {
             "comment": "Reference: low voice in the first block.",
-            "motifs": ["ascending"]
+            "motifs": [
+              "ascending"
+            ]
           },
           {
             "comment": "Separator silence",
-            "motifs": ["silence"]
+            "motifs": [
+              "silence"
+            ]
           },
           {
             "comment": "Transformed: low voice in the second block.",
-            "motifs": ["ascending"],
+            "motifs": [
+              "ascending"
+            ],
             "transforms": [
-              {"name": "reverse"}
+              {
+                "name": "reverse"
+              }
             ]
           }
         ]
@@ -53,8 +87,11 @@
       {
         "comment": "Shifts the entire harmonic sequence (both blocks) down by 5 semitones.",
         "name": "transpose",
-        "params": { "semitones": -5 }
+        "params": {
+          "semitones": -5
+        }
       }
     ]
-  }
+  },
+  "description": "Comparison of a multi-voice harmonic block before and after global batch transformations."
 }

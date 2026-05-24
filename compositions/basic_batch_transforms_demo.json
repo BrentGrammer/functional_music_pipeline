@@ -1,39 +1,53 @@
 {
-  "description": "Demonstrates the behavior of batch-capable transforms (Reverse and Transpose) with before/after comparisons.",
-  "motifs": {
-    "melody": [
-      "261.63:0.5",
-      "293.66:0.5",
-      "329.63:0.5",
-      "349.23:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Basic Batch Transforms Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "ComparisonVoice",
         "phrases": [
           {
             "comment": "Original melody.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Reversed (retrograde).",
-            "motifs": ["melody"],
-            "transforms": [{ "name": "reverse" }]
+            "motifs": [
+              "melody"
+            ],
+            "transforms": [
+              {
+                "name": "reverse"
+              }
+            ]
           },
           {
             "comment": "Transposed up by 12 semitones.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "transpose",
-                "params": { "semitones": 12 }
+                "params": {
+                  "semitones": 12
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates the behavior of batch-capable transforms (Reverse and Transpose) with before/after comparisons."
 }

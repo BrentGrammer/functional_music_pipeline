@@ -1,15 +1,26 @@
 {
-  "motifs": {
-    "subject": ["261.63:0.45", "293.66:0.45", "329.63:0.45"],
-    "answer": ["392.00:0.45", "329.63:0.45", "293.66:0.45"]
-  },
-  "composition": {
+  "name": "Pad Silence Demo",
+  "score": {
+    "motifs": {
+      "subject": [
+        "261.63:0.45",
+        "293.66:0.45",
+        "329.63:0.45"
+      ],
+      "answer": [
+        "392.00:0.45",
+        "329.63:0.45",
+        "293.66:0.45"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Subject statement with trailing silence before the next phrase.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "pad_silence",
@@ -22,10 +33,13 @@
           },
           {
             "comment": "Answer enters after the padded pause.",
-            "motifs": ["answer"]
+            "motifs": [
+              "answer"
+            ]
           }
         ]
       }
-    ]
+    ],
+    "score_transforms": []
   }
 }

@@ -1,80 +1,113 @@
 {
-  "description": "Demonstrates basic transformations: reverse, transpose, scale, delay, and pad_silence. delay is the shorthand alias for pad_silence at the start.",
-  "motifs": {
-    "melody": [
-      "261.63:0.5",
-      "293.66:0.5",
-      "329.63:0.5",
-      "349.23:0.5",
-      "392.00:0.5"
-    ]
-  },
-  "composition": {
+  "name": "Basic Transforms Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "261.63:0.5",
+        "293.66:0.5",
+        "329.63:0.5",
+        "349.23:0.5",
+        "392.00:0.5"
+      ]
+    },
     "voices": [
       {
         "name": "DemoVoice",
         "phrases": [
           {
             "comment": "Original melody.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           },
           {
             "comment": "Reverse (retrograde): plays the notes in reverse order.",
-            "motifs": ["melody"],
-            "transforms": [{ "name": "reverse" }]
+            "motifs": [
+              "melody"
+            ],
+            "transforms": [
+              {
+                "name": "reverse"
+              }
+            ]
           },
           {
             "comment": "Transpose: shifts the pitch up by 7 semitones (a perfect fifth).",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "transpose",
-                "params": { "semitones": 7 }
+                "params": {
+                  "semitones": 7
+                }
               }
             ]
           },
           {
             "comment": "Scale duration: doubles the length of each note for a slower result.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "scale",
-                "params": { "dimension": "duration", "factor": 2.0 }
+                "params": {
+                  "dimension": "duration",
+                  "factor": 2.0
+                }
               }
             ]
           },
           {
             "comment": "Scale amplitude: reduces volume to 30%.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "scale",
-                "params": { "dimension": "amplitude", "factor": 0.3 }
+                "params": {
+                  "dimension": "amplitude",
+                  "factor": 0.3
+                }
               }
             ]
           },
           {
             "comment": "Delay: prepends 1.5 seconds of silence before the melody starts. This is the shorthand alias for pad_silence at position start.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "delay",
-                "params": { "seconds": 1.5 }
+                "params": {
+                  "seconds": 1.5
+                }
               }
             ]
           },
           {
             "comment": "Pad silence: adds 1.0 second of silence after the melody. Unlike delay, this also supports padding at the end.",
-            "motifs": ["melody"],
+            "motifs": [
+              "melody"
+            ],
             "transforms": [
               {
                 "name": "pad_silence",
-                "params": { "seconds": 1.0, "position": "end" }
+                "params": {
+                  "seconds": 1.0,
+                  "position": "end"
+                }
               }
             ]
           }
         ]
       }
-    ]
-  }
+    ],
+    "score_transforms": []
+  },
+  "description": "Demonstrates basic transformations: reverse, transpose, scale, delay, and pad_silence. delay is the shorthand alias for pad_silence at the start."
 }

@@ -1,14 +1,18 @@
 {
-  "description": "A score-scope frost demo that starts from a single tone and renders four staggered frost iterations.",
-  "motifs": {
-    "seed": ["440:1.0"]
-  },
-  "composition": {
+  "name": "Frost Effect Demo",
+  "score": {
+    "motifs": {
+      "seed": [
+        "440:1.0"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
-            "motifs": ["seed"]
+            "motifs": [
+              "seed"
+            ]
           }
         ]
       }
@@ -21,5 +25,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "A score-scope frost demo that starts from a single tone and renders four staggered frost iterations."
 }

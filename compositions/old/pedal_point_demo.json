@@ -1,15 +1,23 @@
 {
-  "description": "Demonstrates the add_pedal_tone transform which adds a sustained anchor note matching the length of the score.",
-  "motifs": {
-    "melody": ["329.63:0.5", "392.00:0.5", "440.00:0.5", "392.00:0.5", "329.63:0.5"]
-  },
-  "composition": {
+  "name": "Pedal Point Demo",
+  "score": {
+    "motifs": {
+      "melody": [
+        "329.63:0.5",
+        "392.00:0.5",
+        "440.00:0.5",
+        "392.00:0.5",
+        "329.63:0.5"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Melody with a sustained pedal tone on C3.",
-            "motifs": ["melody"]
+            "motifs": [
+              "melody"
+            ]
           }
         ]
       }
@@ -22,5 +30,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "Demonstrates the add_pedal_tone transform which adds a sustained anchor note matching the length of the score."
 }

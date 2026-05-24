@@ -46,7 +46,7 @@ From inside the container's shell, you can now run the generator script directly
 
 ```bash
 # To generate a WAV file (default)
-python main.py --composition-file compositions/geological_example.json --output-name my_composition
+python main.py --composition-file compositions/composition_example.json --output-name my_composition
 
 # To generate a MIDI file
 python main.py --composition-file compositions/microtonal_demo.json --output-name my_demo --output-format midi

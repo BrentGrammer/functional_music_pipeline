@@ -1,30 +1,42 @@
 {
-  "description": "A score-scope frost demo that starts from a three-note cluster and renders four staggered frost iterations.",
-  "motifs": {
-    "low": ["330.00:1.0"],
-    "mid": ["440.00:1.0"],
-    "high": ["550.00:1.0"]
-  },
-  "composition": {
+  "name": "Frost Multi Cluster Demo",
+  "score": {
+    "motifs": {
+      "low": [
+        "330.00:1.0"
+      ],
+      "mid": [
+        "440.00:1.0"
+      ],
+      "high": [
+        "550.00:1.0"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
-            "motifs": ["low"]
+            "motifs": [
+              "low"
+            ]
           }
         ]
       },
       {
         "phrases": [
           {
-            "motifs": ["mid"]
+            "motifs": [
+              "mid"
+            ]
           }
         ]
       },
       {
         "phrases": [
           {
-            "motifs": ["high"]
+            "motifs": [
+              "high"
+            ]
           }
         ]
       }
@@ -37,5 +49,6 @@
         }
       }
     ]
-  }
+  },
+  "description": "A score-scope frost demo that starts from a three-note cluster and renders four staggered frost iterations."
 }

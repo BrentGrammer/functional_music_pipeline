@@ -1,14 +1,22 @@
 {
-  "motifs": {
-    "subject": ["261.63:0.4", "293.66:0.4", "329.63:0.4", "392.00:0.6"]
-  },
-  "composition": {
+  "name": "Fugue Subject Answer Demo",
+  "score": {
+    "motifs": {
+      "subject": [
+        "261.63:0.4",
+        "293.66:0.4",
+        "329.63:0.4",
+        "392.00:0.6"
+      ]
+    },
     "voices": [
       {
         "phrases": [
           {
             "comment": "Subject entry in the first voice.",
-            "motifs": ["subject"]
+            "motifs": [
+              "subject"
+            ]
           }
         ]
       },
@@ -16,20 +24,27 @@
         "phrases": [
           {
             "comment": "Answer entry: same subject, transposed up a fifth after the subject completes.",
-            "motifs": ["subject"],
+            "motifs": [
+              "subject"
+            ],
             "transforms": [
               {
                 "name": "transpose",
-                "params": { "semitones": 7 }
+                "params": {
+                  "semitones": 7
+                }
               },
               {
                 "name": "delay",
-                "params": { "seconds": 1.8 }
+                "params": {
+                  "seconds": 1.8
+                }
               }
             ]
           }
         ]
       }
-    ]
+    ],
+    "score_transforms": []
   }
 }
