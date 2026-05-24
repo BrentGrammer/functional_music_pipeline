@@ -78,11 +78,12 @@ def _assert_event_follows(previous_event_voices, event_voices):
 
 def _build_single_seed_frost_composition() -> CompositionDocumentInput:
     return {
+        "name": "Single Seed Frost Demo",
         "description": "A frost demo that starts from a single seed tone and renders three frost events.",
-        "motifs": {
-            "seed_tone": ["440:1.0"],
-        },
-        "composition": {
+        "score": {
+            "motifs": {
+                "seed_tone": ["440:1.0"],
+            },
             "voices": [
                 {
                     "phrases": [
