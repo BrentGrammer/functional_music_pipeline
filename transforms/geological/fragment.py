@@ -12,21 +12,35 @@ from transforms.base import (
     ParsedTransformParams,
     PhraseTransformContext,
     StringParam,
+    ToneDimension,
+    ToneDimensionParam,
     TransformParamFieldSpec,
     TransformParamsSpec,
 )
+
+TONE_REMOVAL_CHANCE = 0.50
+DURATION_DAMAGE_CHANCE = 0.45
+AMPLITUDE_DAMAGE_CHANCE = 0.45
+MIN_DURATION_AFTER_DAMAGE_SECONDS = 0.03
+MAX_DURATION_AFTER_DAMAGE_RATIO = 0.99
+# Use a relative decibel-reduction band instead of raw amplitude ratios so amplitude damage
+# can range from barely perceptible to clearly softer without forcing damaged tones toward silence.
+MIN_AMPLITUDE_REDUCTION_DECIBELS = 0.1
+MAX_AMPLITUDE_REDUCTION_DECIBELS = 20.0
 
 
 @dataclass(frozen=True)
 class FragmentParams:
     damage_pct: int
     damage_tones_chunk_size: int # how wide a span of tones to damage throughout the phrase
+    dimension: ToneDimension | None
     repeatable_damage_key: str | None
 
 
 def _create_fragment_params(parsed_params: ParsedTransformParams) -> FragmentParams:
     damage_pct = parsed_params.required("damage_pct", int)
     damage_tones_chunk_size = parsed_params.required("damage_tones_chunk_size", int)
+    dimension = parsed_params.required("dimension", (ToneDimension, type(None)))
     repeatable_damage_key = parsed_params.required("repeatable_damage_key", (str, type(None)))
 
     _validate_fragment_params(damage_pct=damage_pct, damage_tones_chunk_size=damage_tones_chunk_size)
@@ -34,6 +48,7 @@ def _create_fragment_params(parsed_params: ParsedTransformParams) -> FragmentPar
     return FragmentParams(
         damage_pct=damage_pct,
         damage_tones_chunk_size=damage_tones_chunk_size,
+        dimension=dimension,
         repeatable_damage_key=repeatable_damage_key,
     )
 
@@ -56,6 +71,10 @@ FRAGMENT_PARAMS_SPEC = TransformParamsSpec[FragmentParams](
             required=True,
             schema=IntegerParam(),
         ),
+        "dimension": TransformParamFieldSpec(
+            schema=ToneDimensionParam(),
+            default=None,
+        ),
         "repeatable_damage_key": TransformParamFieldSpec(
             schema=StringParam(),
             default=None,
@@ -77,6 +96,116 @@ def _calculate_how_many_tones_to_damage(tone_count: int, damage_pct: int) -> int
         return 0
 
     return min(tone_count, max(1, rounded_damage_target))
+
+
+def _convert_reduction_decibels_to_ratio(reduction_decibels: float) -> float:
+    """
+    Convert a relative amplitude reduction in decibels into a linear amplitude ratio.
+
+    Amplitude decibels use 20 * log10(ratio), so converting back to a ratio requires
+    10 ** (decibels / 20). The negative sign is needed because these values represent
+    a reduction from the original tone, not a boost.
+    """
+    return 10 ** (-reduction_decibels / 20)
+
+
+def _choose_multi_dimensional_tone_damage(randomizer: random.Random) -> tuple[bool, bool]:
+    apply_duration_damage = randomizer.random() < DURATION_DAMAGE_CHANCE
+    apply_amplitude_damage = randomizer.random() < AMPLITUDE_DAMAGE_CHANCE
+
+    if apply_duration_damage or apply_amplitude_damage:
+        return apply_duration_damage, apply_amplitude_damage
+
+    return randomizer.choice([(True, False), (False, True)])
+
+
+def _calculate_damaged_duration(original_duration: float, randomizer: random.Random) -> tuple[float, float]:
+    duration_after_damage_ratio = randomizer.uniform(
+        0.0,
+        MAX_DURATION_AFTER_DAMAGE_RATIO,
+    )
+    shortened_duration = original_duration * duration_after_damage_ratio
+    minimum_duration_after_damage = min(original_duration, MIN_DURATION_AFTER_DAMAGE_SECONDS)
+    shortened_duration = max(minimum_duration_after_damage, shortened_duration)
+    trailing_silence_duration = original_duration - shortened_duration
+    return shortened_duration, trailing_silence_duration
+
+
+def _calculate_damaged_amplitude(original_amplitude: float, randomizer: random.Random) -> float:
+    amplitude_reduction_decibels = randomizer.uniform(
+        MIN_AMPLITUDE_REDUCTION_DECIBELS,
+        MAX_AMPLITUDE_REDUCTION_DECIBELS,
+    )
+    amplitude_after_damage_ratio = _convert_reduction_decibels_to_ratio(amplitude_reduction_decibels)
+    return original_amplitude * amplitude_after_damage_ratio
+
+
+def _create_silence_from_tone(original_tone: Tone, duration: float) -> Tone:
+    return Tone(
+        frequency=0.0,
+        duration=duration,
+        sample_rate=original_tone.sample_rate,
+        amplitude=0.0,
+    )
+
+
+def _damage_selected_tone_across_dimensions(tone: Tone, randomizer: random.Random) -> list[Tone]:
+    if randomizer.random() < TONE_REMOVAL_CHANCE:
+        return [_create_silence_from_tone(tone, duration=tone.duration)]
+
+    apply_duration_damage, apply_amplitude_damage = _choose_multi_dimensional_tone_damage(randomizer)
+    damaged_duration = tone.duration
+    trailing_silence_duration = 0.0
+    if apply_duration_damage:
+        damaged_duration, trailing_silence_duration = _calculate_damaged_duration(tone.duration, randomizer)
+
+    damaged_amplitude = tone.amplitude
+    if apply_amplitude_damage:
+        damaged_amplitude = _calculate_damaged_amplitude(tone.amplitude, randomizer)
+
+    damaged_tones = [
+        Tone(
+            frequency=tone.frequency,
+            duration=damaged_duration,
+            sample_rate=tone.sample_rate,
+            amplitude=damaged_amplitude,
+        )
+    ]
+    if trailing_silence_duration > 0.0:
+        damaged_tones.append(_create_silence_from_tone(tone, duration=trailing_silence_duration))
+    return damaged_tones
+
+
+def _damage_selected_tone_for_dimension(
+    tone: Tone,
+    dimension: ToneDimension,
+    randomizer: random.Random,
+) -> list[Tone]:
+    if dimension == ToneDimension.FREQUENCY:
+        return [_create_silence_from_tone(tone, duration=tone.duration)]
+
+    if dimension == ToneDimension.DURATION:
+        damaged_duration, trailing_silence_duration = _calculate_damaged_duration(tone.duration, randomizer)
+        return [
+            Tone(
+                frequency=tone.frequency,
+                duration=damaged_duration,
+                sample_rate=tone.sample_rate,
+                amplitude=tone.amplitude,
+            ),
+            _create_silence_from_tone(tone, duration=trailing_silence_duration),
+        ]
+
+    if dimension == ToneDimension.AMPLITUDE:
+        return [
+            Tone(
+                frequency=tone.frequency,
+                duration=tone.duration,
+                sample_rate=tone.sample_rate,
+                amplitude=_calculate_damaged_amplitude(tone.amplitude, randomizer),
+            )
+        ]
+    raise ValueError(f"Unsupported fragment dimension: {dimension}")
 
 
 def _find_valid_chunk_starts(
@@ -153,12 +282,16 @@ def fragment_transform(
     tones: list[Tone],
     damage_pct: int,
     damage_tones_chunk_size: int,
+    dimension: ToneDimension | None = None,
     repeatable_damage_key: str | None = None,
 ) -> list[Tone]:
     _validate_fragment_params(damage_pct=damage_pct, damage_tones_chunk_size=damage_tones_chunk_size)
 
-    if repeatable_damage_key is not None:
+    randomizer = (
         _create_damage_pattern_randomizer(repeatable_damage_key)
+        if repeatable_damage_key is not None
+        else random.Random()
+    )
 
     if damage_pct == 0:
         return [
@@ -171,7 +304,33 @@ def fragment_transform(
             for tone in tones
         ]
 
-    raise NotImplementedError("fragment transform damage behavior is not implemented yet")
+    selected_chunks = _select_chunks_to_damage(
+        tone_count=len(tones),
+        damage_pct=damage_pct,
+        damage_tones_chunk_size=damage_tones_chunk_size,
+        repeatable_damage_key=repeatable_damage_key,
+    )
+    damaged_positions = {position for chunk in selected_chunks for position in chunk}
+    transformed_tones: list[Tone] = []
+
+    for tone_index, tone in enumerate(tones):
+        if tone_index not in damaged_positions:
+            transformed_tones.append(
+                Tone(
+                    frequency=tone.frequency,
+                    duration=tone.duration,
+                    sample_rate=tone.sample_rate,
+                    amplitude=tone.amplitude,
+                )
+            )
+            continue
+
+        if dimension is None:
+            transformed_tones.extend(_damage_selected_tone_across_dimensions(tone, randomizer))
+        else:
+            transformed_tones.extend(_damage_selected_tone_for_dimension(tone, dimension, randomizer))
+    
+    return transformed_tones
 
 
 def fragment_phrase_transform(context: PhraseTransformContext, params: FragmentParams) -> Phrase:
@@ -180,6 +339,7 @@ def fragment_phrase_transform(context: PhraseTransformContext, params: FragmentP
         phrase_tones,
         damage_pct=params.damage_pct,
         damage_tones_chunk_size=params.damage_tones_chunk_size,
+        dimension=params.dimension,
         repeatable_damage_key=params.repeatable_damage_key,
     )
     return Phrase(motifs=[Motif(name="<transformed>", tones=transformed_tones)])
