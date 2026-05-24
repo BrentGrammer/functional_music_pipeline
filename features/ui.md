@@ -43,12 +43,19 @@ Router’s docs describe v7 as a non-breaking upgrade from v6 with framework/dat
 
 For this project, I’d choose one of these:
 
-1. Pragmatic first version: Vite + React + TypeScript + React Router v7 in browser/data-router mode.
+1. Pragmatic first version: Vite + React + TypeScript + React Router v7 in SPA/data-router mode.
    Best fit if FastAPI owns the backend.
 2. More integrated React framework: create-react-router@latest.
    Better if you want SSR, route modules, loaders/actions, and a more framework-like React app. Adds Node-side complexity you probably do not need yet.
 
 I would not start with Next.js unless you specifically want a Node full-stack app. The valuable backend already exists in Python.
+
+React Router v7 decision:
+
+- Use React Router v7 in SPA/data-router mode for the first UI.
+- Do not use SSR or React Router framework mode initially.
+- Reason: this is an authenticated interactive editor, not a public content-heavy site; SEO and server-rendered initial HTML are not important for v1.
+- Keep deployment simple by building static React assets and serving them behind Caddy or Nginx while FastAPI owns the backend API.
 
 Initial UI Scope
 The smallest useful UI would be:
