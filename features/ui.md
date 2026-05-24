@@ -282,6 +282,7 @@ MP3 conversion note:
 
 The major architecture direction is mostly settled, but these items should be specified before implementation:
 
+- Composition/score schema migration: the UI should assume the new composition document shape described in `features/composition_score_document_schema.md`, where a composition owns metadata and contains a `score` object.
 - API and data model spec: concrete PostgreSQL tables, composition document versioning, ownership model, endpoints, request/response shapes, and error formats.
 - Composition persistence behavior: save, update, duplicate, delete, import/export JSON, and whether deletion is soft or hard.
 - Render execution model: synchronous preview render first, with background render jobs deferred until render time becomes slow.
