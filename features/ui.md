@@ -189,3 +189,56 @@ Recommended first public deployment:
 - Use the cheap option only for a private prototype or short-lived demo where local database maintenance and recovery risk are acceptable.
 - Neon Postgres was considered as a cheaper external managed database, but rejected for now because serverless scale-to-zero pricing introduces less predictable costs if usage grows or if the app keeps the database awake.
 - AWS Lightsail/RDS/S3 remains a viable later path, but DigitalOcean Droplet + Managed PostgreSQL + Spaces is preferred for the first public deployment.
+
+## Authentication Direction
+
+Use FastAPI Users as the initial authentication stack. This keeps authentication inside the FastAPI/PostgreSQL architecture without adding a paid external auth service.
+
+Recommended auth shape:
+
+- FastAPI Users for registration, login, logout, current-user dependencies, and auth route scaffolding.
+- PostgreSQL for users, OAuth account links, sessions/tokens, saved compositions, render metadata, and future job state.
+- Secure HttpOnly cookies for browser sessions instead of storing JWTs in localStorage.
+- Hashed passwords for email/password login.
+- Google OAuth support through FastAPI Users' OAuth integration when social login is needed.
+
+Avoid Auth0, Clerk, Supabase Auth, or a separate self-hosted identity server for the first version unless requirements change. Do not hand-roll password or session security beyond configuring proven libraries.
+
+# Summary of Plan
+
+Frontend
+
+- React + TypeScript
+- Vite
+- React Router v7
+- dnd kit for drag/drop
+- Lane/timeline editor, not React Flow initially
+- Continuous timeline dragging, no visible snap grid
+- Phrase blocks cannot overlap inside a voice
+- Render preview through <audio> using generated WAV files
+
+Backend
+
+- FastAPI + uvicorn
+- Existing Python composition/parser/transform/render pipeline stays the source of truth
+- Add a thin API layer around the current CLI/core pipeline
+- PostgreSQL for users, saved compositions, render jobs, and metadata
+- Store flexible composition documents in Postgres, likely with JSONB
+- Rendered WAV/MIDI files go to object storage, not the database
+
+Persistence/Auth
+
+- PostgreSQL chosen over MongoDB
+- Users own compositions; backend enforces ownership checks
+- Passwords must be hashed, not stored directly
+- Auth provider still not fully chosen, but app needs login/session support
+
+Hosting
+
+- Preferred initial deployment: DigitalOcean
+- Use a Basic Droplet for FastAPI, React static build, reverse proxy, and runtime
+- Use DigitalOcean Managed PostgreSQL
+- Use DigitalOcean Spaces for WAV/MIDI render artifacts
+- Expected small-scale cost: roughly $26-$32/month
+- Neon was considered but rejected for now due to pricing unpredictability
+- AWS Lightsail/RDS/S3 remains viable later, but not the first choice
