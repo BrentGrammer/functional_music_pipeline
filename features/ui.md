@@ -290,8 +290,41 @@ The major architecture direction is mostly settled, but these items should be sp
 - Transform metadata contract: backend endpoint for available transforms, parameter schemas, defaults, labels, and validation rules so the UI can build transform controls dynamically.
 - Validation UX: how backend validation errors map to UI blocks, including invalid transforms, invalid timing, phrase overlap, and render limits.
 - Security details: cookie auth, CSRF protection, CORS policy, ownership checks, private render access, and safe signed URLs for saved render objects.
-- Deployment shape: Docker Compose on the Droplet, reverse proxy choice, environment variables, database migrations, `ffmpeg`, TLS, backups, and basic monitoring.
+- Deployment details: exact Docker files, reverse proxy config, environment variables, database migration command, TLS setup, backups, and basic monitoring.
 - Testing plan: pytest for API/core behavior, frontend component tests for editor behavior, and later Playwright coverage for render/preview flows.
+
+## Deployment Direction
+
+Use Docker Compose for local development and a similar containerized shape on the DigitalOcean Droplet.
+
+Local development:
+
+```text
+docker-compose.yml
+  api       FastAPI backend with Python dependencies and ffmpeg
+  web       React/Vite dev server
+  postgres  Local PostgreSQL for development and tests
+```
+
+Production on DigitalOcean:
+
+```text
+docker-compose.prod.yml
+  api       FastAPI backend with production server settings and ffmpeg
+  web/proxy Built React app served behind Caddy or Nginx
+```
+
+Production should use DigitalOcean Managed PostgreSQL instead of running Postgres in Compose. The production app should connect to Managed PostgreSQL and Spaces through environment variables.
+
+Deployment decisions:
+
+- Use Docker for both frontend and backend.
+- Install `ffmpeg` in the backend image for later MP3 export support.
+- Use `docker compose up` for local development.
+- Prefer Caddy if automatic TLS simplicity is the priority; use Nginx if explicit reverse proxy configuration is preferred.
+- Run database migrations as an explicit deploy step or one-off command.
+- Store secrets in environment variables on the Droplet, not in committed files.
+- Keep production Postgres outside Compose when using DigitalOcean Managed PostgreSQL.
 
 ## Initial API Shape
 
