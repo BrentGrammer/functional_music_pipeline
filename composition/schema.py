@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import NotRequired, TypeAlias, TypedDict
+from typing import NotRequired, Required, TypeAlias, TypedDict
 
 MotifsConfigInput: TypeAlias = dict[str, list[str]]
 
@@ -59,16 +59,14 @@ class ScoreDocument(TypedDict):
 
 
 class CompositionDocumentInput(TypedDict, total=False):
-    name: str
+    name: Required[str]
     description: str
     document_version: int
-    created_at: str
     score: ScoreDocumentInput
 
 
 class CompositionDocument(TypedDict):
-    name: NotRequired[str]
+    name: str
     description: NotRequired[str]
-    document_version: NotRequired[int]
-    created_at: NotRequired[str]
+    document_version: int
     score: ScoreDocument

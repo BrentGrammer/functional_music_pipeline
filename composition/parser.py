@@ -48,6 +48,21 @@ def _validate_composition_document(
     if not isinstance(composition_document, dict):
         raise ValueError("Composition document must be an object.")
 
+    composition_name = composition_document.get("name")
+    if not isinstance(composition_name, str) or not composition_name:
+        raise ValueError("Composition 'name' must be a non-empty string.")
+
+    composition_description = composition_document.get("description")
+    if composition_description is not None and not isinstance(composition_description, str):
+        raise ValueError("Composition 'description' must be a string.")
+
+    document_version = composition_document.get("document_version")
+    if document_version is not None:
+        if not isinstance(document_version, int) or isinstance(document_version, bool):
+            raise ValueError("Composition 'document_version' must be an integer.")
+    else:
+        document_version = 1
+
     score_document = composition_document.get("score")
     if not isinstance(score_document, dict):
         raise ValueError("Composition 'score' must be an object.")
@@ -153,11 +168,14 @@ def _validate_composition_document(
         score_transforms=validated_score_transforms,
     )
 
-    validated_document: CompositionDocument = {"score": validated_score}
-    for metadata_key in ("name", "description", "document_version", "created_at"):
-        metadata_value = composition_document.get(metadata_key)
-        if metadata_value is not None:
-            validated_document[metadata_key] = metadata_value
+    validated_document: CompositionDocument = {
+        "name": composition_name,
+        "document_version": document_version,
+        "score": validated_score,
+    }
+    composition_description = composition_document.get("description")
+    if composition_description is not None:
+        validated_document["description"] = composition_description
     return validated_document
 
 def _extract_transform_requests_from_phrase(
