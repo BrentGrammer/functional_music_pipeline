@@ -204,6 +204,41 @@ Recommended auth shape:
 
 Avoid Auth0, Clerk, Supabase Auth, or a separate self-hosted identity server for the first version unless requirements change. Do not hand-roll password or session security beyond configuring proven libraries.
 
+## Render Preview And Storage Direction
+
+Use temporary previews first instead of storing every rendered WAV/MIDI file permanently.
+
+Recommended preview flow:
+
+- User clicks Preview or Render Preview.
+- FastAPI renders the current composition on demand.
+- For small renders, the API can return audio bytes directly. For larger renders, write to a temporary file and stream the response.
+- React creates a Blob URL from the response and assigns it to an audio element.
+- The user can replay the preview in the browser while the page remains open.
+- If the user edits the composition, refreshes, closes the tab, or requests a new preview, the app can render again.
+
+Do not use browser localStorage for rendered WAV/MIDI files. It is a poor fit for binary audio and has tight browser storage limits. IndexedDB can store blobs, but it should not be the first render storage model because it adds complexity and is not a reliable user-facing archive.
+
+Use DigitalOcean Spaces only for explicit saved/final renders or later features such as render history, shareable links, and replaying old renders without regenerating them.
+
+If Spaces is used for saved or longer-lived renders:
+
+- Keep objects private.
+- Store render metadata and object keys in PostgreSQL.
+- Include `render_id`, `user_id`, `composition_id`, format, size, duration, status, and object key.
+- Serve playback/download through signed URLs or backend authorization.
+- Add lifecycle cleanup for temporary or unsaved render objects.
+- Treat saved renders as stale if the underlying composition changes.
+
+Render guardrails:
+
+- Validate maximum render duration before rendering.
+- Limit concurrent renders per user.
+- Render non-trivial outputs to temporary files instead of keeping large audio entirely in memory.
+- Stream file responses and uploads where possible.
+- Clean up temporary files after response completion or a short TTL.
+- Keep persistent object storage optional until users need saved render history or sharing.
+
 # Summary of Plan
 
 Frontend
