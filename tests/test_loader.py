@@ -12,7 +12,6 @@ class TestLoadCompositionScore:
         composition_document = {
             "name": "Loader Study",
             "description": "Minimal persisted composition document.",
-            "document_version": 1,
             "score": {
                 "motifs": {
                     "seed": ["440:1.0"],
