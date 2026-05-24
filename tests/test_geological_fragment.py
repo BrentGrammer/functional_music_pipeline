@@ -7,15 +7,16 @@ from composition.transformer import transform_score
 from score_model.motif import Motif
 from score_model.phrase import Phrase
 from score_model.score import Score
-from score_model.traversal import flatten_phrase_tones
 from score_model.tone import Tone
+from score_model.traversal import flatten_phrase_tones
 from score_model.voice import Voice
-from transforms.base import PhraseTransformContext
+from transforms.base import PhraseTransformContext, ToneDimension
 from transforms.geological.fragment import (
     FRAGMENT_PARAMS_SPEC,
     FragmentParams,
     _select_chunks_to_damage,
     fragment_phrase_transform,
+    fragment_transform,
 )
 from transforms.registry import PHRASE_TRANSFORMS
 
@@ -30,7 +31,7 @@ def test_fragment_params_accept_omitted_pattern_key():
         transform_name="fragment",
     )
 
-    assert params == FragmentParams(damage_pct=0, damage_tones_chunk_size=4, repeatable_damage_key=None)
+    assert params == FragmentParams(damage_pct=0, damage_tones_chunk_size=4, dimension=None, repeatable_damage_key=None)
 
 
 def test_fragment_params_accept_string_pattern_key():
@@ -41,11 +42,30 @@ def test_fragment_params_accept_string_pattern_key():
         transform_name="fragment",
     )
 
-    assert params == FragmentParams(damage_pct=0, damage_tones_chunk_size=4, repeatable_damage_key=repeatable_damage_key)
+    assert params == FragmentParams(
+        damage_pct=0,
+        damage_tones_chunk_size=4,
+        dimension=None,
+        repeatable_damage_key=repeatable_damage_key,
+    )
+
+
+def test_fragment_params_accept_explicit_dimension():
+    params = FRAGMENT_PARAMS_SPEC.parse_params(
+        {"damage_pct": 0, "damage_tones_chunk_size": 4, "dimension": ToneDimension.DURATION},
+        transform_name="fragment",
+    )
+
+    assert params == FragmentParams(
+        damage_pct=0,
+        damage_tones_chunk_size=4,
+        dimension=ToneDimension.DURATION,
+        repeatable_damage_key=None,
+    )
 
 
 @pytest.mark.parametrize("invalid_pattern_key", [123, 4.5, True, None, ["string-in-list"]])
-def test_fragment_params_reject_invalid_pattern_key_values(invalid_pattern_key: object):
+def test_fragment_params_reject_invalid_pattern_key_values(invalid_pattern_key: object) -> None:
     with pytest.raises(ValueError):
         FRAGMENT_PARAMS_SPEC.parse_params(
             {"damage_pct": 0, "damage_tones_chunk_size": 4, "repeatable_damage_key": invalid_pattern_key},
@@ -64,7 +84,7 @@ def test_fragment_damage_pct_zero_returns_equivalent_phrase():
 
     result = fragment_phrase_transform(
         context,
-        FragmentParams(damage_pct=0, damage_tones_chunk_size=4, repeatable_damage_key=None),
+        FragmentParams(damage_pct=0, damage_tones_chunk_size=4, dimension=None, repeatable_damage_key=None),
     )
 
     result_tones = flatten_phrase_tones(result)
@@ -174,7 +194,7 @@ class TestFragmentSelection:
         damage_pct: int,
         damage_tones_chunk_size: int,
         expected_selected_count: int,
-    ):
+    ) -> None:
         selected_chunks = _select_chunks_to_damage(
             tone_count=tone_count,
             damage_pct=damage_pct,
@@ -202,6 +222,88 @@ class TestFragmentSelection:
         )
 
         assert first_chunks == second_chunks
+
+
+class TestFragmentDimensionBoundDamage:
+    def test_frequency_dimension_replaces_selected_tones_with_silence(self):
+        original_tones = [
+            Tone(220.0, duration=0.5, amplitude=0.25),
+            Tone(330.0, duration=0.25, amplitude=0.5),
+        ]
+
+        transformed_tones = fragment_transform(
+            original_tones,
+            damage_pct=100,
+            damage_tones_chunk_size=2,
+            dimension=ToneDimension.FREQUENCY,
+            repeatable_damage_key="pattern-key-a",
+        )
+        all_silent_with_100_pct_damage = [0.0, 0.0]
+        assert [tone.frequency for tone in transformed_tones] == all_silent_with_100_pct_damage
+        assert [tone.duration for tone in transformed_tones] == pytest.approx([0.5, 0.25])
+        assert [tone.amplitude for tone in transformed_tones] == all_silent_with_100_pct_damage
+
+    def test_duration_dimension_shortens_selected_tones_and_preserves_the_phrase_timeline(self):
+        original_tones = [
+            Tone(220.0, duration=0.5, amplitude=0.25),
+            Tone(330.0, duration=0.25, amplitude=0.5),
+        ]
+        original_total_duration = sum(tone.duration for tone in original_tones)
+
+        transformed_tones = fragment_transform(
+            original_tones,
+            damage_pct=100,
+            damage_tones_chunk_size=2,
+            dimension=ToneDimension.DURATION,
+            repeatable_damage_key="pattern-key-a",
+        )
+
+        damaged_first_tone, first_trailing_silence, damaged_second_tone, second_trailing_silence = transformed_tones
+
+        assert sum(tone.duration for tone in transformed_tones) == pytest.approx(original_total_duration)
+        
+        assert damaged_first_tone.frequency == original_tones[0].frequency
+        assert damaged_second_tone.frequency == original_tones[1].frequency
+         
+        assert damaged_first_tone.amplitude == original_tones[0].amplitude
+        assert damaged_second_tone.amplitude == original_tones[1].amplitude
+
+        assert damaged_first_tone.duration < original_tones[0].duration
+        assert damaged_second_tone.duration < original_tones[1].duration
+        
+        assert first_trailing_silence.frequency == 0.0
+        assert first_trailing_silence.amplitude == 0.0
+        
+        assert second_trailing_silence.frequency == 0.0
+        assert second_trailing_silence.amplitude == 0.0
+
+    def test_amplitude_dimension_reduces_selected_tone_amplitudes_only(self):
+        tone_1_frequency = 220.0
+        tone_2_frequency = 330.0
+
+        tone_1_amplitude = 0.25
+        tone_2_amplitude = 0.5
+
+        tone_1_duration = 0.5
+        tone_2_duration = 0.25
+
+        original_tones = [
+            Tone(tone_1_frequency, duration=tone_1_duration, amplitude=tone_1_amplitude),
+            Tone(tone_2_frequency, duration=tone_2_duration, amplitude=tone_2_amplitude),
+        ]
+
+        transformed_tones = fragment_transform(
+            original_tones,
+            damage_pct=100,
+            damage_tones_chunk_size=2,
+            dimension=ToneDimension.AMPLITUDE,
+            repeatable_damage_key="pattern-key-a",
+        )
+
+        assert [tone.frequency for tone in transformed_tones] == pytest.approx([tone_1_frequency, tone_2_frequency])
+        assert [tone.duration for tone in transformed_tones] == pytest.approx([tone_1_duration, tone_2_duration])
+        assert transformed_tones[0].amplitude < tone_1_amplitude
+        assert transformed_tones[1].amplitude < tone_2_amplitude
 
 
 class TestFragmentAcceptance:
