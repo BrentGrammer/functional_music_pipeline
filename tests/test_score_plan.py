@@ -51,7 +51,6 @@ def test_score_plan_preserves_planning_metadata():
 def test_parse_score_plan_resolves_motifs_and_preserves_structure():
     composition_document: CompositionDocumentInput = {
         "name": "Structure Study",
-        "document_version": 1,
         "score": {
             "motifs": {
                 "m1": ["440.0:1.0"],

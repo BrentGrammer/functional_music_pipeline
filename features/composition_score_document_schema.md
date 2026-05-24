@@ -14,7 +14,6 @@ Use the new shape directly. Do not preserve backwards compatibility for the old 
 {
   "name": "Frost bloom study",
   "description": "Optional notes about the composition.",
-  "document_version": 1,
   "score": {
     "motifs": {},
     "voices": [],
@@ -44,7 +43,6 @@ New shape:
 {
   "name": "...",
   "description": "...",
-  "document_version": 1,
   "score": {
     "motifs": {},
     "voices": [],
@@ -59,7 +57,6 @@ New shape:
 - Update `CompositionDocumentInput` and `CompositionDocument` so they contain metadata plus `score`.
 - Update the parser so `generate_score_plan` reads `document["score"]` instead of top-level `motifs` and `composition`.
 - After the score shape migration is stable, expand `_validate_composition_document()` to validate composition metadata fields as part of the top-level document contract.
-- Treat `document_version` as a schema version integer, not semantic versioning, and default it to `1`.
 - Keep the existing runtime `Score` domain object. It remains the parsed/renderable domain model.
 - Update existing JSON files in `compositions/` to the new shape.
 - Update parser, loader, CLI, and tests to use the new document shape.
@@ -82,7 +79,6 @@ New shape:
    {
      "name": "...",
      "description": "...",
-     "document_version": 1,
      "score": {
        "motifs": {},
        "voices": [],
@@ -102,7 +98,6 @@ New shape:
    - Expand `_validate_composition_document()` to validate top-level metadata fields.
    - Validate `name` as a required non-empty string.
    - Validate `description` as a string when present.
-   - Validate `document_version` as an integer schema version and default it to `1` when omitted.
 5. Update composition JSON examples
    - Convert files in compositions/ to the new shape.
 6. Add metadata validation tests
@@ -110,3 +105,22 @@ New shape:
 7. Run targeted then full tests
    - Start with parser/loader/render tests.
    - Then broader suite.
+
+## Handoff
+
+Current state:
+
+- The composition document now requires `name`.
+- `created_at` is no longer part of the composition document contract.
+- `score` is nested under the composition document and is the only place where motifs, voices, and score transforms live.
+- `composition/parser.py`, `composition/schema.py`, and the focused parser/loader/document tests have already been migrated to the new shape.
+
+What remains:
+
+- Update `tests/test_proportion_golden_ratio.py` to the new document shape.
+- Decide whether to keep or remove any remaining checked-in JSON examples under `compositions/`.
+- If desired, do a final cleanup pass on this document so the implementation notes and examples match the settled contract exactly.
+
+Useful next-session entry point:
+
+- Start with `tests/test_proportion_golden_ratio.py`.

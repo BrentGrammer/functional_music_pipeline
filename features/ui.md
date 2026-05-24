@@ -356,7 +356,6 @@ Composition response shape:
   "id": "uuid",
   "name": "Frost bloom study",
   "description": "Optional notes",
-  "document_version": 1,
   "score": {
     "motifs": {},
     "voices": [],
@@ -400,7 +399,6 @@ Example export request:
   "composition": {
     "name": "Frost bloom study",
     "description": "Optional notes",
-    "document_version": 1,
     "score": {
       "motifs": {},
       "voices": [],

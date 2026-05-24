@@ -61,12 +61,10 @@ class ScoreDocument(TypedDict):
 class CompositionDocumentInput(TypedDict, total=False):
     name: Required[str]
     description: str
-    document_version: int
     score: ScoreDocumentInput
 
 
 class CompositionDocument(TypedDict):
     name: str
     description: NotRequired[str]
-    document_version: int
     score: ScoreDocument

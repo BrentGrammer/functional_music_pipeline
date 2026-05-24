@@ -232,7 +232,6 @@ def test_validate_composition_document_returns_validated_document():
     composition_document: CompositionDocumentInput = {
         "name": "Document Study",
         "description": "Parser validation example.",
-        "document_version": 1,
         "score": {
             "motifs": {"seed": ["440"]},
             "voices": [{"phrases": [{"motifs": ["seed"]}]}],
@@ -248,7 +247,6 @@ def test_validate_composition_document_returns_validated_document():
     assert validated_document == {
         "name": "Document Study",
         "description": "Parser validation example.",
-        "document_version": 1,
         "score": {
             "motifs": {"seed": ["440"]},
             "voices": [{"phrases": [{"motifs": ["seed"], "transforms": default_for_missing_transforms}]}],
@@ -268,7 +266,6 @@ def test_validate_composition_document_defaults_missing_phrase_transforms():
 
     validated_document = _validate_composition_document(composition_document)
 
-    assert validated_document["document_version"] == 1
     assert validated_document["score"]["voices"][0]["phrases"][0]["transforms"] == []
 
 
@@ -283,7 +280,6 @@ def test_validate_composition_document_defaults_missing_score_transforms():
 
     validated_document = _validate_composition_document(composition_document)
 
-    assert validated_document["document_version"] == 1
     assert validated_document["score"]["score_transforms"] == []
 
 
@@ -306,20 +302,6 @@ def test_validate_composition_document_rejects_non_string_description():
     with pytest.raises(ValueError):
         _validate_composition_document(
             {"name": "Description Study", "description": 123, "score": {"motifs": {}, "voices": []}}
-        )
-
-
-def test_validate_composition_document_rejects_non_integer_document_version():
-    with pytest.raises(ValueError):
-        _validate_composition_document(
-            {"name": "Version Study", "document_version": "1", "score": {"motifs": {}, "voices": []}}
-        )
-
-
-def test_validate_composition_document_rejects_boolean_document_version():
-    with pytest.raises(ValueError):
-        _validate_composition_document(
-            {"name": "Version Study", "document_version": True, "score": {"motifs": {}, "voices": []}}
         )
 
 

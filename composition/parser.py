@@ -56,13 +56,6 @@ def _validate_composition_document(
     if composition_description is not None and not isinstance(composition_description, str):
         raise ValueError("Composition 'description' must be a string.")
 
-    document_version = composition_document.get("document_version")
-    if document_version is not None:
-        if not isinstance(document_version, int) or isinstance(document_version, bool):
-            raise ValueError("Composition 'document_version' must be an integer.")
-    else:
-        document_version = 1
-
     score_document = composition_document.get("score")
     if not isinstance(score_document, dict):
         raise ValueError("Composition 'score' must be an object.")
@@ -170,7 +163,6 @@ def _validate_composition_document(
 
     validated_document: CompositionDocument = {
         "name": composition_name,
-        "document_version": document_version,
         "score": validated_score,
     }
     composition_description = composition_document.get("description")
