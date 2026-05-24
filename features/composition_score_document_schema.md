@@ -71,3 +71,34 @@ New shape:
 - Score document: editable musical blueprint stored inside the composition.
 - Score domain object: runtime model produced from the score document for transforms/rendering.
 - Render/export: generated WAV, MP3, or MIDI artifact.
+
+1. Migrate schema
+   - Add ScoreDocumentInput / ScoreDocument.
+   - Update CompositionDocumentInput / CompositionDocument to contain metadata plus score.
+   - New shape:
+
+   ```json
+   {
+     "name": "...",
+     "description": "...",
+     "document_version": 1,
+     "score": {
+       "motifs": {},
+       "voices": [],
+       "score_transforms": []
+     }
+   }
+   ```
+
+2. Update parser
+   - generate_score_plan reads document["score"].
+   - Remove old document["motifs"] + document["composition"] parsing.
+   - No backwards compatibility.
+3. Update composition JSON examples
+   - Convert files in compositions/ to the new shape.
+4. Update tests
+   - Parser/schema/loader/render tests should use the new document shape.
+   - Keep behavior expectations the same: same score output, same transforms, same renders.
+5. Run targeted then full tests
+   - Start with parser/loader/render tests.
+   - Then broader suite.
