@@ -278,6 +278,20 @@ MP3 conversion note:
 - Expect smaller files and lower storage/bandwidth usage than WAV, at the cost of lossy compression and additional CPU time.
 - Test MP3 export by asserting that an MP3 file is produced and playable/servable, not by comparing exact encoded bytes.
 
+## Remaining Planning Gaps
+
+The major architecture direction is mostly settled, but these items should be specified before implementation:
+
+- API and data model spec: concrete PostgreSQL tables, composition document versioning, ownership model, endpoints, request/response shapes, and error formats.
+- Composition persistence behavior: save, update, duplicate, delete, import/export JSON, and whether deletion is soft or hard.
+- Render execution model: synchronous preview render first, with background render jobs deferred until render time becomes slow.
+- Frontend editor state model: how voices, phrases, motifs, transform chains, timing offsets, selection, dirty state, and validation state are stored before saving.
+- Transform metadata contract: backend endpoint for available transforms, parameter schemas, defaults, labels, and validation rules so the UI can build transform controls dynamically.
+- Validation UX: how backend validation errors map to UI blocks, including invalid transforms, invalid timing, phrase overlap, and render limits.
+- Security details: cookie auth, CSRF protection, CORS policy, ownership checks, private render access, and safe signed URLs for saved render objects.
+- Deployment shape: Docker Compose on the Droplet, reverse proxy choice, environment variables, database migrations, `ffmpeg`, TLS, backups, and basic monitoring.
+- Testing plan: pytest for API/core behavior, frontend component tests for editor behavior, and later Playwright coverage for render/preview flows.
+
 # Summary of Plan
 
 Frontend
