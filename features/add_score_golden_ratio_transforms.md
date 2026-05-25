@@ -1,5 +1,7 @@
 ## Add Explicit Score Golden Ratio Grow/Shrink Transforms
 
+Did we do this already? check if it's done.
+
 ### Summary
 
 Introduce two explicit score-scope Golden Ratio transforms named score_golden_ratio_shrink and score_golden_ratio_grow. These will operate at score scope only, scaling each
