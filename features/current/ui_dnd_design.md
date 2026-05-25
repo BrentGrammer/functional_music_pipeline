@@ -564,19 +564,67 @@ The phrase editor should be the main place where motifs are added, created, orde
 
 Global motif row
 
-Keep it, but make it mostly passive:
+### Editing Global Motifs
 
-Shows motifs that exist in the project
-Can be horizontally scrolled
-Can be dragged from into a phrase
-Can open motif details on click
-Should not be the main place where users edit motif contents
+Motifs are global reusable objects
 
-This avoids the problem you mentioned:
+A phrase does not own motif contents.
+A phrase only stores references to motifs:
 
-If I edit a motif globally, does that change every phrase using it?
+The global motif list owns the actual motif data:
+So if the user edits “Rising Third” globally, every phrase using it updates automatically.
 
-That gets conceptually messy fast.
+Phrase editor should only manage usage/order
+Inside the phrase side panel, the user can:
+
+Add existing motif to phrase
+Remove motif from phrase
+Reorder motifs in phrase
+
+But they should not edit the motif’s musical contents there.
+
+So the side panel motif section becomes:
+
+```text
+Motifs in this phrase
+[ :: Rising Third     remove ]
+[ :: Turn Figure      remove ]
+[ :: Cadence Cell     remove ]
+[ + Add Motif ] (Cancel | Create)
+```
+
+(The `::` is the handle to drag order)
+
+#### Motif Editor
+
+User clicks a motif in the global motif row:
+
+[ Motif A ] [ Motif B ] [ Motif C ]
+
+Then a modal opens:
+
+<!-- prettier-ignore -->
+┌──────────────────────────────────────────────┐
+│ Edit Motif: Rising Third                 X   │
+├──────────────────────────────────────────────┤
+│ Name                                         │
+│ [ Rising Third                            ]  │
+│                                              │
+│ Tones                                        │
+│                                              │
+│ #  Frequency Hz      Duration sec   ⋯    │   |
+│ :: [ 440.0      ]    [ 1.0      ]   ⋯    │   |
+│ :: [ 493.88     ]    [ 0.75     ]   ⋯    |   |
+│ :: [ 523.25     ]    [ 1.3      ]   ⋯    │   |
+│                                              │
+│  [ + Add Tone ]                              │
+│                                              │
+├──────────────────────────────────────────────┤
+│                        Cancel   Save         │
+└──────────────────────────────────────────────┘
+
+- `::` is a drag handle to rearrange order of tones.
+- `...` is the menu that has options: Delete | Duplicate
 
 ---
 
